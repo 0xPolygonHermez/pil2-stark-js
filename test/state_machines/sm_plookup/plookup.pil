@@ -1,0 +1,10 @@
+namespace Plookup(%N);
+
+
+    pol commit sel, a, b;
+    pol commit cc;
+
+    pol constant SEL, A, B;
+
+    sel {a, b', a*b'} in SEL {A, B, cc};
+

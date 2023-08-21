@@ -1,0 +1,12 @@
+node_modules
+.vscode
+dist
+tmp/*
+
+test/compressor/verifier*
+!test/compressor/verifier.circom
+!test/compressor/verifier.proof.zkin.json
+
+test/final/verifier*
+!test/final/verifier.circom
+!test/final/verifier.proof.zkin.json

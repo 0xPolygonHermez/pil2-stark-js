@@ -1,0 +1,14 @@
+constant %N = 2**3;
+
+namespace Simple(%N);
+
+    pol constant LAST[2];
+    pol commit a[2], b;
+
+    public out = b(%N-1);
+    public out2 = b(%N-2);
+
+    a[0]*a[1] = b;
+
+    LAST[0] * (b - :out) = 0;
+    LAST[1] * (b - :out2) = 0;

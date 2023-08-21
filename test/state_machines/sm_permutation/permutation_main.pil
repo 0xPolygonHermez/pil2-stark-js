@@ -1,0 +1,6 @@
+constant %N = 2**8;
+
+namespace Global(%N);
+    pol constant L1;
+
+include "permutation.pil"
