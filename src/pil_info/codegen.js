@@ -1,8 +1,8 @@
-const { expressionError } = require("./helpers/quotientPolynomial/debug");
+const { expressionError } = require("./helpers/debug");
 
 
 function pilCodeGen(ctx, expId, prime, addMul) {
-    if (ctx.calculated[prime][expId]) return;
+    if (ctx.calculated[expId] && ctx.calculated[expId][prime]) return;
 
     calculateDeps(ctx, ctx.pil.expressions[expId], prime, expId);
 
@@ -44,7 +44,8 @@ function pilCodeGen(ctx, expId, prime, addMul) {
         code: codeCtx.code,
     });
 
-    ctx.calculated[prime][expId] = true;
+    if(!ctx.calculated[expId]) ctx.calculated[expId] = {};
+    ctx.calculated[expId][prime] = true;
     
     if (codeCtx.tmpUsed > ctx.tmpUsed) ctx.tmpUsed = codeCtx.tmpUsed;
 }
@@ -99,20 +100,21 @@ function buildCode(ctx) {
     res = {};
     res.tmpUsed = ctx.tmpUsed;
     res.first = [];
+    res.last = [];
+    res.everyFrame = [];
+    res.everyRow = [];
 
+    console.log(ctx.code);
     for (let i=0; i<ctx.code.length; i++) {
         for (let j=0; j< ctx.code[i].code.length; j++) {
-            res.first.push(ctx.code[i].code[j]);
+            res.everyRow.push(ctx.code[i].code[j]);
         }
     }
 
     // Expressions that are not saved, cannot be reused later on
     for (let i=0; i<ctx.pil.expressions.length; i++) {
         const e = ctx.pil.expressions[i];
-        if (!e.keep) {
-            ctx.calculated[0][i] = false;
-            ctx.calculated[1][i] = false;
-        }
+        if (!e.keep) delete ctx.calculated[i];
     }
     ctx.code = [];
     return res;

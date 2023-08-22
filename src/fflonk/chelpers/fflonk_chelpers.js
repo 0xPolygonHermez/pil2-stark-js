@@ -50,17 +50,17 @@ module.exports = function buildCHelpers(fflonkInfo, config = {}) {
 
         if (optcodes && multipleCodeFiles) {
             if(name === "Q") {
-                code.push(compileCode_QPolynomial(starkInfo, `${name}_first`, starkInfo.code[name].first, dom));
+                code.push(compileCode_QPolynomial(starkInfo, `${name}_everyRow`, starkInfo.code[name].everyRow, dom));
             } else if (name === "fri") {
-                code.push(compileCode_fri(starkInfo, `${name}_first`, starkInfo.code[name].first, dom));
+                code.push(compileCode_fri(starkInfo, `${name}_everyRow`, starkInfo.code[name].everyRow, dom));
             } else {
-                code.push(compileCode_parser(starkInfo, `${name}_first`, starkInfo.code[name].first, dom));
+                code.push(compileCode_parser(starkInfo, `${name}_everyRow`, starkInfo.code[name].everyRow, dom));
             }
             result[`${name}_parser`]= code.join("\n\n") + "\n";
             code.length = 0;
         }
 
-	    code.push(compileCode(`${name}_first`, starkInfo.code[name].first, dom));
+	    code.push(compileCode(`${name}_everyRow`, starkInfo.code[name].everyRow, dom));
 
         if (multipleCodeFiles) {
             result[name] = code.join("\n\n") + "\n";

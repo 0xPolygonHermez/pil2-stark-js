@@ -393,7 +393,7 @@ template parallel VerifyEvaluations() {
 
     // Using the evaluations committed and the challenges,
     // calculate the sum of q_i, i.e, q_0(X) + challenge * q_1(X) + challenge^2 * q_2(X) +  ... + challenge^(l-1) * q_l-1(X) evaluated at z 
-<% const evalP = unrollCode(starkInfo.code.qVerifier.first) -%>
+<% const evalP = unrollCode(starkInfo.code.qVerifier.everyRow) -%>
 
     signal xAcc[<%- starkInfo.qDeg %>][3]; //Stores, at each step, x^i evaluated at z
     signal qStep[<%- starkInfo.qDeg-1 %>][3]; // Stores the evaluations of Q_i
@@ -495,7 +495,7 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
 
 <%  } -%>
 
-<% const evalQ = unrollCode(starkInfo.code.queryVerifier.first) -%>
+<% const evalQ = unrollCode(starkInfo.code.queryVerifier.everyRow) -%>
 
     // Final Normalization
     signal queryVals[3] <== GLCNorm()(<%- evalQ %>);

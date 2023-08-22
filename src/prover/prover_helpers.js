@@ -35,20 +35,20 @@ module.exports.callCalculateExps = async function callCalculateExps(step, dom, c
 module.exports.calculateExps = function calculateExps(ctx, code, dom) {
     ctx.tmp = new Array(code.tmpUsed);
 
-    cFirst = new Function("ctx", "i", module.exports.compileCode(ctx, code.first, dom));
+    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.everyRow, dom));
 
     const N = dom=="n" ? ctx.N : ctx.Next;
 
     for (let i=0; i<N; i++) {
-        cFirst(ctx, i);
+        cEveryRow(ctx, i);
     }
 }
 
 module.exports.calculateExpAtPoint = function calculateExpAtPoint(ctx, code, i) {
     ctx.tmp = new Array(code.tmpUsed);
-    cFirst = new Function("ctx", "i", module.exports.compileCode(ctx, code.first, "n", true));
+    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.everyRow, "n", true));
 
-    return cFirst(ctx, i);
+    return cEveryRow(ctx, i);
 }
 
 
@@ -359,7 +359,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     for (let i = 0; i < execInfo.inputSections.length; i++) setWidth(execInfo.inputSections[i]);
     for (let i = 0; i < execInfo.outputSections.length; i++) setWidth(execInfo.outputSections[i]);
 
-    const cFirst = module.exports.compileCode(ctx, code.first, dom, false);
+    const cEveryRow = module.exports.compileCode(ctx, code.everyRow, dom, false);
 
     const n = dom === "n" ? ctx.N : ctx.Next;
     const next = dom === "n" ? 1 : (1 << ctx.extendBits);
@@ -398,9 +398,9 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             }
     
             if (useThreads) {
-                promises.push(pool.exec("proofgen_execute", [ctxIn, true, cFirst, curN, execInfo, execPart, i, n]));
+                promises.push(pool.exec("proofgen_execute", [ctxIn, true, cEveryRow, curN, execInfo, execPart, i, n]));
             } else {
-                res.push(await proofgen_execute(ctxIn, true, cFirst, curN, execInfo, execPart, i, n));
+                res.push(await proofgen_execute(ctxIn, true, cEveryRow, curN, execInfo, execPart, i, n));
             }
         }
         if (useThreads) {
@@ -444,9 +444,9 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             }
     
             if (useThreads) {
-                promises.push(pool.exec("proofgen_execute", [ctxIn, false, cFirst, curN, execInfo, execPart, i, n]));
+                promises.push(pool.exec("proofgen_execute", [ctxIn, false, cEveryRow, curN, execInfo, execPart, i, n]));
             } else {
-                res.push(await proofgen_execute(ctxIn, false, cFirst, curN, execInfo, execPart, i, n));
+                res.push(await proofgen_execute(ctxIn, false, cEveryRow, curN, execInfo, execPart, i, n));
             }
         }
         if (useThreads) {

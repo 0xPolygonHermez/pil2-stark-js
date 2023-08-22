@@ -3,26 +3,25 @@ const F3g = require("../../../src/helpers/f3g");
 
 const wasm_tester = require("circom_tester").wasm;
 
+const tmp = require('temporary');
+const fs = require("fs");
+const ejs = require("ejs");
+
 describe("GL in BN128 circuit", function () {
-    let circuitMul;
-    let circuitCMul;
-    let circuitMulAdd;
-    let circuitCMulAdd;
-    let circuitInv;
-    let circuitCInv;
+    let circuit;
 
     this.timeout(10000000);
 
     before( async() => {
-        circuitMul = await wasm_tester(path.join(__dirname, "circom", "glmul.bn128.test.circom"), {O:1, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
-        circuitCMul = await wasm_tester(path.join(__dirname, "circom", "glcmul.bn128.test.circom"), {O:1, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
-        circuitMulAdd = await wasm_tester(path.join(__dirname, "circom", "glmuladd.bn128.test.circom"), {O:1, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
-        circuitCMulAdd = await wasm_tester(path.join(__dirname, "circom", "glcmuladd.bn128.test.circom"), {O:1, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
-        circuitInv = await wasm_tester(path.join(__dirname, "circom", "glinv.bn128.test.circom"), {O:1, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
-        circuitCInv = await wasm_tester(path.join(__dirname, "circom", "glcinv.bn128.test.circom"), {O:1, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
+        template = await fs.promises.readFile(path.join(__dirname, "circom", "gl.bn128.test.circom.ejs"), "utf8");
     });
 
     it("Should check a basefield multiplication", async () => {
+        const content = ejs.render(template, {glName: "GLMul", dirName:path.join(__dirname, "circom")});
+        const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
+        await fs.promises.writeFile(circuitFile, content);
+        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
+
         const F = new F3g();
 
         const input={
@@ -30,12 +29,17 @@ describe("GL in BN128 circuit", function () {
             inb: F.e(-1)
         };
 
-        const w = await circuitMul.calculateWitness(input, true);
+        const w = await circuit.calculateWitness(input, true);
 
-        await circuitMul.assertOut(w, {out: 2n});
+        await circuit.assertOut(w, {out: 2n});
 
     });
     it("Should check a complex multiplication", async () => {
+        const content = ejs.render(template, {glName: "GLCMul", dirName:path.join(__dirname, "circom")});
+        const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
+        await fs.promises.writeFile(circuitFile, content);
+        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
+
         const F = new F3g();
 
         const input={
@@ -43,12 +47,17 @@ describe("GL in BN128 circuit", function () {
             inb: F.e([-1,-33, 4])
         };
 
-        const w = await circuitCMul.calculateWitness(input, true);
+        const w = await circuit.calculateWitness(input, true);
 
-        await circuitCMul.assertOut(w, {out: F.mul(input.ina, input.inb)});
+        await circuit.assertOut(w, {out: F.mul(input.ina, input.inb)});
     });
 
     it("Should check a basefield multiplication addition", async () => {
+        const content = ejs.render(template, {glName: "GLMulAdd", dirName:path.join(__dirname, "circom")});
+        const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
+        await fs.promises.writeFile(circuitFile, content);
+        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
+
         const F = new F3g();
 
         const input={
@@ -57,12 +66,17 @@ describe("GL in BN128 circuit", function () {
             inc: F.e(444)
         };
 
-        const w = await circuitMulAdd.calculateWitness(input, true);
+        const w = await circuit.calculateWitness(input, true);
 
-        await circuitMulAdd.assertOut(w, {out: 446n});
+        await circuit.assertOut(w, {out: 446n});
 
     });
     it("Should check a complex multiplication addition", async () => {
+        const content = ejs.render(template, {glName: "GLCMulAdd", dirName:path.join(__dirname, "circom")});
+        const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
+        await fs.promises.writeFile(circuitFile, content);
+        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
+
         const F = new F3g();
 
         const input={
@@ -71,33 +85,43 @@ describe("GL in BN128 circuit", function () {
             inc: F.e([5,-8, -99])
         };
 
-        const w = await circuitCMulAdd.calculateWitness(input, true);
+        const w = await circuit.calculateWitness(input, true);
 
-        await circuitCMulAdd.assertOut(w, {out: F.add(F.mul(input.ina, input.inb), input.inc)});
+        await circuit.assertOut(w, {out: F.add(F.mul(input.ina, input.inb), input.inc)});
     });
 
     it("Should check a basefield inv", async () => {
+        const content = ejs.render(template, {glName: "GLInv", dirName:path.join(__dirname, "circom")});
+        const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
+        await fs.promises.writeFile(circuitFile, content);
+        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
+
         const F = new F3g();
 
         const input={
             in: F.e(2),
         };
 
-        const w = await circuitInv.calculateWitness(input, true);
+        const w = await circuit.calculateWitness(input, true);
 
-        await circuitInv.assertOut(w, {out: F.inv(input.in)});
+        await circuit.assertOut(w, {out: F.inv(input.in)});
 
     });
     it("Should check a complex inv", async () => {
+        const content = ejs.render(template, {glName: "GLCInv", dirName:path.join(__dirname, "circom")});
+        const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
+        await fs.promises.writeFile(circuitFile, content);
+        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
+
         const F = new F3g();
 
         const input={
             in: F.e([-2, 3, -35]),
         };
 
-        const w = await circuitCInv.calculateWitness(input, true);
+        const w = await circuit.calculateWitness(input, true);
 
-        await circuitCInv.assertOut(w, {out:  F.inv(input.in)});
+        await circuit.assertOut(w, {out:  F.inv(input.in)});
 
     });
 

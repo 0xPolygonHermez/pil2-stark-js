@@ -114,7 +114,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
     let challengeXi = curve.Fr.exp(challengeXiSeed, vk.powerW);
     ctx.x = challengeXi;
 
-    const execCode = executeCode(curve.Fr, ctx, fflonkInfo.code.qVerifier.first);
+    const execCode = executeCode(curve.Fr, ctx, fflonkInfo.code.qVerifier.everyRow);
 
     const xN = curve.Fr.exp(challengeXi, ctx.N);
     ctx.Z = curve.Fr.sub(xN, curve.Fr.one);   

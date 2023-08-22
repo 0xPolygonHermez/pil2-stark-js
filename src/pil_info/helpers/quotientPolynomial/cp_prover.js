@@ -87,8 +87,9 @@ module.exports = function generateConstraintPolynomial(res, pil, ctx, ctxExt, st
 
     for(let i = 0; i < Object.keys(res.imPolsMap).length; i++) {
         const expId = Object.keys(res.imPolsMap)[i];
-        ctxExt.calculated[0][expId] = true;
-        ctxExt.calculated[1][expId] = true;
+        ctxExt.calculated[expId] = {};
+        ctxExt.calculated[expId][0] = true;
+        ctxExt.calculated[expId][1] = true;
     }
 
     pilCodeGen(ctxExt, res.cExp, 0);
@@ -109,16 +110,9 @@ module.exports = function generateConstraintPolynomial(res, pil, ctx, ctxExt, st
         });
 
     } else {
-        code.push({
-            op: "copy",
-            dest: {
-                type: "q",
-                id: 0
-            },
-            src: [code[code.length-1].dest],
-        });
+        code[code.length-1].dest = {type: "q", id: 0};
     }
-    
+
     res.code["Q"] = buildCode(ctxExt);
 }
 
@@ -169,22 +163,14 @@ function calculateImPols(pil, _exp, maxDeg) {
                 let r = maxDeg-l;
                 const [e1, d1] = _calculateImPols(pil, exp.values[0], imPols, l);
                 const [e2, d2] = _calculateImPols(pil,  exp.values[1], e1, r );
-                if (e2 !== false) {
-                    if (eb === false) {
-                        eb = e2;
-                        ed = d1+d2;
-                    } else {
-                        if (Object.keys(e2).length < Object.keys(eb).length) {
-                            eb=e2;
-                            ed = d1+d2;
-                        }
-                    }
-                }
-                if (eb !== false) {
-                    if (Object.keys(eb).length == Object.keys(imPols).length) return [eb, ed];  // Cannot o it better.
-                }
+                if(e2 !== false && (eb === false || Object.keys(e2).length < Object.keys(eb).length)) {
+                    eb = e2;
+                    ed = d1+d2;
+                } 
+            
+                if (eb !== false && Object.keys(eb).length == Object.keys(imPols).length) return [eb, ed];  // Cannot do it better.
             }
-            return [eb, ed]
+            return [eb, ed];
         } else if (exp.op == "exp") {
             if (maxDeg < 1) {
                 return [false, -1];

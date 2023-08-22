@@ -1,0 +1,6 @@
+pragma circom 2.1.0;
+pragma custom_templates;
+
+include "<%- dirName %>/../../../../circuits.gl/<%- linearHashDir %>.circom";
+
+component main = LinearHash(<%- n %>, 3);

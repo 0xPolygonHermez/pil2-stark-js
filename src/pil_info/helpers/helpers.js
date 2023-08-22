@@ -51,7 +51,7 @@ module.exports.iterateCode = function iterateCode(code, dom, f) {
 
     ctx.code = code;
 
-    _iterate(code.first, f);
+    _iterate(code.everyRow, f);
     
     function _iterate(subCode, f) {
         for (let i=0; i<subCode.length; i++) {
@@ -90,7 +90,7 @@ module.exports.fixCode = function fixCode(res, stark) {
 function setCodeDimensions(code, pilInfo, stark) {
     const tmpDim = [];
 
-    _setCodeDimensions(code.first);
+    _setCodeDimensions(code.everyRow);
 
     function _setCodeDimensions(code) {
         for (let i=0; i<code.length; i++) {

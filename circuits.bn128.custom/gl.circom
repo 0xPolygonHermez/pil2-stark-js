@@ -56,10 +56,9 @@ template GLMul() {
     out <== GLMulAdd()(ina, inb, 0);
 }
 
-template custom CustomGLCMulAdd() {
+template custom CustomGLCMul() {
     signal input ina[3];
     signal input inb[3];
-    signal input inc[3];
     signal output out[3];
 
     var p=0xFFFFFFFF00000001;
@@ -74,9 +73,9 @@ template custom CustomGLCMulAdd() {
     F = (ina[2]+16*p) * (inb[2]+16*p);
     G = D-E;
 
-    out[0] <-- C+G-F + inc[0]+16*p;
-    out[1] <-- A+C-E-E-D + inc[1]+16*p;
-    out[2] <-- B-G + inc[2]+16*p;
+    out[0] <-- C+G-F;
+    out[1] <-- A+C-E-E-D;
+    out[2] <-- B-G;
 }
 
 template GLCMulAdd() {
@@ -87,7 +86,9 @@ template GLCMulAdd() {
 
     var p=0xFFFFFFFF00000001;
 
-    signal m[3] <== CustomGLCMulAdd()(ina, inb, inc);
+    signal mul[3] <== CustomGLCMul()(ina, inb);
+
+    signal m[3] <== [mul[0] + inc[0]+16*p, mul[1] + inc[1]+16*p, mul[2] + inc[2]+16*p];
 
     signal k[3];
 
@@ -110,7 +111,24 @@ template GLCMul() {
     signal input inb[3];
     signal output out[3];
 
-    out <== GLCMulAdd()(ina, inb, [0,0,0]);
+    var p=0xFFFFFFFF00000001;
+
+    signal m[3] <== CustomGLCMul()(ina, inb);
+
+    signal k[3];
+
+    k[0] <-- m[0] \ p;
+    k[1] <-- m[1] \ p;
+    k[2] <-- m[2] \ p;
+
+    out[0] <== m[0] -k[0]*p;
+    out[1] <== m[1] -k[1]*p;
+    out[2] <== m[2] -k[2]*p;
+
+    for (var i = 0; i<3; i++) {
+        _ <== Num2Bytes(80)(k[i]);
+        _ <== Num2Bytes(64)(out[i]);
+    }
 }
 
 

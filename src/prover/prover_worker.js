@@ -3,9 +3,9 @@ const workerpool = require('workerpool');
 const F3g = require("../helpers/f3g.js");
 
 
-async function proofgen_execute(ctx, stark, cFirstSrc, n, execInfo, st_name, st_i, st_n) {
+async function proofgen_execute(ctx, stark, cEveryRowSrc, n, execInfo, st_name, st_i, st_n) {
 
-    cFirst = new Function("ctx", "i", cFirstSrc);
+    cEveryRow = new Function("ctx", "i", cEveryRowSrc);
 
     console.log(`start exec ${st_name}... ${st_i}/${st_n} `);
     if(stark) {
@@ -14,7 +14,7 @@ async function proofgen_execute(ctx, stark, cFirstSrc, n, execInfo, st_name, st_
     ctx.tmp = [];
 
     for (let i=0; i<n; i++) {
-        cFirst(ctx, i);
+        cEveryRow(ctx, i);
     }
 
     const ctxOut = {}

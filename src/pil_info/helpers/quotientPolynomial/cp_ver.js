@@ -2,14 +2,15 @@ const {pilCodeGen, buildCode} = require("../../codegen.js");
 const { iterateCode } = require("../helpers.js");
 
 module.exports  = function generateConstraintPolynomialVerifier(res, ctx, stark) {
-    ctx.calculated[0] = {};
-    ctx.calculated[1] = {};
+    // Reinstantiate the context
+    ctx.calculated = {};
        
     for(let i = 0; i < Object.keys(res.imPolsMap).length; i++) {
         const expId = Object.keys(res.imPolsMap)[i];
         if(res.imPolsMap[expId].imPol) {
-            ctx.calculated[0][expId] = true;
-            ctx.calculated[1][expId] = true;
+            ctx.calculated[expId] = {};
+            ctx.calculated[expId][0] = true;
+            ctx.calculated[expId][1] = true;
         }
     }
 

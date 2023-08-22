@@ -1052,10 +1052,10 @@ module.exports = function compileCode_parser(fflonkInfo, nBits, functionName, co
     argsString += "};"
 
     // join operations
-    if (functionName == "stepQext_first") {
+    if (functionName == "stepQext_everyRow") {
         assert(0);
         //Not suported at this moment due to ext
-    } else if (functionName == "step3_first") {
+    } else if (functionName == "step3_everyRow") {
 
         groupOps = " 0, 50,";
         let countGroup = opsString.split(groupOps).length - 1;
@@ -1071,7 +1071,7 @@ module.exports = function compileCode_parser(fflonkInfo, nBits, functionName, co
             "\n",
             `uint64_t args3[NARGS_] = ${argsString}`
         ].join("\n");
-    } else if (functionName == "step3prev_first") {
+    } else if (functionName == "step3prev_everyRow") {
         res = [
             `#define NOPS_ ${cont_ops}`,
             `#define NARGS_ ${cont_args}`,
@@ -1081,7 +1081,7 @@ module.exports = function compileCode_parser(fflonkInfo, nBits, functionName, co
             "\n",
             `uint64_t args3prev[NARGS_] = ${argsString}`
         ].join("\n");
-    } else if (functionName == "step2prev_first") {
+    } else if (functionName == "step2prev_everyRow") {
         res = [
             `#define NOPS_ ${cont_ops}`,
             `#define NARGS_ ${cont_args}`,
