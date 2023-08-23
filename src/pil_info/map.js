@@ -14,6 +14,7 @@ module.exports = function map(res, pil, stark) {
     mapImPols(res, pil, stark);
 
     res.qDim = getExpDim(res, pil, res.cExp, stark);
+
     res.mapSectionsN["q_ext"] = res.qDim;
 	
     if(stark) {

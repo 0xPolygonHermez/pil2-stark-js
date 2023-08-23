@@ -29,6 +29,8 @@ module.exports.getExpDim = function getExpDim(res, pil, expId, stark) {
             case "challenge":
             case "eval":
                 return stark ? 3 : 1;
+            case "Zi":    
+                return stark && res.nLibStages !== 0 || Object.keys(res.imPolsMap).length > 0 ? 3 : 1;
             case "xDivXSubXi":
                 if(stark) return 3;
                 throw new Error("Exp op not defined: " + exp.op);
@@ -51,7 +53,7 @@ module.exports.iterateCode = function iterateCode(code, dom, f) {
 
     ctx.code = code;
 
-    _iterate(code.everyRow, f);
+    _iterate(code.code, f);
     
     function _iterate(subCode, f) {
         for (let i=0; i<subCode.length; i++) {
@@ -90,7 +92,7 @@ module.exports.fixCode = function fixCode(res, stark) {
 function setCodeDimensions(code, pilInfo, stark) {
     const tmpDim = [];
 
-    _setCodeDimensions(code.everyRow);
+    _setCodeDimensions(code.code);
 
     function _setCodeDimensions(code) {
         for (let i=0; i<code.length; i++) {
@@ -120,11 +122,12 @@ function setCodeDimensions(code, pilInfo, stark) {
                 case "const": 
                 case "number": 
                 case "public": 
-                case "Zi":
                     r.dim = 1; break;
+                case "Zi":
+                    r.dim = stark && pilInfo.nLibStages !== 0 || Object.keys(pilInfo.imPolsMap).length > 0 ? 3 : 1;
+                    break;
                 case "eval": 
                 case "challenge": 
-                case "Z":
                 case "xDivXSubXi": 
                 case "x": 
                     r.dim= stark ? 3 : 1; break;

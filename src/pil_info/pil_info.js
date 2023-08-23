@@ -16,6 +16,12 @@ const { fixCode, setDimensions } = require("./helpers/helpers.js");
 module.exports = function pilInfo(F, _pil, stark = true, starkStruct) {
     const pil = JSON.parse(JSON.stringify(_pil));    // Make a copy as we are going to destroy pil
 
+    for(let i = 0; i < pil.polIdentities.length; i++) {
+        if(!pil.polIdentities[i].boundary) {
+            pil.polIdentities[i].boundary = "everyRow";
+        }   
+    }
+    
     const res = {
         cmPolsMap: [],
         libs: {},

@@ -108,6 +108,13 @@ class ExpressionOps {
         }
     }
 
+    zi(boundary) {
+        return {
+            op: "Zi",
+            boundary,
+        }
+    }
+
     x() {
         return {
             op: "x"

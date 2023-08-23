@@ -1548,10 +1548,10 @@ module.exports = function compileCode_parser(starkInfo, functionName, code, dom,
     argsString += "};"
 
     // join operations
-    if (functionName == "stepQext_everyRow") {
+    if (functionName == "stepQext") {
         assert(0);
         //Not suported at this moment due to ext
-    } else if (functionName == "step3_everyRow") {
+    } else if (functionName == "step3") {
 
         groupOps = " 0, 50,";
         let countGroup = opsString.split(groupOps).length - 1;
@@ -1568,7 +1568,7 @@ module.exports = function compileCode_parser(starkInfo, functionName, code, dom,
             "\n",
             `uint64_t args3[NARGS_] = ${argsString}`
         ].join("\n");
-    } else if (functionName == "step3prev_everyRow") {
+    } else if (functionName == "step3prev") {
         res = [
             `#define NOPS_ ${cont_ops}`,
             `#define NARGS_ ${cont_args}`,
@@ -1579,7 +1579,7 @@ module.exports = function compileCode_parser(starkInfo, functionName, code, dom,
             "\n",
             `uint64_t args3prev[NARGS_] = ${argsString}`
         ].join("\n");
-    } else if (functionName == "step2prev_everyRow") {
+    } else if (functionName == "step2prev") {
         res = [
             `#define NOPS_ ${cont_ops}`,
             `#define NARGS_ ${cont_args}`,

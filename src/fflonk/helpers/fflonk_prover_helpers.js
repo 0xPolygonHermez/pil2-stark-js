@@ -2,6 +2,7 @@ const { BigBuffer, utils } = require("ffjavascript");
 const { Polynomial, Keccak256Transcript, commit, open } = require("shplonkjs");
 
 const { ifft, fft } = require("../../helpers/fft/fft_p.bn128");
+const { printPol } = require("../../prover/prover_helpers");
 const { PILFFLONK_PROTOCOL_ID } = require("../zkey/zkey_constants");
 
 const { stringifyBigInts } = utils;
@@ -91,6 +92,8 @@ module.exports.initProverFflonk = async function initProver(pilInfo, zkey, logge
     ctx.q_ext = new Proxy(new BigBuffer(ctx.Next * ctx.F.n8), BigBufferHandler);
     ctx.x_ext = new Proxy(new BigBuffer(ctx.Next * ctx.F.n8), BigBufferHandler); // Omegas a l'extès
 
+    ctx.Zi_ext = new Proxy(new BigBuffer(ctx.Next * ctx.F.n8), BigBufferHandler);
+    
     // Read const coefs and extended evals
     ctx.const_n.set(ctx.zkey.constPolsEvals);
     ctx.const_coefs.set(ctx.zkey.constPolsCoefs);
@@ -99,6 +102,17 @@ module.exports.initProverFflonk = async function initProver(pilInfo, zkey, logge
     // Read x_n and x_ext
     ctx.x_n.set(ctx.zkey.x_n);
     ctx.x_ext.set(ctx.zkey.x_ext);
+
+    // const coefsZerofier = new BigBuffer(ctx.Next * ctx.F.n8);
+    // coefsZerofier.set(ctx.F.e(-1), 0);
+    // coefsZerofier.set(ctx.F.one, (ctx.N - 1)*ctx.F.n8);
+    // const zerofierEvals = await ctx.F.fft(coefsZerofier);
+
+    // const zhInv = await ctx.F.batchInverse(zerofierEvals);
+
+    // ctx.Zi_ext.set(zhInv);
+
+    // printPol(ctx.Zi_ext, ctx.F);
 
     ctx.transcript = new Keccak256Transcript(ctx.curve);
 

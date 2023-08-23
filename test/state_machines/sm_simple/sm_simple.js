@@ -1,8 +1,18 @@
 module.exports.buildConstants = async function (N, pols) {
     if(pols) {
         for ( let i=0; i<N; i++) {
-            pols.LAST[0][i] = (i == N-1) ? 1n : 0n;
-            pols.LAST[1][i] = (i == N-2) ? 1n : 0n;
+            if(pols.LAST) {
+                if(pols.LAST.length == 2) {
+                    pols.LAST[0][i] = (i == N-1) ? 1n : 0n;
+                    pols.LAST[1][i] = (i == N-2) ? 1n : 0n;
+                } else {
+                    pols.LAST[i] = (i == N-1) ? 1n : 0n;
+                }
+            } 
+
+            if(pols.L1) {
+                pols.L1[i] = i == 0 ? 1n : 0n;
+            }
         }
     }
 }

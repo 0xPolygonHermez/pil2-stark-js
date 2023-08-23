@@ -10,7 +10,7 @@ module.exports = async function buildCHelpers(starkInfo, config = {}) {
 
     for (let i = 0; i < starkInfo.nPublics; i++) {
         if (starkInfo.publicsCode[i]) {
-            code.push(compileCode("publics_" + i + "_everyRow", starkInfo.publicsCode[i].everyRow, "n", true));
+            code.push(compileCode("publics_" + i + "", starkInfo.publicsCode[i].code, "n", true));
         }
     }
 
@@ -19,7 +19,7 @@ module.exports = async function buildCHelpers(starkInfo, config = {}) {
     for (let i = 0; i < starkInfo.nPublics; i++) {
         const comma = i == 0 ? "     " : "     ,";
         if (starkInfo.publicsCode[i]) {
-            pubTable.push(`${comma}(publics_${i}_everyRow, NULL, NULL)`);
+            pubTable.push(`${comma}(publics_${i}, NULL, NULL)`);
         } else {
             pubTable.push(`${comma}(NULL,NULL,NULL)`);
         }
@@ -42,17 +42,17 @@ module.exports = async function buildCHelpers(starkInfo, config = {}) {
 
         if (optcodes && multipleCodeFiles) {
             if(name === "Q") {
-                code.push(compileCode_QPolynomial(starkInfo, `${name}_everyRow`, starkInfo.code[name].everyRow, dom));
+                code.push(compileCode_QPolynomial(starkInfo, `${name}`, starkInfo.code[name].code, dom));
             } else if (name === "fri") {
-                code.push(compileCode_fri(starkInfo, `${name}_everyRow`, starkInfo.code[name].everyRow, dom));
+                code.push(compileCode_fri(starkInfo, `${name}`, starkInfo.code[name].code, dom));
             } else {
-                code.push(compileCode_parser(starkInfo, `${name}_everyRow`, starkInfo.code[name].everyRow, dom));
+                code.push(compileCode_parser(starkInfo, `${name}`, starkInfo.code[name].code, dom));
             }
             result[`${name}_parser`]= code.join("\n\n") + "\n";
             code.length = 0;
         }
 
-	    code.push(compileCode(`${name}_everyRow`, starkInfo.code[name].everyRow, dom));
+	    code.push(compileCode(`${name}`, starkInfo.code[name].code, dom));
 
         if (multipleCodeFiles) {
             result[name] = code.join("\n\n") + "\n";

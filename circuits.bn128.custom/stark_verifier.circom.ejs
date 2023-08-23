@@ -162,8 +162,12 @@ class Transcript {
             return "publics[" + r.id + "]";
         } else if (r.type == "x") {
             return "challenges" + starkInfo.challenges["xi"][0];
-        } else if (r.type == "Z") {
-            return "Z";
+        } else if (r.type == "Zi") {
+            if(r.boundary === "everyRow") {
+                return "Zh";
+            } else if(r.boundary === "firstRow") {
+                return "Zfirst";
+            } else throw new Error("Invalid boundary: " + r.boundary);
         } else if (r.type == "xDivXSubXi") {
             return "xDivXSubXi[" + starkInfo.fri2Id[r.opening] + "]";
         } else if (r.type == "tmp") {
@@ -390,12 +394,18 @@ template parallel VerifyEvaluations() {
         }
     }
 
-    // Store the vanishing polynomial Zg = x^nBits - 1 evaluated at z
-    signal Z[3] <== [zMul[<%- starkStruct.nBits - 1 %>][0] -1 + p, zMul[<%- starkStruct.nBits - 1 %>][1], zMul[<%- starkStruct.nBits - 1 %>][2]];
+<%  if(starkInfo.boundaries.includes("everyRow")) { -%>
+    // Store the vanishing polynomial Zh = x^nBits - 1 evaluated at z
+    signal Z[3] <== GLCInv()([zMul[<%- starkStruct.nBits - 1 %>][0] -1 + p, zMul[<%- starkStruct.nBits - 1 %>][1], zMul[<%- starkStruct.nBits - 1 %>][2]]);
+<%  } -%>
+
+<%  if(starkInfo.boundaries.includes("firstRow")) { -%>
+    signal Zfirst[3] <== GLCInv()([challenges<%- starkInfo.challenges["xi"][0] %>[0] - 1, challenges<%- starkInfo.challenges["xi"][0] %>[1], challenges<%- starkInfo.challenges["xi"][0] %>[2]]);
+<%  } -%>
 
     // Using the evaluations committed and the challenges,
     // calculate the sum of q_i, i.e, q_0(X) + challenge * q_1(X) + challenge^2 * q_2(X) +  ... + challenge^(l-1) * q_l-1(X) evaluated at z 
-<% const evalP = unrollCode(starkInfo.code.qVerifier.everyRow) -%>
+<% const evalP = unrollCode(starkInfo.code.qVerifier.code) -%>
 
     signal xAcc[<%- starkInfo.qDeg %>][3]; //Stores, at each step, x^i evaluated at z
     signal qStep[<%- starkInfo.qDeg-1 %>][3]; // Stores the evaluations of Q_i
@@ -418,10 +428,8 @@ template parallel VerifyEvaluations() {
         }
     }
 
-    signal QZ[3] <== GLCMul()(qAcc[<%- starkInfo.qDeg-1 %>], Z); // Stores the result of multiplying Q(X) per Zg(X)
-
     // Final normalization
-    signal normC[3] <== GLCNorm()([<%- evalP %>[0] - QZ[0], <%- evalP %>[1] - QZ[1],<%- evalP %>[2] - QZ[2]]);
+    signal normC[3] <== GLCNorm()([<%- evalP %>[0] - qAcc[<%- starkInfo.qDeg-1 %>][0], <%- evalP %>[1] - qAcc[<%- starkInfo.qDeg-1 %>][1],<%- evalP %>[2] - qAcc[<%- starkInfo.qDeg-1 %>][2]]);
 
     // Final Verification. Check that Q(X)*Zg(X) = sum of linear combination of q_i, which is stored at <%- evalP %> 
     enable * normC[0] === 0;
@@ -498,7 +506,7 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
 
 <%  } -%>
 
-<% const evalQ = unrollCode(starkInfo.code.queryVerifier.everyRow) -%>
+<% const evalQ = unrollCode(starkInfo.code.queryVerifier.code) -%>
 
     // Final Normalization
     signal queryVals[3] <== GLCNorm()(<%- evalQ %>);
@@ -564,9 +572,7 @@ template parallel VerifyFinalPol() {
     signal input enable;
 
 <% const nLastBits = starkStruct.steps[ starkStruct.steps.length-1].nBits;  -%>
-<% console.log("NLastBits", nLastBits); -%>
 <% const maxDegBits =  Math.max(nLastBits -  (starkStruct.nBitsExt - starkStruct.nBits), 0); -%>
-<% console.log("MaxDegBits", maxDegBits); -%>
     // Calculate the IFFT to get the coefficients of finalPol 
     signal lastIFFT[<%- 1 << nLastBits %>][3] <== FFT(<%- nLastBits %>, 1)(finalPol);
 

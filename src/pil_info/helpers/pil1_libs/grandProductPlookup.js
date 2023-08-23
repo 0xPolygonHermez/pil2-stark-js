@@ -88,14 +88,15 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil) {
         const z = E.cm(puCtx.zId);
         const zp = E.cm(puCtx.zId, true);
 
-        if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
+        // if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
+        // const l1 = E.const(pil.references["Global.L1"].id);
+        // const c1 = E.mul(l1,  E.sub(z, E.number(1)));
 
-        const l1 = E.const(pil.references["Global.L1"].id);
+        const c1 = E.sub(z, E.number(1));
 
-        const c1 = E.mul(l1,  E.sub(z, E.number(1)));
         c1.deg=2;
         pil.expressions.push(c1);
-        pil.polIdentities.push({e: pil.expressions.length - 1});
+        pil.polIdentities.push({e: pil.expressions.length - 1, boundary: "firstRow"});
 
 
         const numExp = E.mul(
@@ -152,7 +153,7 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil) {
         const c2 = E.sub(  E.mul(zp, den), E.mul(z, num)  );
         c2.deg=2;
         pil.expressions.push(c2);
-        pil.polIdentities.push({e: pil.expressions.length - 1});
+        pil.polIdentities.push({e: pil.expressions.length - 1, boundary: "everyRow"});
 
         const stage2 = {
             pols: {

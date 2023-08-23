@@ -35,7 +35,7 @@ module.exports.callCalculateExps = async function callCalculateExps(step, dom, c
 module.exports.calculateExps = function calculateExps(ctx, code, dom) {
     ctx.tmp = new Array(code.tmpUsed);
 
-    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.everyRow, dom));
+    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.code, dom));
 
     const N = dom=="n" ? ctx.N : ctx.Next;
 
@@ -46,7 +46,7 @@ module.exports.calculateExps = function calculateExps(ctx, code, dom) {
 
 module.exports.calculateExpAtPoint = function calculateExpAtPoint(ctx, code, i) {
     ctx.tmp = new Array(code.tmpUsed);
-    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.everyRow, "n", true));
+    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.code, "n", true));
 
     return cEveryRow(ctx, i);
 }
@@ -78,6 +78,7 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
         body.push(`  return ${getRef(code[code.length-1].dest)};`);
     }
 
+    console.log(body);
     return body.join("\n");
 
     function getRef(r) {
@@ -120,7 +121,15 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
                     throw new Error("Invalid dom");
                 }
             }
-            case "Zi": return `ctx.Zi_ext[i]`;
+            case "Zi": {
+                if(r.boundary === "everyRow") {
+                    return `ctx.Zi_ext[i]`;
+                } else if(r.boundary === "firstRow") {
+                    return `ctx.Zi_fr_ext[i]`;
+                } else {
+                    throw new Error("Invalid boundary" + r.boundary);
+                }
+            }
             default: throw new Error("Invalid reference type get: " + r.type);
         }
     }
@@ -321,6 +330,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         execInfo.outputSections.push({ name: "q_ext" });
         if(ctx.prover === "stark") {
             execInfo.inputSections.push({ name: "Zi_ext" });
+            execInfo.inputSections.push({ name: "Zi_fr_ext" });
         }
         dom = "ext";
     } else if (execPart == "fri") {
@@ -343,7 +353,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             stage.width = ctx.pilInfo.nConstants;
         } else if (typeof ctx.pilInfo.mapSectionsN[stage.name.split("_")[0]] != "undefined") {
             stage.width = ctx.pilInfo.mapSectionsN[stage.name.split("_")[0]];
-        } else if (["x_n", "x_ext", "Zi_ext"].indexOf(stage.name) >= 0) {
+        } else if (["x_n", "x_ext", "Zi_ext", "Zi_fr_ext"].indexOf(stage.name) >= 0) {
             stage.width = 1;
         } else if (["xDivXSubXi_ext"].indexOf(stage.name) >= 0) {
             stage.width = 3*ctx.pilInfo.nFriOpenings;
@@ -359,7 +369,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     for (let i = 0; i < execInfo.inputSections.length; i++) setWidth(execInfo.inputSections[i]);
     for (let i = 0; i < execInfo.outputSections.length; i++) setWidth(execInfo.outputSections[i]);
 
-    const cEveryRow = module.exports.compileCode(ctx, code.everyRow, dom, false);
+    const cEveryRow = module.exports.compileCode(ctx, code.code, dom, false);
 
     const n = dom === "n" ? ctx.N : ctx.Next;
     const next = dom === "n" ? 1 : (1 << ctx.extendBits);
@@ -473,4 +483,15 @@ module.exports.hintFunctions = async function hintFunctions(functionName, F, inp
         throw new Error("Invalid function name: " + functionName);
     }
 
+}
+
+
+module.exports.printPol = function printPol(buffer, Fr) {
+    const len = buffer.byteLength / Fr.n8;
+
+    console.log("---------------------------");
+    for (let i = 0; i < len; ++i) {
+        console.log(i, Fr.toString(buffer.slice(i * Fr.n8, (i + 1) * Fr.n8)));
+    }
+    console.log("---------------------------");
 }

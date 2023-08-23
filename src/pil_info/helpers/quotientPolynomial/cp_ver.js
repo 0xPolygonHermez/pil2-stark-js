@@ -14,7 +14,8 @@ module.exports  = function generateConstraintPolynomialVerifier(res, ctx, stark)
         }
     }
 
-    pilCodeGen(ctx, res.cExp, 0, true);
+    let addMul = stark && res.starkStruct.verificationHashType == "GL" ? false : true;
+    pilCodeGen(ctx, res.cExp, 0, addMul);
 
     res.code.qVerifier = buildCode(ctx);
 
@@ -85,7 +86,7 @@ module.exports  = function generateConstraintPolynomialVerifier(res, ctx, stark)
             case "challenge":
             case "public":
             case "tmp":
-            case "Z":
+            case "Zi": 
             case "x":
             case "eval":
                     break;

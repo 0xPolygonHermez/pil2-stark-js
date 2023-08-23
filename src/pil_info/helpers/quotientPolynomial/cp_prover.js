@@ -15,10 +15,16 @@ module.exports = function generateConstraintPolynomial(res, pil, ctx, ctxExt, st
         res.nChallenges++;
     }
 
+    res.boundaries = [];
+
     let cExp = null;
     for (let i=0; i<pil.polIdentities.length; i++) {
+        const boundary = pil.polIdentities[i].boundary;
+        if(!["everyRow", "firstRow", "lastRow"].includes(boundary)) throw new Error("Boundary " + boundary + " not supported");
+        if(!res.boundaries.includes(boundary)) res.boundaries.push(boundary);
         calculateDegreeExpressions(pil, pil.expressions[pil.polIdentities[i].e]);
-        const e = E.exp(pil.polIdentities[i].e);
+        let e = E.exp(pil.polIdentities[i].e);
+        if(stark) e = E.mul(E.zi(boundary), e);
         if (cExp) {
             cExp = E.add(E.mul(vc, cExp), e);
         } else {
@@ -49,10 +55,10 @@ module.exports = function generateConstraintPolynomial(res, pil, ctx, ctxExt, st
     res.qDeg = qDeg;
 
     let imExpsList = Object.keys(imExps).map(Number);
-    res.imPolsMap = {}
+    res.imPolsMap = {};
     for (let i=0; i<imExpsList.length; i++) {
         res.imPolsMap[imExpsList[i]] = {id: pil.nCommitments++, imPol: true};
-        const e = {
+        let e = {
             op: "sub",
             values: [
                 Object.assign({}, pil.expressions[imExpsList[i]]),
@@ -62,6 +68,7 @@ module.exports = function generateConstraintPolynomial(res, pil, ctx, ctxExt, st
                 }
             ]
         };
+        if(stark) e = E.mul(E.zi("everyRow"), e);
         if (cExp) {
             cExp = E.add(E.mul(vc, cExp), e);
         } else {
@@ -94,24 +101,24 @@ module.exports = function generateConstraintPolynomial(res, pil, ctx, ctxExt, st
 
     pilCodeGen(ctxExt, res.cExp, 0);
     const code = ctxExt.code[ctxExt.code.length-1].code;
-    if(stark) {
-        code.push({
-            op: "mul",
-            dest: {
-                type: "q",
-                id: 0
-            },
-            src: [
-            code[code.length-1].dest,
-            {
-                    type: "Zi"
-            }
-            ]
-        });
+    // if(stark) {
+    //     code.push({
+    //         op: "mul",
+    //         dest: {
+    //             type: "q",
+    //             id: 0
+    //         },
+    //         src: [
+    //         code[code.length-1].dest,
+    //         {
+    //                 type: "Zi"
+    //         }
+    //         ]
+    //     });
 
-    } else {
+    // } else {
         code[code.length-1].dest = {type: "q", id: 0};
-    }
+    // }
 
     res.code["Q"] = buildCode(ctxExt);
 }
@@ -139,9 +146,9 @@ function calculateImPols(pil, _exp, maxDeg) {
                 if (d>md) md = d;
             }
             return [imPols, md];
-        } else if (["number", "public", "challenge"].indexOf(exp.op) >=0 ) {
+        } else if (["number", "public", "challenge"].indexOf(exp.op) >=0 || (exp.op === "Zi" && exp.boundary === "everyRow")) {
             return [imPols, 0];
-        } else if (["x", "const", "cm"].indexOf(exp.op) >= 0) {
+        } else if (["x", "const", "cm"].indexOf(exp.op) >= 0 || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
             if (maxDeg < 1) {
                 return [false, -1];
             }
@@ -209,9 +216,9 @@ function calculateDegreeExpressions(pil, exp) {
     if (exp.op == "exp") {
         if (pil.expressions[exp.id].expDeg) exp.expDeg = pil.expressions[exp.id].expDeg;
         if (!exp.expDeg) exp.expDeg = calculateDegreeExpressions(pil, pil.expressions[exp.id]);
-    } else if (["x", "cm", "const"].includes(exp.op)) {
+    } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         exp.expDeg = 1;
-    } else if (["number", "challenge", "public", "eval"].includes(exp.op)) {
+    } else if (["number", "challenge", "public", "eval"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
         exp.expDeg = 0;
     } else if(exp.op == "neg") {
         exp.expDeg = calculateDegreeExpressions(pil, exp.values[0]);

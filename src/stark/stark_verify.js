@@ -99,11 +99,14 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
 
     if (logger) logger.debug("Verifying evaluations");
 
-    const xN = F.exp(ctx.challenges[starkInfo.challenges["xi"][0]], N)
-    ctx.Z = F.sub(xN, 1n);
-    ctx.Zp = F.sub(F.exp(F.mul(ctx.challenges[starkInfo.challenges["xi"][0]], F.w[nBits]), N), 1n);
+    const xi = ctx.challenges[starkInfo.challenges["xi"][0]];
 
-    const res=executeCode(F, ctx, starkInfo.code.qVerifier.everyRow);
+    const xN = F.exp(xi, N);
+    ctx.Z = F.inv(F.sub(xN, 1n));
+    
+    ctx.Z_fr = F.inv(F.sub(xi, 1n));
+
+    const res=executeCode(F, ctx, starkInfo.code.qVerifier.code);
 
     let xAcc = 1n;
     let q = 0n;
@@ -113,9 +116,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
         xAcc = F.mul(xAcc, xN);
     }
 
-    const qZ = F.mul(q, ctx.Z);
-
-    if (!F.eq(res, qZ)) {
+    if (!F.eq(res, q)) {
         if(logger) logger.warn("Invalid evaluations");
         return false;
     }
@@ -185,7 +186,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
             ctxQry.xDivXSubXi[id] = F.div(x, F.sub(x, F.mul(ctxQry.challenges[starkInfo.challenges["xi"][0]], w)));
         }
 
-        const vals = [executeCode(F, ctxQry, starkInfo.code.queryVerifier.everyRow)];
+        const vals = [executeCode(F, ctxQry, starkInfo.code.queryVerifier.code)];
 
         return vals;
     }
@@ -231,7 +232,15 @@ function executeCode(F, ctx, code) {
             case "challenge": return ctx.challenges[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[ctx.starkInfo.fri2Id[r.opening]];
             case "x": return ctx.challenges[ctx.starkInfo.challenges["xi"][0]];
-            case "Z": return r.prime ? ctx.Zp : ctx.Z;
+            case "Zi": {
+                if(r.boundary === "everyRow") {
+                    return ctx.Z;
+                } else if (r.boundary === "firstRow") {
+                    return ctx.Z_fr;
+                } else {
+                    throw new Error("Invalid boundary: " + r.boundary);
+                }
+            }
             default: throw new Error("Invalid reference type get: " + r.type);
         }
     }

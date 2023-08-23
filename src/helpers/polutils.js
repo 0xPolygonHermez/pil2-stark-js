@@ -36,18 +36,36 @@ module.exports.extendPolBuffer = async function extendPolBuffer(Fr, buffSrc, buf
     return buffDst;
 }
 
-module.exports.buildZhInv = function buildZhInv(F, Nbits, extendBits, _offset) {
-    const offset = _offset || 0;
+module.exports.buildZhInv = function buildZhInv(F, Nbits, extendBits) {
     const ZHInv = [];
     let w = F.one;
-    let sn= F.shift;
+    let sn= F.shift; 
     for (i=0; i<Nbits; i++) sn = F.square(sn);
     for (let i=0; i<(1 << extendBits); i++) {
-        ZHInv[i] =F.inv(F.sub(F.mul(sn, w), F.one));
-        w = F.mul(w, F.w[extendBits])
+        const zh = F.sub(F.mul(sn, w), F.one);
+        ZHInv[i] = F.inv(zh);
+        w = F.mul(w, F.w[extendBits]);
     }
     return function (i) {
-        return ZHInv[(i + offset) % ZHInv.length];
+        return ZHInv[i % ZHInv.length];
+    }
+}
+
+module.exports.buildUniqueRowZerofierInv = function buildUniqueRowZerofierInv(F, nBits, nBitsExt, rowIndex) {
+    const ZHFirstRowInv = [];
+    let root = F.one;
+    for(let i = 0; i < rowIndex; ++i) {
+        root = F.mul(root, F.w[nBits]);
+    }
+    let w = F.one;
+    let s = F.shift;
+    for (let i=0; i< (1 << nBitsExt); i++) {
+        const zh = F.sub(F.mul(s, w), root);
+        ZHFirstRowInv[i] = F.inv(zh);
+        w = F.mul(w, F.w[nBitsExt]);
+    }
+    return function (i) {
+        return ZHFirstRowInv[i];
     }
 }
 

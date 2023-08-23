@@ -76,7 +76,9 @@ function evalExp(codeCtx, exp, prime) {
         return { type: "number", value: exp.value.toString() }
     } else if (exp.op == "xDivXSubXi") {
         return { type: "xDivXSubXi", opening: exp.opening }
-    } else if (exp.op == "x") {
+    } else if (exp.op == "Zi") {
+        return { type: "Zi", boundary: exp.boundary }
+    } else if (exp.op === "x") {
         return { type: "x" }
     } else {
         throw new Error(`Invalid op: ${exp.op}`);
@@ -102,12 +104,11 @@ function buildCode(ctx) {
     res.first = [];
     res.last = [];
     res.everyFrame = [];
-    res.everyRow = [];
+    res.code = [];
 
-    console.log(ctx.code);
     for (let i=0; i<ctx.code.length; i++) {
         for (let j=0; j< ctx.code[i].code.length; j++) {
-            res.everyRow.push(ctx.code[i].code[j]);
+            res.code.push(ctx.code[i].code[j]);
         }
     }
 
