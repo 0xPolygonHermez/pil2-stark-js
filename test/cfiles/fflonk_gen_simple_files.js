@@ -72,8 +72,7 @@ describe("simple sm", async function () {
     
         const committedPols = newCommitPolsArray(pil, F);
     
-        const isArray = filename === "simple2p" ? true : false;
-        await smSimple.execute(N, committedPols.Simple, isArray, F);
+        await smSimple.execute(N, committedPols.Simple, F);
     
         const res = await verifyPil(F, pil, committedPols, constPols);
     

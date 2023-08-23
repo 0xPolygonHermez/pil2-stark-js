@@ -167,6 +167,8 @@ class Transcript {
                 return "Zh";
             } else if(r.boundary === "firstRow") {
                 return "Zfirst";
+            } else if(r.boundary === "lastRow") {
+                return "Zlast";
             } else throw new Error("Invalid boundary: " + r.boundary);
         } else if (r.type == "xDivXSubXi") {
             return "xDivXSubXi[" + starkInfo.fri2Id[r.opening] + "]";

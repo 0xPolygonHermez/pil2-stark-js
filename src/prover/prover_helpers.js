@@ -78,7 +78,6 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
         body.push(`  return ${getRef(code[code.length-1].dest)};`);
     }
 
-    console.log(body);
     return body.join("\n");
 
     function getRef(r) {
@@ -126,6 +125,8 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
                     return `ctx.Zi_ext[i]`;
                 } else if(r.boundary === "firstRow") {
                     return `ctx.Zi_fr_ext[i]`;
+                } else if(r.boundary === "lastRow") {
+                    return `ctx.Zi_lr_ext[i]`;
                 } else {
                     throw new Error("Invalid boundary" + r.boundary);
                 }
@@ -329,8 +330,15 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         execInfo.inputSections.push({ name: "x_ext" });
         execInfo.outputSections.push({ name: "q_ext" });
         if(ctx.prover === "stark") {
-            execInfo.inputSections.push({ name: "Zi_ext" });
-            execInfo.inputSections.push({ name: "Zi_fr_ext" });
+            if(ctx.pilInfo.boundaries.includes("everyRow")) {
+                execInfo.inputSections.push({ name: "Zi_ext" });
+            }
+            if(ctx.pilInfo.boundaries.includes("firstRow")) {
+                execInfo.inputSections.push({ name: "Zi_fr_ext" });
+            }
+            if(ctx.pilInfo.boundaries.includes("lastRow")) {
+                execInfo.inputSections.push({ name: "Zi_lr_ext" });
+            }
         }
         dom = "ext";
     } else if (execPart == "fri") {
@@ -353,7 +361,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             stage.width = ctx.pilInfo.nConstants;
         } else if (typeof ctx.pilInfo.mapSectionsN[stage.name.split("_")[0]] != "undefined") {
             stage.width = ctx.pilInfo.mapSectionsN[stage.name.split("_")[0]];
-        } else if (["x_n", "x_ext", "Zi_ext", "Zi_fr_ext"].indexOf(stage.name) >= 0) {
+        } else if (["x_n", "x_ext", "Zi_ext", "Zi_fr_ext", "Zi_lr_ext"].indexOf(stage.name) >= 0) {
             stage.width = 1;
         } else if (["xDivXSubXi_ext"].indexOf(stage.name) >= 0) {
             stage.width = 3*ctx.pilInfo.nFriOpenings;

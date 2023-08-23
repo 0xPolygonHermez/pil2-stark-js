@@ -104,7 +104,17 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
     const xN = F.exp(xi, N);
     ctx.Z = F.inv(F.sub(xN, 1n));
     
-    ctx.Z_fr = F.inv(F.sub(xi, 1n));
+    if(starkInfo.boundaries.includes("firstRow")) {
+        ctx.Z_fr = F.inv(F.sub(xi, 1n));
+    }
+
+    if(starkInfo.boundaries.includes("lastRow")) {
+        let root = F.one;
+        for(let i = 0; i < N - 1; ++i) {
+            root = F.mul(root, F.w[nBits]);
+        }
+        ctx.Z_lr = F.inv(F.sub(xi, root));
+    }
 
     const res=executeCode(F, ctx, starkInfo.code.qVerifier.code);
 
@@ -237,6 +247,8 @@ function executeCode(F, ctx, code) {
                     return ctx.Z;
                 } else if (r.boundary === "firstRow") {
                     return ctx.Z_fr;
+                } else if (r.boundary === "lastRow") {
+                    return ctx.Z_lr;
                 } else {
                     throw new Error("Invalid boundary: " + r.boundary);
                 }

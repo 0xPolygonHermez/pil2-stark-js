@@ -1,0 +1,12 @@
+constant %N = 2**3;
+
+namespace Simple(%N);
+
+    pol constant LAST;
+
+    pol commit a, b, c;
+
+    pol a2 = a*a + c;
+
+    // LAST * (a2 - b) = 0;
+    a2 = b;

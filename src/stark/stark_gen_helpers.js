@@ -99,7 +99,6 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.f_ext = new Proxy(new BigBuffer(3*ctx.Next), BigBufferHandler);
     ctx.x_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandler);
     ctx.Zi_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandler);
-    ctx.Zi_fr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandler); // Zerofier first row
 
     ctx.xDivXSubXi_ext = new Proxy(new BigBuffer(3*ctx.Next*ctx.pilInfo.nFriOpenings), BigBufferHandler);
 
@@ -123,9 +122,20 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         ctx.Zi_ext[i] = zhInv(i);
     }
 
-    const zhFirstRowInv = buildUniqueRowZerofierInv(ctx.F, ctx.nBits, ctx.nBitsExt, 0);
-    for (let i=0; i<ctx.Next; i++) {
-        ctx.Zi_fr_ext[i] = zhFirstRowInv(i);
+    if(ctx.pilInfo.boundaries.includes("firstRow")) {
+        ctx.Zi_fr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandler); 
+        const zerofierFirstRowInv = buildUniqueRowZerofierInv(ctx.F, ctx.nBits, ctx.nBitsExt, 0);
+        for (let i=0; i<ctx.Next; i++) {
+            ctx.Zi_fr_ext[i] = zerofierFirstRowInv(i);
+        }
+    } 
+
+    if(ctx.pilInfo.boundaries.includes("lastRow")) {
+        ctx.Zi_lr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandler); 
+        const zerofierLastRowInv = buildUniqueRowZerofierInv(ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1);
+        for (let i=0; i<ctx.Next; i++) {
+            ctx.Zi_lr_ext[i] = zerofierLastRowInv(i);
+        }
     }
 
     // Read const coefs

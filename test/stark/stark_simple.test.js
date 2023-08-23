@@ -39,13 +39,12 @@ async function runTest(pilFile) {
 
     const cmPols = newCommitPolsArray(pil, F);
 
-    const isArray = pilFile === "simple2p.pil" ? true : false;
-    const result = await smSimple.execute(N, cmPols.Simple, isArray, F);
+    const result = await smSimple.execute(N, cmPols.Simple, F);
     console.log("Result: " + result);
 
     const res = await verifyPil(F, pil, cmPols , constPols);
 
-    if (res.length != 0 && !["simple5.pil"].includes(pilFile)) {
+    if (res.length != 0 && !["simple5.pil", "simple6.pil"].includes(pilFile)) {
         console.log("Pil does not pass");
         for (let i=0; i<res.length; i++) {
             console.log(res[i]);
@@ -55,6 +54,8 @@ async function runTest(pilFile) {
 
     if (pilFile === "simple5.pil") {
         pil.polIdentities[0].boundary = "firstRow";
+    } else if (pilFile === "simple6.pil") {
+        pil.polIdentities[0].boundary = "lastRow";
     }
     
     const setup = await starkSetup(constPols, pil, starkStruct, {F});
@@ -87,8 +88,10 @@ describe("simple sm", async function () {
     it("Simple4p", async () => {
         await runTest("simple4p.pil");
     });
-    it.only("Simple5", async () => {
+    it("Simple5", async () => {
         await runTest("simple5.pil");
     });
-
+    it.only("Simple6", async () => {
+        await runTest("simple6.pil");
+    });
 });

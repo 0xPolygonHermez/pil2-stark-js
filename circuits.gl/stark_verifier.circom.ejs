@@ -147,6 +147,8 @@ class Transcript {
                 return "Zh";
             } else if(r.boundary === "firstRow") {
                 return "Zfirst";
+            } else if(r.boundary === "lastRow") {
+                return "Zlast";
             } else throw new Error("Invalid boundary: " + r.boundary);
         } else if (r.type == "xDivXSubXi") {
             return "xDivXSubXi[" + starkInfo.fri2Id[r.opening] + "]";
@@ -341,6 +343,14 @@ template parallel VerifyEvaluations() {
     
 <%  if(starkInfo.boundaries.includes("firstRow")) { -%>
     signal Zfirst[3] <== CInv()([challenges<%- starkInfo.challenges["xi"][0] %>[0] - 1, challenges<%- starkInfo.challenges["xi"][0] %>[1], challenges<%- starkInfo.challenges["xi"][0] %>[2]]);
+<%  } -%>
+
+<%  if(starkInfo.boundaries.includes("lastRow")) { -%>
+<%  let root = F.one; -%>
+<%  for(let i = 0; i < (1 << starkStruct.nBits); ++i) { -%>
+<%    root = F.mul(root, F.w[starkStruct.nBits]); -%>
+<%  } -%>
+    signal Zlast[3] <== CInv()([challenges<%- starkInfo.challenges["xi"][0] %>[0] - 1, challenges<%- starkInfo.challenges["xi"][0] %>[1], challenges<%- starkInfo.challenges["xi"][0] %>[2]]);
 <%  } -%>
 
     // Using the evaluations committed and the challenges,
