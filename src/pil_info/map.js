@@ -7,6 +7,8 @@ module.exports = function map(res, pil, stark) {
 
     res.mapSectionsN = {};
 
+    res.mapSectionsN["tmpExp"] = 0;
+    
     mapCmAndConstPols(res, pil);
 
     mapLibPols(res, pil, stark);
@@ -29,6 +31,7 @@ module.exports = function map(res, pil, stark) {
 }
 
 function mapCmAndConstPols(res, pil) {
+    res.mapSectionsN["const"] = 0;
     res.mapSectionsN["cm1"] = 0;
     for (const polRef in pil.references) {
         const polInfo = pil.references[polRef];

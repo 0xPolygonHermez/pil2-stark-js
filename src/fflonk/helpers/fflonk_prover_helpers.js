@@ -2,7 +2,7 @@ const { BigBuffer, utils } = require("ffjavascript");
 const { Polynomial, Keccak256Transcript, commit, open } = require("shplonkjs");
 
 const { ifft, fft } = require("../../helpers/fft/fft_p.bn128");
-const { printPol } = require("../../prover/prover_helpers");
+const { BigBufferHandler } = require("../../prover/prover_helpers");
 const { PILFFLONK_PROTOCOL_ID } = require("../zkey/zkey_constants");
 
 const { stringifyBigInts } = utils;
@@ -102,17 +102,6 @@ module.exports.initProverFflonk = async function initProver(pilInfo, zkey, logge
     // Read x_n and x_ext
     ctx.x_n.set(ctx.zkey.x_n);
     ctx.x_ext.set(ctx.zkey.x_ext);
-
-    // const coefsZerofier = new BigBuffer(ctx.Next * ctx.F.n8);
-    // coefsZerofier.set(ctx.F.e(-1), 0);
-    // coefsZerofier.set(ctx.F.one, (ctx.N - 1)*ctx.F.n8);
-    // const zerofierEvals = await ctx.F.fft(coefsZerofier);
-
-    // const zhInv = await ctx.F.batchInverse(zerofierEvals);
-
-    // ctx.Zi_ext.set(zhInv);
-
-    // printPol(ctx.Zi_ext, ctx.F);
 
     ctx.transcript = new Keccak256Transcript(ctx.curve);
 
@@ -336,22 +325,3 @@ module.exports.extendAndCommit = async function extendAndCommit(stage, ctx, logg
         return 0;
     } 
 }
-
-const BigBufferHandler = {
-    get: function (obj, prop) {
-        if (!isNaN(prop)) {
-            return obj.slice(prop*32, prop*32 + 32);
-        } else return obj[prop];
-    },
-    set: function (obj, prop, value) {
-        if (!isNaN(prop)) {
-            obj.set(value, prop*32);
-            return true;
-        } else {
-            obj[prop] = value;
-            return true;
-        }
-    },
-};
-
-module.exports.BigBufferHandler = BigBufferHandler;

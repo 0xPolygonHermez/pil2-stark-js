@@ -15,7 +15,7 @@ module.exports = function generateConstraintPolynomial(res, pil, ctx, ctxExt, st
         res.nChallenges++;
     }
 
-    res.boundaries = [];
+    res.boundaries = ["everyRow"];
 
     let cExp = null;
     for (let i=0; i<pil.polIdentities.length; i++) {

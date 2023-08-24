@@ -1,7 +1,6 @@
 const { proofgen_execute } = require("./prover_worker");
 const workerpool = require("workerpool");
 const {BigBuffer} = require("ffjavascript");
-const { BigBufferHandler } = require("../fflonk/helpers/fflonk_prover_helpers");
 const { calculateZ, calculateH1H2 } = require("../helpers/polutils");
 
 const maxNperThread = 1<<18;
@@ -78,6 +77,7 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
         body.push(`  return ${getRef(code[code.length-1].dest)};`);
     }
 
+    console.log(body);
     return body.join("\n");
 
     function getRef(r) {
@@ -307,6 +307,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             execInfo.inputSections.push({ name: `cm${stage}_n` });
             execInfo.outputSections.push({ name: `cm${stage}_n` });
         }
+        execInfo.inputSections.push({ name: "tmpExp_n" });
         execInfo.outputSections.push({ name: "tmpExp_n" });
         dom = "n";
     } else if (execPart == "imPols") {
@@ -503,3 +504,39 @@ module.exports.printPol = function printPol(buffer, Fr) {
     }
     console.log("---------------------------");
 }
+
+const BigBufferHandler = {
+    get: function (obj, prop) {
+        if (!isNaN(prop)) {
+            return obj.slice(prop*32, prop*32 + 32);
+        } else return obj[prop];
+    },
+    set: function (obj, prop, value) {
+        if (!isNaN(prop)) {
+            obj.set(value, prop*32);
+            return true;
+        } else {
+            obj[prop] = value;
+            return true;
+        }
+    },
+};
+
+const BigBufferHandlerBigInt = {
+    get: function(obj, prop) {
+        if (!isNaN(prop)) {
+            return obj.getElement(prop);
+        } else return obj[prop];
+    },
+    set: function(obj, prop, value) {
+        if (!isNaN(prop)) {
+            return obj.setElement(prop, value);
+        } else {
+            obj[prop] = value;
+            return true;
+        }
+    }
+};
+
+module.exports.BigBufferHandler = BigBufferHandler;
+module.exports.BigBufferHandlerBigInt = BigBufferHandlerBigInt;

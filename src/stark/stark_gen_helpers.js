@@ -12,7 +12,7 @@ const FRI = require("./fri.js");
 const _ = require("json-bigint");
 const { interpolate, ifft, fft } = require("../helpers/fft/fft_p.js");
 const {BigBuffer} = require("pilcom");
-const { callCalculateExps, getPolRef } = require("../prover/prover_helpers.js");
+const { callCalculateExps, getPolRef, BigBufferHandlerBigInt } = require("../prover/prover_helpers.js");
 
 module.exports.initProverStark = async function initProverStark(pilInfo, constPols, constTree, options = {}) {
     const ctx = {};
@@ -78,29 +78,29 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
 
     ctx.fri = new FRI( ctx.pilInfo.starkStruct, ctx.MH );
 
-    ctx.const_n = new Proxy(new BigBuffer(ctx.pilInfo.nConstants*ctx.N), BigBufferHandler);
-    ctx.cm1_n = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1*ctx.N), BigBufferHandler);
+    ctx.const_n = new Proxy(new BigBuffer(ctx.pilInfo.nConstants*ctx.N), BigBufferHandlerBigInt);
+    ctx.cm1_n = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1*ctx.N), BigBufferHandlerBigInt);
     for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
         const stage = i + 2;
-        ctx[`cm${stage}_n`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.N), BigBufferHandler);
+        ctx[`cm${stage}_n`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.N), BigBufferHandlerBigInt);
     }
-    ctx.tmpExp_n = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp*ctx.N), BigBufferHandler);
-    ctx.x_n = new Proxy(new BigBuffer(ctx.N), BigBufferHandler);
+    ctx.tmpExp_n = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp*ctx.N), BigBufferHandlerBigInt);
+    ctx.x_n = new Proxy(new BigBuffer(ctx.N), BigBufferHandlerBigInt);
 
     
-    ctx.const_ext = new Proxy(constTree.elements, BigBufferHandler);
-    ctx.cm1_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1*ctx.Next), BigBufferHandler);
+    ctx.const_ext = new Proxy(constTree.elements, BigBufferHandlerBigInt);
+    ctx.cm1_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1*ctx.Next), BigBufferHandlerBigInt);
     for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
         const stage = i + 2;
-        ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.Next), BigBufferHandler);
+        ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.Next), BigBufferHandlerBigInt);
     }
-    ctx.cmQ_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ*ctx.Next), BigBufferHandler);
-    ctx.q_ext = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.Next), BigBufferHandler);
-    ctx.f_ext = new Proxy(new BigBuffer(3*ctx.Next), BigBufferHandler);
-    ctx.x_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandler);
-    ctx.Zi_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandler);
+    ctx.cmQ_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ*ctx.Next), BigBufferHandlerBigInt);
+    ctx.q_ext = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.Next), BigBufferHandlerBigInt);
+    ctx.f_ext = new Proxy(new BigBuffer(3*ctx.Next), BigBufferHandlerBigInt);
+    ctx.x_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt);
+    ctx.Zi_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt);
 
-    ctx.xDivXSubXi_ext = new Proxy(new BigBuffer(3*ctx.Next*ctx.pilInfo.nFriOpenings), BigBufferHandler);
+    ctx.xDivXSubXi_ext = new Proxy(new BigBuffer(3*ctx.Next*ctx.pilInfo.nFriOpenings), BigBufferHandlerBigInt);
 
     // Build x_n
     let xx = ctx.F.one;
@@ -123,7 +123,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     }
 
     if(ctx.pilInfo.boundaries.includes("firstRow")) {
-        ctx.Zi_fr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandler); 
+        ctx.Zi_fr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt); 
         const zerofierFirstRowInv = buildUniqueRowZerofierInv(ctx.F, ctx.nBits, ctx.nBitsExt, 0);
         for (let i=0; i<ctx.Next; i++) {
             ctx.Zi_fr_ext[i] = zerofierFirstRowInv(i);
@@ -131,7 +131,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     } 
 
     if(ctx.pilInfo.boundaries.includes("lastRow")) {
-        ctx.Zi_lr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandler); 
+        ctx.Zi_lr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt); 
         const zerofierLastRowInv = buildUniqueRowZerofierInv(ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1);
         for (let i=0; i<ctx.Next; i++) {
             ctx.Zi_lr_ext[i] = zerofierLastRowInv(i);
@@ -147,8 +147,8 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
 module.exports.computeQStark = async function computeQStark(ctx, logger) {
     if (logger) logger.debug("Compute Trace Quotient Polynomials");
 
-    const qq1 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.Next), BigBufferHandler);
-    const qq2 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.pilInfo.qDeg*ctx.Next), BigBufferHandler);
+    const qq1 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.Next), BigBufferHandlerBigInt);
+    const qq2 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.pilInfo.qDeg*ctx.Next), BigBufferHandlerBigInt);
     await ifft(ctx.q_ext, ctx.pilInfo.qDim, ctx.nBitsExt, qq1);
 
     let curS = 1n;
@@ -369,20 +369,4 @@ module.exports.calculateChallengeStark = async function calculateChallengeStark(
 
     return ctx.transcript.getField();
 }
-
-const BigBufferHandler = {
-    get: function(obj, prop) {
-        if (!isNaN(prop)) {
-            return obj.getElement(prop);
-        } else return obj[prop];
-    },
-    set: function(obj, prop, value) {
-        if (!isNaN(prop)) {
-            return obj.setElement(prop, value);
-        } else {
-            obj[prop] = value;
-            return true;
-        }
-    }
-};
 
