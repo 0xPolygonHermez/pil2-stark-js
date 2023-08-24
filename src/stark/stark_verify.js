@@ -116,6 +116,27 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
         ctx.Z_lr = F.inv(F.sub(xi, root));
     }
 
+    if(starkInfo.boundaries.includes("everyFrame")) {
+        for(let i = 0; i < starkInfo.constraintFrames.length; ++i) {
+            ctx["Z_frame" + i] = ctx.Z;
+            const frame = starkInfo.constraintFrames[i];
+            for(let j = 0; j < frame.offsetMin; ++j) {
+                let root = F.one;
+                for(let k = 0; k < j; ++k) {
+                    root = F.mul(root, F.w[nBits]);
+                }
+                ctx["Z_frame" + i] = F.mul(ctx["Z_frame" + i], F.sub(xi, root));
+            }
+            for(let j = 0; j < frame.offsetMax; ++j) {
+                let root = F.one;
+                for(let k = 0; k < (N - j - 1); ++k) {
+                    root = F.mul(root, F.w[nBits]);
+                }
+                ctx["Z_frame" + i] = F.mul(ctx["Z_frame" + i], F.sub(xi, root));
+            }  
+        }   
+    }
+
     const res=executeCode(F, ctx, starkInfo.code.qVerifier.code);
 
     let xAcc = 1n;
@@ -249,6 +270,8 @@ function executeCode(F, ctx, code) {
                     return ctx.Z_fr;
                 } else if (r.boundary === "lastRow") {
                     return ctx.Z_lr;
+                } else if (r.boundary === "everyFrame") {
+                    return ctx[`Z_frame${r.frameId}`];
                 } else {
                     throw new Error("Invalid boundary: " + r.boundary);
                 }

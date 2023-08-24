@@ -12,6 +12,12 @@ const Logger = require('logplease');
 
 const smSimple = require("../state_machines/sm_simple/sm_simple.js");
 
+const pil2circom = require("../../src/pil2circom");
+const { proof2zkin } = require("../../src/proof2zkin");
+const wasm_tester = require("circom_tester/wasm/tester");
+const tmp = require('tmp-promise');
+const fs = require("fs");
+
 async function runTest(pilFile) {
     const logger = Logger.create("pil-stark", {showTimestamp: false});
     Logger.setLogLevel("DEBUG");
@@ -65,12 +71,28 @@ async function runTest(pilFile) {
     const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, setup.starkInfo, {logger});
 
     assert(resV==true);
+
+    if(pilFile !== "simple1.pil") {
+        const verifier = await pil2circom(pil, setup.constRoot, setup.starkInfo, {});
+
+        const fileName = await tmp.tmpName();
+        await fs.promises.writeFile(fileName, verifier, "utf8");
+
+        const circuit = await wasm_tester(fileName, {O:1, prime: "goldilocks", include: "circuits.gl"});
+
+        const input = proof2zkin(resP.proof, setup.starkInfo);
+        input.publics = resP.publics;
+
+        await circuit.calculateWitness(input, true);
+
+        await fs.promises.unlink(fileName);
+    }
 }
 
 describe("simple sm", async function () {
     this.timeout(10000000);
 
-    it("Simple1", async () => {
+    it.only("Simple1", async () => {
         await runTest("simple1.pil");
     });
     it("Simple2", async () => {

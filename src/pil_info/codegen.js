@@ -77,7 +77,7 @@ function evalExp(codeCtx, exp, prime) {
     } else if (exp.op == "xDivXSubXi") {
         return { type: "xDivXSubXi", opening: exp.opening }
     } else if (exp.op == "Zi") {
-        return { type: "Zi", boundary: exp.boundary }
+        return { type: "Zi", boundary: exp.boundary, frameId: exp.frameId }
     } else if (exp.op === "x") {
         return { type: "x" }
     } else {

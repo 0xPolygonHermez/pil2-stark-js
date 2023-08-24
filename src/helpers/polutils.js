@@ -36,23 +36,25 @@ module.exports.extendPolBuffer = async function extendPolBuffer(Fr, buffSrc, buf
     return buffDst;
 }
 
-module.exports.buildZhInv = function buildZhInv(F, Nbits, extendBits) {
-    const ZHInv = [];
+module.exports.buildZhInv = function buildZhInv(buffTo, F, nBits, nBitsExt) {
+    const extendBits = nBitsExt - nBits;
+    const Next = (1<<nBitsExt);
+    const extend = (1<<extendBits);
     let w = F.one;
     let sn= F.shift; 
-    for (i=0; i<Nbits; i++) sn = F.square(sn);
-    for (let i=0; i<(1 << extendBits); i++) {
-        const zh = F.sub(F.mul(sn, w), F.one);
-        ZHInv[i] = F.inv(zh);
+    for (let i=0; i<nBits; i++) sn = F.square(sn);
+    for (let i=0; i<extend; i++) {
+        const xn = F.mul(sn, w);
+        const zh = F.sub(xn, F.one);
+        buffTo[i] = F.inv(zh);
         w = F.mul(w, F.w[extendBits]);
     }
-    return function (i) {
-        return ZHInv[i % ZHInv.length];
+    for (let i=extend; i<Next; i++) {
+        buffTo[i] = buffTo[i % extend];
     }
 }
 
-module.exports.buildUniqueRowZerofierInv = function buildUniqueRowZerofierInv(F, nBits, nBitsExt, rowIndex) {
-    const ZHFirstRowInv = [];
+module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, F, nBits, nBitsExt, rowIndex) {
     let root = F.one;
     for(let i = 0; i < rowIndex; ++i) {
         root = F.mul(root, F.w[nBits]);
@@ -60,12 +62,42 @@ module.exports.buildUniqueRowZerofierInv = function buildUniqueRowZerofierInv(F,
     let w = F.one;
     let s = F.shift;
     for (let i=0; i< (1 << nBitsExt); i++) {
-        const zh = F.sub(F.mul(s, w), root);
-        ZHFirstRowInv[i] = F.inv(zh);
+        const x = F.mul(s, w);
+        const zh = F.sub(x, root);
+
+        buffTo[i] = F.inv(zh);
         w = F.mul(w, F.w[nBitsExt]);
     }
-    return function (i) {
-        return ZHFirstRowInv[i];
+}
+
+
+module.exports.buildFrameZerofierInv = function buildFrameZerofierInv(buffTo, F, buffZhInv, nBits, nBitsExt, frame) {
+   let roots = [];
+   for(let i = 0; i < frame.offsetMin; ++i) {
+        let root = F.one;
+        for (let j = 0; j < i; ++j) {
+            root = F.mul(root, F.w[nBits]);
+        }
+        roots.push(root);
+    }
+    for(let i = 0; i < frame.offsetMax; ++i) {
+        let root = F.one;
+        for (let j = 0; j < ((1<<nBits) - i - 1); ++j) {
+            root = F.mul(root, F.w[nBits]);
+        }
+        roots.push(root);
+    }
+
+    let w = F.one;
+    let s = F.shift;
+    for (let i=0; i< (1 << nBitsExt); i++) {
+        let zi = buffZhInv[i];
+        const x = F.mul(s, w);
+        for(let j = 0; j < roots.length; ++j) {
+            zi = F.mul(zi, F.sub(x, roots[j]));
+        }
+        buffTo[i] = zi;
+        w = F.mul(w, F.w[nBitsExt]);
     }
 }
 

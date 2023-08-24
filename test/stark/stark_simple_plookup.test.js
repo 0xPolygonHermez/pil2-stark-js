@@ -12,6 +12,12 @@ const Logger = require('logplease');
 const smGlobal = require("../state_machines/sm/sm_global.js");
 const smSimplePlookup = require("../state_machines/sm_simple_plookup/sm_simple_plookup.js");
 
+const pil2circom = require("../../src/pil2circom");
+const { proof2zkin } = require("../../src/proof2zkin");
+const wasm_tester = require("circom_tester/wasm/tester");
+const tmp = require('tmp-promise');
+const fs = require("fs");
+
 describe("test stark simple plookup sm", async function () {
     this.timeout(10000000);
 
@@ -60,6 +66,20 @@ describe("test stark simple plookup sm", async function () {
         const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, setup.starkInfo, {logger});
 
         assert(resV==true);
+
+        const verifier = await pil2circom(pil, setup.constRoot, setup.starkInfo, {});
+
+        const fileName = await tmp.tmpName();
+        await fs.promises.writeFile(fileName, verifier, "utf8");
+
+        const circuit = await wasm_tester(fileName, {O:1, prime: "goldilocks", include: "circuits.gl"});
+
+        const input = proof2zkin(resP.proof, setup.starkInfo);
+        input.publics = resP.publics;
+
+        await circuit.calculateWitness(input, true);
+
+        await fs.promises.unlink(fileName);
     });
 
 });

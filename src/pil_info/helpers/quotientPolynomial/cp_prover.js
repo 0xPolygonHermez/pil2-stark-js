@@ -17,14 +17,27 @@ module.exports = function generateConstraintPolynomial(res, pil, ctx, ctxExt, st
 
     res.boundaries = ["everyRow"];
 
+    res.constraintFrames = [];
+    
     let cExp = null;
     for (let i=0; i<pil.polIdentities.length; i++) {
         const boundary = pil.polIdentities[i].boundary;
-        if(!["everyRow", "firstRow", "lastRow"].includes(boundary)) throw new Error("Boundary " + boundary + " not supported");
+        if(!["everyRow", "firstRow", "lastRow", "everyFrame"].includes(boundary)) throw new Error("Boundary " + boundary + " not supported");
         if(!res.boundaries.includes(boundary)) res.boundaries.push(boundary);
+        let zi;
+        if(boundary === "everyFrame") {
+            let frameId = res.constraintFrames.findIndex(f => f.offsetMin ===  pil.polIdentities[i].offsetMin && f.offsetMax === pil.polIdentities[i].offsetMax);
+            if(frameId == -1) {
+                res.constraintFrames.push({offsetMin: pil.polIdentities[i].offsetMin, offsetMax: pil.polIdentities[i].offsetMax})
+                frameId = res.constraintFrames.length - 1;
+            }
+            zi = E.zi(boundary, frameId);
+        } else {
+            zi = E.zi(boundary);
+        }
         calculateDegreeExpressions(pil, pil.expressions[pil.polIdentities[i].e]);
         let e = E.exp(pil.polIdentities[i].e);
-        if(stark) e = E.mul(E.zi(boundary), e);
+        if(stark) e = E.mul(zi, e);
         if (cExp) {
             cExp = E.add(E.mul(vc, cExp), e);
         } else {

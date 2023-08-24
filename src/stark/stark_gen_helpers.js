@@ -5,7 +5,7 @@ const Transcript = require("../helpers/transcript/transcript");
 const TranscriptBN128 = require("../helpers/transcript/transcript.bn128");
 const F3g = require("../helpers/f3g.js");
 
-const { buildZhInv, buildUniqueRowZerofierInv } = require("../helpers/polutils.js");
+const { buildZhInv, buildOneRowZerofierInv, buildFrameZerofierInv } = require("../helpers/polutils.js");
 const buildPoseidonGL = require("../helpers/hash/poseidon/poseidon");
 const buildPoseidonBN128 = require("circomlibjs").buildPoseidon;
 const FRI = require("./fri.js");
@@ -117,25 +117,23 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     }
 
     // Build ZHInv
-    const zhInv = buildZhInv(ctx.F, ctx.nBits, ctx.extendBits);
-    for (let i=0; i<ctx.Next; i++) {
-        ctx.Zi_ext[i] = zhInv(i);
-    }
+    buildZhInv(ctx.Zi_ext, ctx.F, ctx.nBits, ctx.nBitsExt);
 
     if(ctx.pilInfo.boundaries.includes("firstRow")) {
         ctx.Zi_fr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt); 
-        const zerofierFirstRowInv = buildUniqueRowZerofierInv(ctx.F, ctx.nBits, ctx.nBitsExt, 0);
-        for (let i=0; i<ctx.Next; i++) {
-            ctx.Zi_fr_ext[i] = zerofierFirstRowInv(i);
-        }
+        buildOneRowZerofierInv(ctx.Zi_fr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, 0);
     } 
 
     if(ctx.pilInfo.boundaries.includes("lastRow")) {
         ctx.Zi_lr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt); 
-        const zerofierLastRowInv = buildUniqueRowZerofierInv(ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1);
-        for (let i=0; i<ctx.Next; i++) {
-            ctx.Zi_lr_ext[i] = zerofierLastRowInv(i);
-        }
+        buildOneRowZerofierInv(ctx.Zi_lr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1);
+    }
+
+    if(ctx.pilInfo.boundaries.includes("everyFrame")) {
+        for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) {
+            ctx[`Zi_frame${i}_ext`] = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt); 
+            buildFrameZerofierInv(ctx[`Zi_frame${i}_ext`], ctx.F, ctx.Zi_ext, ctx.nBits, ctx.nBitsExt, ctx.pilInfo.constraintFrames[i]);
+        }   
     }
 
     // Read const coefs

@@ -149,6 +149,9 @@ class Transcript {
                 return "Zfirst";
             } else if(r.boundary === "lastRow") {
                 return "Zlast";
+            } else if(r.boundary === "everyFrame") {
+                const frame = starkInfo.constraintFrames[r.frameId];
+                return "Zframe" + r.frameId + "[" + (frame.offsetMin + frame.offsetMax - 1) + "]";
             } else throw new Error("Invalid boundary: " + r.boundary);
         } else if (r.type == "xDivXSubXi") {
             return "xDivXSubXi[" + starkInfo.fri2Id[r.opening] + "]";
@@ -170,6 +173,8 @@ class Transcript {
 <%      if (inst.dest.type == "tmp" && ![1,3].includes(inst.dest.dim)) {                -%>
 <%          throw new Error("Invalid dimension");                                       -%>
 <%      }                                                                               -%>
+<%      if(inst.src[0] && inst.src[0].type === "Zi") inst.src[0].dim = 3;               -%>
+<%      if(inst.src[1] && inst.src[1].type === "Zi") inst.src[1].dim = 3;               -%>
 <%      if (inst.op == "add") {                                                         -%>
 <%          if ((inst.src[0].dim==1) && (inst.src[1].dim==1)) {                         -%>
     signal <%- ref(inst.dest) %> <== <%- ref(inst.src[0]) %> + <%- ref(inst.src[1]) %>;
@@ -336,10 +341,8 @@ template parallel VerifyEvaluations() {
         }
     }
 
-<%  if(starkInfo.boundaries.includes("everyRow")) { -%>
-        // Store the vanishing polynomial Zh(x) = x^nBits - 1 evaluated at z
-        signal Zh[3] <== CInv()([zMul[<%- starkStruct.nBits - 1%>][0] -1, zMul[<%- starkStruct.nBits - 1%>][1], zMul[<%- starkStruct.nBits - 1%>][2]]);
-<%  } -%>
+    // Store the vanishing polynomial Zh(x) = x^nBits - 1 evaluated at z
+    signal Zh[3] <== CInv()([zMul[<%- starkStruct.nBits - 1%>][0] - 1, zMul[<%- starkStruct.nBits - 1%>][1], zMul[<%- starkStruct.nBits - 1%>][2]]);
     
 <%  if(starkInfo.boundaries.includes("firstRow")) { -%>
     signal Zfirst[3] <== CInv()([challenges<%- starkInfo.challenges["xi"][0] %>[0] - 1, challenges<%- starkInfo.challenges["xi"][0] %>[1], challenges<%- starkInfo.challenges["xi"][0] %>[2]]);
@@ -347,10 +350,40 @@ template parallel VerifyEvaluations() {
 
 <%  if(starkInfo.boundaries.includes("lastRow")) { -%>
 <%  let root = F.one; -%>
-<%  for(let i = 0; i < (1 << starkStruct.nBits); ++i) { -%>
+<%  for(let i = 0; i < (1 << starkStruct.nBits) - 1; ++i) { -%>
 <%    root = F.mul(root, F.w[starkStruct.nBits]); -%>
 <%  } -%>
-    signal Zlast[3] <== CInv()([challenges<%- starkInfo.challenges["xi"][0] %>[0] - 1, challenges<%- starkInfo.challenges["xi"][0] %>[1], challenges<%- starkInfo.challenges["xi"][0] %>[2]]);
+    signal Zlast[3] <== CInv()([challenges<%- starkInfo.challenges["xi"][0] %>[0] - <%- root %>, challenges<%- starkInfo.challenges["xi"][0] %>[1], challenges<%- starkInfo.challenges["xi"][0] %>[2]]);
+<%  } -%>
+
+<%  if(starkInfo.boundaries.includes("everyFrame")) { -%>
+<%  for(let i = 0; i < starkInfo.constraintFrames.length; ++i) { -%>
+<%      let frame = starkInfo.constraintFrames[i]; -%>
+<%      let c = 0; -%>
+    signal Zframe<%- i %>[<%- frame.offsetMin + frame.offsetMax %>][3];
+<%      for(let j = 0; j < frame.offsetMin; j++) { -%>
+<%          let root = F.one; -%>
+<%          for(let k = 0; k < j; ++k) { -%>
+<%              root = F.mul(root, F.w[starkStruct.nBits]); -%>
+<%          } -%>
+<%          if(c === 0) { -%> 
+    Zframe<%- i %>[<%- c++ %>] <== CMul()(Zh, [challenges<%- starkInfo.challenges["xi"][0] %>[0] - <%- root %>, challenges<%- starkInfo.challenges["xi"][0] %>[1], challenges<%- starkInfo.challenges["xi"][0] %>[2]]);
+<%          } else { -%>
+    Zframe<%- i %>[<%- c++ %>] <== CMul()(Zframe<%- i %>, [challenges<%- starkInfo.challenges["xi"][0] %>[0] - <%- root %>, challenges<%- starkInfo.challenges["xi"][0] %>[1], challenges<%- starkInfo.challenges["xi"][0] %>[2]]);
+<%          } -%>
+<%      } -%>
+<%      for(let j = 0; j < frame.offsetMax; j++) { -%>
+<%          let root = F.one; -%>
+<%          for(let k = 0; k < ((1<<starkStruct.nBits) - i - 1); ++k) { -%>
+<%              root = F.mul(root, F.w[starkStruct.nBits]); -%>
+<%          } -%>
+<%          if(c === 0) { -%> 
+    Zframe<%- i %>[<%- c++ %>] <== CMul()(Zh, [challenges<%- starkInfo.challenges["xi"][0] %>[0] - <%- root %>, challenges<%- starkInfo.challenges["xi"][0] %>[1], challenges<%- starkInfo.challenges["xi"][0] %>[2]]);
+<%          } else { -%>
+    Zframe<%- i %>[<%- c++ %>] <== CMul()(Zframe<%- i %>, [challenges<%- starkInfo.challenges["xi"][0] %>[0] - <%- root %>, challenges<%- starkInfo.challenges["xi"][0] %>[1], challenges<%- starkInfo.challenges["xi"][0] %>[2]]);
+<%          } -%>
+<%      } -%>
+<%  } -%>
 <%  } -%>
 
     // Using the evaluations committed and the challenges,

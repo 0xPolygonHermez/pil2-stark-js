@@ -77,7 +77,6 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
         body.push(`  return ${getRef(code[code.length-1].dest)};`);
     }
 
-    console.log(body);
     return body.join("\n");
 
     function getRef(r) {
@@ -127,8 +126,10 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
                     return `ctx.Zi_fr_ext[i]`;
                 } else if(r.boundary === "lastRow") {
                     return `ctx.Zi_lr_ext[i]`;
+                } else if(r.boundary === "everyFrame") {
+                    return `ctx.Zi_frame${r.frameId}_ext[i]`;
                 } else {
-                    throw new Error("Invalid boundary" + r.boundary);
+                    throw new Error("Invalid boundary: " + r.boundary);
                 }
             }
             default: throw new Error("Invalid reference type get: " + r.type);
@@ -297,6 +298,13 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         const stage = 2 + i;
         execStages.push(`stage${stage}`);
     }
+
+    const ziPols = ["Zi_ext"];
+    if(ctx.pilInfo.boundaries.includes("firstRow")) ziPols.push("Zi_fr_ext");
+    if(ctx.pilInfo.boundaries.includes("lastRow")) ziPols.push("Zi_lr_ext");
+    if(ctx.pilInfo.boundaries.includes("everyRow")) {
+        for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) ziPols.push(`Zi_frame${i}_ext`);
+    }
     
     if (execStages.includes(execPart)) {
         execInfo.inputSections.push({ name: "const_n" });
@@ -331,14 +339,8 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         execInfo.inputSections.push({ name: "x_ext" });
         execInfo.outputSections.push({ name: "q_ext" });
         if(ctx.prover === "stark") {
-            if(ctx.pilInfo.boundaries.includes("everyRow")) {
-                execInfo.inputSections.push({ name: "Zi_ext" });
-            }
-            if(ctx.pilInfo.boundaries.includes("firstRow")) {
-                execInfo.inputSections.push({ name: "Zi_fr_ext" });
-            }
-            if(ctx.pilInfo.boundaries.includes("lastRow")) {
-                execInfo.inputSections.push({ name: "Zi_lr_ext" });
+            for(let i = 0; i < ziPols.length; ++i) {
+                execInfo.inputSections.push({ name: ziPols[i] });
             }
         }
         dom = "ext";
@@ -362,7 +364,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             stage.width = ctx.pilInfo.nConstants;
         } else if (typeof ctx.pilInfo.mapSectionsN[stage.name.split("_")[0]] != "undefined") {
             stage.width = ctx.pilInfo.mapSectionsN[stage.name.split("_")[0]];
-        } else if (["x_n", "x_ext", "Zi_ext", "Zi_fr_ext", "Zi_lr_ext"].indexOf(stage.name) >= 0) {
+        } else if (["x_n", "x_ext", ...ziPols].indexOf(stage.name) >= 0) {
             stage.width = 1;
         } else if (["xDivXSubXi_ext"].indexOf(stage.name) >= 0) {
             stage.width = 3*ctx.pilInfo.nFriOpenings;
