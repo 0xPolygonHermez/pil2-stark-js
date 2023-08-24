@@ -1,6 +1,6 @@
 const ExpressionOps = require("../../expressionops");
 
-module.exports.grandProductPlookup = function grandProductPlookup(res, pil) {
+module.exports.grandProductPlookup = function grandProductPlookup(res, pil, stark) {
     const E = new ExpressionOps();
 
     const alpha = E.challenge("stage1_challenge0");
@@ -88,11 +88,15 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil) {
         const z = E.cm(puCtx.zId);
         const zp = E.cm(puCtx.zId, true);
 
-        // if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
-        // const l1 = E.const(pil.references["Global.L1"].id);
-        // const c1 = E.mul(l1,  E.sub(z, E.number(1)));
+        let c1;
+        if(stark) {
+            c1 = E.sub(z, E.number(1));
+        } else {
+            if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
+            const l1 = E.const(pil.references["Global.L1"].id);
+            c1 = E.mul(l1,  E.sub(z, E.number(1)));
+        }
 
-        const c1 = E.sub(z, E.number(1));
 
         c1.deg=2;
         pil.expressions.push(c1);

@@ -3,7 +3,7 @@ const ExpressionOps = require("../../expressionops");
 
 const getKs = require("pilcom").getKs;
 
-module.exports.grandProductConnection = function grandProductConnection(res, pil, F) {
+module.exports.grandProductConnection = function grandProductConnection(res, pil, stark, F) {
     const E = new ExpressionOps();
 
     const gamma = E.challenge("stage1_challenge0");
@@ -76,11 +76,14 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
         const z = E.cm(ciCtx.zId);
         const zp = E.cm(ciCtx.zId, true);
 
-        // if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
-        // const l1 = E.const(pil.references["Global.L1"].id);
-        // const c1 = E.mul(l1,  E.sub(z, E.number(1)));
-
-        const c1 = E.sub(z, E.number(1));
+        let c1;
+        if(stark) {
+            c1 = E.sub(z, E.number(1));
+        } else {
+            if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
+            const l1 = E.const(pil.references["Global.L1"].id);
+            c1 = E.mul(l1,  E.sub(z, E.number(1)));
+        }
 
         c1.deg=2;
         pil.expressions.push(c1);

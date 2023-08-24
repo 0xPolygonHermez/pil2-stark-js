@@ -36,7 +36,7 @@ module.exports.extendPolBuffer = async function extendPolBuffer(Fr, buffSrc, buf
     return buffDst;
 }
 
-module.exports.buildZhInv = function buildZhInv(buffTo, F, nBits, nBitsExt) {
+module.exports.buildZhInv = function buildZhInv(buffTo, F, nBits, nBitsExt, stark) {
     const extendBits = nBitsExt - nBits;
     const Next = (1<<nBitsExt);
     const extend = (1<<extendBits);
@@ -44,7 +44,7 @@ module.exports.buildZhInv = function buildZhInv(buffTo, F, nBits, nBitsExt) {
     let sn= F.shift; 
     for (let i=0; i<nBits; i++) sn = F.square(sn);
     for (let i=0; i<extend; i++) {
-        const xn = F.mul(sn, w);
+        const xn = stark ? F.mul(sn, w) : w;
         const zh = F.sub(xn, F.one);
         buffTo[i] = F.inv(zh);
         w = F.mul(w, F.w[extendBits]);
@@ -54,7 +54,7 @@ module.exports.buildZhInv = function buildZhInv(buffTo, F, nBits, nBitsExt) {
     }
 }
 
-module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, F, nBits, nBitsExt, rowIndex) {
+module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, F, nBits, nBitsExt, rowIndex, stark) {
     let root = F.one;
     for(let i = 0; i < rowIndex; ++i) {
         root = F.mul(root, F.w[nBits]);
@@ -62,7 +62,7 @@ module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, 
     let w = F.one;
     let s = F.shift;
     for (let i=0; i< (1 << nBitsExt); i++) {
-        const x = F.mul(s, w);
+        const x = stark ? F.mul(s, w) : w;
         const zh = F.sub(x, root);
 
         buffTo[i] = F.inv(zh);
@@ -71,7 +71,7 @@ module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, 
 }
 
 
-module.exports.buildFrameZerofierInv = function buildFrameZerofierInv(buffTo, F, buffZhInv, nBits, nBitsExt, frame) {
+module.exports.buildFrameZerofierInv = function buildFrameZerofierInv(buffTo, F, buffZhInv, nBits, nBitsExt, frame, stark) {
    let roots = [];
    for(let i = 0; i < frame.offsetMin; ++i) {
         let root = F.one;
@@ -92,7 +92,7 @@ module.exports.buildFrameZerofierInv = function buildFrameZerofierInv(buffTo, F,
     let s = F.shift;
     for (let i=0; i< (1 << nBitsExt); i++) {
         let zi = buffZhInv[i];
-        const x = F.mul(s, w);
+        const x = stark ? F.mul(s, w) : w;
         for(let j = 0; j < roots.length; ++j) {
             zi = F.mul(zi, F.sub(x, roots[j]));
         }

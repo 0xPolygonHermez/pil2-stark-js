@@ -4,7 +4,7 @@ const { grandProductConnection } = require("./pil1_libs/grandProductConnection.j
 const { grandProductPermutation } = require("./pil1_libs/grandProductPermutation.js");
 const { grandProductPlookup } = require("./pil1_libs/grandProductPlookup.js");
 
-module.exports = function generateLibsCode(F, res, pil, ctx) {
+module.exports = function generateLibsCode(F, res, pil, ctx, stark) {
     const E = new ExpressionOps();
 
     let pilLibs = [];
@@ -12,21 +12,21 @@ module.exports = function generateLibsCode(F, res, pil, ctx) {
     if(pil.plookupIdentities.length > 0) {
         pilLibs.push({
             nChallenges: [2,2],
-            lib: function() { grandProductPlookup(res, pil) },
+            lib: function() { grandProductPlookup(res, pil, stark) },
         });
     }
 
     if(pil.connectionIdentities.length > 0) {
         pilLibs.push({
             nChallenges: [2],
-            lib: function() { grandProductConnection(res, pil, F)},
+            lib: function() { grandProductConnection(res, pil, stark, F)},
         });
     }
 
     if(pil.permutationIdentities.length > 0) {
         pilLibs.push({
             nChallenges: [3],
-            lib: function() { grandProductPermutation(res, pil, F)},
+            lib: function() { grandProductPermutation(res, pil, stark)},
         });
     }
 

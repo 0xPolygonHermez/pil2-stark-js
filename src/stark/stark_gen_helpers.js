@@ -117,22 +117,21 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     }
 
     // Build ZHInv
-    buildZhInv(ctx.Zi_ext, ctx.F, ctx.nBits, ctx.nBitsExt);
-
+    buildZhInv(ctx.Zi_ext, ctx.F, ctx.nBits, ctx.nBitsExt, true);    
     if(ctx.pilInfo.boundaries.includes("firstRow")) {
         ctx.Zi_fr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt); 
-        buildOneRowZerofierInv(ctx.Zi_fr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, 0);
+        buildOneRowZerofierInv(ctx.Zi_fr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, 0, true);
     } 
 
     if(ctx.pilInfo.boundaries.includes("lastRow")) {
         ctx.Zi_lr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt); 
-        buildOneRowZerofierInv(ctx.Zi_lr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1);
+        buildOneRowZerofierInv(ctx.Zi_lr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1, true);
     }
 
     if(ctx.pilInfo.boundaries.includes("everyFrame")) {
         for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) {
             ctx[`Zi_frame${i}_ext`] = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt); 
-            buildFrameZerofierInv(ctx[`Zi_frame${i}_ext`], ctx.F, ctx.Zi_ext, ctx.nBits, ctx.nBitsExt, ctx.pilInfo.constraintFrames[i]);
+            buildFrameZerofierInv(ctx[`Zi_frame${i}_ext`], ctx.F, ctx.Zi_ext, ctx.nBits, ctx.nBitsExt, ctx.pilInfo.constraintFrames[i], true);
         }   
     }
 

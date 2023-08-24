@@ -74,7 +74,7 @@ module.exports = function pilInfo(F, _pil, stark = true, starkStruct) {
 
     generatePublicCalculators(res, pil, ctx);
 
-    generateLibsCode(F, res, pil, ctx);
+    generateLibsCode(F, res, pil, ctx, stark);
     
     generateConstraintPolynomial(res, pil, ctx, ctx_ext, stark);
 

@@ -92,7 +92,6 @@ module.exports.initProverFflonk = async function initProver(pilInfo, zkey, logge
     ctx.q_ext = new Proxy(new BigBuffer(ctx.Next * ctx.F.n8), BigBufferHandler);
     ctx.x_ext = new Proxy(new BigBuffer(ctx.Next * ctx.F.n8), BigBufferHandler); // Omegas a l'extès
 
-    ctx.Zi_ext = new Proxy(new BigBuffer(ctx.Next * ctx.F.n8), BigBufferHandler);
     
     // Read const coefs and extended evals
     ctx.const_n.set(ctx.zkey.constPolsEvals);
