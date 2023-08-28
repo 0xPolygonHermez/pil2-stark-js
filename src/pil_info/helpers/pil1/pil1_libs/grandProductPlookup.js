@@ -1,4 +1,4 @@
-const ExpressionOps = require("../../expressionops");
+const ExpressionOps = require("../../../expressionops");
 
 module.exports.grandProductPlookup = function grandProductPlookup(res, pil, stark) {
     const E = new ExpressionOps();

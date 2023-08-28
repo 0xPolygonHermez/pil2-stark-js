@@ -3,18 +3,18 @@ const {pilCodeGen, buildCode} = require("../../codegen.js");
 const ExpressionOps = require("../../expressionops");
 
 
-module.exports = function generateFRIPolynomial(res, pil, ctxExt) {
+module.exports = function generateFRIPolynomial(res, expressions, constraints, ctxExt) {
     const E = new ExpressionOps();
 
     const vf1 = E.challenge("vf1");
     const vf2 = E.challenge("vf2");
     
-    res.challenges["fri"] = [vf1.id, vf2.id];
-    res.nChallenges += 2;
+    res.challengesMap.push({stage: "fri", stageId: 0, globalId: vf1.id });
+    res.challengesMap.push({stage: "fri", stageId: 1, globalId: vf2.id });
 
 
     let friExp = null;
-    for (let i=0; i<pil.nCommitments; i++) {
+    for (let i=0; i<res.nCommitments; i++) {
         if (friExp) {
             friExp = E.add(E.mul(vf1, friExp), E.cm(i));
         } else {
@@ -49,15 +49,15 @@ module.exports = function generateFRIPolynomial(res, pil, ctxExt) {
         }
     }
 
-    res.friExpId = pil.expressions.length;
-    pil.expressions.push(friExp);
+    res.friExpId = expressions.length;
+    expressions.push(friExp);
 
-    pilCodeGen(ctxExt, res.friExpId, 0);
+    pilCodeGen(ctxExt, expressions, constraints, res.friExpId, 0);
 
     const code = ctxExt.code[ctxExt.code.length-1].code;
 
     code[code.length-1].dest = { type: "f", id: 0 };
 
-    res.code["fri"] = buildCode(ctxExt);
+    res.code["fri"] = buildCode(ctxExt, expressions);
 
 }

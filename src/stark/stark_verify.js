@@ -72,34 +72,39 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
 
     for(let i=0; i < starkInfo.nLibStages; i++) {
         const stage = i + 2;
-        for(let j = 0; j < starkInfo.challenges[stage].length; ++j) {
-            const index = starkInfo.challenges[stage][j];
+        const challengesStage = starkInfo.challengesMap.filter(c => c.stage == stage);
+        for(let j = 0; j < challengesStage.length; ++j) {
+            const index = challengesStage[j].globalId;
             ctx.challenges[index] = transcript.getField();
             if (logger) logger.debug("··· challenges[" + index + "]: " + F.toString(ctx.challenges[index]));
         }
         transcript.put(proof["root" + stage]);
     }
     
-    ctx.challenges[starkInfo.challenges["Q"][0]] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + starkInfo.challenges["Q"][0] + "]: " + F.toString(ctx.challenges[starkInfo.challenges["Q"][0]]));
+    let qChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === "Q" && c.stageId === 0);
+    ctx.challenges[qChallengeId] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + F.toString(ctx.challenges[qChallengeId]));
     transcript.put(proof.rootQ);
 
 
-    ctx.challenges[starkInfo.challenges["xi"][0]] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + starkInfo.challenges["xi"][0] + "]: " + F.toString(ctx.challenges[starkInfo.challenges["xi"][0]]));
+    let xiChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === "evals" && c.stageId === 0);
+    ctx.challenges[xiChallengeId] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + xiChallengeId + "]: " + F.toString(ctx.challenges[xiChallengeId]));
     for (let i=0; i<ctx.evals.length; i++) {
         transcript.put(ctx.evals[i]);
     }
 
-    ctx.challenges[starkInfo.challenges["fri"][0]] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + starkInfo.challenges["fri"][0] + "]: " + F.toString(ctx.challenges[starkInfo.challenges["fri"][0]]));
+    let vf1ChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === "fri" && c.stageId === 0);
+    let vf2ChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === "fri" && c.stageId === 1);
+    ctx.challenges[vf1ChallengeId] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + vf1ChallengeId + "]: " + F.toString(ctx.challenges[vf1ChallengeId]));
 
-    ctx.challenges[starkInfo.challenges["fri"][1]] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + starkInfo.challenges["fri"][1] + "]: " + F.toString(ctx.challenges[starkInfo.challenges["fri"][1]]));
+    ctx.challenges[vf2ChallengeId] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + vf2ChallengeId + "]: " + F.toString(ctx.challenges[vf2ChallengeId]));
 
     if (logger) logger.debug("Verifying evaluations");
 
-    const xi = ctx.challenges[starkInfo.challenges["xi"][0]];
+    const xi = ctx.challenges[xiChallengeId];
 
     const xN = F.exp(xi, N);
     ctx.Z = F.inv(F.sub(xN, 1n));
@@ -214,7 +219,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
                 w = F.div(1n, w);
             }
 
-            ctxQry.xDivXSubXi[id] = F.div(x, F.sub(x, F.mul(ctxQry.challenges[starkInfo.challenges["xi"][0]], w)));
+            ctxQry.xDivXSubXi[id] = F.div(x, F.sub(x, F.mul(ctxQry.challenges[xiChallengeId], w)));
         }
 
         const vals = [executeCode(F, ctxQry, starkInfo.code.queryVerifier.code)];
@@ -262,7 +267,7 @@ function executeCode(F, ctx, code) {
             case "public": return BigInt(ctx.publics[r.id]);
             case "challenge": return ctx.challenges[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[ctx.starkInfo.fri2Id[r.opening]];
-            case "x": return ctx.challenges[ctx.starkInfo.challenges["xi"][0]];
+            case "x": return ctx.challenges[ctx.starkInfo.challengesMap.findIndex(c => c.stage === "evals" && c.stageId === 0)];
             case "Zi": {
                 if(r.boundary === "everyRow") {
                     return ctx.Z;

@@ -166,7 +166,7 @@ contract PilFflonkVerifier {
     // Memory data
     // Challenges
 <%  let challengeCount = 0; -%>
-<%  for(let i = 0; i < fflonkInfo.nChallenges; ++i) { -%>
+<%  for(let i = 0; i < fflonkInfo.challengesMap.length; ++i) { -%>
     uint16 constant pChallenge<%- i %> = <%- challengeCount %>;
 <%  challengeCount += 32; -%>
 <%  } -%>
@@ -235,8 +235,9 @@ contract PilFflonkVerifier {
 <%  for(let i = 0; i < fflonkInfo.nLibStages; ++i) { -%>
 <%      const stage = i + 2 -%>
                 // Transcript stage <%= stage %>
-<%      for(let j = 0; j < fflonkInfo.challenges[stage].length; ++j) { -%>
-<%          const index = fflonkInfo.challenges[stage][j]; -%>
+<%      const challengesStage = fflonkInfo.challengesMap.filter(c => c.stage === stage); -%>
+<%      for(let j = 0; j < challengesStage.length; ++j) { -%>
+<%          const index = challengesStage[j].globalId; -%>
                 challenge := mod(keccak256(add(pMem, pLastMem), <%= memC - pLastMem %>), q)
                 mstore(add(pMem, pChallenge<%- index %>), challenge) // Store challenge <%= index %>
                 mstore(add(pMem, pLastMem), challenge) // Add challenge to transcript
@@ -255,7 +256,7 @@ contract PilFflonkVerifier {
 
                 // Compute challenge quotient polynomial
                 challenge := mod(keccak256(add(pMem, pLastMem), <%= memC - pLastMem %>), q)
-                mstore(add(pMem, pChallenge<%- fflonkInfo.nChallenges - 1 %>), challenge)
+                mstore(add(pMem, pChallenge<%- fflonkInfo.challengesMap.length - 1 %>), challenge)
                 mstore(add(pMem, pLastMem), challenge)
 <%  memC = pLastMem + 32; -%>
 

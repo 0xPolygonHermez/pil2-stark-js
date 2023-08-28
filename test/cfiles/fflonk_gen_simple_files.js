@@ -63,11 +63,7 @@ describe("simple sm", async function () {
         const pil = await compile(F, path.join(__dirname, "../state_machines/", "sm_simple", `${filename}.pil`));
         const constPols =  newConstantPolsArray(pil, F);
     
-        let maxPilPolDeg = 0;
-        for (const polRef in pil.references) {
-            maxPilPolDeg = Math.max(maxPilPolDeg, pil.references[polRef].polDeg);
-        }
-        const N = 2**(log2(maxPilPolDeg - 1) + 1);
+        const N = Object.values(pil.references)[0].polDeg;
         await smSimple.buildConstants(N, constPols.Simple);
     
         const committedPols = newCommitPolsArray(pil, F);

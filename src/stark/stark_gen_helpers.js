@@ -172,8 +172,9 @@ module.exports.computeQStark = async function computeQStark(ctx, logger) {
 module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challenge, logger) {
     if (logger) logger.debug("Compute Evals");
 
-    ctx.challenges[ctx.pilInfo.challenges["xi"][0]] = challenge; // xi
-    if (logger) logger.debug("··· challenges[" + ctx.pilInfo.challenges["xi"][0] + "]: " + ctx.F.toString(ctx.challenges[ctx.pilInfo.challenges["xi"][0]]));
+    let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === "evals" && c.stageId === 0);
+    ctx.challenges[xiChallengeId] = challenge; // xi
+    if (logger) logger.debug("··· challenges[" + xiChallengeId + "]: " + ctx.F.toString(ctx.challenges[xiChallengeId]));
 
     let LEv = [];
     const friOpenings = Object.keys(ctx.pilInfo.fri2Id);
@@ -187,7 +188,7 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challen
             w = ctx.F.mul(w, ctx.F.w[ctx.nBits]);
         }
         if(opening < 0) w = ctx.F.div(1n, w);
-        const xi = ctx.F.div(ctx.F.mul(ctx.challenges[ctx.pilInfo.challenges["xi"][0]], w), ctx.F.shift);
+        const xi = ctx.F.div(ctx.F.mul(ctx.challenges[xiChallengeId], w), ctx.F.shift);
         for (let k=1; k<ctx.N; k++) {
             LEv[index][k] = ctx.F.mul(LEv[index][k-1], xi);
         }
@@ -246,7 +247,8 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
         }
         if(opening < 0) w = ctx.F.div(1n, w);
 
-        let xi = ctx.F.mul(ctx.challenges[ctx.pilInfo.challenges["xi"][0]], w);
+        let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === "evals" && c.stageId === 0);
+        let xi = ctx.F.mul(ctx.challenges[xiChallengeId], w);
 
         let den = new Array(ctx.Next);
         let x = ctx.F.shift;
@@ -331,15 +333,17 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
 }
 
 module.exports.setChallengesStark = function setChallengesStark(stage, ctx, challenge, logger) {
-    let challengesIndex = ctx.pilInfo.challenges[stage];
+    let challengesStage = ctx.pilInfo.challengesMap.filter(c => c.stage === stage);
 
-    if(challengesIndex.length === 0) throw new Error("No challenges needed for stage " + stage);
+    if(challengesStage.length === 0) throw new Error("No challenges needed for stage " + stage);
 
-    ctx.challenges[challengesIndex[0]] = challenge;
-    if (logger) logger.debug("··· challenges[" + challengesIndex[0] + "]: " + ctx.F.toString(ctx.challenges[challengesIndex[0]]));
-    for (let i=1; i<challengesIndex.length; i++) {
-        const index = challengesIndex[i];
-        ctx.challenges[index] = ctx.transcript.getField();
+    for (let i=0; i<challengesStage.length; i++) {
+        const index = challengesStage[i].globalId;
+        if(i > 0) {
+            ctx.challenges[index] = ctx.transcript.getField();
+        } else {
+            ctx.challenges[index] = challenge;
+        }
         if (logger) logger.debug("··· challenges[" + index + "]: " + ctx.F.toString(ctx.challenges[index]));
     }
     return;
@@ -355,7 +359,7 @@ module.exports.calculateChallengeStark = async function calculateChallengeStark(
     }
 
     if(stage === 1) {
-        for (let i=0; i<ctx.pilInfo.publics.length; i++) {
+        for (let i=0; i<ctx.pilInfo.nPublics; i++) {
             ctx.transcript.put(ctx.publics[i]);
         }
     }

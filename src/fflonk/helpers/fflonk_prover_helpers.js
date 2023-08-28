@@ -221,19 +221,20 @@ module.exports.genProofFflonk = async function genProof(ctx, logger) {
 }
 
 module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, challenge, logger) {
-    let challengesIndex = ctx.pilInfo.challenges[stage];
+    let challengesStage = ctx.pilInfo.challengesMap.filter(c => c.stage === stage);
 
-    if(challengesIndex.length === 0) throw new Error("No challenges needed for stage " + stage);
+    if(challengesStage.length === 0) throw new Error("No challenges needed for stage " + stage);
 
-    ctx.challenges[challengesIndex[0]] = challenge;
-    if (logger) logger.debug("··· challenges[" + challengesIndex[0] + "]: " + ctx.F.toString(ctx.challenges[challengesIndex[0]]));
-    for (let i=1; i<challengesIndex.length; i++) {
-        const previousIndex = challengesIndex[i-1];
-        const index = challengesIndex[i];
-        ctx.transcript.reset();
-        ctx.transcript.addScalar(ctx.challenges[previousIndex]);
-        ctx.challenges[index] = ctx.transcript.getChallenge();
-        if (logger) logger.debug("··· challenges[" + challengesIndex[i] + "]: " + ctx.F.toString(ctx.challenges[challengesIndex[i]]));
+    for (let i=0; i<challengesStage.length; i++) {
+        const index = challengesStage[i].globalId;
+        if(i > 0) {
+            ctx.transcript.reset();
+            ctx.transcript.addScalar(ctx.challenges[index - 1]);
+            ctx.challenges[index] = ctx.transcript.getChallenge();
+        } else {
+            ctx.challenges[index] = challenge;
+        }
+        if (logger) logger.debug("··· challenges[" + index + "]: " + ctx.F.toString(ctx.challenges[index]));
     }
     return;
 }
@@ -249,16 +250,16 @@ module.exports.calculateChallengeFflonk = async function calculateChallengeFflon
         }
     
         // Add all the publics to the transcript
-        for (let i = 0; i < ctx.pilInfo.publics.length; i++) {
+        for (let i = 0; i < ctx.pilInfo.nPublics; i++) {
             ctx.transcript.addScalar(ctx.publics[i]);
         }
     }
 
-    let challengesIndex = ctx.pilInfo.challenges[stage];
+    let challengesStage = ctx.pilInfo.challengesMap.filter(c => c.stage === stage);
     
-    if(challengesIndex) {
-        const lastChallengeIndex = challengesIndex[challengesIndex.length - 1];
-        const challenge = ctx.challenges[lastChallengeIndex];
+    if(challengesStage.length > 0) {
+        const lastChallengeStageId = challengesStage[challengesStage.length - 1].globalId;
+        const challenge = ctx.challenges[ctx.pilInfo.challengesMap[lastChallengeStageId].globalId];
         ctx.transcript.addScalar(challenge);
     }
 

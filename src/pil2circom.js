@@ -5,7 +5,7 @@ const path = require("path");
 const { log2 } = require("pilcom/src/utils.js");
 
 
-module.exports = async function pil2circom(pil, constRoot, starkInfo, options) {
+module.exports = async function pil2circom(constRoot, starkInfo, options) {
 
     options = options || {};
     starkStruct = starkInfo.starkStruct;
@@ -31,7 +31,6 @@ module.exports = async function pil2circom(pil, constRoot, starkInfo, options) {
         starkInfo: starkInfo,
         starkStruct: starkStruct,
         constRoot: constRoot,
-        pil: pil,
         options: options,
         arity: Number(options.arity),
         transcriptArity: Number(options.transcriptArity),

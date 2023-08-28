@@ -1,5 +1,5 @@
 
-const ExpressionOps = require("../../expressionops");
+const ExpressionOps = require("../../../expressionops");
 
 const getKs = require("pilcom").getKs;
 

@@ -1,26 +1,20 @@
-module.exports.getExpDim = function getExpDim(res, pil, expId, stark) {
+module.exports.getExpDim = function getExpDim(res, expressions, expId, stark) {
 
-    return _getExpDim(pil.expressions[expId]);
+    return _getExpDim(expressions[expId]);
 
     function _getExpDim(exp) {
-        if(typeof(exp.dimMap) !== "undefined") return exp.dimMap; 
+        if(typeof(exp.dim) !== "undefined") return exp.dim; 
         switch (exp.op) {
             case "add":
             case "sub":
             case "mul":
             case "muladd":
             case "neg":
-                let md = 1;
-                for (let i=0; i<exp.values.length; i++) {
-                    const d = _getExpDim(exp.values[i]);
-                    if (d>md) md=d;
-                }
-                return md;
+                return Math.max(...exp.values.map(v => _getExpDim(v)));
             case "cm": return res.cmPolsMap[exp.id].dim;
             case "exp":
-                exp.dimMap = _getExpDim(pil.expressions[exp.id]);
-                return exp.dimMap;
-            case "q": return _getExpDim(pil.expressions[pil.q2exp[exp.id]]);
+                exp.dim = _getExpDim(expressions[exp.id]);
+                return exp.dim;
             case "const":
             case "number":
             case "public": 
@@ -67,7 +61,7 @@ module.exports.iterateCode = function iterateCode(code, dom, f) {
 
 module.exports.setDimensions = function setDimensions(res, stark) {
     for (let i=0; i<res.nPublics; i++) {
-        if (res.publicsCode[i]) setCodeDimensions(res.publicsCode[i], res, stark);
+        setCodeDimensions(res.publicsCode[i], res, stark);
     }
     
     for(let i = 0; i < Object.keys(res.code).length; ++i) {
@@ -77,7 +71,7 @@ module.exports.setDimensions = function setDimensions(res, stark) {
 }
 
 module.exports.fixCode = function fixCode(res, stark) {
-    for (let i=0; i< res.publicsCode.length; i++) {
+    for (let i=0; i< res.nPublics; i++) {
         fixProverCode(res, res.publicsCode[i], "n", stark);
     }
 
@@ -210,3 +204,4 @@ function fixProverCode(res, code, dom, stark, verifierQuery = false) {
         }
     }
 }
+

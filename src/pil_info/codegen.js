@@ -1,22 +1,20 @@
 const { expressionError } = require("./helpers/debug");
 
-
-function pilCodeGen(ctx, expId, prime, addMul) {
+function pilCodeGen(ctx, expressions, constraints, expId, prime, addMul) {
     if (ctx.calculated[expId] && ctx.calculated[expId][prime]) return;
 
-    calculateDeps(ctx, ctx.pil.expressions[expId], prime, expId);
+    calculateDeps(ctx, expressions, constraints, expressions[expId], prime, expId);
 
     const codeCtx = {
-        pil: ctx.pil,
         expId: expId,
         tmpUsed: ctx.tmpUsed,
         code: []
     }
 
-    let e = ctx.pil.expressions[expId];
+    let e = expressions[expId];
     if (addMul) e = findAddMul(e);
     
-    const retRef = evalExp(codeCtx, e, prime);
+    const retRef = evalExp(codeCtx, constraints, e, prime);
 
     if (retRef.type == "tmp") {
         codeCtx.code[codeCtx.code.length-1].dest = {
@@ -50,10 +48,10 @@ function pilCodeGen(ctx, expId, prime, addMul) {
     if (codeCtx.tmpUsed > ctx.tmpUsed) ctx.tmpUsed = codeCtx.tmpUsed;
 }
 
-function evalExp(codeCtx, exp, prime) {
+function evalExp(codeCtx, constraints, exp, prime) {
     prime = prime || 0;
     if (["add", "sub", "mul", "muladd", "neg"].includes(exp.op)) {
-        const values = exp.values.map(v => evalExp(codeCtx, v, prime));
+        const values = exp.values.map(v => evalExp(codeCtx, constraints, v, prime));
         let op = exp.op;
         if(exp.op == "neg") {
             values.unshift({type: "number", value: "0"});
@@ -67,7 +65,7 @@ function evalExp(codeCtx, exp, prime) {
         });
         return r;
     } else if (["cm", "const", "exp", "q"].includes(exp.op)) {
-        if (exp.next && prime) expressionError(codeCtx.pil, "double Prime", codeCtx.expId);
+        // if (exp.next && prime) expressionError(codeCtx.pil, constraints, "double Prime", codeCtx.expId);
         let p = exp.next || prime ? 1 : 0; 
         return { type: exp.op, id: exp.id, prime: p }
     } else if (["public", "challenge", "eval"].includes(exp.op)) {
@@ -86,19 +84,17 @@ function evalExp(codeCtx, exp, prime) {
 }
 
 
-function calculateDeps(ctx, exp, prime, expIdErr, addMul) {
+function calculateDeps(ctx, expressions, constraints, exp, prime, expIdErr, addMul) {
     if (exp.op == "exp") {
-        if (prime && exp.next) expressionError(ctx.pil, `Double prime`, expIdErr, exp.id);
+        // if (prime && exp.next) expressionError(ctx.pil, constraints, `Double prime`, expIdErr, exp.id);
         let p = exp.next || prime ? 1 : 0;
-        pilCodeGen(ctx, exp.id, p, addMul);
-    } else if (exp.values) {
-        for (let i=0; i<exp.values.length; i++) {
-            calculateDeps(ctx, exp.values[i], prime, expIdErr, addMul);
-        }
+        pilCodeGen(ctx, expressions, constraints, exp.id, p, addMul);
+    } else if (["add", "sub", "mul", "neg", "muladd"].includes(exp.op)) {
+        exp.values.map(v => calculateDeps(ctx, expressions, constraints, v, prime, expIdErr, addMul));
     }
 }
 
-function buildCode(ctx) {
+function buildCode(ctx, expressions) {
     res = {};
     res.tmpUsed = ctx.tmpUsed;
     res.first = [];
@@ -113,8 +109,8 @@ function buildCode(ctx) {
     }
 
     // Expressions that are not saved, cannot be reused later on
-    for (let i=0; i<ctx.pil.expressions.length; i++) {
-        const e = ctx.pil.expressions[i];
+    for (let i=0; i<expressions.length; i++) {
+        const e = expressions[i];
         if (!e.keep) delete ctx.calculated[i];
     }
     ctx.code = [];

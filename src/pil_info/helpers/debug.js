@@ -1,10 +1,10 @@
-module.exports.expressionError = function expressionError(pil, strErr, e1, e2, warn) {
+module.exports.expressionError = function expressionError(pil, constraints, strErr, e1, e2, warn) {
     let str  = strErr;
     if (typeof e1 !== "undefined")  {
-        str = str + "\n" + getExpressionInfo(pil, e1);
+        str = str + "\n" + getExpressionInfo(pil, constraints, e1);
     }
     if (typeof e2 !== "undefined") {
-        str = str + "\n" + getExpressionInfo(pil, e2);
+        str = str + "\n" + getExpressionInfo(pil, constraints, e2);
     }
 
     if(warn) {
@@ -14,9 +14,9 @@ module.exports.expressionError = function expressionError(pil, strErr, e1, e2, w
     }
 }
 
-function getExpressionInfo(pil, expId) {
-    for (let i=0; i<pil.polIdentities.length; i++) {
-        const pi = pil.polIdentities[i];
+function getExpressionInfo(pil, constraints, expId) {
+    for (let i=0; i < constraints.length; i++) {
+        const pi = constraints[i];
         if (pi.e == expId) {
             return `${pi.fileName}:${pi.line}`;
         }

@@ -71,12 +71,7 @@ describe("generating files for arguments", async function () {
 
         const namePil = outputFilename.split("_").map(n => n.charAt(0).toUpperCase() + n.slice(1)).join("");
 
-        let maxPilPolDeg = 0;
-        for (const polRef in pil.references) {
-            maxPilPolDeg = Math.max(maxPilPolDeg, pil.references[polRef].polDeg);
-        }
-        const N = 2**(log2(maxPilPolDeg - 1) + 1);
-        if(!namePil.includes("Fibonacci")) {
+        const N = Object.values(pil.references)[0].polDeg;       if(!namePil.includes("Fibonacci")) {
             await smGlobal.buildConstants(N, constPols.Global);
             await smModule.execute(N, committedPols[namePil], F);
         } else {

@@ -23,9 +23,7 @@ module.exports = function buildCHelpers(fflonkInfo, config = {}) {
 
     const codePublics = [];
     for (let i = 0; i < fflonkInfo.nPublics; i++) {
-        if (fflonkInfo.publicsCode[i]) {
-            codePublics.push(compileCode(i, fflonkInfo.publicsCode[i], "n", true));
-        }
+        codePublics.push(compileCode(i, fflonkInfo.publicsCode[i], "n", true));
     }
 
     code.push(

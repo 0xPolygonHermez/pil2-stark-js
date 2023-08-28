@@ -1,7 +1,7 @@
 
 const { getExpDim } = require("./helpers/helpers.js");
 
-module.exports = function map(res, pil, stark) {  
+module.exports = function map(res, symbols, expressions, stark) {  
     res.cmPolsMap = [];
     res.constPolsMap = [];
 
@@ -9,13 +9,13 @@ module.exports = function map(res, pil, stark) {
 
     res.mapSectionsN["tmpExp"] = 0;
     
-    mapCmAndConstPols(res, pil);
+    mapCmAndConstPols(res, symbols);
 
-    mapLibPols(res, pil, stark);
+    mapLibPols(res, expressions, stark);
 
-    mapImPols(res, pil, stark);
+    mapImPols(res, expressions, stark);
 
-    res.qDim = getExpDim(res, pil, res.cExp, stark);
+    res.qDim = getExpDim(res, expressions, res.cExp, stark);
 
     res.mapSectionsN["q_ext"] = res.qDim;
 	
@@ -30,28 +30,18 @@ module.exports = function map(res, pil, stark) {
     }
 }
 
-function mapCmAndConstPols(res, pil) {
+function mapCmAndConstPols(res, symbols) {
     res.mapSectionsN["const"] = 0;
     res.mapSectionsN["cm1"] = 0;
-    for (const polRef in pil.references) {
-        const polInfo = pil.references[polRef];
-        if(polInfo.type === "imP") continue;
-        const stage = polInfo.type === 'constP' ? "const" : "cm1";
-        let name = polRef;
-        if(polInfo.isArray) {
-            for(let i = 0; i < polInfo.len; ++i) {
-                const namePol = name + i;
-                const polId = polInfo.id + i;
-                addPol(res, stage, namePol, 1, polId); 
-            }
-        } else {
-            addPol(res, stage, name, 1, polInfo.id);
-        }
+    for(let i = 0; i < symbols.length; ++i) {
+        if(!["witness", "fixed"].includes(symbols[i].type)) continue;
+        const stage = symbols[i].type === "witness" ? "cm1" : "const";
+        addPol(res, stage, symbols[i].name, 1, symbols[i].polId);
     }
 }
 
-function mapLibPols(res, pil, stark) {
-    let nCommits = pil.nCommitments;
+function mapLibPols(res, expressions, stark) {
+    let nCommits = res.nCommitments;
     for(let i = 0; i < Object.keys(res.libs).length; ++i) {
         const libName = Object.keys(res.libs)[i];
         const lib = res.libs[libName];
@@ -78,7 +68,7 @@ function mapLibPols(res, pil, stark) {
                         if(libStage.hints[l].outputs.includes(name)) {
                             for(let m = 0; m < libStage.hints[l].inputs.length; ++m) {
                                 let inputPol = libStage.hints[l].inputs[m];
-                                dim = Math.max(dim, getExpDim(res, pil, libStage.pols[inputPol].id, stark));
+                                dim = Math.max(dim, getExpDim(res, expressions, libStage.pols[inputPol].id, stark));
                             }
                         }
                     }
@@ -92,12 +82,12 @@ function mapLibPols(res, pil, stark) {
     }
 }
 
-function mapImPols(res, pil, stark) {
+function mapImPols(res, expressions, stark) {
     for (let i=0; i<Object.keys(res.imPolsMap).length; i++) {
         let id = Object.keys(res.imPolsMap)[i];
         let pol = res.imPolsMap[id];
         const section = pol.imPol ? "cm" + (res.nLibStages + 1) : "tmpExp";
-        const dim = getExpDim(res, pil, id, stark);
+        const dim = getExpDim(res, expressions, id, stark);
 
         if(!res.mapSectionsN[section]) res.mapSectionsN[section] = 0;
 

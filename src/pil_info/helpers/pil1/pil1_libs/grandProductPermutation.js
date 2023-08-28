@@ -1,4 +1,4 @@
-const ExpressionOps = require("../../expressionops");
+const ExpressionOps = require("../../../expressionops");
 
 module.exports.grandProductPermutation = function grandProductPermutation(res, pil, stark) {
     const E = new ExpressionOps();

@@ -1,7 +1,7 @@
 const {pilCodeGen, buildCode} = require("../../codegen.js");
 const { iterateCode } = require("../helpers.js");
 
-module.exports  = function generateConstraintPolynomialVerifier(res, ctx, stark) {
+module.exports  = function generateConstraintPolynomialVerifier(res, expressions, constraints, ctx, stark) {
     // Reinstantiate the context
     ctx.calculated = {};
        
@@ -15,9 +15,9 @@ module.exports  = function generateConstraintPolynomialVerifier(res, ctx, stark)
     }
 
     let addMul = stark && res.starkStruct.verificationHashType == "GL" ? false : true;
-    pilCodeGen(ctx, res.cExp, 0, addMul);
+    pilCodeGen(ctx, expressions, constraints, res.cExp, 0, addMul);
 
-    res.code.qVerifier = buildCode(ctx);
+    res.code.qVerifier = buildCode(ctx, expressions);
 
     res.evMap = [];
 

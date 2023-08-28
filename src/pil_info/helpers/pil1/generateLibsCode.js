@@ -1,5 +1,5 @@
-const { buildCode, pilCodeGen } = require("../codegen");
-const ExpressionOps = require("../expressionops");
+const { buildCode, pilCodeGen } = require("../../codegen");
+const ExpressionOps = require("../../expressionops");
 const { grandProductConnection } = require("./pil1_libs/grandProductConnection.js");
 const { grandProductPermutation } = require("./pil1_libs/grandProductPermutation.js");
 const { grandProductPlookup } = require("./pil1_libs/grandProductPlookup.js");
@@ -36,15 +36,18 @@ module.exports = function generateLibsCode(F, res, pil, ctx, stark) {
     
     for(let i = 0; i < res.nLibStages; ++i) {
         const stage = 2 + i;
+        let nChallengesStage = 0;
         for(let j = 0; j < pilLibs.length; ++j) {
             const lib = pilLibs[j];
-            if(lib.nChallenges <= res.nLibStages) continue;
-            if(!res.challenges[stage]) res.challenges[stage] = [];
-            const nChallenges = res.challenges[stage].length;
-            for(let k = nChallenges; k < lib.nChallenges[i]; ++k) {
-                res.challenges[stage].push(res.nChallenges++);
-                E.challenge(`stage${i+1}_challenge${k}`);
-            }    
+            const nStagesLib = lib.nChallenges.length;
+            if(i >= nStagesLib) continue;
+            const nChallengesLib = lib.nChallenges[i];
+            for(let k = nChallengesStage; k < nChallengesLib; ++k) {
+                const c = E.challenge(`stage${i+1}_challenge${k}`);
+                res.challengesMap.push({stage: stage, stageId: k, globalId: c.id});
+            }
+            nChallengesStage = nChallengesLib;
+    
         }
     }
 
@@ -61,12 +64,12 @@ module.exports = function generateLibsCode(F, res, pil, ctx, stark) {
                 for(let k = 0; k < Object.keys(polsStage).length; ++k) {
                     let name = Object.keys(polsStage)[k];
                     if(polsStage[name].tmp) {
-                        pilCodeGen(ctx, polsStage[name].id, 0);
+                        pilCodeGen(ctx, pil.expressions, pil.polIdentities, polsStage[name].id, 0);
                     }                    
                 }
             }
         }
         const stage = 2 + i;
-        res.code[`stage${stage}`] = buildCode(ctx);
+        res.code[`stage${stage}`] = buildCode(ctx, pil.expressions);
     }
 }

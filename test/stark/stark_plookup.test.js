@@ -68,7 +68,7 @@ describe("test stark plookup sm", async function () {
 
         assert(resV==true);
 
-        const verifier = await pil2circom(pil, setup.constRoot, setup.starkInfo, {});
+        const verifier = await pil2circom(setup.constRoot, setup.starkInfo, {});
 
         const fileName = await tmp.tmpName();
         await fs.promises.writeFile(fileName, verifier, "utf8");

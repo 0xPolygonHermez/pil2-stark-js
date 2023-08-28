@@ -9,17 +9,12 @@ const minNperThread = 1<<12;
 module.exports.calculatePublics = async function calculatePublics(ctx) {
     // Calculate publics
     ctx.publics = [];
-    for (let i=0; i<ctx.pilInfo.publics.length; i++) {
-        const publicPol = ctx.pilInfo.publics[i];
-
-        if ("cmP" === publicPol.polType) {
-            const offset = (ctx.pilInfo.publics[i].idx * ctx.pilInfo.mapSectionsN.cm1 + ctx.pilInfo.publics[i].polId);
-            ctx.publics[i] = ctx.cm1_n[offset];
-        } else if ("imP" === publicPol.polType) {
-            ctx.publics[i] = module.exports.calculateExpAtPoint(ctx, ctx.pilInfo.publicsCode[i], publicPol.idx);
-        } else {
-            throw new Error(`Invalid public type: ${polType.type}`);
-        }
+    for (let i=0; i<ctx.pilInfo.nPublics; i++) {
+        ctx.publics[i] = module.exports.calculateExpAtPoint(
+            ctx, 
+            ctx.pilInfo.publicsCode[i], 
+            ctx.pilInfo.publicsCode[i].idx
+        );
     }
 }
 
