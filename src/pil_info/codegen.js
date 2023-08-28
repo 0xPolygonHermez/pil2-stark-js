@@ -118,29 +118,30 @@ function buildCode(ctx, expressions) {
 }
 
 function findAddMul(exp) {
-    if (!exp.values) return exp;
-    if ((exp.op == "add") && (exp.values[0].op == "mul")) {
+    const values = exp.values;
+    if (!values) return exp;
+    if ((exp.op == "add") && (values[0].op == "mul")) {
         return {
             op: "muladd",
             values: [
-                findAddMul(exp.values[0].values[0]),
-                findAddMul(exp.values[0].values[1]),
-                findAddMul(exp.values[1]),
+                findAddMul(values[0].values[0]),
+                findAddMul(values[0].values[1]),
+                findAddMul(values[1]),
             ]
         }
-    } else if ((exp.op == "add") && (exp.values[1].op == "mul")) {
+    } else if ((exp.op == "add") && (values[1].op == "mul")) {
         return {
             op: "muladd",
             values: [
-                findAddMul(exp.values[1].values[0]),
-                findAddMul(exp.values[1].values[1]),
-                findAddMul(exp.values[0]),
+                findAddMul(values[1].values[0]),
+                findAddMul(values[1].values[1]),
+                findAddMul(values[0]),
             ]
         }
     } else {
         const r = Object.assign({}, exp);
         for (let i=0; i < r.values.length; i++) {
-            r.values[i] = findAddMul(exp.values[i]);
+            r.values[i] = findAddMul(values[i]);
         }
         return r;
     }

@@ -10,19 +10,24 @@ const map = require("./map.js");
 const { fixCode, setDimensions } = require("./helpers/helpers.js");
 const { generatePil1Code } = require("./helpers/pil1/generatePil1Code");
 
-module.exports = function pilInfo(F, _pil, stark = true, starkStruct) {
-    const pil = JSON.parse(JSON.stringify(_pil));    // Make a copy as we are going to destroy the original
-
+module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct) {
     const res = {
         cmPolsMap: [],
         challengesMap: [],
         libs: {},
         code: {},
-        nConstants: pil.nConstants,
-        nPublics: pil.publics.length,
         nLibStages: 0,
         starkStruct: starkStruct,
     };
+
+    let expressions, symbols, constraints;
+
+    if(pil1) {
+        const pil1Info = generatePil1Code(F, res, pil, stark);
+        expressions = pil1Info.expressions;
+        symbols = pil1Info.symbols;
+        constraints = pil1Info.constraints;
+    }
 
     const ctx = {
         calculated: {},
@@ -35,9 +40,7 @@ module.exports = function pilInfo(F, _pil, stark = true, starkStruct) {
         tmpUsed: 0,
         code: []
     };
-    
-    const {expressions, symbols, constraints } = generatePil1Code(F, res, pil, ctx, stark);
-    
+
     generateConstraintPolynomial(res, expressions, constraints, ctx, ctx_ext, stark);
     
     map(res, symbols, expressions, stark);

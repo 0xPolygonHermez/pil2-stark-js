@@ -9,8 +9,8 @@ module.exports = function generateFRIPolynomial(res, expressions, constraints, c
     const vf1 = E.challenge("vf1");
     const vf2 = E.challenge("vf2");
     
-    res.challengesMap.push({stage: "fri", stageId: 0, globalId: vf1.id });
-    res.challengesMap.push({stage: "fri", stageId: 1, globalId: vf2.id });
+    res.challengesMap.push({stage: "fri", stageId: 0, name: "vf1", globalId: vf1.id });
+    res.challengesMap.push({stage: "fri", stageId: 1, name: "vf2", globalId: vf2.id });
 
 
     let friExp = null;

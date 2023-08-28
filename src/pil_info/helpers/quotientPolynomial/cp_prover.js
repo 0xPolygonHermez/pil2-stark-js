@@ -6,11 +6,11 @@ module.exports = function generateConstraintPolynomial(res, expressions, constra
     const E = new ExpressionOps();
 
     const vc = E.challenge("vc");
-    res.challengesMap.push({stage: "Q", stageId: 0, globalId: vc.id});
+    res.challengesMap.push({stage: "Q", stageId: 0, name: "vc", globalId: vc.id});
 
     if(stark) {
         const xi = E.challenge("xi");
-        res.challengesMap.push({stage: "evals", stageId: 0, globalId: xi.id});
+        res.challengesMap.push({stage: "evals", stageId: 0, name: "xi", globalId: xi.id});
     }
 
     res.boundaries = ["everyRow"];
@@ -133,8 +133,10 @@ function calculateImPols(expressions, _exp, maxDeg) {
         if (imPols === false) {
             return [false, -1];
         }
-        if (["add", "sub", "neg"].indexOf(exp.op) >=0 ) {
-            let md =0;
+        if (exp.op === "neg") {
+            return _calculateImPols(expressions, exp.values[0], imPols, maxDeg);
+        } else if (["add", "sub"].indexOf(exp.op) >=0 ) {
+            let md = 0;
             for (let i=0; i<exp.values.length; i++) {
                 [imPols , d] = _calculateImPols(expressions, exp.values[i], imPols, maxDeg);
                 if (d>md) md = d;
@@ -143,9 +145,7 @@ function calculateImPols(expressions, _exp, maxDeg) {
         } else if (["number", "public", "challenge"].indexOf(exp.op) >=0 || (exp.op === "Zi" && exp.boundary === "everyRow")) {
             return [imPols, 0];
         } else if (["x", "const", "cm"].indexOf(exp.op) >= 0 || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
-            if (maxDeg < 1) {
-                return [false, -1];
-            }
+            if (maxDeg < 1) return [false, -1];
             return [imPols, 1];
         } else if (exp.op == "mul") {
             let eb = false;
@@ -216,10 +216,14 @@ function calculateDegreeExpressions(expressions, exp) {
         exp.expDeg = 0;
     } else if(exp.op == "neg") {
         exp.expDeg = calculateDegreeExpressions(expressions, exp.values[0]);
-    } else if(["add", "sub"].includes(exp.op)) {
-        exp.expDeg = Math.max(calculateDegreeExpressions(expressions, exp.values[0]), calculateDegreeExpressions(expressions, exp.values[1]));
-    } else if (exp.op == "mul") {
-        exp.expDeg = calculateDegreeExpressions(expressions, exp.values[0]) + calculateDegreeExpressions(expressions, exp.values[1]);
+    } else if(["add", "sub", "mul"].includes(exp.op)) {
+        const lhsDeg = calculateDegreeExpressions(expressions, exp.values[0]);
+        const rhsDeg = calculateDegreeExpressions(expressions, exp.values[1]);
+        if(exp.op === "mul") {
+            exp.expDeg = lhsDeg + rhsDeg;
+        } else {
+            exp.expDeg = Math.max(lhsDeg, rhsDeg);
+        }
     } else {
         throw new Error("Exp op not defined: "+ exp.op);
     }

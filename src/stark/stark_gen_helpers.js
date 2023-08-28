@@ -1,5 +1,5 @@
 
-const buildMerklehashGL = require("../helpers/hash/merklehash/merklehash_p.js");
+const buildMerkleHashGL = require("../helpers/hash/merklehash/merklehash_p.js");
 const buildMerkleHashBN128 = require("../helpers/hash/merklehash/merklehash_bn128_p.js");
 const Transcript = require("../helpers/transcript/transcript");
 const TranscriptBN128 = require("../helpers/transcript/transcript.bn128");
@@ -62,7 +62,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
 
     if (ctx.pilInfo.starkStruct.verificationHashType == "GL") {
         const poseidon = await buildPoseidonGL();
-        ctx.MH = await buildMerklehashGL(ctx.pilInfo.starkStruct.splitLinearHash);
+        ctx.MH = await buildMerkleHashGL(ctx.pilInfo.starkStruct.splitLinearHash);
         ctx.transcript = new Transcript(poseidon);
     } else if (ctx.pilInfo.starkStruct.verificationHashType == "BN128") {
         const poseidonBN128 = await buildPoseidonBN128();

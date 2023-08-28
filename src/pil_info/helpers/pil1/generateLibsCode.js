@@ -44,7 +44,7 @@ module.exports = function generateLibsCode(F, res, pil, ctx, stark) {
             const nChallengesLib = lib.nChallenges[i];
             for(let k = nChallengesStage; k < nChallengesLib; ++k) {
                 const c = E.challenge(`stage${i+1}_challenge${k}`);
-                res.challengesMap.push({stage: stage, stageId: k, globalId: c.id});
+                res.challengesMap.push({stage: stage, name: `challenge${k}`, stageId: k, globalId: c.id});
             }
             nChallengesStage = nChallengesLib;
     

@@ -2,7 +2,18 @@ const { log2 } = require("pilcom/src/utils");
 const generateLibsCode = require("./generateLibsCode");
 const generatePublicsCode = require("./generatePublicsCode");
 
-module.exports.generatePil1Code = function generatePil1Code(F, res, pil, ctx, stark) {
+module.exports.generatePil1Code = function generatePil1Code(F, res, _pil, stark) {
+    const pil = JSON.parse(JSON.stringify(_pil));    // Make a copy as we are going to destroy the original
+
+    res.nPublics = pil.publics.length;
+    res.nConstants = pil.nConstants;
+
+    const ctx = {
+        calculated: {},
+        tmpUsed: 0,
+        code: []
+    };
+
     generatePublicsCode(res, pil, ctx);
 
     generateLibsCode(F, res, pil, ctx, stark);

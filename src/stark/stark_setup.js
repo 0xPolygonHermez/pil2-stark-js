@@ -1,6 +1,7 @@
 
 const {BigBuffer} = require("pilcom");
-const buildMerklehashGL = require("../helpers/hash/merklehash/merklehash_p.js");
+const buildMerkleHashGL = require("../helpers/hash/merklehash/merklehash_p.js");
+const buildMerkleHashBN128 = require("../helpers/hash/merklehash/merklehash_bn128_p.js");
 const pilInfo = require("../pil_info/pil_info.js");
 
 const { interpolate } = require("../helpers/fft/fft_p");
@@ -20,7 +21,7 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
     let custom = options.custom || false;    
     let MH;
     if (starkStruct.verificationHashType == "GL") {
-        MH = await buildMerklehashGL();
+        MH = await buildMerkleHashGL();
     } else if (starkStruct.verificationHashType == "BN128") {
         MH = await buildMerkleHashBN128(arity, custom);
     } else {
@@ -32,6 +33,6 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
     return {
         constTree: constTree,
         constRoot: MH.root(constTree),
-        starkInfo: pilInfo(F, pil, true, starkStruct)
+        starkInfo: pilInfo(F, pil, true, true, starkStruct)
     }
 }

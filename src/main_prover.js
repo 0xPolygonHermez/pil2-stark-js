@@ -5,7 +5,7 @@ const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
 const proofGen = require("./prover/prover.js");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true, storeAsString: true });
 const { proof2zkin } = require("./proof2zkin");
-const buildMerklehashGL = require("./helpers/hash/merklehash/merklehash_p.js");
+const buildMerkleHashGL = require("./helpers/hash/merklehash/merklehash_p.js");
 const buildMerkleHashBN128 = require("./helpers/hash/merklehash/merklehash_bn128_p.js");
 
 const Logger = require('logplease');
@@ -60,7 +60,7 @@ async function run() {
     let options = {logger};
     let MH;
     if (starkInfo.starkStruct.verificationHashType == "GL") {
-        MH = await buildMerklehashGL();
+        MH = await buildMerkleHashGL();
     } else if (starkInfo.starkStruct.verificationHashType == "BN128") {
         let arity = Number(argv.arity) || 16;
         let custom = argv.custom || false;

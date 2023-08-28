@@ -80,6 +80,10 @@ class ExpressionOps {
         };
     }
 
+    getChallenges() {
+        return challenges;
+    }
+
     number(n) {
         return {
             op: "number",

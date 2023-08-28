@@ -8,9 +8,11 @@ module.exports.getExpDim = function getExpDim(res, expressions, expId, stark) {
             case "add":
             case "sub":
             case "mul":
-            case "muladd":
+                return Math.max(...[_getExpDim(exp.values[0]), _getExpDim(exp.values[1])]);
             case "neg":
-                return Math.max(...exp.values.map(v => _getExpDim(v)));
+                return _getExpDim(exp.values[0]);
+            case "muladd":
+                return Math.max(...[_getExpDim(exp.values[0]), _getExpDim(exp.values[1]), _getExpDim(exp.values[2])]);
             case "cm": return res.cmPolsMap[exp.id].dim;
             case "exp":
                 exp.dim = _getExpDim(expressions[exp.id]);
