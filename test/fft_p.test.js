@@ -85,9 +85,9 @@ describe("test fft", async function () {
         let extBits =1;
 
         const n = 1 << nBits;
-        const nExt = 1 << (nBits + extBits);
+        const extN = 1 << (nBits + extBits);
         const buff = new BigBuffer(n*nPols);
-        const buffOut = new BigBuffer(nExt*nPols);
+        const buffOut = new BigBuffer(extN*nPols);
 
 
         console.log("Initializing...");
@@ -111,7 +111,7 @@ describe("test fft", async function () {
 
         console.log("check...");
         for (let i=0; i<nPols; i++) {
-            for (let j=0; j<nExt; j++) {
+            for (let j=0; j<extN; j++) {
                 assert(F.eq(polsV[i][j], buffOut.getElement(j*nPols + i)));
             }
         }
@@ -196,9 +196,9 @@ describe("test fft", async function () {
         let extBits =1;
 
         const n = 1 << nBits;
-        const nExt = 1 << (nBits + extBits);
+        const extN = 1 << (nBits + extBits);
         const buff = new BigBuffer(n*nPols);
-        const buffOut = new BigBuffer(nExt*nPols);
+        const buffOut = new BigBuffer(extN*nPols);
 
 
         console.log("Initializing...");
@@ -222,7 +222,7 @@ describe("test fft", async function () {
 
         console.log("check...");
         for (let i=0; i<nPols; i++) {
-            for (let j=0; j<nExt; j++) {
+            for (let j=0; j<extN; j++) {
                 assert(F.eq(polsV[i][j], buffOut.getElement(j*nPols + i)));
             }
         }

@@ -118,7 +118,7 @@ function addPol(res, stage, name, dim, pos) {
 
 function setMapOffsets(res) {
     const N = 1 << res.starkStruct.nBits;
-    const Next = 1 << res.starkStruct.nBitsExt;
+    const extN = 1 << res.starkStruct.nBitsExt;
 
     res.mapOffsets = {};
     res.mapOffsets.cm1_n = 0;
@@ -131,10 +131,10 @@ function setMapOffsets(res) {
     res.mapOffsets.cm1_ext = res.mapOffsets.tmpExp_n +  N * res.mapSectionsN.tmpExp;
     for(let i = 0; i < res.nLibStages; ++i) {
         const stage = 2 + i;
-        res.mapOffsets["cm" + stage + "_ext"] = res.mapOffsets["cm" + (stage - 1) + "_ext"] + Next * res.mapSectionsN["cm" +  (stage - 1) ];
+        res.mapOffsets["cm" + stage + "_ext"] = res.mapOffsets["cm" + (stage - 1) + "_ext"] + extN * res.mapSectionsN["cm" +  (stage - 1) ];
     }
-    res.mapOffsets.cmQ_ext = res.mapOffsets["cm" + (res.nLibStages + 1) + "_ext"] +  Next * res.mapSectionsN["cm" + (res.nLibStages + 1)];
-    res.mapOffsets.q_ext = res.mapOffsets.cmQ_ext +  Next * res.mapSectionsN.cmQ;
-    res.mapOffsets.f_ext = res.mapOffsets.q_ext +  Next * res.mapSectionsN.q_ext;
-    res.mapTotalN = res.mapOffsets.f_ext +  Next * res.mapSectionsN.f_ext;
+    res.mapOffsets.cmQ_ext = res.mapOffsets["cm" + (res.nLibStages + 1) + "_ext"] +  extN * res.mapSectionsN["cm" + (res.nLibStages + 1)];
+    res.mapOffsets.q_ext = res.mapOffsets.cmQ_ext +  extN * res.mapSectionsN.cmQ;
+    res.mapOffsets.f_ext = res.mapOffsets.q_ext +  extN * res.mapSectionsN.q_ext;
+    res.mapTotalN = res.mapOffsets.f_ext +  extN * res.mapSectionsN.f_ext;
 }

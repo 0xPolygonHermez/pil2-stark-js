@@ -38,7 +38,7 @@ module.exports.extendPolBuffer = async function extendPolBuffer(Fr, buffSrc, buf
 
 module.exports.buildZhInv = function buildZhInv(buffTo, F, nBits, nBitsExt, stark) {
     const extendBits = nBitsExt - nBits;
-    const Next = (1<<nBitsExt);
+    const extN = (1<<nBitsExt);
     const extend = (1<<extendBits);
     let w = F.one;
     let sn= F.shift; 
@@ -49,7 +49,7 @@ module.exports.buildZhInv = function buildZhInv(buffTo, F, nBits, nBitsExt, star
         buffTo[i] = F.inv(zh);
         w = F.mul(w, F.w[extendBits]);
     }
-    for (let i=extend; i<Next; i++) {
+    for (let i=extend; i<extN; i++) {
         buffTo[i] = buffTo[i % extend];
     }
 }

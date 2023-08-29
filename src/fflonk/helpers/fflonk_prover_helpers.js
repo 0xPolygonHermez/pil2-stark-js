@@ -34,7 +34,7 @@ module.exports.initProverFflonk = async function initProver(pilInfo, zkey, logge
 
     ctx.N = 1 << ctx.nBits;
     ctx.NCoefs = 1 << ctx.nBitsCoefs;
-    ctx.Next = (1 << ctx.nBitsExt);
+    ctx.extN = (1 << ctx.nBitsExt);
 
     ctx.challenges = [];
 
@@ -51,7 +51,7 @@ module.exports.initProverFflonk = async function initProver(pilInfo, zkey, logge
         logger.debug(`  Curve:         ${ctx.curve.name}`);
         logger.debug(`  Domain size:   ${ctx.N} (2^${ctx.zkey.power})`);
         logger.debug(`  Domaize size coefs: ${ctx.NCoefs} (2^${ctx.nBitsCoefs})`);
-        logger.debug(`  Domain size ext: ${ctx.Next} (2^${ctx.nBitsExt})`);
+        logger.debug(`  Domain size ext: ${ctx.extN} (2^${ctx.nBitsExt})`);
         logger.debug(`  ExtendBits: ${ctx.extendBits}`);
         logger.debug(`  Const  pols:   ${ctx.pilInfo.nConstants}`);
         logger.debug(`  Stage 1 pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1").length}`);
@@ -83,14 +83,14 @@ module.exports.initProverFflonk = async function initProver(pilInfo, zkey, logge
     }  
 
     // Reserve big buffers for the polynomial evaluations in the extended
-    ctx.const_ext = new Proxy(new BigBuffer(ctx.pilInfo.nConstants * ctx.Next * ctx.F.n8), BigBufferHandler);
-    ctx.cm1_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.Next * ctx.F.n8), BigBufferHandler);
+    ctx.const_ext = new Proxy(new BigBuffer(ctx.pilInfo.nConstants * ctx.extN * ctx.F.n8), BigBufferHandler);
+    ctx.cm1_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.extN * ctx.F.n8), BigBufferHandler);
     for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
         const stage = i + 2;
-        ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.Next * ctx.F.n8), BigBufferHandler);
+        ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.extN * ctx.F.n8), BigBufferHandler);
     }
-    ctx.q_ext = new Proxy(new BigBuffer(ctx.Next * ctx.F.n8), BigBufferHandler);
-    ctx.x_ext = new Proxy(new BigBuffer(ctx.Next * ctx.F.n8), BigBufferHandler); // Omegas a l'extès
+    ctx.q_ext = new Proxy(new BigBuffer(ctx.extN * ctx.F.n8), BigBufferHandler);
+    ctx.x_ext = new Proxy(new BigBuffer(ctx.extN * ctx.F.n8), BigBufferHandler); // Omegas a l'extès
 
     
     // Read const coefs and extended evals

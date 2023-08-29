@@ -35,14 +35,14 @@ async function run() {
 
     const nBits = starkStruct.nBits;
     const nBitsExt = starkStruct.nBitsExt;
-    const nExt = 1 << nBitsExt;
+    const extN = 1 << nBitsExt;
 
     const constPols = newConstantPolsArray(pil, F);
     await constPols.loadFromFile(constFile);
 
     const constBuff  = constPols.writeToBuff();
 
-    const constPolsArrayE = new BigBuffer(nExt*pil.nConstants);
+    const constPolsArrayE = new BigBuffer(extN*pil.nConstants);
 
     await interpolate(constBuff, pil.nConstants, nBits, constPolsArrayE, nBitsExt );
 
@@ -60,7 +60,7 @@ async function run() {
 
 
     console.log("Start merkelizing..");
-    const constTree = await MH.merkelize(constPolsArrayE, pil.nConstants, nExt);
+    const constTree = await MH.merkelize(constPolsArrayE, pil.nConstants, extN);
 
     const constRoot = MH.root(constTree);
 

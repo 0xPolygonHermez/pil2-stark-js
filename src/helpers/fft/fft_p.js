@@ -186,8 +186,8 @@ async function ifft(buffSrc, nPols, nBits, buffDst) {
 
 async function interpolate(buffSrc, nPols, nBits, buffDst, nBitsExt) {
     const n = 1 << nBits;
-    const nExt = 1 << nBitsExt;
-    const tmpBuff = new BigBuffer(nExt*nPols);
+    const extN = 1 << nBitsExt;
+    const tmpBuff = new BigBuffer(extN*nPols);
     const outBuff = buffDst;
 
     let bIn, bOut;
@@ -211,12 +211,12 @@ async function interpolate(buffSrc, nPols, nBits, buffDst, nBitsExt) {
 
     nTrasposes += 1 // The middle convertion
 
-    let blockBitsExt = log2(nExt*nPols/idealNBlocks);
+    let blockBitsExt = log2(extN*nPols/idealNBlocks);
     if (blockBitsExt < minBlockBits) blockBitsExt = minBlockBits;
     if (blockBitsExt > maxBlockBits) blockBitsExt = maxBlockBits;
     blockBitsExt = Math.min(nBitsExt, blockBitsExt);
     const blockSizeExt = 1 << blockBitsExt;
-    const nBlocksExt = nExt / blockSizeExt;
+    const nBlocksExt = extN / blockSizeExt;
 
     if (blockBitsExt < nBitsExt) {
         nTrasposes += Math.floor((nBitsExt-1) / blockBitsExt)+1;

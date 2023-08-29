@@ -36,7 +36,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.extendBits = ctx.nBitsExt - ctx.nBits;
 
     ctx.N = 1 << ctx.pilInfo.starkStruct.nBits;
-    ctx.Next = 1 << ctx.pilInfo.starkStruct.nBitsExt;
+    ctx.extN = 1 << ctx.pilInfo.starkStruct.nBitsExt;
     ctx.tmp = [];
     ctx.challenges = [];
 
@@ -48,7 +48,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         logger.debug(`  Number Stark steps: ${ctx.pilInfo.starkStruct.steps.length}`);
         logger.debug(`  VerificationType: ${ctx.pilInfo.starkStruct.verificationHashType}`);
         logger.debug(`  Domain size: ${ctx.N} (2^${ctx.nBits})`);
-        logger.debug(`  Domain size ext: ${ctx.Next} (2^${ctx.nBitsExt})`);
+        logger.debug(`  Domain size ext: ${ctx.extN} (2^${ctx.nBitsExt})`);
         logger.debug(`  Const  pols:   ${ctx.pilInfo.nConstants}`);
         logger.debug(`  Stage 1 pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1").length}`);
         for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
@@ -89,18 +89,18 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
 
     
     ctx.const_ext = new Proxy(constTree.elements, BigBufferHandlerBigInt);
-    ctx.cm1_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1*ctx.Next), BigBufferHandlerBigInt);
+    ctx.cm1_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1*ctx.extN), BigBufferHandlerBigInt);
     for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
         const stage = i + 2;
-        ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.Next), BigBufferHandlerBigInt);
+        ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.extN), BigBufferHandlerBigInt);
     }
-    ctx.cmQ_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ*ctx.Next), BigBufferHandlerBigInt);
-    ctx.q_ext = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.Next), BigBufferHandlerBigInt);
-    ctx.f_ext = new Proxy(new BigBuffer(3*ctx.Next), BigBufferHandlerBigInt);
-    ctx.x_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt);
-    ctx.Zi_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt);
+    ctx.cmQ_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ*ctx.extN), BigBufferHandlerBigInt);
+    ctx.q_ext = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.extN), BigBufferHandlerBigInt);
+    ctx.f_ext = new Proxy(new BigBuffer(3*ctx.extN), BigBufferHandlerBigInt);
+    ctx.x_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt);
+    ctx.Zi_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt);
 
-    ctx.xDivXSubXi_ext = new Proxy(new BigBuffer(3*ctx.Next*ctx.pilInfo.openingPoints.length), BigBufferHandlerBigInt);
+    ctx.xDivXSubXi_ext = new Proxy(new BigBuffer(3*ctx.extN*ctx.pilInfo.openingPoints.length), BigBufferHandlerBigInt);
 
     // Build x_n
     let xx = ctx.F.one;
@@ -111,7 +111,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
 
     // Build x_ext
     xx = ctx.F.shift;
-    for (let i=0; i<ctx.Next; i++) {
+    for (let i=0; i<ctx.extN; i++) {
         ctx.x_ext[i] = xx;
         xx = ctx.F.mul(xx, ctx.F.w[ctx.nBitsExt]);
     }
@@ -119,18 +119,18 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     // Build ZHInv
     buildZhInv(ctx.Zi_ext, ctx.F, ctx.nBits, ctx.nBitsExt, true);    
     if(ctx.pilInfo.boundaries.includes("firstRow")) {
-        ctx.Zi_fr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt); 
+        ctx.Zi_fr_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
         buildOneRowZerofierInv(ctx.Zi_fr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, 0, true);
     } 
 
     if(ctx.pilInfo.boundaries.includes("lastRow")) {
-        ctx.Zi_lr_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt); 
+        ctx.Zi_lr_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
         buildOneRowZerofierInv(ctx.Zi_lr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1, true);
     }
 
     if(ctx.pilInfo.boundaries.includes("everyFrame")) {
         for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) {
-            ctx[`Zi_frame${i}_ext`] = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt); 
+            ctx[`Zi_frame${i}_ext`] = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
             buildFrameZerofierInv(ctx[`Zi_frame${i}_ext`], ctx.F, ctx.Zi_ext, ctx.nBits, ctx.nBitsExt, ctx.pilInfo.constraintFrames[i], true);
         }   
     }
@@ -144,8 +144,8 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
 module.exports.computeQStark = async function computeQStark(ctx, logger) {
     if (logger) logger.debug("Compute Trace Quotient Polynomials");
 
-    const qq1 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.Next), BigBufferHandlerBigInt);
-    const qq2 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.pilInfo.qDeg*ctx.Next), BigBufferHandlerBigInt);
+    const qq1 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.extN), BigBufferHandlerBigInt);
+    const qq2 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.pilInfo.qDeg*ctx.extN), BigBufferHandlerBigInt);
     await ifft(ctx.q_ext, ctx.pilInfo.qDim, ctx.nBitsExt, qq1);
 
     let curS = 1n;
@@ -166,7 +166,7 @@ module.exports.computeQStark = async function computeQStark(ctx, logger) {
     if (logger) logger.debug("··· Merkelizing Q polynomial tree");
 
     const nPolsQ = ctx.pilInfo.mapSectionsN.cmQ || 0;
-    ctx.trees[ctx.pilInfo.nLibStages + 2] = await ctx.MH.merkelize(ctx.cmQ_ext, nPolsQ, ctx.Next);
+    ctx.trees[ctx.pilInfo.nLibStages + 2] = await ctx.MH.merkelize(ctx.cmQ_ext, nPolsQ, ctx.extN);
 }
 
 module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challenge, logger) {
@@ -202,7 +202,7 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challen
         if (ev.type == "const") {
             p = {
                 buffer: ctx.const_ext,
-                deg: ctx.Next,
+                deg: ctx.extN,
                 offset: ev.id,
                 size: ctx.pilInfo.nConstants,
                 dim: 1
@@ -250,16 +250,16 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
         let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === "evals" && c.stageId === 0);
         let xi = ctx.F.mul(ctx.challenges[xiChallengeId], w);
 
-        let den = new Array(ctx.Next);
+        let den = new Array(ctx.extN);
         let x = ctx.F.shift;
 
-        for (let k=0; k < ctx.Next; k++) {
+        for (let k=0; k < ctx.extN; k++) {
             den[k] = ctx.F.sub(x, xi);
             x = ctx.F.mul(x, ctx.F.w[ctx.nBitsExt])
         }
         den = ctx.F.batchInverse(den);
         x = ctx.F.shift;
-        for (let k=0; k < ctx.Next; k++) {
+        for (let k=0; k < ctx.extN; k++) {
             const v = ctx.F.mul(den[k], x);
             ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + ctx.pilInfo.fri2Id[opening])] = v[0];
             ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + ctx.pilInfo.fri2Id[opening]) + 1] = v[1];
@@ -271,9 +271,9 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
 
     await callCalculateExps("fri", "ext", ctx, options.parallelExec, options.useThreads);
 
-    const friPol = new Array(ctx.Next);
+    const friPol = new Array(ctx.extN);
 
-    for (let i=0; i<ctx.Next; i++) {
+    for (let i=0; i<ctx.extN; i++) {
         friPol[i] = [
             ctx.f_ext[i*3],
             ctx.f_ext[i*3 + 1],
@@ -329,7 +329,7 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
     await interpolate(buffFrom, nPols, ctx.nBits, buffTo, ctx.nBitsExt);
     
     if (logger) logger.debug("··· Merkelizing Stage " + stage);
-    ctx.trees[stage] = await ctx.MH.merkelize(buffTo, nPols, ctx.Next);
+    ctx.trees[stage] = await ctx.MH.merkelize(buffTo, nPols, ctx.extN);
 }
 
 module.exports.setChallengesStark = function setChallengesStark(stage, ctx, challenge, logger) {

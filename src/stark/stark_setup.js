@@ -11,8 +11,8 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
     const F = options.F;
     const nBits = starkStruct.nBits;
     const nBitsExt = starkStruct.nBitsExt;
-    const nExt= 1 << nBitsExt;
-    const constPolsArrayE = new BigBuffer(nExt*pil.nConstants);
+    const extN= 1 << nBitsExt;
+    const constPolsArrayE = new BigBuffer(extN*pil.nConstants);
 
     const constBuff  = constPols.writeToBuff();
     await interpolate(constBuff, pil.nConstants, nBits, constPolsArrayE, nBitsExt );
@@ -28,7 +28,7 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
         throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
     }
 
-    const constTree = await MH.merkelize(constPolsArrayE, pil.nConstants, nExt);
+    const constTree = await MH.merkelize(constPolsArrayE, pil.nConstants, extN);
 
     return {
         constTree: constTree,

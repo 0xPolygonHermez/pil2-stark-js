@@ -31,7 +31,7 @@ module.exports.calculateExps = function calculateExps(ctx, code, dom) {
 
     cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.code, dom));
 
-    const N = dom=="n" ? ctx.N : ctx.Next;
+    const N = dom=="n" ? ctx.N : ctx.extN;
 
     for (let i=0; i<N; i++) {
         cEveryRow(ctx, i);
@@ -50,7 +50,7 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
     const body = [];
 
     const next = dom === "n" ? 1 : (1 << ctx.extendBits);
-    const N = dom === "n" ? ctx.N : ctx.Next;
+    const N = dom === "n" ? ctx.N : ctx.extN;
 
     for (let j=0;j<code.length; j++) {
         const src = [];
@@ -78,7 +78,7 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
         switch (r.type) {
             case "tmp": return `ctx.tmp[${r.id}]`;
             case "const": {
-                const index = r.prime ? `((i + ${next})%${N})` : "i"
+                const index = r.prime ? `((i + ${next + r.prime - 1})%${N})` : "i"
                 if (dom === "n") {
                     return `ctx.const_n[${r.id} + ${index} * ${ctx.pilInfo.nConstants}]`;
                 } else if (dom === "ext") {
@@ -177,7 +177,7 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
     function evalMap(polId, prime, extended, val) {
         let p = ctx.pilInfo.cmPolsMap[polId];
         offset = p.stagePos;
-        let index = prime ? `((i + ${next})%${N})` : "i";
+        let index = prime ? `((i + ${next + prime - 1})%${N})` : "i";
         let size = ctx.pilInfo.mapSectionsN[p.stage];
         let stage = extended ? p.stage + "_ext" : p.stage + "_n";
         let pos = `${offset} + ${index} * ${size}`;
@@ -239,7 +239,7 @@ module.exports.setPol = function setPol(ctx, idPol, pol, dom) {
 
 module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
     if(!["n", "ext"].includes(dom)) throw new Error("invalid stage");
-    const deg = dom === "ext" ? ctx.Next : ctx.N;
+    const deg = dom === "ext" ? ctx.extN : ctx.N;
     let p = ctx.pilInfo.cmPolsMap[idPol];
     let stage = p.stage + "_" + dom;
     let polRef = {
@@ -366,7 +366,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
 
     const cEveryRow = module.exports.compileCode(ctx, code.code, dom, false);
 
-    const n = dom === "n" ? ctx.N : ctx.Next;
+    const n = dom === "n" ? ctx.N : ctx.extN;
     const next = dom === "n" ? 1 : (1 << ctx.extendBits);
 
     let nPerThread = Math.floor((n - 1) / pool.maxWorkers) + 1;
