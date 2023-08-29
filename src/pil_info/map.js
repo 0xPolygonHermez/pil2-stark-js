@@ -87,8 +87,7 @@ function mapImPols(res, expressions, stark) {
     for (let i=0; i<Object.keys(res.imPolsMap).length; i++) {
         let id = Object.keys(res.imPolsMap)[i];
         let pol = res.imPolsMap[id];
-        const stage = pol.stageImPol ? pol.stageImPol : 1;
-        const section = pol.imPol ? "cm" + stage : "tmpExp";
+        const section = pol.imPol ? "cm" + pol.stageImPol  : "tmpExp";
         const dim = getExpDim(res, expressions, id, stark);
 
         if(!res.mapSectionsN[section]) res.mapSectionsN[section] = 0;

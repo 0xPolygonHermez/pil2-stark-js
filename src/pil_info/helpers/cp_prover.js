@@ -67,8 +67,9 @@ module.exports = function generateConstraintPolynomial(res, expressions, constra
     let imExpsList = Object.keys(imExps).map(Number);
     res.imPolsMap = {};
     for (let i=0; i<imExpsList.length; i++) {
-        res.imPolsMap[imExpsList[i]] = {id: res.nCommitments++, imPol: true};
-        E.cm(res.nCommitments-1, false, res.nLibStages + 1);
+        const stage = expressions[imExpsList[i]].stage;
+        res.imPolsMap[imExpsList[i]] = {id: res.nCommitments++, imPol: true, stageImPol: stage};
+        E.cm(res.nCommitments-1, false, stage);
         let e = {
             op: "sub",
             values: [
