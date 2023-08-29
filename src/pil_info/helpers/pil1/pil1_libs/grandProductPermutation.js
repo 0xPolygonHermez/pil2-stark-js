@@ -3,9 +3,9 @@ const ExpressionOps = require("../../../expressionops");
 module.exports.grandProductPermutation = function grandProductPermutation(res, pil, stark) {
     const E = new ExpressionOps();
 
-    const gamma = E.challenge("stage1_challenge0");
-    const delta = E.challenge("stage1_challenge1");
-    const epsilon = E.challenge("stage1_challenge2");
+    const gamma = E.challenge("stage1_challenge0", 2);
+    const delta = E.challenge("stage1_challenge1", 2);
+    const epsilon = E.challenge("stage1_challenge2", 2);
 
     for (let i=0; i<pil.permutationIdentities.length; i++) {
         const name = `Permutation${i}`;
@@ -57,8 +57,8 @@ module.exports.grandProductPermutation = function grandProductPermutation(res, p
 
         const f = E.exp(peCtx.fExpId);
         const t = E.exp(peCtx.tExpId);
-        const z = E.cm(peCtx.zId);
-        const zp = E.cm(peCtx.zId, true);
+        const z = E.cm(peCtx.zId, false, 2);
+        const zp = E.cm(peCtx.zId, true, 2);
 
         let c1;
         if(stark) {

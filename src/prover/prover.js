@@ -65,7 +65,7 @@ async function stage1(ctx, options) {
     if(ctx.pilInfo.nLibStages === 0) {
         if(logger) logger.debug("> Calculating intermediate polynomials");
 
-        await callCalculateExps("imPols", "n", ctx, options.parallelExec, options.useThreads);
+        await callCalculateExps("stage1", "n", ctx, options.parallelExec, options.useThreads);
     }
 
     ctx.prover === "stark" ? await extendAndMerkelize(1, ctx) : await extendAndCommit(1, ctx, logger);
@@ -100,11 +100,6 @@ async function libStage(stage, ctx, challenge, options) {
                 setPol(ctx, libStage.pols[hint.outputs[k]].id, outputs[k], "n");
             }
         }        
-    }
-
-    if(ctx.pilInfo.nLibStages === stage + 1) {
-        if(logger) logger.debug("> Calculating intermediate polynomials");
-        await callCalculateExps("imPols", "n", ctx, options.parallelExec, options.useThreads);
     }
 
     ctx.prover === "stark" ? await extendAndMerkelize(genStage, ctx, logger) : await extendAndCommit(genStage, ctx, logger);

@@ -313,17 +313,6 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         execInfo.inputSections.push({ name: "tmpExp_n" });
         execInfo.outputSections.push({ name: "tmpExp_n" });
         dom = "n";
-    } else if (execPart == "imPols") {
-        execInfo.inputSections.push({ name: "const_n" });
-        execInfo.inputSections.push({ name: "cm1_n" });
-        for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
-            const stage = i + 2;
-            execInfo.inputSections.push({ name: `cm${stage}_n` });
-        }
-        execInfo.inputSections.push({ name: "x_n" });
-        execInfo.outputSections.push({ name: `cm${ctx.pilInfo.nLibStages + 1}_n` });
-        execInfo.outputSections.push({ name: "tmpExp_n" });
-        dom = "n";
     } else if (execPart == "Q") {
         execInfo.inputSections.push({ name: "const_ext" });
         execInfo.inputSections.push({ name: "cm1_ext" });

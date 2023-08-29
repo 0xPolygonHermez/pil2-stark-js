@@ -1,15 +1,14 @@
-const {pilCodeGen, buildCode} = require("../../codegen.js");
-const ExpressionOps = require("../../expressionops");
+const ExpressionOps = require("../expressionops");
 
-module.exports = function generateConstraintPolynomial(res, expressions, constraints, ctx, ctxExt, stark) {
+module.exports = function generateConstraintPolynomial(res, expressions, constraints, stark) {
 
     const E = new ExpressionOps();
 
-    const vc = E.challenge("vc");
+    const vc = E.challenge("vc", res.nLibStages + 2);
     res.challengesMap.push({stage: "Q", stageId: 0, name: "vc", globalId: vc.id});
 
     if(stark) {
-        const xi = E.challenge("xi");
+        const xi = E.challenge("xi", res.nLibStages + 3);
         res.challengesMap.push({stage: "evals", stageId: 0, name: "xi", globalId: xi.id});
     }
 
@@ -69,6 +68,7 @@ module.exports = function generateConstraintPolynomial(res, expressions, constra
     res.imPolsMap = {};
     for (let i=0; i<imExpsList.length; i++) {
         res.imPolsMap[imExpsList[i]] = {id: res.nCommitments++, imPol: true};
+        E.cm(res.nCommitments-1, false, res.nLibStages + 1);
         let e = {
             op: "sub",
             values: [
@@ -94,27 +94,9 @@ module.exports = function generateConstraintPolynomial(res, expressions, constra
         res.qs = [];
         for (let i=0; i<res.qDeg; i++) {
             res.qs[i] = res.nCommitments++;
+            E.cm(res.nCommitments-1, false, res.nLibStages + 2);
         }
     }
-
-    for (let i=0; i<imExpsList.length; i++) {
-        pilCodeGen(ctx, expressions, constraints, imExpsList[i], 0);
-    }
-
-    res.code["imPols"] = buildCode(ctx, expressions);
-
-    for(let i = 0; i < Object.keys(res.imPolsMap).length; i++) {
-        const expId = Object.keys(res.imPolsMap)[i];
-        ctxExt.calculated[expId] = {};
-        ctxExt.calculated[expId][0] = true;
-        ctxExt.calculated[expId][1] = true;
-    }
-
-    pilCodeGen(ctxExt, expressions, constraints, res.cExp, 0);
-    const code = ctxExt.code[ctxExt.code.length-1].code;
-    code[code.length-1].dest = {type: "q", id: 0};
-
-    res.code["Q"] = buildCode(ctxExt, expressions);
 }
 
 function calculateImPols(expressions, _exp, maxDeg) {
@@ -205,28 +187,46 @@ function calculateImPols(expressions, _exp, maxDeg) {
 }
 
 function calculateDegreeExpressions(expressions, exp) {
-    if(exp.expDeg) return exp.expDeg;
+    if(exp.expDeg) return;
 
     if (exp.op == "exp") {
-        if (expressions[exp.id].expDeg) exp.expDeg = expressions[exp.id].expDeg;
-        if (!exp.expDeg) exp.expDeg = calculateDegreeExpressions(expressions, expressions[exp.id]);
+        if (expressions[exp.id].expDeg) {
+            exp.expDeg = expressions[exp.id].expDeg;
+            exp.stage = expressions[exp.id].stage;
+        }
+        if (!exp.expDeg) {
+            calculateDegreeExpressions(expressions, expressions[exp.id]);
+            exp.expDeg = expressions[exp.id].expDeg;
+            exp.stage = expressions[exp.id].stage;
+        }
     } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         exp.expDeg = 1;
+        if(exp.op !== "cm") {
+            exp.stage = 0; 
+        } else if(!exp.stage) {
+            exp.stage = 1;
+        }
     } else if (["number", "challenge", "public", "eval"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
         exp.expDeg = 0;
+        if(exp.op !== "challenge") exp.stage = 0; 
     } else if(exp.op == "neg") {
-        exp.expDeg = calculateDegreeExpressions(expressions, exp.values[0]);
+        calculateDegreeExpressions(expressions, exp.values[0]);
+        exp.expDeg = exp.values[0].expDeg;
+        exp.stage = exp.values[0].stage;
     } else if(["add", "sub", "mul"].includes(exp.op)) {
-        const lhsDeg = calculateDegreeExpressions(expressions, exp.values[0]);
-        const rhsDeg = calculateDegreeExpressions(expressions, exp.values[1]);
+        calculateDegreeExpressions(expressions, exp.values[0]);
+        calculateDegreeExpressions(expressions, exp.values[1]);
+        const lhsDeg = exp.values[0].expDeg;
+        const rhsDeg = exp.values[1].expDeg;
         if(exp.op === "mul") {
             exp.expDeg = lhsDeg + rhsDeg;
         } else {
             exp.expDeg = Math.max(lhsDeg, rhsDeg);
         }
+        exp.stage = Math.max(exp.values[0].stage, exp.values[1].stage);
     } else {
         throw new Error("Exp op not defined: "+ exp.op);
     }
 
-    return exp.expDeg;
+    return;
 }

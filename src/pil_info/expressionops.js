@@ -1,6 +1,8 @@
 
 let challenges = {};
 let nChallenges = 0;
+
+let cmStages = {};
 class ExpressionOps {
 
     add(a, b) {
@@ -45,10 +47,19 @@ class ExpressionOps {
         }
     }
 
-    cm(id, next) {
+    cm(id, next, stage) {
+        if(cmStages[id] === undefined) {
+            if(stage) {
+                cmStages[id] = stage;
+            } else {
+                console.log(cmStages);
+                throw new Error("Stage not defined for cm " + id);
+            }
+        } 
         return {
             op: "cm",
             id: id,
+            stage: cmStages[id],
             next: !!next
         }
     }
@@ -69,14 +80,18 @@ class ExpressionOps {
         }
     }
 
-    challenge(name) {
+    challenge(name, stage) {
         if (!name) throw new Error("Challenge name not defined");
         if (challenges[name] === undefined) {
-            challenges[name] = nChallenges++;
+            challenges[name] = {
+                id: nChallenges++,
+                stage: stage
+            }
         }
         return {
             op: "challenge",
-            id: challenges[name],
+            id: challenges[name].id,
+            stage: challenges[name].stage
         };
     }
 

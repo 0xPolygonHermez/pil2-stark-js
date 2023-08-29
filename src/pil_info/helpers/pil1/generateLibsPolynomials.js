@@ -1,10 +1,9 @@
-const { buildCode, pilCodeGen } = require("../../codegen");
 const ExpressionOps = require("../../expressionops");
 const { grandProductConnection } = require("./pil1_libs/grandProductConnection.js");
 const { grandProductPermutation } = require("./pil1_libs/grandProductPermutation.js");
 const { grandProductPlookup } = require("./pil1_libs/grandProductPlookup.js");
 
-module.exports = function generateLibsCode(F, res, pil, ctx, stark) {
+module.exports = function generateLibsPolynomials(F, res, pil, stark) {
     const E = new ExpressionOps();
 
     let pilLibs = [];
@@ -43,7 +42,7 @@ module.exports = function generateLibsCode(F, res, pil, ctx, stark) {
             if(i >= nStagesLib) continue;
             const nChallengesLib = lib.nChallenges[i];
             for(let k = nChallengesStage; k < nChallengesLib; ++k) {
-                const c = E.challenge(`stage${i+1}_challenge${k}`);
+                const c = E.challenge(`stage${i+1}_challenge${k}`, stage);
                 res.challengesMap.push({stage: stage, name: `challenge${k}`, stageId: k, globalId: c.id});
             }
             nChallengesStage = nChallengesLib;
@@ -53,23 +52,5 @@ module.exports = function generateLibsCode(F, res, pil, ctx, stark) {
 
     for(let i = 0; i < pilLibs.length; ++i) {
         pilLibs[i].lib();
-    }
-
-    for(let i = 0; i < res.nLibStages; ++i) {
-        for(let j = 0; j < Object.keys(res.libs).length; ++j) {
-            const libName = Object.keys(res.libs)[j];
-            const lib = res.libs[libName];
-            if(lib.length > i) {
-                const polsStage = lib[i].pols;
-                for(let k = 0; k < Object.keys(polsStage).length; ++k) {
-                    let name = Object.keys(polsStage)[k];
-                    if(polsStage[name].tmp) {
-                        pilCodeGen(ctx, pil.expressions, pil.polIdentities, polsStage[name].id, 0);
-                    }                    
-                }
-            }
-        }
-        const stage = 2 + i;
-        res.code[`stage${stage}`] = buildCode(ctx, pil.expressions);
     }
 }

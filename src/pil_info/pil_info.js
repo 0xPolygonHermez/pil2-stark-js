@@ -1,14 +1,14 @@
 
-const generateConstraintPolynomial = require("./helpers/quotientPolynomial/cp_prover");
-const generateConstraintPolynomialVerifier = require("./helpers/quotientPolynomial/cp_ver");
+const generateConstraintPolynomial = require("./helpers/cp_prover");
+const generateConstraintPolynomialVerifierCode = require("./helpers/cp_ver");
 
-const generateFRIPolynomial = require("./helpers/fri/fri_prover");
-const generateVerifierQuery = require("./helpers/fri/fri_verifier");
+const generateFRIPolynomial = require("./helpers/fri_prover");
 
 const map = require("./map.js");
 
 const { fixCode, setDimensions } = require("./helpers/helpers.js");
-const { generatePil1Code } = require("./helpers/pil1/generatePil1Code");
+const { generatePil1Polynomials } = require("./helpers/pil1/generatePil1Polynomials");
+const { generateConstraintPolynomialCode, generateFRICode, generatePublicsCode, generateLibsCode } = require("./helpers/generateCode");
 
 module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct) {
     const res = {
@@ -20,36 +20,41 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
         starkStruct: starkStruct,
     };
 
-    let expressions, symbols, constraints;
+    let expressions, symbols, constraints, publics;
 
     if(pil1) {
-        const pil1Info = generatePil1Code(F, res, pil, stark);
-        expressions = pil1Info.expressions;
-        symbols = pil1Info.symbols;
-        constraints = pil1Info.constraints;
+        ({expressions, symbols, constraints, publics} = generatePil1Polynomials(F, res, pil, stark));
+    } else {
+        constraints = pil.constraints.map(c => {
+            let boundary = Object.keys(c)[0];
+            let constraint = {
+                boundary,
+                expId: c[boundary].expressionIdx,
+                debugLine: c[boundary].debugLine,
+            }
+
+            if(boundary === "everyFrame") {
+                constraint.offsetMin = c[boundary].offsetMin;
+                constraint.offsetMax = c[boundary].offsetMax;
+            }
+            return constraint;
+        });
     }
 
-    const ctx = {
-        calculated: {},
-        tmpUsed: 0,
-        code: []
-    };
 
-    const ctx_ext = {
-        calculated: {},
-        tmpUsed: 0,
-        code: []
-    };
+    generateConstraintPolynomial(res, expressions, constraints, stark);
 
-    generateConstraintPolynomial(res, expressions, constraints, ctx, ctx_ext, stark);
-    
-    map(res, symbols, expressions, stark);
+    generatePublicsCode(res, expressions, constraints, publics);
+    generateLibsCode(res, expressions, constraints);
+    generateConstraintPolynomialCode(res, expressions, constraints);
 
-    generateConstraintPolynomialVerifier(res, expressions, constraints, ctx, stark);
+    map(res, symbols, expressions, stark);       
+
+    generateConstraintPolynomialVerifierCode(res, expressions, constraints, stark);
 
     if(stark) {
-        generateFRIPolynomial(res, expressions, constraints, ctx_ext);
-        generateVerifierQuery(res, expressions, constraints, ctx_ext);
+        generateFRIPolynomial(res, expressions);
+        generateFRICode(res, expressions, constraints);
     } 
 
     fixCode(res, stark);

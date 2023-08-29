@@ -6,8 +6,8 @@ const getKs = require("pilcom").getKs;
 module.exports.grandProductConnection = function grandProductConnection(res, pil, stark, F) {
     const E = new ExpressionOps();
 
-    const gamma = E.challenge("stage1_challenge0");
-    const delta = E.challenge("stage1_challenge1");
+    const gamma = E.challenge("stage1_challenge0", 2);
+    const delta = E.challenge("stage1_challenge1", 2);
 
     for (let i=0; i<pil.connectionIdentities.length; i++) {
         const name = `Connection${i}`;
@@ -73,8 +73,8 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
             pil.expressions.push(denExp);
         }
 
-        const z = E.cm(ciCtx.zId);
-        const zp = E.cm(ciCtx.zId, true);
+        const z = E.cm(ciCtx.zId, false, 2);
+        const zp = E.cm(ciCtx.zId, true, 2);
 
         let c1;
         if(stark) {

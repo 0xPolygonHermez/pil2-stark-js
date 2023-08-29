@@ -1,0 +1,23 @@
+// public in1;
+// public in2;
+// public out;
+
+subproof Fibonacci(2**6) {
+
+    col witness a,b;
+
+    col fixed L1 = [1,0...];
+
+    (b' - a) * (1 - L1') === 0;
+    // L1 * (b - in1) === 0;
+    // L1 * (a - in2) === 0;
+
+    // when first {
+    //     (b - in1) === 0;
+    //     (a - in2) === 0;
+    // } 
+
+    // when frame {
+    //     (b' - a) === 0;
+    // }
+}

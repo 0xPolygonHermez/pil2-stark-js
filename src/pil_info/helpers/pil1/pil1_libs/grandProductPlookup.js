@@ -3,10 +3,10 @@ const ExpressionOps = require("../../../expressionops");
 module.exports.grandProductPlookup = function grandProductPlookup(res, pil, stark) {
     const E = new ExpressionOps();
 
-    const alpha = E.challenge("stage1_challenge0");
-    const beta = E.challenge("stage1_challenge1");
-    const gamma = E.challenge("stage2_challenge0");
-    const delta = E.challenge("stage2_challenge1");
+    const alpha = E.challenge("stage1_challenge0", 2);
+    const beta = E.challenge("stage1_challenge1", 2);
+    const gamma = E.challenge("stage2_challenge0", 3);
+    const delta = E.challenge("stage2_challenge1", 3);
 
 
     for (let i=0; i<pil.plookupIdentities.length; i++) {
@@ -79,14 +79,14 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, star
         
         puCtx.zId = pil.nCommitments++;
 
-        const h1 = E.cm(puCtx.h1Id);
-        const h2 =  E.cm(puCtx.h2Id);
-        const h1p = E.cm(puCtx.h1Id, true);
+        const h1 = E.cm(puCtx.h1Id, false, 2);
+        const h1p = E.cm(puCtx.h1Id, true, 2);
+        const h2 =  E.cm(puCtx.h2Id, false, 2);
         const f = E.exp(puCtx.fExpId);
         const t = E.exp(puCtx.tExpId);
         const tp = E.exp(puCtx.tExpId, true);
-        const z = E.cm(puCtx.zId);
-        const zp = E.cm(puCtx.zId, true);
+        const z = E.cm(puCtx.zId, false, 3);
+        const zp = E.cm(puCtx.zId, true, 3);
 
         let c1;
         if(stark) {

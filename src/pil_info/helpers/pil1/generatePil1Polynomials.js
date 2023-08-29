@@ -1,22 +1,18 @@
 const { log2 } = require("pilcom/src/utils");
-const generateLibsCode = require("./generateLibsCode");
-const generatePublicsCode = require("./generatePublicsCode");
+const ExpressionOps = require("../../expressionops");
+const generateLibsPolynomials = require("./generateLibsPolynomials");
+const generatePublicsPolynomials = require("./generatePublicsPolynomials");
 
-module.exports.generatePil1Code = function generatePil1Code(F, res, _pil, stark) {
+module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res, _pil, stark) {
+    const E = new ExpressionOps();
     const pil = JSON.parse(JSON.stringify(_pil));    // Make a copy as we are going to destroy the original
 
     res.nPublics = pil.publics.length;
     res.nConstants = pil.nConstants;
 
-    const ctx = {
-        calculated: {},
-        tmpUsed: 0,
-        code: []
-    };
+    const publics = generatePublicsPolynomials(res, pil);
 
-    generatePublicsCode(res, pil, ctx);
-
-    generateLibsCode(F, res, pil, ctx, stark);
+    generateLibsPolynomials(F, res, pil, stark);
 
     res.nCommitments = pil.nCommitments;
     res.pilPower = log2(Object.values(pil.references)[0].polDeg);
@@ -36,9 +32,11 @@ module.exports.generatePil1Code = function generatePil1Code(F, res, _pil, stark)
                 const namePol = name + i;
                 const polId = polInfo.id + i;
                 symbols.push({type, name: namePol, polId});
+                E.cm(polId, false, 1);
             }
         } else {
             symbols.push({type, name, polId: polInfo.id});
+            E.cm(polInfo.id, false, 1);
         }
     }
 
@@ -58,5 +56,5 @@ module.exports.generatePil1Code = function generatePil1Code(F, res, _pil, stark)
         }
     }
 
-    return { symbols, expressions, constraints };
+    return { publics, symbols, expressions, constraints };
 }

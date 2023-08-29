@@ -58,6 +58,7 @@ function mapLibPols(res, expressions, stark) {
 
                     res.imPolsMap[polId].libName = libName;
                     res.imPolsMap[polId].stage = j;
+                    res.imPolsMap[polId].stageImPol = stage;
                     res.imPolsMap[polId].name = name;
                 } else {
                     let dim = -1;
@@ -86,7 +87,8 @@ function mapImPols(res, expressions, stark) {
     for (let i=0; i<Object.keys(res.imPolsMap).length; i++) {
         let id = Object.keys(res.imPolsMap)[i];
         let pol = res.imPolsMap[id];
-        const section = pol.imPol ? "cm" + (res.nLibStages + 1) : "tmpExp";
+        const stage = pol.stageImPol ? pol.stageImPol : 1;
+        const section = pol.imPol ? "cm" + stage : "tmpExp";
         const dim = getExpDim(res, expressions, id, stark);
 
         if(!res.mapSectionsN[section]) res.mapSectionsN[section] = 0;

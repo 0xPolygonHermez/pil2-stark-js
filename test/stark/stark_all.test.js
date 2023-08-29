@@ -82,7 +82,7 @@ describe("test All sm", async function () {
         const fileName = await tmp.tmpName();
         await fs.promises.writeFile(fileName, verifier, "utf8");
 
-        const circuit = await wasm_tester(fileName, {O:1, prime: "goldilocks", include: "circuits.gl"});
+        const circuit = await wasm_tester(fileName, {O:1, prime: "goldilocks", include: "circuits.gl", verbose: true});
 
         const input = proof2zkin(resP.proof, setup.starkInfo);
         input.publics = resP.publics;

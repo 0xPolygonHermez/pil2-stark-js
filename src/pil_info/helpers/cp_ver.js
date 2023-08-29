@@ -1,10 +1,13 @@
-const {pilCodeGen, buildCode} = require("../../codegen.js");
-const { iterateCode } = require("../helpers.js");
+const {pilCodeGen, buildCode} = require("../codegen.js");
+const { iterateCode } = require("./helpers.js");
 
-module.exports  = function generateConstraintPolynomialVerifier(res, expressions, constraints, ctx, stark) {
-    // Reinstantiate the context
-    ctx.calculated = {};
-       
+module.exports  = function generateConstraintPolynomialVerifierCode(res, expressions, constraints, stark) {       
+    let ctx = {
+        calculated: {},
+        tmpUsed: 0,
+        code: []
+    };
+
     for(let i = 0; i < Object.keys(res.imPolsMap).length; i++) {
         const expId = Object.keys(res.imPolsMap)[i];
         if(res.imPolsMap[expId].imPol) {
