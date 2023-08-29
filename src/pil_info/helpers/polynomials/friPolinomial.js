@@ -1,5 +1,5 @@
 
-const ExpressionOps = require("../expressionops");
+const ExpressionOps = require("../../expressionops");
 
 
 module.exports = function generateFRIPolynomial(res, expressions) {

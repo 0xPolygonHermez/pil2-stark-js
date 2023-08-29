@@ -101,13 +101,13 @@ describe("simple sm", async function () {
     it("Simple2p", async () => {
         await runTest("simple2p.pil");
     });
-    it("Simple3", async () => {
+    it.only("Simple3", async () => {
         await runTest("simple3.pil");
     });
     it("Simple4", async () => {
         await runTest("simple4.pil");
     });
-    it.only("Simple4p", async () => {
+    it("Simple4p", async () => {
         await runTest("simple4p.pil");
     });
     it("Simple5", async () => {

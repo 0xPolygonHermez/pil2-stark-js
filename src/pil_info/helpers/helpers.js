@@ -35,30 +35,6 @@ module.exports.getExpDim = function getExpDim(res, expressions, expId, stark) {
     }
 }
 
-module.exports.iterateCode = function iterateCode(code, dom, nOpeningPoints, f) {
-    const ctx = {};
-
-    ctx.dom = dom;
-    ctx.expMap = [];
-    
-    for(let i = 0; i < nOpeningPoints; ++i) {
-        ctx.expMap[i] = {};
-    }
-
-    ctx.code = code;
-
-    _iterate(code.code, f);
-    
-    function _iterate(subCode, f) {
-        for (let i=0; i<subCode.length; i++) {
-            for (let j=0; j<subCode[i].src.length; j++) {
-                f(subCode[i].src[j], ctx);
-            }
-            f(subCode[i].dest, ctx);
-        }
-    }
-}
-
 module.exports.setDimensions = function setDimensions(res, stark) {
     for (let i=0; i<res.nPublics; i++) {
         setCodeDimensions(res.publicsCode[i], res, stark);
@@ -67,19 +43,6 @@ module.exports.setDimensions = function setDimensions(res, stark) {
     for(let i = 0; i < Object.keys(res.code).length; ++i) {
         const name = Object.keys(res.code)[i];
         setCodeDimensions(res.code[name], res, stark);
-    }
-}
-
-module.exports.fixCode = function fixCode(res, stark) {
-    for (let i=0; i< res.nPublics; i++) {
-        fixProverCode(res, res.publicsCode[i], "n", stark);
-    }
-
-    for(let i = 0; i < Object.keys(res.code).length; ++i) {
-        const name = Object.keys(res.code)[i];
-        const dom = ["Q", "qVerifier" ,"fri", "queryVerifier"].includes(name) ? "ext" : "n";
-        const verifier = name === "queryVerifier" ? true : false;
-        fixProverCode(res, res.code[name], dom, stark, verifier);
     }
 }
 
@@ -143,64 +106,6 @@ function setCodeDimensions(code, pilInfo, stark) {
                     r.dim=dim; return;
                 default: throw new Error("Invalid reference type set: " + r.type);
             }
-        }
-    }
-}
-
-
-function fixProverCode(res, code, dom, stark, verifierQuery = false) {
-    module.exports.iterateCode(code, dom, res.openingPoints.length, fixRef)
-
-    function fixRef(r, ctx) {
-        switch (r.type) {
-            case "cm":
-                if (verifierQuery) {
-                    const p1 = res.cmPolsMap[r.id];
-                    let index = Number(p1.stage.substr(2));
-                    if (p1.stage === "cmQ") {
-                        r.type = "treeQ";
-                        index = res.nLibStages + 2;
-                    } else {
-                        if(index < 1 || index > res.nLibStages + 1) throw new Error("Invalid cm stage");
-                        r.type = "tree" + index;
-                    }
-                            
-                    r.stageId = res.cmPolsMap.filter(p => p.stage === p1.stage && p.stagePos < p1.stagePos).length;
-                    r.treePos = p1.stagePos;
-                    r.dim = p1.dim;
-                }
-                break;
-            case "exp":
-                if (typeof res.imPolsMap[r.id] != "undefined" && (res.imPolsMap[r.id].imPol || ctx.dom === "n")) {
-                    r.type = "cm";
-                    r.id = res.imPolsMap[r.id].id;
-                } else {
-                    const p = r.prime || 0;
-                    if (typeof ctx.expMap[p][r.id] === "undefined") {
-                        ctx.expMap[p][r.id] = ctx.code.tmpUsed ++;
-                    }
-                    r.type= "tmp";
-                    r.expId = r.id;
-                    r.id= ctx.expMap[p][r.id];
-                }
-                break;
-            case "const":
-            case "number":
-            case "challenge":
-            case "public":
-            case "tmp":
-            case "Zi":
-            case "eval":
-            case "x":
-            case "q":
-            case "tmpExp":
-                break;
-            case "xDivXSubXi":
-            case "f":
-                if(!stark) throw new Error("Invalid reference type" + r.type);
-                break;
-            default:
-                throw new Error("Invalid reference type " + r.type);
         }
     }
 }

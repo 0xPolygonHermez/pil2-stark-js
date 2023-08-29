@@ -48,11 +48,11 @@ class ExpressionOps {
     }
 
     cm(id, rowOffset = 0, stage) {
-        if(cmStages[id] === undefined) {
+        if(!(id in cmStages)) {
             if(stage) {
                 cmStages[id] = stage;
             } else {
-                console.log(cmStages);
+                console.log("CM STAGES", cmStages);
                 throw new Error("Stage not defined for cm " + id);
             }
         } 
@@ -75,7 +75,7 @@ class ExpressionOps {
  
     challenge(name, stage) {
         if (!name) throw new Error("Challenge name not defined");
-        if (challenges[name] === undefined) {
+        if (!(name in challenges)) {
             challenges[name] = {
                 id: nChallenges++,
                 stage: stage

@@ -37,8 +37,9 @@ describe("test fibonacci sm", async function () {
         const pil = pilout.subproofs[0].airs[0];
         pil.symbols = pilout.symbols;
       
-        pilInfo(F, pil, true, false, starkStruct);
-
+        const piloutInfo = pilInfo(F, pil, true, false, starkStruct);
+        console.log(piloutInfo);
+    
         return;
     });
 

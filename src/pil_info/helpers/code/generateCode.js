@@ -1,4 +1,4 @@
-const { pilCodeGen, buildCode } = require("../codegen");
+const { pilCodeGen, buildCode } = require("./codegen");
 
 module.exports.generatePublicsCode = function generatePublicsCode(res, expressions, constraints, publics) {
     const ctx = {

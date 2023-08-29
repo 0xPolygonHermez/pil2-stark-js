@@ -1,5 +1,5 @@
-const {pilCodeGen, buildCode} = require("../codegen.js");
-const { iterateCode } = require("./helpers.js");
+const { iterateCode, buildCode, pilCodeGen } = require("../code/codegen.js");
+
 
 module.exports  = function generateConstraintPolynomialVerifierCode(res, expressions, constraints, stark) {       
     let ctx = {

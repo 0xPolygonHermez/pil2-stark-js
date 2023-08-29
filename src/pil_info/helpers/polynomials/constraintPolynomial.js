@@ -1,4 +1,4 @@
-const ExpressionOps = require("../expressionops");
+const ExpressionOps = require("../../expressionops");
 
 module.exports = function generateConstraintPolynomial(res, expressions, constraints, stark) {
 
