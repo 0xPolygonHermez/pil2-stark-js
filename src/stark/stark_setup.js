@@ -6,7 +6,7 @@ const pilInfo = require("../pil_info/pil_info.js");
 
 const { interpolate } = require("../helpers/fft/fft_p");
 
-module.exports = async function starkSetup(constPols, pil, starkStruct, options) {
+module.exports = async function starkSetup(constPols, pil, pil1 = true, starkStruct, options) {
 
     const F = options.F;
     const nBits = starkStruct.nBits;
@@ -33,6 +33,6 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
     return {
         constTree: constTree,
         constRoot: MH.root(constTree),
-        starkInfo: pilInfo(F, pil, true, true, starkStruct)
+        starkInfo: pilInfo(F, pil, true, pil1, starkStruct)
     }
 }

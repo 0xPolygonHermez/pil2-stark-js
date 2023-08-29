@@ -64,7 +64,7 @@ async function runTest(pilFile) {
         pil.polIdentities[0].boundary = "lastRow";
     }
     
-    const setup = await starkSetup(constPols, pil, starkStruct, {F});
+    const setup = await starkSetup(constPols, pil, true, starkStruct, {F});
     
     const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, {logger});
 
@@ -101,7 +101,7 @@ describe("simple sm", async function () {
     it("Simple2p", async () => {
         await runTest("simple2p.pil");
     });
-    it.only("Simple3", async () => {
+    it("Simple3", async () => {
         await runTest("simple3.pil");
     });
     it("Simple4", async () => {

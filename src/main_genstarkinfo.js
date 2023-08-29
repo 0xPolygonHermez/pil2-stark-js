@@ -23,10 +23,12 @@ async function run() {
     const starkStructFile = typeof(argv.starkstruct) === "string" ?  argv.starkstruct.trim() : "mycircuit.stark_struct.json";
     const starkInfoFile = typeof(argv.starkinfo) === "string" ?  argv.starkinfo.trim() : "mycircuit.starkinfo.json";
 
+    const pil2 = argv.pil2 || false;
+
     const pil = await compile(F, pilFile, null, pilConfig);
     const starkStruct = JSON.parse(await fs.promises.readFile(starkStructFile, "utf8"));
 
-    const starkInfo = pilInfo(F, pil, true, true, starkStruct);
+    const starkInfo = pilInfo(F, pil, true, !pil2, starkStruct);
 
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
 

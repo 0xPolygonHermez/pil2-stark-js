@@ -8,6 +8,10 @@ const Logger = require('logplease');
 
 const fs = require("fs");
 const pilInfo = require("../../../src/pil_info/pil_info");
+const { newCommitPolsArrayPil2 } = require("pilcom/src/polsarray");
+
+const smFibonacci = require("../../state_machines/sm_fibonacci_pil2/sm_fibonacci.js");
+
 
 describe("test fibonacci sm", async function () {
     this.timeout(10000000);
@@ -37,10 +41,11 @@ describe("test fibonacci sm", async function () {
         const pil = pilout.subproofs[0].airs[0];
         pil.symbols = pilout.symbols;
       
+        const N = pil.numRows;
         const piloutInfo = pilInfo(F, pil, true, false, starkStruct);
-        console.log(piloutInfo);
-    
-        return;
-    });
+        
+        const cmPols = newCommitPolsArrayPil2(pil.symbols, N, F);
 
+        await smFibonacci.execute(N, cmPols.Fibonacci, F);
+    });
 });
