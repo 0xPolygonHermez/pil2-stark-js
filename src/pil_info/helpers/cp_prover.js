@@ -32,7 +32,6 @@ module.exports = function generateConstraintPolynomial(res, expressions, constra
         } else {
             zi = E.zi(boundary);
         }
-        calculateDegreeExpressions(expressions, expressions[constraints[i].e]);
         let e = E.exp(constraints[i].e);
         if(stark) e = E.mul(zi, e);
         if (cExp) {
@@ -68,16 +67,12 @@ module.exports = function generateConstraintPolynomial(res, expressions, constra
     res.imPolsMap = {};
     for (let i=0; i<imExpsList.length; i++) {
         const stage = expressions[imExpsList[i]].stage;
-        res.imPolsMap[imExpsList[i]] = {id: res.nCommitments++, imPol: true, stageImPol: stage};
-        E.cm(res.nCommitments-1, false, stage);
+        res.imPolsMap[imExpsList[i]] = {id: res.nCommitments++, imPol: true, stageImPol: stage};    
         let e = {
             op: "sub",
             values: [
                 Object.assign({}, expressions[imExpsList[i]]),
-                {
-                    op: "cm",
-                    id: res.nCommitments-1
-                }
+                E.cm(res.nCommitments-1, 0, stage),
             ]
         };
         if(stark) e = E.mul(E.zi("everyRow"), e);
@@ -95,7 +90,7 @@ module.exports = function generateConstraintPolynomial(res, expressions, constra
         res.qs = [];
         for (let i=0; i<res.qDeg; i++) {
             res.qs[i] = res.nCommitments++;
-            E.cm(res.nCommitments-1, false, res.nLibStages + 2);
+            E.cm(res.nCommitments-1, 0, res.nLibStages + 2);
         }
     }
 }
@@ -185,49 +180,4 @@ function calculateImPols(expressions, _exp, maxDeg) {
         }
     }
 
-}
-
-function calculateDegreeExpressions(expressions, exp) {
-    if(exp.expDeg) return;
-
-    if (exp.op == "exp") {
-        if (expressions[exp.id].expDeg) {
-            exp.expDeg = expressions[exp.id].expDeg;
-            exp.stage = expressions[exp.id].stage;
-        }
-        if (!exp.expDeg) {
-            calculateDegreeExpressions(expressions, expressions[exp.id]);
-            exp.expDeg = expressions[exp.id].expDeg;
-            exp.stage = expressions[exp.id].stage;
-        }
-    } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
-        exp.expDeg = 1;
-        if(exp.op !== "cm") {
-            exp.stage = 0; 
-        } else if(!exp.stage) {
-            exp.stage = 1;
-        }
-    } else if (["number", "challenge", "public", "eval"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
-        exp.expDeg = 0;
-        if(exp.op !== "challenge") exp.stage = 0; 
-    } else if(exp.op == "neg") {
-        calculateDegreeExpressions(expressions, exp.values[0]);
-        exp.expDeg = exp.values[0].expDeg;
-        exp.stage = exp.values[0].stage;
-    } else if(["add", "sub", "mul"].includes(exp.op)) {
-        calculateDegreeExpressions(expressions, exp.values[0]);
-        calculateDegreeExpressions(expressions, exp.values[1]);
-        const lhsDeg = exp.values[0].expDeg;
-        const rhsDeg = exp.values[1].expDeg;
-        if(exp.op === "mul") {
-            exp.expDeg = lhsDeg + rhsDeg;
-        } else {
-            exp.expDeg = Math.max(lhsDeg, rhsDeg);
-        }
-        exp.stage = Math.max(exp.values[0].stage, exp.values[1].stage);
-    } else {
-        throw new Error("Exp op not defined: "+ exp.op);
-    }
-
-    return;
 }

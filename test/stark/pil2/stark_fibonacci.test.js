@@ -34,7 +34,10 @@ describe("test fibonacci sm", async function () {
         const PilOut = protobuf.loadSync("./node_modules/pilcom2/src/pilout.proto").lookupType("PilOut");
         let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
         
-        pilInfo(F, pilout, true, false, starkStruct);
+        const pil = pilout.subproofs[0].airs[0];
+        pil.symbols = pilout.symbols;
+      
+        pilInfo(F, pil, true, false, starkStruct);
 
         return;
     });

@@ -461,9 +461,9 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
         xacc[i] <== xacc[i-1] * ( ys[i]*(roots(<%- starkStruct.steps[0].nBits %> - i) - 1) +1);
     }
 
-    signal xDivXSubXi[<%- starkInfo.nFriOpenings %>][3];
+    signal xDivXSubXi[<%- starkInfo.openingPoints.length %>][3];
 
-<%  for(var i=0; i<starkInfo.nFriOpenings; ++i) { -%>
+<%  for(var i=0; i<starkInfo.openingPoints.length; ++i) { -%>
 <%  const opening = Number(Object.keys(starkInfo.fri2Id)[i]); -%>
 <%  let root = "1"; -%>
 <%  for(let j = 0; j < Math.abs(opening); ++j) {

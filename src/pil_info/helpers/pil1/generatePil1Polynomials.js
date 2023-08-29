@@ -32,11 +32,11 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
                 const namePol = name + i;
                 const polId = polInfo.id + i;
                 symbols.push({type, name: namePol, polId});
-                E.cm(polId, false, 1);
+                E.cm(polId, 0, 1);
             }
         } else {
             symbols.push({type, name, polId: polInfo.id});
-            E.cm(polInfo.id, false, 1);
+            E.cm(polInfo.id, 0, 1);
         }
     }
 

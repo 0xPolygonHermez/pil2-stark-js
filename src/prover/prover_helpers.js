@@ -101,9 +101,9 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
             case "challenge": return `ctx.challenges[${r.id}]`;
             case "eval": return `ctx.evals[${r.id}]`;
             case "xDivXSubXi": return `[
-                    ctx.xDivXSubXi_ext[3*(${ctx.pilInfo.fri2Id[r.opening]} + ${ctx.pilInfo.nFriOpenings}*i)], 
-                    ctx.xDivXSubXi_ext[3*(${ctx.pilInfo.fri2Id[r.opening]} + ${ctx.pilInfo.nFriOpenings}*i) + 1], 
-                    ctx.xDivXSubXi_ext[3*(${ctx.pilInfo.fri2Id[r.opening]} + ${ctx.pilInfo.nFriOpenings}*i) + 2]
+                    ctx.xDivXSubXi_ext[3*(${ctx.pilInfo.fri2Id[r.opening]} + ${ctx.pilInfo.openingPoints.length}*i)], 
+                    ctx.xDivXSubXi_ext[3*(${ctx.pilInfo.fri2Id[r.opening]} + ${ctx.pilInfo.openingPoints.length}*i) + 1], 
+                    ctx.xDivXSubXi_ext[3*(${ctx.pilInfo.fri2Id[r.opening]} + ${ctx.pilInfo.openingPoints.length}*i) + 2]
                 ]`;
             case "x": {
                 if (dom=="n") {
@@ -351,7 +351,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         } else if (["x_n", "x_ext", ...ziPols].indexOf(stage.name) >= 0) {
             stage.width = 1;
         } else if (["xDivXSubXi_ext"].indexOf(stage.name) >= 0) {
-            stage.width = 3*ctx.pilInfo.nFriOpenings;
+            stage.width = 3*ctx.pilInfo.openingPoints.length;
         } else if (["f_ext"].indexOf(stage.name) >= 0) {
             stage.width = 3;
         } else if (["q_ext"].indexOf(stage.name) >= 0) {

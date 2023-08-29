@@ -100,7 +100,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.x_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt);
     ctx.Zi_ext = new Proxy(new BigBuffer(ctx.Next), BigBufferHandlerBigInt);
 
-    ctx.xDivXSubXi_ext = new Proxy(new BigBuffer(3*ctx.Next*ctx.pilInfo.nFriOpenings), BigBufferHandlerBigInt);
+    ctx.xDivXSubXi_ext = new Proxy(new BigBuffer(3*ctx.Next*ctx.pilInfo.openingPoints.length), BigBufferHandlerBigInt);
 
     // Build x_n
     let xx = ctx.F.one;
@@ -178,7 +178,7 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challen
 
     let LEv = [];
     const friOpenings = Object.keys(ctx.pilInfo.fri2Id);
-    for(let i = 0; i < ctx.pilInfo.nFriOpenings; i++) {
+    for(let i = 0; i < ctx.pilInfo.openingPoints.length; i++) {
         const opening = Number(friOpenings[i]);
         const index = ctx.pilInfo.fri2Id[opening];
         LEv[index] = new Array(ctx.N);
@@ -238,7 +238,7 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
     module.exports.setChallengesStark("fri", ctx, challenge, logger);
 
     const friOpenings = Object.keys(ctx.pilInfo.fri2Id);
-    for(let i = 0; i < ctx.pilInfo.nFriOpenings; i++) {
+    for(let i = 0; i < ctx.pilInfo.openingPoints.length; i++) {
         const opening = friOpenings[i];
 
         let w = 1n;
@@ -261,9 +261,9 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
         x = ctx.F.shift;
         for (let k=0; k < ctx.Next; k++) {
             const v = ctx.F.mul(den[k], x);
-            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.nFriOpenings + ctx.pilInfo.fri2Id[opening])] = v[0];
-            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.nFriOpenings + ctx.pilInfo.fri2Id[opening]) + 1] = v[1];
-            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.nFriOpenings + ctx.pilInfo.fri2Id[opening]) + 2] = v[2];
+            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + ctx.pilInfo.fri2Id[opening])] = v[0];
+            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + ctx.pilInfo.fri2Id[opening]) + 1] = v[1];
+            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + ctx.pilInfo.fri2Id[opening]) + 2] = v[2];
     
             x = ctx.F.mul(x, ctx.F.w[ctx.nBitsExt])
         }

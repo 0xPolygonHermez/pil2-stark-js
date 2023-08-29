@@ -73,8 +73,8 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
             pil.expressions.push(denExp);
         }
 
-        const z = E.cm(ciCtx.zId, false, 2);
-        const zp = E.cm(ciCtx.zId, true, 2);
+        const z = E.cm(ciCtx.zId, 0, 2);
+        const zp = E.cm(ciCtx.zId, 1, 2);
 
         let c1;
         if(stark) {

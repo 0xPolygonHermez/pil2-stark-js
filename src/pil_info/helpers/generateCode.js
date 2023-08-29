@@ -45,8 +45,10 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
     for(let i = 0; i < Object.keys(res.imPolsMap).length; i++) {
         const expId = Object.keys(res.imPolsMap)[i];
         ctx_ext.calculated[expId] = {};
-        ctx_ext.calculated[expId][0] = true;
-        ctx_ext.calculated[expId][1] = true;
+        for(let i = 0; i < res.openingPoints.length; ++i) {
+            const openingPoint = res.openingPoints[i];
+            ctx_ext.calculated[expId][openingPoint] = true;
+        }
     }
 
     pilCodeGen(ctx_ext, expressions, constraints, res.cExp, 0);
@@ -63,7 +65,7 @@ module.exports.generateLibsCode = function generateLibsCode(res, expressions, co
         code: []
     };
 
-    if(res.nLibsStages === 0) {
+    if(res.nLibStages === 0) {
         for(let j = 0; j < expressions.length; ++j) {
             if(expressions[j].stage === 1) {
                 pilCodeGen(ctx, expressions, constraints, j, 0);

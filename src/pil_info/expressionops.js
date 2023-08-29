@@ -39,15 +39,15 @@ class ExpressionOps {
         }
     }
 
-    exp(id, next) {
+    exp(id, rowOffset = 0) {
         return {
             op: "exp",
             id: id,
-            next: !!next
+            rowOffset: rowOffset
         }
     }
 
-    cm(id, next, stage) {
+    cm(id, rowOffset = 0, stage) {
         if(cmStages[id] === undefined) {
             if(stage) {
                 cmStages[id] = stage;
@@ -60,26 +60,19 @@ class ExpressionOps {
             op: "cm",
             id: id,
             stage: cmStages[id],
-            next: !!next
+            rowOffset: rowOffset
         }
     }
 
-    const(id, next) {
+    const(id, rowOffset = 0) {
         return {
             op: "const",
             id: id,
-            next: !!next
+            rowOffset: rowOffset
         }
     }
 
-    q(id, next) {
-        return {
-            op: "q",
-            id: id,
-            next: !!next
-        }
-    }
-
+ 
     challenge(name, stage) {
         if (!name) throw new Error("Challenge name not defined");
         if (challenges[name] === undefined) {

@@ -12,8 +12,10 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, express
         const expId = Object.keys(res.imPolsMap)[i];
         if(res.imPolsMap[expId].imPol) {
             ctx.calculated[expId] = {};
-            ctx.calculated[expId][0] = true;
-            ctx.calculated[expId][1] = true;
+            for(let i = 0; i < res.openingPoints.length; ++i) {
+                const openingPoint = res.openingPoints[i];
+                ctx.calculated[expId][openingPoint] = true;
+            }
         }
     }
 
@@ -24,7 +26,7 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, express
 
     res.evMap = [];
 
-    iterateCode(res.code.qVerifier, "n", fixRef);
+    iterateCode(res.code.qVerifier, "n", res.openingPoints.length, fixRef);
 
     if (stark) {
         for (let i = 0; i < res.qDeg; i++) {
@@ -51,7 +53,7 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, express
     }
 
     function fixRef(r, ctx) {
-        const p = r.prime ? 1 : 0;
+        const p = r.prime || 0;
         switch (r.type) {
             // Check the expressions ids. If it is an intermediate polynomial
             // modify the type and set it as a commit;

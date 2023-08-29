@@ -79,14 +79,14 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, star
         
         puCtx.zId = pil.nCommitments++;
 
-        const h1 = E.cm(puCtx.h1Id, false, 2);
-        const h1p = E.cm(puCtx.h1Id, true, 2);
-        const h2 =  E.cm(puCtx.h2Id, false, 2);
+        const h1 = E.cm(puCtx.h1Id, 0, 2);
+        const h1p = E.cm(puCtx.h1Id, 1, 2);
+        const h2 =  E.cm(puCtx.h2Id, 0, 2);
         const f = E.exp(puCtx.fExpId);
         const t = E.exp(puCtx.tExpId);
-        const tp = E.exp(puCtx.tExpId, true);
-        const z = E.cm(puCtx.zId, false, 3);
-        const zp = E.cm(puCtx.zId, true, 3);
+        const tp = E.exp(puCtx.tExpId, 1);
+        const z = E.cm(puCtx.zId, 0, 3);
+        const zp = E.cm(puCtx.zId, 1, 3);
 
         let c1;
         if(stark) {

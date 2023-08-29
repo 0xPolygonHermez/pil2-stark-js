@@ -20,7 +20,7 @@ module.exports = function generateFRIPolynomial(res, expressions) {
             friExp = E.cm(i);
         }
     }
-
+    
     let friExps = {};
     for (let i=0; i<res.evMap.length; i++) {
         const ev = res.evMap[i];
@@ -33,12 +33,12 @@ module.exports = function generateFRIPolynomial(res, expressions) {
     }
 
     res.fri2Id = {};
-    res.nFriOpenings = 0;
+    let nOpenings = 0;
 
     for(let i = 0; i < Object.keys(friExps).length; i++) {
         const opening = Number(Object.keys(friExps)[i]);
         if(!res.fri2Id[opening]) {
-            res.fri2Id[opening] = res.nFriOpenings++;
+            res.fri2Id[opening] = nOpenings++;
         }   
         friExps[opening] = E.mul(friExps[opening], E.xDivXSubXi(opening));
         if(friExp) {

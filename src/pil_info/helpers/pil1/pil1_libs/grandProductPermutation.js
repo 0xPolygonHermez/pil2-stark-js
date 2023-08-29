@@ -57,8 +57,8 @@ module.exports.grandProductPermutation = function grandProductPermutation(res, p
 
         const f = E.exp(peCtx.fExpId);
         const t = E.exp(peCtx.tExpId);
-        const z = E.cm(peCtx.zId, false, 2);
-        const zp = E.cm(peCtx.zId, true, 2);
+        const z = E.cm(peCtx.zId, 0, 2);
+        const zp = E.cm(peCtx.zId, 1, 2);
 
         let c1;
         if(stark) {

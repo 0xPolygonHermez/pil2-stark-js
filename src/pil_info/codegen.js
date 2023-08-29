@@ -64,9 +64,9 @@ function evalExp(codeCtx, constraints, exp, prime) {
             src: values
         });
         return r;
-    } else if (["cm", "const", "exp", "q"].includes(exp.op)) {
-        // if (exp.next && prime) expressionError(codeCtx.pil, constraints, "double Prime", codeCtx.expId);
-        let p = exp.next || prime ? 1 : 0; 
+    } else if (["cm", "const", "exp"].includes(exp.op)) {
+        // if (exp.rowOffset && prime) expressionError(codeCtx.pil, constraints, "double Prime", codeCtx.expId);
+        let p = exp.rowOffset || prime; 
         return { type: exp.op, id: exp.id, prime: p }
     } else if (["public", "challenge", "eval"].includes(exp.op)) {
         return { type: exp.op, id: exp.id }
@@ -86,8 +86,8 @@ function evalExp(codeCtx, constraints, exp, prime) {
 
 function calculateDeps(ctx, expressions, constraints, exp, prime, expIdErr, addMul) {
     if (exp.op == "exp") {
-        // if (prime && exp.next) expressionError(ctx.pil, constraints, `Double prime`, expIdErr, exp.id);
-        let p = exp.next || prime ? 1 : 0;
+        // if (prime && exp.rowOffset) expressionError(ctx.pil, constraints, `Double prime`, expIdErr, exp.id);
+        let p = exp.rowOffset || prime;
         pilCodeGen(ctx, expressions, constraints, exp.id, p, addMul);
     } else if (["add", "sub", "mul", "neg", "muladd"].includes(exp.op)) {
         exp.values.map(v => calculateDeps(ctx, expressions, constraints, v, prime, expIdErr, addMul));

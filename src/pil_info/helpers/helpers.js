@@ -35,15 +35,13 @@ module.exports.getExpDim = function getExpDim(res, expressions, expId, stark) {
     }
 }
 
-module.exports.iterateCode = function iterateCode(code, dom, f) {
+module.exports.iterateCode = function iterateCode(code, dom, nOpeningPoints, f) {
     const ctx = {};
 
     ctx.dom = dom;
     ctx.expMap = [];
     
-    // let openings = stark ? res.nFriOpenings : 2;
-    let openings = 2;
-    for(let i = 0; i < openings; ++i) {
+    for(let i = 0; i < nOpeningPoints; ++i) {
         ctx.expMap[i] = {};
     }
 
@@ -151,7 +149,7 @@ function setCodeDimensions(code, pilInfo, stark) {
 
 
 function fixProverCode(res, code, dom, stark, verifierQuery = false) {
-    module.exports.iterateCode(code, dom, fixRef)
+    module.exports.iterateCode(code, dom, res.openingPoints.length, fixRef)
 
     function fixRef(r, ctx) {
         switch (r.type) {
@@ -177,7 +175,7 @@ function fixProverCode(res, code, dom, stark, verifierQuery = false) {
                     r.type = "cm";
                     r.id = res.imPolsMap[r.id].id;
                 } else {
-                    const p = r.prime ? 1 : 0;
+                    const p = r.prime || 0;
                     if (typeof ctx.expMap[p][r.id] === "undefined") {
                         ctx.expMap[p][r.id] = ctx.code.tmpUsed ++;
                     }
@@ -206,4 +204,66 @@ function fixProverCode(res, code, dom, stark, verifierQuery = false) {
         }
     }
 }
+
+module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp) {
+    if(exp.expDeg) return;
+
+    if (exp.op == "exp") {
+        if("next" in exp) {
+            exp.rowOffset = exp.next ? 1 : 0;
+            delete exp.next;
+        }
+        delete exp.next;
+        if (expressions[exp.id].expDeg) {
+            exp.expDeg = expressions[exp.id].expDeg;
+            exp.stage = expressions[exp.id].stage;
+            exp.rowsOffsets = expressions[exp.id].rowsOffsets;
+        }
+        if (!exp.expDeg) {
+            addInfoExpressions(expressions, expressions[exp.id]);
+            exp.expDeg = expressions[exp.id].expDeg;
+            exp.stage = expressions[exp.id].stage;
+            exp.rowOffsets = expressions[exp.id].rowOffsets || [0];
+        }
+    } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
+        exp.expDeg = 1;
+        if(exp.op !== "cm") {
+            exp.stage = 0; 
+        } else if(!exp.stage) {
+            exp.stage = 1;
+        }
+        if("next" in exp) {
+            exp.rowOffset = exp.next ? 1 : 0;
+            delete exp.next;
+            exp.rowsOffsets = [exp.rowOffset];
+        }
+    } else if (["number", "challenge", "public", "eval"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
+        exp.expDeg = 0;
+        if(exp.op !== "challenge") exp.stage = 0; 
+    } else if(exp.op == "neg") {
+        addInfoExpressions(expressions, exp.values[0]);
+        exp.expDeg = exp.values[0].expDeg;
+        exp.stage = exp.values[0].stage;
+        exp.rowsOffsets = "rowOffset" in exp.values[0] ? [exp.values[0].rowOffset] : exp.values[0].rowsOffsets || [0];
+    } else if(["add", "sub", "mul"].includes(exp.op)) {
+        addInfoExpressions(expressions, exp.values[0]);
+        addInfoExpressions(expressions, exp.values[1]);
+        const lhsDeg = exp.values[0].expDeg;
+        const rhsDeg = exp.values[1].expDeg;
+        if(exp.op === "mul") {
+            exp.expDeg = lhsDeg + rhsDeg;
+        } else {
+            exp.expDeg = Math.max(lhsDeg, rhsDeg);
+        }
+        exp.stage = Math.max(exp.values[0].stage, exp.values[1].stage);
+        const lhsRowOffsets = "rowOffset" in exp.values[0] ? [exp.values[0].rowOffset] : exp.values[0].rowsOffsets || [0];
+        const rhsRowOffsets = "rowOffset" in exp.values[1] ? [exp.values[1].rowOffset] : exp.values[1].rowsOffsets || [0];
+        exp.rowsOffsets = [...new Set([...lhsRowOffsets, ...rhsRowOffsets])];
+    } else {
+        throw new Error("Exp op not defined: "+ exp.op);
+    }
+
+    return;
+}
+
 

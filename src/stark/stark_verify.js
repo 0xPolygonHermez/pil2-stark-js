@@ -207,7 +207,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
         const x = F.mul(F.shift, F.exp(F.w[nBits + extendBits], idx));
 	
         ctxQry.xDivXSubXi = {};
-        for(let i = 0; i < starkInfo.nFriOpenings; ++i) {
+        for(let i = 0; i < starkInfo.openingPoints.length; ++i) {
             const opening = Number(Object.keys(starkInfo.fri2Id)[i]);
             const id = starkInfo.fri2Id[opening];
 
