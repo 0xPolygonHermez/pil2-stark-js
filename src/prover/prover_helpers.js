@@ -294,6 +294,8 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         execStages.push(`stage${stage}`);
     }
 
+    if(ctx.pilInfo.nLibStages === 0) execStages.push("stage1");
+
     const ziPols = ["Zi_ext"];
     if(ctx.pilInfo.boundaries.includes("firstRow")) ziPols.push("Zi_fr_ext");
     if(ctx.pilInfo.boundaries.includes("lastRow")) ziPols.push("Zi_lr_ext");
@@ -312,6 +314,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         }
         execInfo.inputSections.push({ name: "tmpExp_n" });
         execInfo.outputSections.push({ name: "tmpExp_n" });
+        if(execPart === "stage1") execInfo.outputSections.push({ name: "cm1_n" });
         dom = "n";
     } else if (execPart == "Q") {
         execInfo.inputSections.push({ name: "const_ext" });
@@ -340,7 +343,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         execInfo.outputSections.push({ name: "f_ext" });
         dom = "ext";
     } else {
-        throw new Error("Exec type not defined" + execPart);
+        throw new Error("Exec type not defined " + execPart);
     }
 
     function setWidth(stage) {

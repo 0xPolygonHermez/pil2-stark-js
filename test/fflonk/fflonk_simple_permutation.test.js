@@ -2,12 +2,6 @@ const chai = require("chai");
 const assert = chai.assert;
 const {F1Field} = require("ffjavascript");
 const path = require("path");
-const fflonkSetup  = require("../../src/fflonk/helpers/fflonk_setup.js");
-const fflonkProve = require("../../src/fflonk/helpers/fflonk_prover.js");
-const pilInfo = require("../../src/pil_info/pil_info.js");
-const fflonkVerify  = require("../../src/fflonk/helpers/fflonk_verify.js");
-const fflonkVerificationKey = require("../../src/fflonk/helpers/fflonk_verification_key.js");
-const { readPilFflonkZkeyFile } = require("../../src/fflonk/zkey/zkey_pilfflonk.js");
 
 const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
 
@@ -16,7 +10,9 @@ const smPermutation = require("../state_machines/sm_simple_permutation/sm_simple
 
 const Logger = require('logplease');
 
-describe("Fflonk permutation sm", async function () {
+const { generateFflonkProof } = require("./helpers.js");
+
+describe("Fflonk simple permutation sm", async function () {
     this.timeout(10000000);
 
     it("It should create the pols main", async () => {
@@ -28,9 +24,8 @@ describe("Fflonk permutation sm", async function () {
         const pil = await compile(F, path.join(__dirname, "../state_machines/", "sm_simple_permutation", "simple_permutation_main.pil"));
         const constPols =  newConstantPolsArray(pil, F);
 
-        const fflonkInfo = pilInfo(F, pil, false);
-        
-        const N = 2**(fflonkInfo.pilPower);
+        const N = pil.references[Object.keys(pil.references)[0]].polDeg;
+
         await smGlobal.buildConstants(N,constPols.Global);
         await smPermutation.buildConstants(N, constPols.SimplePermutation);
 
@@ -48,18 +43,6 @@ describe("Fflonk permutation sm", async function () {
             assert(0);
         }
 
-        const ptauFile =  path.join(__dirname, "../../", "tmp", "powersOfTau28_hez_final_19.ptau");
-        const zkeyFilename =  path.join(__dirname, "../../", "tmp", "fflonk_simple_permutation.zkey");
-   
-        await fflonkSetup(constPols, zkeyFilename, ptauFile, fflonkInfo, {extraMuls: 1, logger});
-   
-        const zkey = await readPilFflonkZkeyFile(zkeyFilename, {logger});
-
-        const vk = await fflonkVerificationKey(zkey, {logger});
-
-        const {proof, publics} = await fflonkProve(zkey, cmPols, fflonkInfo, {logger});
-
-        const isValid = await fflonkVerify(vk, publics, proof, fflonkInfo, {logger});
-        assert(isValid);
+        await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 1});
     });
 });

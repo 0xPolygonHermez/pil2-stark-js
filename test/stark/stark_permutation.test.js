@@ -2,9 +2,6 @@ const chai = require("chai");
 const assert = chai.assert;
 const F3g = require("../../src/helpers/f3g");
 const path = require("path");
-const starkSetup = require("../../src/stark/stark_setup.js");
-const starkGen = require("../../src/stark/stark_gen.js");
-const starkVerify = require("../../src/stark/stark_verify.js");
 
 const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
 
@@ -13,11 +10,7 @@ const Logger = require('logplease');
 const smGlobal = require("../state_machines/sm/sm_global.js");
 const smPermutation = require("../state_machines/sm_permutation/sm_permutation.js");
 
-const pil2circom = require("../../src/pil2circom");
-const { proof2zkin } = require("../../src/proof2zkin");
-const wasm_tester = require("circom_tester/wasm/tester");
-const tmp = require('tmp-promise');
-const fs = require("fs");
+const { generateStarkProof } = require("./helpers");
 
 describe("test permutation sm", async function () {
     this.timeout(10000000);
@@ -60,27 +53,7 @@ describe("test permutation sm", async function () {
             assert(0);
         }
 
-        const setup = await starkSetup(constPols, pil, starkStruct, {F, pil1: true});
-
-        const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, {logger});
-
-        const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, setup.starkInfo, {logger});
-
-        assert(resV==true);
-
-        const verifier = await pil2circom(setup.constRoot, setup.starkInfo, {});
-
-        const fileName = await tmp.tmpName();
-        await fs.promises.writeFile(fileName, verifier, "utf8");
-
-        const circuit = await wasm_tester(fileName, {O:1, prime: "goldilocks", include: "circuits.gl"});
-
-        const input = proof2zkin(resP.proof, setup.starkInfo);
-        input.publics = resP.publics;
-
-        await circuit.calculateWitness(input, true);
-
-        await fs.promises.unlink(fileName);
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: true});
     });
 
 });
