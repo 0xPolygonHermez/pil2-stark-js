@@ -1,4 +1,6 @@
 const ExpressionOps = require("../expressionops");
+const ProtoOut = require("pilcom2/src/proto_out.js");
+const { newConstantPolsArrayPil2 } = require("pilcom/src/polsarray");
 
 module.exports.getPiloutInfo = function getPiloutInfo(res, pilout) {
     const E = new ExpressionOps();
@@ -29,6 +31,8 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout) {
     });
 
     res.nCommitments = symbols.filter(s => s.type === "witness").length;
+    res.nConstants = symbols.filter(s => s.type === "fixed").length;
+    res.nPublics = 0;
 
     const expressions = pilout.expressions;
     for(let i = 0; i < expressions.length; ++i) {
@@ -42,6 +46,8 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout) {
 
 
 function formatExpression(expressions, exp) {
+    const P = new ProtoOut();
+
     if(exp.op) return exp;
 
     let op = Object.keys(exp)[0];
@@ -50,7 +56,6 @@ function formatExpression(expressions, exp) {
         exp = {
             op: "exp",
             id: exp[op].idx,
-            rowOffset: exp[op].rowOffset || 0,
         }
     } else if(["add", "mul", "sub"].includes(op)) {
         const lhs = exp[op].lhs;
@@ -65,7 +70,7 @@ function formatExpression(expressions, exp) {
     } else if (op === "constant") {
         exp = {
             op: "number",
-            value: "1",
+            value: P.buf2bint(exp.constant.value).toString(),
         }
     } else if (op === "witnessCol") {
         exp = {
@@ -83,3 +88,28 @@ function formatExpression(expressions, exp) {
 
     return exp;
 }
+
+module.exports.getFixedPolsPil2 = function getFixedPolsPil2(pil, F) {
+
+    const cnstPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
+        
+    const P = new ProtoOut();
+
+    for(let i = 0; i < cnstPols.$$defArray.length; ++i) {
+        const def = cnstPols.$$defArray[i];
+        const name = def.name;
+        const [nameSpace, namePol] = name.split(".");
+        const deg = def.polDeg;
+        const fixedCols = pil.fixedCols[i];
+        for(let j = 0; j < deg; ++j) {
+            if(def.idx) {
+                cnstPols[nameSpace][namePol][def.idx][j] = P.buf2bint(fixedCols.values[j]);
+            } else {
+                cnstPols[nameSpace][namePol][j] = P.buf2bint(fixedCols.values[j]);
+            }
+        }
+    }
+
+    return cnstPols;
+}
+    

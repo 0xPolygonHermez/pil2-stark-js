@@ -60,7 +60,7 @@ describe("test stark plookup sm", async function () {
             assert(0);
         }
 
-        const setup = await starkSetup(constPols, pil, true, starkStruct, {F});
+        const setup = await starkSetup(constPols, pil, starkStruct, {F, pil1: true});
 
         const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, {logger});
 

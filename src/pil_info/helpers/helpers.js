@@ -118,7 +118,6 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
             exp.rowOffset = exp.next ? 1 : 0;
             delete exp.next;
         }
-        delete exp.next;
         if (expressions[exp.id].expDeg) {
             exp.expDeg = expressions[exp.id].expDeg;
             exp.stage = expressions[exp.id].stage;
@@ -128,7 +127,7 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
             addInfoExpressions(expressions, expressions[exp.id]);
             exp.expDeg = expressions[exp.id].expDeg;
             exp.stage = expressions[exp.id].stage;
-            exp.rowOffsets = expressions[exp.id].rowOffsets || [0];
+            exp.rowsOffsets = expressions[exp.id].rowsOffsets || [0];
         }
     } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         exp.expDeg = 1;
@@ -140,6 +139,9 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
         if("next" in exp) {
             exp.rowOffset = exp.next ? 1 : 0;
             delete exp.next;
+        }
+
+        if("rowOffset" in exp) {
             exp.rowsOffsets = [exp.rowOffset];
         }
     } else if (["number", "challenge", "public", "eval"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
@@ -149,7 +151,7 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
         addInfoExpressions(expressions, exp.values[0]);
         exp.expDeg = exp.values[0].expDeg;
         exp.stage = exp.values[0].stage;
-        exp.rowsOffsets = "rowOffset" in exp.values[0] ? [exp.values[0].rowOffset] : exp.values[0].rowsOffsets || [0];
+        exp.rowsOffsets = exp.values[0].rowsOffsets || [0];
     } else if(["add", "sub", "mul"].includes(exp.op)) {
         addInfoExpressions(expressions, exp.values[0]);
         addInfoExpressions(expressions, exp.values[1]);
@@ -161,8 +163,8 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
             exp.expDeg = Math.max(lhsDeg, rhsDeg);
         }
         exp.stage = Math.max(exp.values[0].stage, exp.values[1].stage);
-        const lhsRowOffsets = "rowOffset" in exp.values[0] ? [exp.values[0].rowOffset] : exp.values[0].rowsOffsets || [0];
-        const rhsRowOffsets = "rowOffset" in exp.values[1] ? [exp.values[1].rowOffset] : exp.values[1].rowsOffsets || [0];
+        const lhsRowOffsets = exp.values[0].rowsOffsets || [0];
+        const rhsRowOffsets = exp.values[1].rowsOffsets || [0];
         exp.rowsOffsets = [...new Set([...lhsRowOffsets, ...rhsRowOffsets])];
     } else {
         throw new Error("Exp op not defined: "+ exp.op);

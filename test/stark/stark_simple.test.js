@@ -64,7 +64,7 @@ async function runTest(pilFile) {
         pil.polIdentities[0].boundary = "lastRow";
     }
     
-    const setup = await starkSetup(constPols, pil, true, starkStruct, {F});
+    const setup = await starkSetup(constPols, pil, starkStruct, {F, pil1: true});
     
     const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, {logger});
 
