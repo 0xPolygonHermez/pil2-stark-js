@@ -39,11 +39,12 @@ class ExpressionOps {
         }
     }
 
-    exp(id, rowOffset = 0) {
+    exp(id, rowOffset = 0, stage) {
         return {
             op: "exp",
             id: id,
-            rowOffset: rowOffset
+            rowOffset: rowOffset,
+            stage: stage,
         }
     }
 

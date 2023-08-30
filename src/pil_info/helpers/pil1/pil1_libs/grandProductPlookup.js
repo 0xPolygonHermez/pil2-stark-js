@@ -34,7 +34,9 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, star
 
         puCtx.tExpId = pil.expressions.length;
         tExp.keep = true;
+        tExp.stage = 2;
         pil.expressions.push(tExp);
+        
 
 
         fExp = null;
@@ -55,6 +57,7 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, star
 
         puCtx.fExpId = pil.expressions.length;
         fExp.keep = true;
+        fExp.stage = 2;
         pil.expressions.push(fExp);
 
         puCtx.h1Id = pil.nCommitments++;
@@ -82,9 +85,9 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, star
         const h1 = E.cm(puCtx.h1Id, 0, 2);
         const h1p = E.cm(puCtx.h1Id, 1, 2);
         const h2 =  E.cm(puCtx.h2Id, 0, 2);
-        const f = E.exp(puCtx.fExpId);
-        const t = E.exp(puCtx.tExpId);
-        const tp = E.exp(puCtx.tExpId, 1);
+        const f = E.exp(puCtx.fExpId, 0, 2);
+        const t = E.exp(puCtx.tExpId, 0, 2);
+        const tp = E.exp(puCtx.tExpId, 1, 2);
         const z = E.cm(puCtx.zId, 0, 3);
         const zp = E.cm(puCtx.zId, 1, 3);
 
@@ -122,6 +125,7 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, star
         numExp.keep = true;
         puCtx.numId = pil.expressions.length;
         numExp.keep = true;
+        numExp.stage = 3;
         pil.expressions.push(numExp);
 
         const denExp = E.mul(
@@ -149,6 +153,7 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, star
         denExp.keep = true;
         puCtx.denId = pil.expressions.length;
         denExp.keep = true;
+        denExp.stage = 3;
         pil.expressions.push(denExp);
 
         const num = E.exp(puCtx.numId);

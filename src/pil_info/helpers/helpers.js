@@ -111,7 +111,7 @@ function setCodeDimensions(code, pilInfo, stark) {
 }
 
 module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp) {
-    if(exp.expDeg) return;
+    if("expDeg" in exp) return;
 
     if (exp.op == "exp") {
         if("next" in exp) {
@@ -120,14 +120,14 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
         }
         if (expressions[exp.id].expDeg) {
             exp.expDeg = expressions[exp.id].expDeg;
-            exp.stage = expressions[exp.id].stage;
             exp.rowsOffsets = expressions[exp.id].rowsOffsets;
+            if(!exp.stage) exp.stage = expressions[exp.id].stage;
         }
         if (!exp.expDeg) {
             addInfoExpressions(expressions, expressions[exp.id]);
             exp.expDeg = expressions[exp.id].expDeg;
-            exp.stage = expressions[exp.id].stage;
             exp.rowsOffsets = expressions[exp.id].rowsOffsets || [0];
+            if(!exp.stage) exp.stage = expressions[exp.id].stage;
         }
     } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         exp.expDeg = 1;

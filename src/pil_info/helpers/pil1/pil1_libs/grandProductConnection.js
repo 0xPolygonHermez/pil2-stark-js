@@ -32,10 +32,12 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
 
         ciCtx.numId = pil.expressions.length;
         numExp.keep = true;
+        numExp.stage = 2;
         pil.expressions.push(numExp);
 
         ciCtx.denId = pil.expressions.length;
         denExp.keep = true;
+        denExp.stage = 2
         pil.expressions.push(denExp);
 
         let ks = getKs(F, ci.pols.length-1);
@@ -67,9 +69,11 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
             denExp.keep = true;
 
             ciCtx.numId = pil.expressions.length;
+            numExp.stage = 2;
             pil.expressions.push(numExp);
 
             ciCtx.denId = pil.expressions.length;
+            denExp.stage = 2;
             pil.expressions.push(denExp);
         }
 

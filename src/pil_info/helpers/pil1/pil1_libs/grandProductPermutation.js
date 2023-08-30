@@ -31,6 +31,7 @@ module.exports.grandProductPermutation = function grandProductPermutation(res, p
         }
 
         peCtx.tExpId = pil.expressions.length;
+        tExp.stage = 2;
         pil.expressions.push(tExp);
 
 
@@ -51,6 +52,7 @@ module.exports.grandProductPermutation = function grandProductPermutation(res, p
         }
 
         peCtx.fExpId = pil.expressions.length;
+        fExp.stage = 2;
         pil.expressions.push(fExp);
 
         peCtx.zId = pil.nCommitments++;
@@ -76,11 +78,13 @@ module.exports.grandProductPermutation = function grandProductPermutation(res, p
         const numExp = E.add(f, epsilon);
         peCtx.numId = pil.expressions.length;
         numExp.keep = true;
+        numExp.stage = 2;
         pil.expressions.push(numExp);
 
         const denExp = E.add(t, epsilon);
         peCtx.denId = pil.expressions.length;
         denExp.keep = true;
+        denExp.stage = 2;
         pil.expressions.push(denExp);
 
         const c2 = E.sub(  E.mul(zp,  E.exp( peCtx.denId )), E.mul(z, E.exp( peCtx.numId )));
