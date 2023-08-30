@@ -11,13 +11,13 @@ const Logger = require('logplease');
 const fs = require("fs");
 const { newCommitPolsArrayPil2 } = require("pilcom/src/polsarray");
 
-const smFibonacci = require("../../state_machines/pil2/sm_fibonacci/sm_fibonacci.js");
+const smSimple = require("../../state_machines/pil2/sm_simple/sm_simple.js");
 
 const { getFixedPolsPil2 } = require("../../../src/pil_info/helpers/getPiloutInfo");
 
 const { generateStarkProof } = require("../helpers");
 
-describe("test fibonacci pil2 sm", async function () {
+describe("test simple pil2 sm", async function () {
     this.timeout(10000000);
 
     it("It should create the pols main", async () => {
@@ -36,7 +36,7 @@ describe("test fibonacci pil2 sm", async function () {
         };
 
         const F = new F3g("0xFFFFFFFF00000001");
-        await compile(F, path.join(__dirname, "../../state_machines/", "pil2", "sm_fibonacci", "fibonacci.pil"));
+        await compile(F, path.join(__dirname, "../../state_machines/", "pil2", "sm_simple", "simple.pil"));
         
         const piloutEncoded = fs.readFileSync("./tmp/pilout.ptb");
         const PilOut = protobuf.loadSync("./node_modules/pilcom2/src/pilout.proto").lookupType("PilOut");
@@ -48,7 +48,7 @@ describe("test fibonacci pil2 sm", async function () {
         const constPols = getFixedPolsPil2(pil, F);
 
         const cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
-        await smFibonacci.execute(pil.numRows, cmPols.Fibonacci, F);
+        await smSimple.execute(pil.numRows, cmPols.Simple, F);
 
         await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: false});
     });
