@@ -1,6 +1,7 @@
 const ExpressionOps = require("../../expressionops");
+const { getExpDim } = require("../helpers");
 
-module.exports = function generateConstraintPolynomial(res, expressions, constraints, stark) {
+module.exports = function generateConstraintPolynomial(res, symbols, expressions, constraints, stark) {
 
     const E = new ExpressionOps();
 
@@ -64,10 +65,17 @@ module.exports = function generateConstraintPolynomial(res, expressions, constra
     res.qDeg = qDeg;
 
     let imExpsList = Object.keys(imExps).map(Number);
-    res.imPolsMap = {};
     for (let i=0; i<imExpsList.length; i++) {
-        const stage = expressions[imExpsList[i]].stage;
-        res.imPolsMap[imExpsList[i]] = {id: res.nCommitments++, imPol: true, stageImPol: stage};    
+        const expId = imExpsList[i];
+        const stage = expressions[expId].stage;
+        const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId);
+        if(!symbol) {
+            symbols.push({ type: "tmpPol", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage, dim: getExpDim(expressions, expId, stark), imPol: true });
+        } else {
+            symbol.imPol = true;
+            symbol.expId = expId;
+            symbol.polId = res.nCommitments++;
+        };
         let e = {
             op: "sub",
             values: [
@@ -85,7 +93,9 @@ module.exports = function generateConstraintPolynomial(res, expressions, constra
 
     res.cExp = expressions.length;
     expressions.push(cExp);
-    
+
+    res.qDim = getExpDim(expressions, res.cExp, stark);
+
     if(stark) {
         res.qs = [];
         for (let i=0; i<res.qDeg; i++) {

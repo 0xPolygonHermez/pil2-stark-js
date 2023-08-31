@@ -8,7 +8,7 @@ const map = require("./map.js");
 
 const { setDimensions, addInfoExpressions } = require("./helpers/helpers.js");
 const { generatePil1Polynomials } = require("./helpers/pil1/generatePil1Polynomials");
-const { generateConstraintPolynomialCode, generateFRICode, generatePublicsCode, generateLibsCode } = require("./helpers/code/generateCode");
+const { generateConstraintPolynomialCode, generateFRICode, generatePublicsCode, generateStagesCode } = require("./helpers/code/generateCode");
 const { getPiloutInfo } = require("./helpers/getPiloutInfo");
 const { fixCode } = require("./helpers/code/codegen");
 
@@ -37,28 +37,26 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
     
     res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
 
-    generateConstraintPolynomial(res, expressions, constraints, stark);
+    generateConstraintPolynomial(res, symbols, expressions, constraints, stark);
+
+    map(res, symbols, stark);       
 
     generatePublicsCode(res, expressions, constraints, publics);
-    generateLibsCode(res, expressions, constraints);
-    generateConstraintPolynomialCode(res, expressions, constraints);
 
-    map(res, symbols, expressions, stark);       
+    generateStagesCode(res, expressions, constraints);
 
-    generateConstraintPolynomialVerifierCode(res, expressions, constraints, stark);
+    generateConstraintPolynomialCode(res, symbols, expressions, constraints);
+
+    generateConstraintPolynomialVerifierCode(res, symbols, expressions, constraints, stark);
 
     if(stark) {
         generateFRIPolynomial(res, expressions);
         generateFRICode(res, expressions, constraints);
     } 
 
-    fixCode(res, stark);
+    fixCode(res, symbols, stark);
 
     setDimensions(res, stark);
-
-    delete res.imPolsMap;
-    delete res.cExp;
-    delete res.friExpId;
     
     return res;
 

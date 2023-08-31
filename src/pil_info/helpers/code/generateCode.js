@@ -25,7 +25,7 @@ module.exports.generateFRICode = function generateFRICode(res, expressions, cons
 
     const code = ctxExt.code[ctxExt.code.length-1].code;
 
-    code[code.length-1].dest = { type: "f", id: 0 };
+    code[code.length-1].dest = { type: "f", id: 0, dim: 3 };
 
     res.code["fri"] = buildCode(ctxExt, expressions);
 
@@ -35,15 +35,16 @@ module.exports.generateFRICode = function generateFRICode(res, expressions, cons
 }
 
 
-module.exports.generateConstraintPolynomialCode = function generateConstraintPolynomialCode(res, expressions, constraints) {
+module.exports.generateConstraintPolynomialCode = function generateConstraintPolynomialCode(res, symbols, expressions, constraints) {
     const ctx_ext = {
         calculated: {},
         tmpUsed: 0,
         code: []
     };
 
-    for(let i = 0; i < Object.keys(res.imPolsMap).length; i++) {
-        const expId = Object.keys(res.imPolsMap)[i];
+    for(let i = 0; i < symbols.length; i++) {
+        if(!symbols[i].imPol) continue;
+        const expId = symbols[i].expId;
         ctx_ext.calculated[expId] = {};
         for(let i = 0; i < res.openingPoints.length; ++i) {
             const openingPoint = res.openingPoints[i];
@@ -53,12 +54,12 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
 
     pilCodeGen(ctx_ext, expressions, constraints, res.cExp, 0);
     const code = ctx_ext.code[ctx_ext.code.length-1].code;
-    code[code.length-1].dest = {type: "q", id: 0};
+    code[code.length-1].dest = {type: "q", id: 0, dim: res.qDim };
 
     res.code["Q"] = buildCode(ctx_ext, expressions);
 }
 
-module.exports.generateLibsCode = function generateLibsCode(res, expressions, constraints) {
+module.exports.generateStagesCode = function generateStagesCode(res, expressions, constraints) {
     const ctx = {
         calculated: {},
         tmpUsed: 0,

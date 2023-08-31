@@ -21,12 +21,13 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout) {
     });
 
     const symbols = pilout.symbols.map(s => {
-        E.cm(s.id, 0, 1);
+        E.cm(s.id, 0, s.stage);
         return {
             name: s.name,
             stage: s.stage,
             type: s.type === 1 ? "fixed" : s.type === 3 ? "witness" : undefined,
             polId: s.id,
+            dim: s.dim || 1,
         }
     });
 

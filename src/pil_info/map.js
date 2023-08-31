@@ -1,7 +1,5 @@
 
-const { getExpDim } = require("./helpers/helpers.js");
-
-module.exports = function map(res, symbols, expressions, stark) {  
+module.exports = function map(res, symbols, stark) {  
     res.cmPolsMap = [];
     res.constPolsMap = [];
 
@@ -9,13 +7,7 @@ module.exports = function map(res, symbols, expressions, stark) {
 
     res.mapSectionsN["tmpExp"] = 0;
     
-    mapCmAndConstPols(res, symbols);
-
-    mapLibPols(res, expressions, stark);
-
-    mapImPols(res, expressions, stark);
-
-    res.qDim = getExpDim(res, expressions, res.cExp, stark);
+    mapSymbols(res, symbols);
 
     res.mapSectionsN["q_ext"] = res.qDim;
 	
@@ -28,90 +20,52 @@ module.exports = function map(res, symbols, expressions, stark) {
 
         setMapOffsets(res);   
     }
-}
 
-function mapCmAndConstPols(res, symbols) {
-    res.mapSectionsN["const"] = 0;
-    res.mapSectionsN["cm1"] = 0;
-    for(let i = 0; i < symbols.length; ++i) {
-        if(!["witness", "fixed"].includes(symbols[i].type)) continue;
-        const stage = symbols[i].type === "witness" ? "cm1" : "const";
-        addPol(res, stage, symbols[i].name, 1, symbols[i].polId);
+    for(let i = 0; i < res.cmPolsMap.length; ++i) {
+        let cm = res.cmPolsMap[i];
+        cm.stagePos = res.cmPolsMap
+            .slice(0, i)
+            .filter((p) => p.stage == cm.stage)
+            .reduce((acc, p) => acc + p.dim, 0);
     }
 }
 
-function mapLibPols(res, expressions, stark) {
+function mapSymbols(res, symbols) {
     let nCommits = res.nCommitments;
-    for(let i = 0; i < Object.keys(res.libs).length; ++i) {
-        const libName = Object.keys(res.libs)[i];
-        const lib = res.libs[libName];
-        for(let j = 0; j < lib.length; ++j) {
-            const libStage = lib[j];
-            const stage = 2 + j;
-            for(let k = 0; k < Object.keys(libStage.pols).length; ++k) {
-                const name = Object.keys(libStage.pols)[k];
-                if(libStage.pols[name].tmp) {
-                    const polId = libStage.pols[name].id;
-                    if (!res.imPolsMap[polId]) {
-                        res.imPolsMap[polId] = {imPol: false, id: nCommits++};
-                    }
+    for(let i = 0; i < symbols.length; ++i) {
+        let symbol = symbols[i];
+        if(!["witness", "fixed", "tmpPol"].includes(symbol.type)) continue;
+        let stage;
+        if(symbol.type === "fixed") {
+            stage = "const";
+        } else {
+            if(!symbol.stage || symbol.stage === 0) throw new Error("Invalid witness stage");
+            stage = "cm" + symbol.stage;
+        }
+        
+        if(!res.mapSectionsN[stage]) res.mapSectionsN[stage] = 0;
 
-                    res.imPolsMap[polId].libName = libName;
-                    res.imPolsMap[polId].stage = j;
-                    res.imPolsMap[polId].stageImPol = stage;
-                    res.imPolsMap[polId].name = name;
-                } else {
-                    let dim = -1;
-
-                    if(!res.mapSectionsN[`cm${stage}`]) res.mapSectionsN[`cm${stage}`] = 0;
-
-                    for(let l = 0; l < libStage.hints.length; ++l) {
-                        if(libStage.hints[l].outputs.includes(name)) {
-                            for(let m = 0; m < libStage.hints[l].inputs.length; ++m) {
-                                let inputPol = libStage.hints[l].inputs[m];
-                                dim = Math.max(dim, getExpDim(res, expressions, libStage.pols[inputPol].id, stark));
-                            }
-                        }
-                    }
-
-                    if(dim === -1) dim = stark ? 3 : 1;
-
-                    addPol(res,`cm${stage}`,`${libName}_${name}`, dim, libStage.pols[name].id);
-                }
+        if(symbol.type === "tmpPol") {
+            const [nameSpace, namePol] = symbol.name.split("."); 
+            const im = symbol.imPol;
+            if(!im) symbol.polId = nCommits++;        
+            stage = im ? stage : "tmpExp";
+            addPol(res, stage, symbol.name, symbol.dim, symbol.polId, im);
+            if(res.libs[nameSpace]) {
+                res.libs[nameSpace][symbol.stage - 2].pols[namePol].id = symbol.polId;
             }
+        } else {
+            addPol(res, stage, symbol.name, symbol.dim, symbol.polId);
         }
     }
 }
 
-function mapImPols(res, expressions, stark) {
-    for (let i=0; i<Object.keys(res.imPolsMap).length; i++) {
-        let id = Object.keys(res.imPolsMap)[i];
-        let pol = res.imPolsMap[id];
-        const section = pol.imPol ? "cm" + pol.stageImPol  : "tmpExp";
-        const dim = getExpDim(res, expressions, id, stark);
-
-        if(!res.mapSectionsN[section]) res.mapSectionsN[section] = 0;
-
-        const name = pol.imPol ? `ImPol${id}` : `TmpExp${id}`;
-        addPol(res, section, name, dim, pol.id);
-
-        if(pol.imPol) {
-            res.cmPolsMap[pol.id].imPol = true;
-        }
-
-        if(pol.libName) {
-            res.libs[pol.libName][pol.stage].pols[pol.name].id = pol.id;
-        } 
-    }
-}
-
-function addPol(res, stage, name, dim, pos) {
-    const polsStage = res.cmPolsMap.filter((p) => p.stage == stage);
-    const stagePos = polsStage.reduce((acc, p) => acc + p.dim, 0);
+function addPol(res, stage, name, dim, pos, imPol) {
     if(stage === "const") {
-        res.constPolsMap[pos] = { stage, name, dim, stagePos };
+        res.constPolsMap[pos] = { stage, name, dim, stagePos: pos };
     } else {
-        res.cmPolsMap[pos] = { stage, name, dim, stagePos };
+        res.cmPolsMap[pos] = { stage, name, dim };
+        if(imPol) res.cmPolsMap[pos].imPol = true;
     }
     res.mapSectionsN[stage] += dim;
 }

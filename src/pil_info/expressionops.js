@@ -53,7 +53,6 @@ class ExpressionOps {
             if(stage) {
                 cmStages[id] = stage;
             } else {
-                console.log("CM STAGES", cmStages);
                 throw new Error("Stage not defined for cm " + id);
             }
         } 

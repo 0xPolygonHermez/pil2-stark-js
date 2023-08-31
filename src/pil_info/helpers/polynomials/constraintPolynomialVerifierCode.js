@@ -1,21 +1,20 @@
 const { iterateCode, buildCode, pilCodeGen } = require("../code/codegen.js");
 
 
-module.exports  = function generateConstraintPolynomialVerifierCode(res, expressions, constraints, stark) {       
+module.exports  = function generateConstraintPolynomialVerifierCode(res, symbols, expressions, constraints, stark) {       
     let ctx = {
         calculated: {},
         tmpUsed: 0,
         code: []
     };
 
-    for(let i = 0; i < Object.keys(res.imPolsMap).length; i++) {
-        const expId = Object.keys(res.imPolsMap)[i];
-        if(res.imPolsMap[expId].imPol) {
-            ctx.calculated[expId] = {};
-            for(let i = 0; i < res.openingPoints.length; ++i) {
-                const openingPoint = res.openingPoints[i];
-                ctx.calculated[expId][openingPoint] = true;
-            }
+    for(let i = 0; i < symbols.length; i++) {
+        if(!symbols[i].imPol) continue;
+        const expId = symbols[i].expId;
+        ctx.calculated[expId] = {};
+        for(let i = 0; i < res.openingPoints.length; ++i) {
+            const openingPoint = res.openingPoints[i];
+            ctx.calculated[expId][openingPoint] = true;
         }
     }
 
@@ -58,9 +57,10 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, express
             // Check the expressions ids. If it is an intermediate polynomial
             // modify the type and set it as a commit;
             case "exp":
-                if (res.imPolsMap[r.id] && res.imPolsMap[r.id].imPol) {
+                let symbol = symbols.find(s => s.type === "tmpPol" && s.expId === r.id);
+                if(symbol && symbol.imPol) {
                     r.type = "cm";
-                    r.id = res.imPolsMap[r.id].id;
+                    r.id = symbol.polId;
                 } else {
                     if (typeof ctx.expMap[p][r.id] === "undefined") {
                         ctx.expMap[p][r.id] = ctx.code.tmpUsed ++;

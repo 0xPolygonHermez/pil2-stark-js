@@ -1,4 +1,4 @@
-module.exports.getExpDim = function getExpDim(res, expressions, expId, stark) {
+module.exports.getExpDim = function getExpDim(expressions, expId, stark) {
 
     return _getExpDim(expressions[expId]);
 
@@ -13,7 +13,7 @@ module.exports.getExpDim = function getExpDim(res, expressions, expId, stark) {
                 return _getExpDim(exp.values[0]);
             case "muladd":
                 return Math.max(...[_getExpDim(exp.values[0]), _getExpDim(exp.values[1]), _getExpDim(exp.values[2])]);
-            case "cm": return res.cmPolsMap[exp.id].dim;
+            case "cm": return exp.dim || 1;
             case "exp":
                 exp.dim = _getExpDim(expressions[exp.id]);
                 return exp.dim;
@@ -21,12 +21,11 @@ module.exports.getExpDim = function getExpDim(res, expressions, expId, stark) {
             case "number":
             case "public": 
             case "x": 
+            case "Zi":
                 return 1;
             case "challenge":
             case "eval":
                 return stark ? 3 : 1;
-            case "Zi":    
-                return stark && res.nLibStages !== 0 || Object.keys(res.imPolsMap).length > 0 ? 3 : 1;
             case "xDivXSubXi":
                 if(stark) return 3;
                 throw new Error("Exp op not defined: " + exp.op);
@@ -53,6 +52,7 @@ function setCodeDimensions(code, pilInfo, stark) {
 
     function _setCodeDimensions(code) {
         for (let i=0; i<code.length; i++) {
+            if(code[i].dest.dim) continue;
             let newDim;
             switch (code[i].op) {
                 case 'add': newDim = Math.max(getDim(code[i].src[0]), getDim(code[i].src[1])); break;
@@ -61,6 +61,9 @@ function setCodeDimensions(code, pilInfo, stark) {
                 case 'muladd': newDim = Math.max(getDim(code[i].src[0]), getDim(code[i].src[1]), getDim(code[i].src[2])); break;
                 case 'copy': newDim = getDim(code[i].src[0]); break;
                 default: throw new Error("Invalid op:"+ code[i].op);
+            }
+            if(isNaN(newDim)) {
+                throw new Error("Invalid dim:"+ newDim);
             }
             setDim(code[i].dest, newDim);
         }
@@ -74,15 +77,12 @@ function setCodeDimensions(code, pilInfo, stark) {
 
             switch (r.type) {
                 case "tmp": r.dim = tmpDim[r.id]; break;
-                case "tmpExp": break;
                 case "cm": r.dim = pilInfo.cmPolsMap[r.id].dim; break;
                 case "const": 
                 case "number": 
                 case "public": 
-                    r.dim = 1; break;
                 case "Zi":
-                    r.dim = stark && pilInfo.nLibStages !== 0 || Object.keys(pilInfo.imPolsMap).length > 0 ? 3 : 1;
-                    break;
+                    r.dim = 1; break;
                 case "eval": 
                 case "challenge": 
                 case "xDivXSubXi": 

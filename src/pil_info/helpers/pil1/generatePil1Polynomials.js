@@ -12,33 +12,34 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
 
     const publics = generatePublicsPolynomials(res, pil);
 
-    generateLibsPolynomials(F, res, pil, stark);
-
-    res.nCommitments = pil.nCommitments;
-    res.pilPower = log2(Object.values(pil.references)[0].polDeg);
-
-    const expressions = [...pil.expressions];
-    const constraints = [...pil.polIdentities]
-
     const symbols = [];
 
     for (const polRef in pil.references) {
         const polInfo = pil.references[polRef];
         if(polInfo.type === "imP") continue;
         const type = polInfo.type === 'constP' ? "fixed" : "witness";
+        const stage = type === "witness" ? 1 : 0;
         let name = polRef;
         if(polInfo.isArray) {
             for(let i = 0; i < polInfo.len; ++i) {
                 const namePol = name + i;
                 const polId = polInfo.id + i;
-                symbols.push({type, name: namePol, polId});
-                E.cm(polId, 0, 1);
+                symbols.push({type, name: namePol, polId, stage, dim: 1 });
+                if(type === "witness") E.cm(polId, 0, stage);
             }
         } else {
-            symbols.push({type, name, polId: polInfo.id});
-            E.cm(polInfo.id, 0, 1);
+            symbols.push({type, name, polId: polInfo.id, stage, dim: 1 });
+            if(type === "witness") E.cm(polInfo.id, 0, stage);
         }
     }
+
+    generateLibsPolynomials(F, res, pil, symbols, stark);
+
+    res.nCommitments = pil.nCommitments;
+    res.pilPower = log2(Object.values(pil.references)[0].polDeg);
+
+    const expressions = [...pil.expressions];
+    const constraints = [...pil.polIdentities]
 
     for(let i = 0; i < constraints.length; i++) {
         if(!constraints[i].boundary) {

@@ -30,7 +30,7 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
     let challenge = await getChallenge(1, ctx);
     
     for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
-        await libStage(i, ctx, challenge, options);
+        await computeStage(i, ctx, challenge, options);
         challenge = await getChallenge(i + 2, ctx);
     }
 
@@ -71,7 +71,7 @@ async function stage1(ctx, options) {
     ctx.prover === "stark" ? await extendAndMerkelize(1, ctx) : await extendAndCommit(1, ctx, logger);
 }
 
-async function libStage(stage, ctx, challenge, options) {
+async function computeStage(stage, ctx, challenge, options) {
     const logger = options.logger;
 
     const genStage = stage + 2;

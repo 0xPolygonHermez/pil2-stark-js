@@ -1,9 +1,10 @@
 
 const ExpressionOps = require("../../../expressionops");
+const { getExpDim } = require("../../helpers");
 
 const getKs = require("pilcom").getKs;
 
-module.exports.grandProductConnection = function grandProductConnection(res, pil, stark, F) {
+module.exports.grandProductConnection = function grandProductConnection(res, pil, symbols, stark, F) {
     const E = new ExpressionOps();
 
     const gamma = E.challenge("stage1_challenge0", 2);
@@ -20,14 +21,14 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
 
         let numExp = E.add(
             E.add(
-                E.exp(ci.pols[0]),
+                E.exp(ci.pols[0],0,2),
                 E.mul(delta, E.x())
             ), gamma);
 
         let denExp = E.add(
             E.add(
-                E.exp(ci.pols[0]),
-                E.mul(delta, E.exp(ci.connections[0]))
+                E.exp(ci.pols[0],0,2),
+                E.mul(delta, E.exp(ci.connections[0],0,2))
             ), gamma);
 
         ciCtx.numId = pil.expressions.length;
@@ -44,10 +45,10 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
         for (let i=1; i<ci.pols.length; i++) {
             const numExp =
                 E.mul(
-                    E.exp(ciCtx.numId),
+                    E.exp(ciCtx.numId,0,2),
                     E.add(
                         E.add(
-                            E.exp(ci.pols[i]),
+                            E.exp(ci.pols[i],0,2),
                             E.mul(E.mul(delta, E.number(ks[i-1])), E.x())
                         ),
                         gamma
@@ -57,11 +58,11 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
 
             const denExp =
                 E.mul(
-                    E.exp(ciCtx.denId),
+                    E.exp(ciCtx.denId,0,2),
                     E.add(
                         E.add(
                             E.exp(ci.pols[i]),
-                            E.mul(delta, E.exp(ci.connections[i]))
+                            E.mul(delta, E.exp(ci.connections[i],0,2))
                         ),
                         gamma
                     )
@@ -94,7 +95,7 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
         pil.polIdentities.push({e: pil.expressions.length - 1, boundary: "firstRow"});
 
 
-        const c2 = E.sub(  E.mul(zp,  E.exp( ciCtx.denId )), E.mul(z, E.exp( ciCtx.numId )));
+        const c2 = E.sub(  E.mul(zp,  E.exp(ciCtx.denId,0,2)), E.mul(z, E.exp(ciCtx.numId,0,2)));
         c2.deg=2;
         pil.expressions.push(c2);
         pil.polIdentities.push({e: pil.expressions.length - 1, boundary: "everyRow"});
@@ -113,6 +114,15 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
                 }
             ]
         }
+
+        const numDim = getExpDim(pil.expressions, ciCtx.numId, stark);
+        symbols.push({ type: "tmpPol", name: `Connection${i}.num`, expId: ciCtx.numId, stage: 2, dim: numDim });
+
+        const denDim = getExpDim(pil.expressions, ciCtx.denId, stark);
+        symbols.push({ type: "tmpPol", name: `Connection${i}.den`, expId: ciCtx.denId, stage: 2, dim: denDim });
+
+        symbols.push({ type: "witness", name: `Connection${i}.z`, polId: ciCtx.zId, stage: 2, dim: Math.max(numDim, denDim) });
+
         res.libs[name].push(stage1);
     }
 }
