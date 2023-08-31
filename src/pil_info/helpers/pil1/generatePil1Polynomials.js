@@ -14,6 +14,8 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
 
     const symbols = [];
 
+    const hints = [];
+
     for (const polRef in pil.references) {
         const polInfo = pil.references[polRef];
         if(polInfo.type === "imP") continue;
@@ -33,7 +35,7 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
         }
     }
 
-    generateLibsPolynomials(F, res, pil, symbols, stark);
+    generateLibsPolynomials(F, res, pil, symbols, hints, stark);
 
     res.nCommitments = pil.nCommitments;
     res.pilPower = log2(Object.values(pil.references)[0].polDeg);
@@ -57,5 +59,5 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
         }
     }
 
-    return { publics, symbols, expressions, constraints };
+    return { publics, symbols, hints, expressions, constraints };
 }

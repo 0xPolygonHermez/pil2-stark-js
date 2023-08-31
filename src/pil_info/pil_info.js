@@ -17,7 +17,6 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
     const res = {
         cmPolsMap: [],
         challengesMap: [],
-        libs: {},
         code: {},
         nLibStages: 0,
         starkStruct: starkStruct,
@@ -26,10 +25,12 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
     let expressions, symbols, constraints, publics;
 
     if(pil1) {
-        ({expressions, symbols, constraints, publics} = generatePil1Polynomials(F, res, pil, stark));
+        ({expressions, symbols, hints, constraints, publics} = generatePil1Polynomials(F, res, pil, stark));
     } else {
         ({expressions, symbols, constraints, publics} = getPiloutInfo(res, pil));
     }
+
+    res.hints = hints;
 
     for(let i = 0; i < constraints.length; ++i) {
         addInfoExpressions(expressions, expressions[constraints[i].e]);

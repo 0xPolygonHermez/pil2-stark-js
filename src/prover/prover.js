@@ -82,24 +82,21 @@ async function computeStage(stage, ctx, challenge, options) {
 
     await callCalculateExps(`stage${genStage}`, "n", ctx, options.parallelExec, options.useThreads);
 
-    for(let i = 0; i < Object.keys(ctx.pilInfo.libs).length; i++) {
-        const libName = Object.keys(ctx.pilInfo.libs)[i];
-        const lib = ctx.pilInfo.libs[libName];
-        if(stage >= lib.length) continue;
+    for(let i = 0; i < ctx.pilInfo.hints.length; i++) {
+        const hint = ctx.pilInfo.hints[i];
+        if(hint.stage !== genStage) continue;
 
-        const libStage = lib[stage];
-        for(let j = 0; j < libStage.hints.length; j++) {
-            const hint = libStage.hints[j];
-            const inputs = [];
-            for(let k = 0; k < hint.inputs.length; ++k) {
-                const pol = getPol(ctx, libStage.pols[hint.inputs[k]].id, "n")
-                inputs.push(pol);
-            }
-            const outputs = await hintFunctions(hint.lib,ctx.F, inputs);
-            for(let k = 0; k < hint.outputs.length; ++k) {
-                setPol(ctx, libStage.pols[hint.outputs[k]].id, outputs[k], "n");
-            }
-        }        
+        const inputs = [];
+        for(let j = 0; j < hint.inputs.length; ++j) {
+            const inputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.inputs[j]);
+            const pol = getPol(ctx, inputIdx, "n")
+            inputs.push(pol);
+        } 
+        const outputs = await hintFunctions(hint.lib,ctx.F, inputs);
+        for(let j = 0; j < hint.outputs.length; ++j) {
+            const outputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.outputs[j]);
+            setPol(ctx, outputIdx, outputs[j], "n");
+        }    
     }
 
     ctx.prover === "stark" ? await extendAndMerkelize(genStage, ctx, logger) : await extendAndCommit(genStage, ctx, logger);

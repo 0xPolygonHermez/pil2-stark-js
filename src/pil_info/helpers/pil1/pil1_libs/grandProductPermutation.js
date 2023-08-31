@@ -1,7 +1,7 @@
 const ExpressionOps = require("../../../expressionops");
 const { getExpDim } = require("../../helpers");
 
-module.exports.grandProductPermutation = function grandProductPermutation(res, pil, symbols, stark) {
+module.exports.grandProductPermutation = function grandProductPermutation(res, pil, symbols, hints, stark) {
     const E = new ExpressionOps();
 
     const gamma = E.challenge("stage1_challenge0", 2);
@@ -9,9 +9,6 @@ module.exports.grandProductPermutation = function grandProductPermutation(res, p
     const epsilon = E.challenge("stage1_challenge2", 2);
 
     for (let i=0; i<pil.permutationIdentities.length; i++) {
-        const name = `Permutation${i}`;
-        res.libs[name] = [];
-
         const peCtx = {};
         const pi = pil.permutationIdentities[i];
 
@@ -93,22 +90,14 @@ module.exports.grandProductPermutation = function grandProductPermutation(res, p
         pil.expressions.push(c2);
         pil.polIdentities.push({e: pil.expressions.length - 1, boundary: "everyRow"});
 
-        const stage1 = {
-            pols: {
-                f: {id: peCtx.fExpId, tmp: true},
-                t: {id: peCtx.tExpId, tmp: true},
-                num: {id: peCtx.numId, tmp: true},
-                den: {id: peCtx.denId, tmp: true},
-                z: {id: peCtx.zId},
-            },
-            hints: [
-                {
-                    inputs: ["num", "den"], 
-                    outputs: ["z"], 
-                    lib: "calculateZ"
-                }
-            ]
-        }
+        const hint = {
+            stage: 2,
+            inputs: [`Permutation${i}.num`, `Permutation${i}.den`], 
+            outputs: [`Permutation${i}.z`], 
+            lib: "calculateZ"
+        };
+
+        hints.push(hint);
 
         const fDim = getExpDim(pil.expressions, peCtx.fExpId, stark);
         symbols.push({ type: "tmpPol", name: `Permutation${i}.f`, expId: peCtx.fExpId, stage: 2, dim: fDim });
@@ -123,7 +112,5 @@ module.exports.grandProductPermutation = function grandProductPermutation(res, p
         symbols.push({ type: "tmpPol", name: `Permutation${i}.den`, expId: peCtx.denId, stage: 2, dim: denDim });
 
         symbols.push({ type: "witness", name: `Permutation${i}.z`, polId: peCtx.zId, stage: 2, dim: Math.max(numDim, denDim) });
-
-        res.libs[name].push(stage1);
     }
 }

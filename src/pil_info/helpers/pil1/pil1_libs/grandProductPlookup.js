@@ -1,7 +1,7 @@
 const ExpressionOps = require("../../../expressionops");
 const { getExpDim } = require("../../helpers");
 
-module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symbols, stark) {
+module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symbols, hints, stark) {
     const E = new ExpressionOps();
 
     const alpha = E.challenge("stage1_challenge0", 2);
@@ -11,9 +11,6 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symb
 
 
     for (let i=0; i<pil.plookupIdentities.length; i++) {
-        const name = `Plookup${i}`;
-        res.libs[name] = [];
-
         const puCtx = {};
         const pi = pil.plookupIdentities[i];
 
@@ -63,24 +60,7 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symb
 
         puCtx.h1Id = pil.nCommitments++;
         puCtx.h2Id = pil.nCommitments++;
-        
-        const stage1 = {
-            pols: {
-                f: {id: puCtx.fExpId, tmp: true},
-                t: {id: puCtx.tExpId, tmp: true},
-                h1: {id: puCtx.h1Id},
-                h2: {id: puCtx.h2Id},
-            },
-            hints: [
-                {
-                    inputs: ["f", "t"], 
-                    outputs: ["h1", "h2"], 
-                    lib: "calculateH1H2"
-                }
-            ]
-        }
-        res.libs[name].push(stage1);
-        
+                
         puCtx.zId = pil.nCommitments++;
 
         const h1 = E.cm(puCtx.h1Id, 0, 2);
@@ -165,21 +145,22 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symb
         pil.expressions.push(c2);
         pil.polIdentities.push({e: pil.expressions.length - 1, boundary: "everyRow"});
 
-        const stage2 = {
-            pols: {
-                num: {id: puCtx.numId, tmp: true},
-                den: {id: puCtx.denId, tmp: true},
-                z: {id: puCtx.zId},
-            },
-            hints: [
-                {
-                    inputs: ["num", "den"], 
-                    outputs: ["z"], 
-                    lib: "calculateZ"
-                }
-            ]
+        const hint1 = {
+            stage: 2,
+            inputs: [`Plookup${i}.f`, `Plookup${i}.t`], 
+            outputs: [`Plookup${i}.h1`, `Plookup${i}.h2`], 
+            lib: "calculateH1H2"
+        };
 
-        }
+        const hint2 = {
+            stage: 3,
+            inputs: [`Plookup${i}.num`, `Plookup${i}.den`], 
+            outputs: [`Plookup${i}.z`], 
+            lib: "calculateZ"
+        };
+
+        hints.push(hint1);
+        hints.push(hint2);
 
         const fDim = getExpDim(pil.expressions, puCtx.fExpId, stark);
         symbols.push({ type: "tmpPol", name: `Plookup${i}.f`, expId: puCtx.fExpId, stage: 2, dim: fDim });
@@ -197,7 +178,5 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symb
         symbols.push({ type: "tmpPol", name: `Plookup${i}.den`, expId: puCtx.denId, stage: 3, dim: denDim });
 
         symbols.push({ type: "witness", name: `Plookup${i}.z`, polId: puCtx.zId, stage: 3, dim: Math.max(numDim, denDim) });
-
-        res.libs[name].push(stage2);
     }
 }

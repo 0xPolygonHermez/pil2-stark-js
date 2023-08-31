@@ -4,16 +4,13 @@ const { getExpDim } = require("../../helpers");
 
 const getKs = require("pilcom").getKs;
 
-module.exports.grandProductConnection = function grandProductConnection(res, pil, symbols, stark, F) {
+module.exports.grandProductConnection = function grandProductConnection(res, pil, symbols, hints, stark, F) {
     const E = new ExpressionOps();
 
     const gamma = E.challenge("stage1_challenge0", 2);
     const delta = E.challenge("stage1_challenge1", 2);
 
     for (let i=0; i<pil.connectionIdentities.length; i++) {
-        const name = `Connection${i}`;
-        res.libs[name] = [];
-
         const ci = pil.connectionIdentities[i];
         const ciCtx = {};
 
@@ -100,6 +97,7 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
         pil.expressions.push(c2);
         pil.polIdentities.push({e: pil.expressions.length - 1, boundary: "everyRow"});
 
+        
         const stage1 = {
             pols: {
                 num: {id: ciCtx.numId, tmp: true},
@@ -123,6 +121,13 @@ module.exports.grandProductConnection = function grandProductConnection(res, pil
 
         symbols.push({ type: "witness", name: `Connection${i}.z`, polId: ciCtx.zId, stage: 2, dim: Math.max(numDim, denDim) });
 
-        res.libs[name].push(stage1);
+        const hint = {
+            stage: 2,
+            inputs: [`Connection${i}.num`, `Connection${i}.den`], 
+            outputs: [`Connection${i}.z`], 
+            lib: "calculateZ"
+        };
+
+        hints.push(hint);
     }
 }

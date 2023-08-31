@@ -3,7 +3,7 @@ const { grandProductConnection } = require("./pil1_libs/grandProductConnection.j
 const { grandProductPermutation } = require("./pil1_libs/grandProductPermutation.js");
 const { grandProductPlookup } = require("./pil1_libs/grandProductPlookup.js");
 
-module.exports = function generateLibsPolynomials(F, res, pil, symbols, stark) {
+module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, stark) {
     const E = new ExpressionOps();
 
     let pilLibs = [];
@@ -11,21 +11,21 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, stark) {
     if(pil.plookupIdentities.length > 0) {
         pilLibs.push({
             nChallenges: [2,2],
-            lib: function() { grandProductPlookup(res, pil, symbols, stark) },
+            lib: function() { grandProductPlookup(res, pil, symbols, hints, stark) },
         });
     }
 
     if(pil.connectionIdentities.length > 0) {
         pilLibs.push({
             nChallenges: [2],
-            lib: function() { grandProductConnection(res, pil, symbols, stark, F)},
+            lib: function() { grandProductConnection(res, pil, symbols, hints, stark, F)},
         });
     }
 
     if(pil.permutationIdentities.length > 0) {
         pilLibs.push({
             nChallenges: [3],
-            lib: function() { grandProductPermutation(res, pil, symbols, stark)},
+            lib: function() { grandProductPermutation(res, pil, symbols, hints, stark)},
         });
     }
 

@@ -46,14 +46,12 @@ function mapSymbols(res, symbols) {
         if(!res.mapSectionsN[stage]) res.mapSectionsN[stage] = 0;
 
         if(symbol.type === "tmpPol") {
-            const [nameSpace, namePol] = symbol.name.split("."); 
             const im = symbol.imPol;
-            if(!im) symbol.polId = nCommits++;        
-            stage = im ? stage : "tmpExp";
-            addPol(res, stage, symbol.name, symbol.dim, symbol.polId, im);
-            if(res.libs[nameSpace]) {
-                res.libs[nameSpace][symbol.stage - 2].pols[namePol].id = symbol.polId;
+            if(!im) {
+                symbol.polId = nCommits++;  
+                stage = "tmpExp";      
             }
+            addPol(res, stage, symbol.name, symbol.dim, symbol.polId, im);
         } else {
             addPol(res, stage, symbol.name, symbol.dim, symbol.polId);
         }
