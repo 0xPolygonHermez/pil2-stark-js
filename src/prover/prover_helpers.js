@@ -49,9 +49,6 @@ module.exports.calculateExpAtPoint = function calculateExpAtPoint(ctx, code, i) 
 module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
     const body = [];
 
-    const next = dom === "n" ? 1 : (1 << ctx.extendBits);
-    const N = dom === "n" ? ctx.N : ctx.extN;
-
     for (let j=0;j<code.length; j++) {
         const src = [];
         for (k=0; k<code[j].src.length; k++) {
@@ -78,6 +75,7 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
         switch (r.type) {
             case "tmp": return `ctx.tmp[${r.id}]`;
             case "const": {
+                const N = dom === "n" ? ctx.N : ctx.extN;
                 const next = dom === "n" ? r.prime : r.prime << ctx.extendBits;
                 const index = r.prime ? `((i + ${next})%${N})` : "i"
                 if (dom === "n") {
@@ -177,7 +175,10 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
 
     function evalMap(polId, prime, dom, val) {
         let p = ctx.pilInfo.cmPolsMap[polId];
-        offset = p.stagePos;
+        offset = ctx.pilInfo.cmPolsMap
+            .filter((pol, index) => pol.stage === p.stage && index < polId)
+            .reduce((acc, pol) => acc + pol.dim, 0);
+        const N = dom === "n" ? ctx.N : ctx.extN;
         const next = dom === "n" ? prime : prime << ctx.extendBits;
         let index = prime ? `((i + ${next})%${N})` : "i";
         let size = ctx.pilInfo.mapSectionsN[p.stage];
@@ -244,11 +245,14 @@ module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
     const deg = dom === "ext" ? ctx.extN : ctx.N;
     let p = ctx.pilInfo.cmPolsMap[idPol];
     let stage = p.stage + "_" + dom;
+    let offset = ctx.pilInfo.cmPolsMap
+    .filter((pol, index) => pol.stage === p.stage && index < idPol)
+    .reduce((acc, pol) => acc + pol.dim, 0);
     let polRef = {
-        stage: stage,
+        stage,
         buffer: ctx[stage],
-        deg: deg,
-        offset: p.stagePos,
+        deg,
+        offset,
         size: ctx.pilInfo.mapSectionsN[p.stage],
         dim: p.dim
     };
@@ -371,46 +375,40 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
 
     const cEveryRow = module.exports.compileCode(ctx, code.code, dom, false);
 
-    const n = dom === "n" ? ctx.N : ctx.extN;
-    const next = dom === "n" ? 1 : (1 << ctx.extendBits);
+    const N = dom === "n" ? ctx.N : ctx.extN;
 
-    let nPerThread = Math.floor((n - 1) / pool.maxWorkers) + 1;
+    let nPerThread = Math.floor((N - 1) / pool.maxWorkers) + 1;
     if (nPerThread > maxNperThread) nPerThread = maxNperThread;
     if (nPerThread < minNperThread) nPerThread = minNperThread;
     const promises = [];
     let res = [];
     const stark = ctx.prover === "stark" ? true : false;
     if(stark) {
-        for (let i = 0; i < n; i += nPerThread) {
-            const curN = Math.min(nPerThread, n - i);
+        for (let i = 0; i < N; i += nPerThread) {
+            const curN = Math.min(nPerThread, N - i);
             const ctxIn = {
-                n: n,
-                nBits: ctx.nBits,
-                next: next,
                 evals: ctx.evals,
                 publics: ctx.publics,
                 challenges: ctx.challenges
             };
             for (let s = 0; s < execInfo.inputSections.length; s++) {
                 const si = execInfo.inputSections[s];
-                ctxIn[si.name] = new BigUint64Array((curN + next) * si.width);
+                ctxIn[si.name] = new BigUint64Array(curN * si.width);
                 const s1 = ctx[si.name].slice(i * si.width, (i + curN) * si.width);
                 ctxIn[si.name].set(s1);
-                const sNext = ctx[si.name].slice(((i + curN)%n) *si.width, ((i + curN)%n) * si.width + si.width*next);
-                ctxIn[si.name].set(sNext, curN*si.width);
             }
     
             for (let s=0; s<execInfo.outputSections.length; s++) {
                 const si = execInfo.outputSections[s];
                 if (typeof ctxIn[si.name] == "undefined") {
-                    ctxIn[si.name] = new BigUint64Array((curN + next) * si.width);
+                    ctxIn[si.name] = new BigUint64Array(curN * si.width);
                 }
             }
     
             if (useThreads) {
-                promises.push(pool.exec("proofgen_execute", [ctxIn, true, cEveryRow, curN, execInfo, execPart, i, n]));
+                promises.push(pool.exec("proofgen_execute", [ctxIn, true, cEveryRow, curN, execInfo, execPart, i, N]));
             } else {
-                res.push(await proofgen_execute(ctxIn, true, cEveryRow, curN, execInfo, execPart, i, n));
+                res.push(await proofgen_execute(ctxIn, true, cEveryRow, curN, execInfo, execPart, i, N));
             }
         }
         if (useThreads) {
@@ -419,44 +417,39 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         for (let i = 0; i < res.length; i++) {
             for (let s = 0; s < execInfo.outputSections.length; s++) {
                 const si = execInfo.outputSections[s];
-                const b = new BigUint64Array(res[i][si.name].buffer, res[i][si.name].byteOffset, res[i][si.name].length - si.width*next);
+                const b = new BigUint64Array(res[i][si.name].buffer, res[i][si.name].byteOffset, res[i][si.name].length);
                 ctx[si.name].set(b, i * nPerThread * si.width);
             }
         }
     } else {
-        for (let i = 0; i < n; i += nPerThread) {
-            const curN = Math.min(nPerThread, n - i);
+        for (let i = 0; i < N; i += nPerThread) {
+            const curN = Math.min(nPerThread, N - i);
             const ctxIn = {
                 F: ctx.F,
-                n: n,
-                nBits: ctx.nBits,
-                next: next,
                 evals: ctx.evals,
                 publics: ctx.publics,
                 challenges: ctx.challenges
             };
             for (let s = 0; s < execInfo.inputSections.length; s++) {
                 const si = execInfo.inputSections[s];
-                ctxIn[si.name] = new BigBuffer((curN + next) * si.width * ctx.F.n8);
+                ctxIn[si.name] = new BigBuffer(curN * si.width * ctx.F.n8);
                 const s1 = si.width > 0 ? ctx[si.name].slice(i * si.width * ctx.F.n8, (i + curN) * si.width * ctx.F.n8) : ctx[si.name];
                 ctxIn[si.name].set(s1, 0);
-                const sNext = si.width > 0 ? ctx[si.name].slice((((i + curN) % n) * si.width) * ctx.F.n8, (((i + curN) % n) * si.width + si.width * next) * ctx.F.n8) : ctx[si.name];
-                ctxIn[si.name].set(sNext, curN * si.width * ctx.F.n8);
                 ctxIn[si.name] = new Proxy(ctxIn[si.name], BigBufferHandler);
             }
     
             for (let s=0; s<execInfo.outputSections.length; s++) {
                 const si = execInfo.outputSections[s];
                 if (typeof ctxIn[si.name] == "undefined") {
-                    ctxIn[si.name] = new BigBuffer((curN + next) * si.width * ctx.F.n8);
+                    ctxIn[si.name] = new BigBuffer(curN * si.width * ctx.F.n8);
                 }
                 ctxIn[si.name] = new Proxy(ctxIn[si.name], BigBufferHandler);
             }
     
             if (useThreads) {
-                promises.push(pool.exec("proofgen_execute", [ctxIn, false, cEveryRow, curN, execInfo, execPart, i, n]));
+                promises.push(pool.exec("proofgen_execute", [ctxIn, false, cEveryRow, curN, execInfo, execPart, i, N]));
             } else {
-                res.push(await proofgen_execute(ctxIn, false, cEveryRow, curN, execInfo, execPart, i, n));
+                res.push(await proofgen_execute(ctxIn, false, cEveryRow, curN, execInfo, execPart, i, N));
             }
         }
         if (useThreads) {
@@ -465,7 +458,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         for (let i = 0; i < res.length; i++) {
             for (let s = 0; s < execInfo.outputSections.length; s++) {
                 const si = execInfo.outputSections[s];
-                const b = si.width > 0 ? res[i][si.name].slice(0, res[i][si.name].byteLength - si.width * next * ctx.F.n8) : res[i][si.name];
+                const b = si.width > 0 ? res[i][si.name].slice(0, res[i][si.name].byteLength * ctx.F.n8) : res[i][si.name];
                 ctx[si.name].set(b, i * nPerThread * si.width * ctx.F.n8);
             }
         }

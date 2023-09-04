@@ -69,7 +69,7 @@ function evalExp(codeCtx, constraints, exp, prime) {
         let p = exp.rowOffset || prime; 
         return { type: exp.op, id: exp.id, prime: p }
     } else if (["public", "challenge", "eval"].includes(exp.op)) {
-        return { type: exp.op, id: exp.id }
+        return { type: exp.op, id: exp.id}
     } else if (exp.op == "number") {
         return { type: "number", value: exp.value.toString() }
     } else if (exp.op == "xDivXSubXi") {
@@ -94,17 +94,17 @@ function calculateDeps(ctx, expressions, constraints, exp, prime, expIdErr, addM
     }
 }
 
-function buildCode(ctx, expressions) {
-    res = {};
-    res.tmpUsed = ctx.tmpUsed;
-    res.first = [];
-    res.last = [];
-    res.everyFrame = [];
-    res.code = [];
+function buildCode(ctx, res, symbols, expressions, dom, stark, verifierEvaluations = false, verifierQuery = false) {
+    let resCode = {};
+    resCode.tmpUsed = ctx.tmpUsed;
+    resCode.first = [];
+    resCode.last = [];
+    resCode.everyFrame = [];
+    resCode.code = [];
 
     for (let i=0; i<ctx.code.length; i++) {
         for (let j=0; j< ctx.code[i].code.length; j++) {
-            res.code.push(ctx.code[i].code[j]);
+            resCode.code.push(ctx.code[i].code[j]);
         }
     }
 
@@ -114,7 +114,12 @@ function buildCode(ctx, expressions) {
         if (!e.keep) delete ctx.calculated[i];
     }
     ctx.code = [];
-    return res;
+
+    fixProverCode(res, symbols, resCode, dom, stark, verifierEvaluations, verifierQuery);
+
+    setCodeDimensions(resCode, res, stark);
+
+    return resCode;
 }
 
 function findAddMul(exp) {
@@ -191,6 +196,7 @@ function fixExpression(res, r, ctx, symbols, verifierEvaluations) {
     if(symbol && (symbol.imPol || (!verifierEvaluations && ctx.dom === "n"))) {
         r.type = "cm";
         r.id = symbol.polId;
+        r.dim = symbol.dim;
         if(verifierEvaluations) fixEval(res, r, prime);
     } else {
         if (!ctx.expMap[prime]) ctx.expMap[prime] = {};
@@ -233,11 +239,56 @@ function fixCommitsQuery(res, r) {
         r.type = "tree" + index;
     }
             
-    r.stageId = res.cmPolsMap.filter(p => p.stage === p1.stage && p.stagePos < p1.stagePos).length;
-    r.treePos = p1.stagePos;
+    const prevPolsStage = res.cmPolsMap.filter((p, index) => p.stage === p1.stage && index < r.id);
+    r.stageId = prevPolsStage.length;
+    r.treePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
     r.dim = p1.dim;
 }
 
-module.exports.fixProverCode = fixProverCode;
+function setCodeDimensions(code, pilInfo, stark) {
+    const tmpDim = [];
+
+    _setCodeDimensions(code.code);
+
+    function _setCodeDimensions(code) {
+        for (let i=0; i<code.length; i++) {
+            let dest = code[i].dest;
+            if(dest.dim) continue;
+            let newDim;
+            switch (code[i].op) {
+                case 'add': newDim = Math.max(getDim(code[i].src[0]), getDim(code[i].src[1])); break;
+                case 'sub': newDim = Math.max(getDim(code[i].src[0]), getDim(code[i].src[1])); break;
+                case 'mul': newDim = Math.max(getDim(code[i].src[0]), getDim(code[i].src[1])); break;
+                case 'muladd': newDim = Math.max(getDim(code[i].src[0]), getDim(code[i].src[1]), getDim(code[i].src[2])); break;
+                case 'copy': newDim = getDim(code[i].src[0]); break;
+                default: throw new Error("Invalid op:"+ code[i].op);
+            }
+            if(isNaN(newDim)) {
+                throw new Error("Invalid dim:"+ newDim);
+            }
+
+            if(dest.type === "tmp") {
+                tmpDim[dest.id] = newDim;
+                dest.dim = newDim;
+            }
+        }
+
+        function getDim(r) {
+            if (r.type === "tmp") {
+                r.dim = tmpDim[r.id];
+            } else if (r.type === "cm") {
+                r.dim = pilInfo.cmPolsMap[r.id].dim;
+            } else if (["const", "number", "public", "Zi"].includes(r.type)) {
+                r.dim = 1;
+            } else if (["eval", "challenge", "xDivXSubXi", "x"].includes(r.type)) {
+                r.dim = stark ? 3 : 1;
+            } else if (!r.type.startsWith("tree") || !stark) {
+                throw new Error("Invalid reference type: " + r.type);
+            }
+            return r.dim;
+        }
+    }
+}
+
 module.exports.pilCodeGen = pilCodeGen;
 module.exports.buildCode  = buildCode;

@@ -1,4 +1,3 @@
-const { setCodeDimensions } = require("../helpers");
 const { pilCodeGen, buildCode, fixProverCode } = require("./codegen");
 
 module.exports.generatePublicsCode = function generatePublicsCode(res, symbols, expressions, constraints, publics,stark) {
@@ -10,10 +9,8 @@ module.exports.generatePublicsCode = function generatePublicsCode(res, symbols, 
 
     for(let i = 0; i < publics.length; ++i) {
         pilCodeGen(ctx, expressions, constraints, publics[i].expId, 0);
-        res.publicsCode[i] = buildCode(ctx, expressions);
+        res.publicsCode[i] = buildCode(ctx, res, symbols, expressions, "n", stark);
         res.publicsCode[i].idx = publics[i].idx;
-        fixProverCode(res, symbols, res.publicsCode[i], "n", stark, false, false);
-        setCodeDimensions(res.publicsCode[i], res, stark);
     }
 }
 
@@ -30,20 +27,16 @@ module.exports.generateFRICode = function generateFRICode(res, friExpId, symbols
 
     code[code.length-1].dest = { type: "f", id: 0, dim: 3 };
 
-    res.code["fri"] = buildCode(ctxExt, expressions);
-    fixProverCode(res, symbols, res.code.fri, "ext", stark, false, false);
-    setCodeDimensions(res.code.fri, res, stark);
+    res.code["fri"] = buildCode(ctxExt, res, symbols, expressions, "ext", stark);
 
     let addMul = res.starkStruct.verificationHashType == "GL" ? false : true;
     pilCodeGen(ctxExt, expressions, constraints, friExpId, 0, addMul);
-    res.code.queryVerifier = buildCode(ctxExt, expressions);
-    fixProverCode(res, symbols, res.code.queryVerifier, "ext", stark, false, true);
-    setCodeDimensions(res.code.queryVerifier, res, stark);
+    res.code.queryVerifier = buildCode(ctxExt, res, symbols, expressions, "ext", stark, false, true);
 }
 
 
 module.exports.generateConstraintPolynomialCode = function generateConstraintPolynomialCode(res, cExpId, symbols, expressions, constraints, stark) {
-    const ctx_ext = {
+    const ctxExt = {
         calculated: {},
         tmpUsed: 0,
         code: []
@@ -52,20 +45,18 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
     for(let i = 0; i < symbols.length; i++) {
         if(!symbols[i].imPol) continue;
         const expId = symbols[i].expId;
-        ctx_ext.calculated[expId] = {};
+        ctxExt.calculated[expId] = {};
         for(let i = 0; i < res.openingPoints.length; ++i) {
             const openingPoint = res.openingPoints[i];
-            ctx_ext.calculated[expId][openingPoint] = true;
+            ctxExt.calculated[expId][openingPoint] = true;
         }
     }
 
-    pilCodeGen(ctx_ext, expressions, constraints, cExpId, 0);
-    const code = ctx_ext.code[ctx_ext.code.length-1].code;
+    pilCodeGen(ctxExt, expressions, constraints, cExpId, 0);
+    const code = ctxExt.code[ctxExt.code.length-1].code;
     code[code.length-1].dest = {type: "q", id: 0, dim: res.qDim };
 
-    res.code["Q"] = buildCode(ctx_ext, expressions);
-    fixProverCode(res, symbols, res.code["Q"], "ext", stark, false, false);
-    setCodeDimensions(res.code.Q, res, stark);
+    res.code["Q"] = buildCode(ctxExt, res, symbols, expressions, "ext", stark);
 }
 
 module.exports.generateStagesCode = function generateStagesCode(res, symbols, expressions, constraints, stark) {
@@ -81,9 +72,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                 pilCodeGen(ctx, expressions, constraints, j, 0);
             }
         }   
-        res.code[`stage1`] = buildCode(ctx, expressions);
-        fixProverCode(res, symbols, res.code["stage1"], "n", stark, false, false);
-        setCodeDimensions(res.code.stage1, res, stark);
+        res.code[`stage1`] =  buildCode(ctx, res, symbols, expressions, "n", stark);
     }
 
     for(let i = 0; i < res.nLibStages; ++i) {
@@ -93,8 +82,6 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                 pilCodeGen(ctx, expressions, constraints, j, 0);
             }
         }
-        res.code[`stage${stage}`] = buildCode(ctx, expressions);
-        fixProverCode(res, symbols, res.code[`stage${stage}`], "n", stark, false, false);
-        setCodeDimensions(res.code[`stage${stage}`], res, stark);
+        res.code[`stage${stage}`] =  buildCode(ctx, res, symbols, expressions, "n", stark);
     }
 }

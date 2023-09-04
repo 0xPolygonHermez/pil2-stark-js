@@ -784,7 +784,9 @@ module.exports = function compileCode_QPolynomial(fflonkInfo, nBits, functionNam
             console.log("xx");
         }
         let stage = extend ? p.stage + "_n" : p.stage + "_ext";
-        let offset = p.stagePos;
+        let offset = starkInfo.cmPolsMap
+            .filter((pol, index) => pol.stage === p.stage && index < polId)
+            .reduce((acc, pol) => acc + pol.dim, 0);
         let size = fflonkInfo.mapSectionsN[p.stage];
         if (p.dim == 1) {
             if (prime) {
@@ -888,7 +890,9 @@ module.exports = function compileCode_QPolynomial(fflonkInfo, nBits, functionNam
 
     function evalMap_(polId, prime, extend) {
         let p = fflonkInfo.cmPolsMap[polId];
-        let offset = p.stagePos;
+        let offset = starkInfo.cmPolsMap
+            .filter((pol, index) => pol.stage === p.stage && index < polId)
+            .reduce((acc, pol) => acc + pol.dim, 0);
         let stage = extend ? p.stage + "_n" : p.stage + "_ext";
         let size = fflonkInfo.mapSectionsN[p.stage];
         if (p.dim == 1) {

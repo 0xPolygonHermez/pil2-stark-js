@@ -620,7 +620,9 @@ module.exports = function compileCode_fri(starkInfo, functionName, code, dom) {
         }
         let stage = extend ? p.stage + "_n" : p.stage + "_ext";
         let offset = starkInfo.mapOffsets[stage];
-        offset += p.stagePos;
+        offset += starkInfo.cmPolsMap
+        .filter((pol, index) => pol.stage === p.stage && index < polId)
+        .reduce((acc, pol) => acc + pol.dim, 0);
         let size = starkInfo.mapSectionsN[p.stage];
         if (p.dim == 1) {
             if (prime) {

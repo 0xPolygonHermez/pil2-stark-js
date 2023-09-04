@@ -1,5 +1,4 @@
 const { buildCode, pilCodeGen, fixProverCode } = require("../code/codegen.js");
-const { setCodeDimensions } = require("../helpers.js");
 
 
 module.exports  = function generateConstraintPolynomialVerifierCode(res, cExpId, symbols, expressions, constraints, stark) {       
@@ -8,6 +7,8 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, cExpId,
         tmpUsed: 0,
         code: []
     };
+
+    res.evMap = [];
 
     for(let i = 0; i < symbols.length; i++) {
         if(!symbols[i].imPol) continue;
@@ -22,22 +23,11 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, cExpId,
     let addMul = stark && res.starkStruct.verificationHashType == "GL" ? false : true;
     pilCodeGen(ctx, expressions, constraints, cExpId, 0, addMul);
 
-    res.code.qVerifier = buildCode(ctx, expressions);
-
-    res.evMap = [];
-
-    fixProverCode(res, symbols, res.code.qVerifier, "n", stark, true, false);
-
-    setCodeDimensions(res.code.qVerifier, res, stark);
+    res.code.qVerifier = buildCode(ctx, res, symbols, expressions, "n", stark, true);
 
     if (stark) {
         for (let i = 0; i < res.qDeg; i++) {
-            const rf = {
-                type: "cm",
-                id: res.qs[i],
-                name: "Q" + i,
-                prime: 0,
-            };
+            const rf = { type: "cm", id: res.qs[i], name: "Q" + i, prime: 0 };
             res.evMap.push(rf);
         }
     } else {

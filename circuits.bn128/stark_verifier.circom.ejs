@@ -602,10 +602,13 @@ template MapValues() {
 <%      let sectionsStage = starkInfo.cmPolsMap.filter(p => p.stage === "cm" + index);  -%>
 <%      for (let i=0; i< sectionsStage.length; i++) {         -%>
 <%          const p = sectionsStage[i];  -%>
+<%          let posStage = sectionsStage
+                .filter((pol, index) => index < i)
+                .reduce((acc, pol) => acc + pol.dim, 0); -%>
 <%          if (p.dim == 1) {                                                    -%>
-    tree<%- index %>_<%- i %> <== vals<%- index %>[<%- p.stagePos %>];
+    tree<%- index %>_<%- i %> <== vals<%- index %>[<%- posStage %>];
 <%          } else if (p.dim == 3) {                                             -%>
-    tree<%- index %>_<%- i %> <== [vals<%- index %>[<%- p.stagePos %>],vals<%- index %>[<%- p.stagePos + 1 %>] , vals<%- index %>[<%- p.stagePos + 2 %>]];
+    tree<%- index %>_<%- i %> <== [vals<%- index %>[<%- posStage %>],vals<%- index %>[<%- posStage + 1 %>] , vals<%- index %>[<%- posStage + 2 %>]];
 <%          } else throw new Error("Invalid dim")                                -%>
 <%      }                                                                        -%>
 <% }                                                                             -%>

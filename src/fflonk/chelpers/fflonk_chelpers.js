@@ -230,7 +230,9 @@ module.exports = function buildCHelpers(fflonkInfo, config = {}) {
             if (!p) {
                 console.log("xx");
             }
-            let offset = p.stagePos;
+            let offset = starkInfo.cmPolsMap
+                .filter((pol, index) => pol.stage === p.stage && index < polId)
+                .reduce((acc, pol) => acc + pol.dim, 0);
             let index = prime ? `((i + ${next})%${N})` : "i";
             let size = fflonkInfo.mapSectionsN[p.stage];
             let stage = extend ? p.stage + "_n" : p.stage + "_ext";

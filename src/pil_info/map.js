@@ -20,14 +20,6 @@ module.exports = function map(res, symbols, stark) {
 
         setMapOffsets(res);   
     }
-
-    for(let i = 0; i < res.cmPolsMap.length; ++i) {
-        let cm = res.cmPolsMap[i];
-        cm.stagePos = res.cmPolsMap
-            .slice(0, i)
-            .filter((p) => p.stage == cm.stage)
-            .reduce((acc, p) => acc + p.dim, 0);
-    }
 }
 
 function mapSymbols(res, symbols) {
@@ -60,7 +52,7 @@ function mapSymbols(res, symbols) {
 
 function addPol(res, stage, name, dim, pos, imPol) {
     if(stage === "const") {
-        res.constPolsMap[pos] = { stage, name, dim, stagePos: pos };
+        res.constPolsMap[pos] = { stage, name, dim };
     } else {
         res.cmPolsMap[pos] = { stage, name, dim };
         if(imPol) res.cmPolsMap[pos].imPol = true;
