@@ -21,7 +21,7 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, cExpId,
     }
 
     let addMul = stark && res.starkStruct.verificationHashType == "GL" ? false : true;
-    pilCodeGen(ctx, expressions, constraints, cExpId, 0, stark, addMul, true);
+    pilCodeGen(ctx, symbols, expressions, constraints, cExpId, 0, stark, addMul, true);
 
     res.code.qVerifier = buildCode(ctx, symbols, expressions, stark, true);
 

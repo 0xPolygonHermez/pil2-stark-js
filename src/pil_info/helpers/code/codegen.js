@@ -1,18 +1,19 @@
-function pilCodeGen(ctx, expressions, constraints, expId, prime, stark, addMul, verifierEvaluations) {
+function pilCodeGen(ctx, symbols, expressions, constraints, expId, prime, stark, addMul, verifierEvaluations, verifierQuery) {
     if (ctx.calculated[expId] && ctx.calculated[expId][prime]) return;
 
-    calculateDeps(ctx, expressions, constraints, expressions[expId], prime, expId, stark, addMul, verifierEvaluations);
+    calculateDeps(ctx, symbols, expressions, constraints, expressions[expId], prime, expId, stark, addMul, verifierEvaluations, verifierQuery);
 
     const codeCtx = {
         expId: expId,
         tmpUsed: ctx.tmpUsed,
+        evMap: ctx.evMap,
         code: []
     }
 
     let e = expressions[expId];
     if (addMul) e = findAddMul(e);
     
-    const retRef = evalExp(codeCtx, constraints, e, prime, stark, verifierEvaluations);
+    const retRef = evalExp(codeCtx, symbols, constraints, e, prime, stark, verifierEvaluations, verifierQuery);
 
     if (retRef.type == "tmp") {
         codeCtx.code[codeCtx.code.length-1].dest = {
@@ -48,10 +49,10 @@ function pilCodeGen(ctx, expressions, constraints, expId, prime, stark, addMul, 
     if (codeCtx.tmpUsed > ctx.tmpUsed) ctx.tmpUsed = codeCtx.tmpUsed;
 }
 
-function evalExp(codeCtx, constraints, exp, prime, stark, verifierEvaluations) {
+function evalExp(codeCtx, symbols, constraints, exp, prime, stark, verifierEvaluations, verifierQuery) {
     prime = prime || 0;
     if (["add", "sub", "mul", "muladd", "neg"].includes(exp.op)) {
-        const values = exp.values.map(v => evalExp(codeCtx, constraints, v, prime, stark, verifierEvaluations));
+        const values = exp.values.map(v => evalExp(codeCtx, symbols, constraints, v, prime, stark, verifierEvaluations, verifierQuery));
         let op = exp.op;
         if(exp.op == "neg") {
             values.unshift({type: "number", value: "0", dim: 1 });
@@ -68,7 +69,13 @@ function evalExp(codeCtx, constraints, exp, prime, stark, verifierEvaluations) {
         return r;
     } else if (["cm", "const"].includes(exp.op)) {
         let p = exp.rowOffset || prime; 
-        return { type: exp.op, id: exp.id, prime: p, dim: exp.dim }
+        const r = { type: exp.op, id: exp.id, prime: p, dim: exp.dim }
+        if(verifierEvaluations) {
+            fixEval(symbols, r, codeCtx.evMap, stark);
+        } else if(verifierQuery && exp.op === "cm") {
+            fixCommitsQuery(symbols, r);
+        }
+        return r;
     } else if (exp.op === "exp") {
         let p = exp.rowOffset || prime; 
         return { type: exp.op, id: exp.id, prime: p, dim: exp.dim }
@@ -91,12 +98,12 @@ function evalExp(codeCtx, constraints, exp, prime, stark, verifierEvaluations) {
 }
 
 
-function calculateDeps(ctx, expressions, constraints, exp, prime, expIdErr, stark, addMul, verifierEvaluations) {
+function calculateDeps(ctx, symbols, expressions, constraints, exp, prime, expIdErr, stark, addMul, verifierEvaluations, verifierQuery) {
     if (exp.op == "exp") {
         let p = exp.rowOffset || prime;
-        pilCodeGen(ctx, expressions, constraints, exp.id, p, stark, addMul, verifierEvaluations);
+        pilCodeGen(ctx, symbols, expressions, constraints, exp.id, p, stark, addMul, verifierEvaluations, verifierQuery);
     } else if (["add", "sub", "mul", "neg", "muladd"].includes(exp.op)) {
-        exp.values.map(v => calculateDeps(ctx, expressions, constraints, v, prime, expIdErr, stark, addMul, verifierEvaluations));
+        exp.values.map(v => calculateDeps(ctx, symbols, expressions, constraints, v, prime, expIdErr, stark, addMul, verifierEvaluations, verifierQuery));
     }
 }
 
@@ -184,14 +191,6 @@ function fixProverCode(symbols, expressions, ctx, code, stark, verifierEvaluatio
     function fixRef(r, ctx) {
         if (r.type === "exp") {
             fixExpression(r, ctx, symbols, expressions, evaluationsMap, stark, verifierEvaluations);
-        } else if(r.type === "cm" && verifierQuery) {
-            fixCommitsQuery(symbols, r);
-        } else if(["cm", "const"].includes(r.type) && verifierEvaluations) {
-            fixEval(symbols, r, evaluationsMap, stark);
-        } else if(["f", "xDivXSubXi"].includes(r.type)) {
-            if(!stark) throw new Error("Invalid reference type" + r.type);
-        } else if(!["cm", "const", "number", "challenge", "public", "tmp", "Zi", "eval", "x", "q", "tmpExp"].includes(r.type)) {
-            throw new Error(`Invalid reference type: ${r.type}`);
         }
     }
 }
