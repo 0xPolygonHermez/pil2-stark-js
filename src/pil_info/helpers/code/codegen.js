@@ -1,29 +1,5 @@
 const { expressionError } = require("./debug");
 
-function iterateCode(code, dom, nOpeningPoints, f) {
-    const ctx = {};
-
-    ctx.dom = dom;
-    ctx.expMap = [];
-    
-    for(let i = 0; i < nOpeningPoints; ++i) {
-        ctx.expMap[i] = {};
-    }
-
-    ctx.code = code;
-
-    _iterate(code.code, f);
-    
-    function _iterate(subCode, f) {
-        for (let i=0; i<subCode.length; i++) {
-            for (let j=0; j<subCode[i].src.length; j++) {
-                f(subCode[i].src[j], ctx);
-            }
-            f(subCode[i].dest, ctx);
-        }
-    }
-}
-
 function pilCodeGen(ctx, expressions, constraints, expId, prime, addMul) {
     if (ctx.calculated[expId] && ctx.calculated[expId][prime]) return;
 
@@ -171,64 +147,97 @@ function findAddMul(exp) {
     }
 }
 
-module.exports.fixProverCode = function fixProverCode(res, symbols, code, dom, stark, verifierQuery = false) {
-    iterateCode(code, dom, res.openingPoints.length, fixRef)
+function iterateCode(code, dom, f) {
+    const ctx = {};
 
-    function fixRef(r, ctx) {
-        switch (r.type) {
-            case "cm":
-                if (verifierQuery) {
-                    const p1 = res.cmPolsMap[r.id];
-                    let index = Number(p1.stage.substr(2));
-                    if (p1.stage === "cmQ") {
-                        r.type = "treeQ";
-                        index = res.nLibStages + 2;
-                    } else {
-                        if(index < 1 || index > res.nLibStages + 1) throw new Error("Invalid cm stage");
-                        r.type = "tree" + index;
-                    }
-                            
-                    r.stageId = res.cmPolsMap.filter(p => p.stage === p1.stage && p.stagePos < p1.stagePos).length;
-                    r.treePos = p1.stagePos;
-                    r.dim = p1.dim;
-                }
-                break;
-            case "exp":
-                let symbol = symbols.find(s => s.type === "tmpPol" && s.expId === r.id);
-                if(symbol && (symbol.imPol || ctx.dom === "n")) {
-                    r.type = "cm";
-                    r.id = symbol.polId;
-                } else {
-                    const p = r.prime || 0;
-                    if (typeof ctx.expMap[p][r.id] === "undefined") {
-                        ctx.expMap[p][r.id] = ctx.code.tmpUsed ++;
-                    }
-                    r.type= "tmp";
-                    r.expId = r.id;
-                    r.id= ctx.expMap[p][r.id];
-                }
-                break;
-            case "const":
-            case "number":
-            case "challenge":
-            case "public":
-            case "tmp":
-            case "Zi":
-            case "eval":
-            case "x":
-            case "q":
-            case "tmpExp":
-                break;
-            case "xDivXSubXi":
-            case "f":
-                if(!stark) throw new Error("Invalid reference type" + r.type);
-                break;
-            default:
-                throw new Error("Invalid reference type " + r.type);
+    ctx.dom = dom;
+    ctx.expMap = [];
+    
+    ctx.code = code;
+
+    _iterate(code.code, f);
+    
+    function _iterate(subCode, f) {
+        for (let i=0; i<subCode.length; i++) {
+            for (let j=0; j<subCode[i].src.length; j++) {
+                f(subCode[i].src[j], ctx);
+            }
+            f(subCode[i].dest, ctx);
         }
     }
 }
 
-module.exports.iterateCode = iterateCode;
+function fixProverCode(res, symbols, code, dom, stark, verifierEvaluations = false, verifierQuery = false) {
+    iterateCode(code, dom, fixRef)
+
+    function fixRef(r, ctx) {
+        if (r.type === "exp") {
+            fixExpression(res, r, ctx, symbols, verifierEvaluations);
+        } else if(r.type === "cm" && verifierQuery) {
+            fixCommitsQuery(res, r);
+        } else if(["cm", "const"].includes(r.type) && verifierEvaluations) {
+            fixEval(res, r);
+        } else if(["f", "xDivXSubXi"].includes(r.type)) {
+            if(!stark) throw new Error("Invalid reference type" + r.type);
+        } else if(!["cm", "const", "number", "challenge", "public", "tmp", "Zi", "eval", "x", "q", "tmpExp"].includes(r.type)) {
+            throw new Error(`Invalid reference type: ${r.type}`);
+        }
+    }
+}
+
+function fixExpression(res, r, ctx, symbols, verifierEvaluations) {
+    const prime = r.prime || 0;
+    const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === r.id);
+    if(symbol && (symbol.imPol || (!verifierEvaluations && ctx.dom === "n"))) {
+        r.type = "cm";
+        r.id = symbol.polId;
+        if(verifierEvaluations) fixEval(res, r, prime);
+    } else {
+        if (!ctx.expMap[prime]) ctx.expMap[prime] = {};
+        if (typeof ctx.expMap[prime][r.id] === "undefined") {
+            ctx.expMap[prime][r.id] = ctx.code.tmpUsed ++;
+        }
+        r.type= "tmp";
+        r.expId = r.id;
+        r.id= ctx.expMap[prime][r.id];
+    }
+}
+
+function fixEval(res, r) {
+    const prime = r.prime || 0;
+    let evalIndex = res.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === prime);
+    if (evalIndex == -1) {
+        const rf = {
+            type: r.type,
+            name: r.type === "cm" ? res.cmPolsMap[r.id].name : res.constPolsMap[r.id].name,
+            id: r.id,
+            prime: prime
+        };
+        res.evMap.push(rf);
+        evalIndex = res.evMap.length - 1;
+    }
+    delete r.prime;
+    r.id = evalIndex;
+    r.type = "eval";
+    return r;
+}
+
+function fixCommitsQuery(res, r) {
+    const p1 = res.cmPolsMap[r.id];
+    let index = Number(p1.stage.substr(2));
+    if (p1.stage === "cmQ") {
+        r.type = "treeQ";
+        index = res.nLibStages + 2;
+    } else {
+        if(index < 1 || index > res.nLibStages + 1) throw new Error("Invalid cm stage");
+        r.type = "tree" + index;
+    }
+            
+    r.stageId = res.cmPolsMap.filter(p => p.stage === p1.stage && p.stagePos < p1.stagePos).length;
+    r.treePos = p1.stagePos;
+    r.dim = p1.dim;
+}
+
+module.exports.fixProverCode = fixProverCode;
 module.exports.pilCodeGen = pilCodeGen;
 module.exports.buildCode  = buildCode;

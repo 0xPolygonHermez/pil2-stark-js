@@ -12,7 +12,7 @@ module.exports.generatePublicsCode = function generatePublicsCode(res, symbols, 
         pilCodeGen(ctx, expressions, constraints, publics[i].expId, 0);
         res.publicsCode[i] = buildCode(ctx, expressions);
         res.publicsCode[i].idx = publics[i].idx;
-        fixProverCode(res, symbols, res.publicsCode[i], "n", stark, false);
+        fixProverCode(res, symbols, res.publicsCode[i], "n", stark, false, false);
         setCodeDimensions(res.publicsCode[i], res, stark);
     }
 }
@@ -31,13 +31,13 @@ module.exports.generateFRICode = function generateFRICode(res, friExpId, symbols
     code[code.length-1].dest = { type: "f", id: 0, dim: 3 };
 
     res.code["fri"] = buildCode(ctxExt, expressions);
-    fixProverCode(res, symbols, res.code.fri, "ext", stark, false);
+    fixProverCode(res, symbols, res.code.fri, "ext", stark, false, false);
     setCodeDimensions(res.code.fri, res, stark);
 
     let addMul = res.starkStruct.verificationHashType == "GL" ? false : true;
     pilCodeGen(ctxExt, expressions, constraints, friExpId, 0, addMul);
     res.code.queryVerifier = buildCode(ctxExt, expressions);
-    fixProverCode(res, symbols, res.code.queryVerifier, "ext", stark, true);
+    fixProverCode(res, symbols, res.code.queryVerifier, "ext", stark, false, true);
     setCodeDimensions(res.code.queryVerifier, res, stark);
 }
 
@@ -64,7 +64,7 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
     code[code.length-1].dest = {type: "q", id: 0, dim: res.qDim };
 
     res.code["Q"] = buildCode(ctx_ext, expressions);
-    fixProverCode(res, symbols, res.code["Q"], "ext", stark, false);
+    fixProverCode(res, symbols, res.code["Q"], "ext", stark, false, false);
     setCodeDimensions(res.code.Q, res, stark);
 }
 
@@ -82,7 +82,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
             }
         }   
         res.code[`stage1`] = buildCode(ctx, expressions);
-        fixProverCode(res, symbols, res.code["stage1"], "n", stark, false);
+        fixProverCode(res, symbols, res.code["stage1"], "n", stark, false, false);
         setCodeDimensions(res.code.stage1, res, stark);
     }
 
@@ -94,7 +94,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
             }
         }
         res.code[`stage${stage}`] = buildCode(ctx, expressions);
-        fixProverCode(res, symbols, res.code[`stage${stage}`], "n", stark, false);
+        fixProverCode(res, symbols, res.code[`stage${stage}`], "n", stark, false, false);
         setCodeDimensions(res.code[`stage${stage}`], res, stark);
     }
 }

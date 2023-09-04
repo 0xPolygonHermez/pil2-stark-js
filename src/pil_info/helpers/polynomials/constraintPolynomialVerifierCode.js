@@ -1,4 +1,4 @@
-const { iterateCode, buildCode, pilCodeGen } = require("../code/codegen.js");
+const { buildCode, pilCodeGen, fixProverCode } = require("../code/codegen.js");
 const { setCodeDimensions } = require("../helpers.js");
 
 
@@ -26,7 +26,7 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, cExpId,
 
     res.evMap = [];
 
-    iterateCode(res.code.qVerifier, "n", res.openingPoints.length, fixRef);
+    fixProverCode(res, symbols, res.code.qVerifier, "n", stark, true, false);
 
     setCodeDimensions(res.code.qVerifier, res, stark);
 
@@ -52,54 +52,5 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, cExpId,
         res.maxPolsOpenings = Math.max(...Object.values(nOpenings));
 
         res.nBitsZK = Math.ceil(Math.log2((res.pilPower + res.maxPolsOpenings) / res.pilPower));
-    }
-
-    function fixRef(r, ctx) {
-        const p = r.prime || 0;
-        switch (r.type) {
-            // Check the expressions ids. If it is an intermediate polynomial
-            // modify the type and set it as a commit;
-            case "exp":
-                let symbol = symbols.find(s => s.type === "tmpPol" && s.expId === r.id);
-                if(symbol && symbol.imPol) {
-                    r.type = "cm";
-                    r.id = symbol.polId;
-                } else {
-                    if (typeof ctx.expMap[p][r.id] === "undefined") {
-                        ctx.expMap[p][r.id] = ctx.code.tmpUsed ++;
-                    }
-                    r.type= "tmp";
-                    r.expId = r.id;
-                    r.id= ctx.expMap[p][r.id];
-                    break;
-                }
-            case "cm":
-            case "const":
-		        let evalIndex = res.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === p);
-                if (evalIndex == -1) {
-                    const rf = {
-                        type: r.type,
-                        name: r.type === "cm" ? res.cmPolsMap[r.id].name : res.constPolsMap[r.id].name,
-                        id: r.id,
-                        prime: p
-                    };
-                    res.evMap.push(rf);
-                    evalIndex = res.evMap.length - 1;
-                }
-                delete r.prime;
-                r.id = evalIndex;
-                r.type = "eval";
-                break;
-            case "number":
-            case "challenge":
-            case "public":
-            case "tmp":
-            case "Zi": 
-            case "x":
-            case "eval":
-                    break;
-            default:
-                throw new Error("Invalid reference type: "+r.type);
-        }
     }
 }
