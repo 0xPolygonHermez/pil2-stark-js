@@ -76,7 +76,12 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
             case "tmp": return `ctx.tmp[${r.id}]`;
             case "const": {
                 const N = dom === "n" ? ctx.N : ctx.extN;
-                const next = dom === "n" ? r.prime : r.prime << ctx.extendBits;
+                let next;
+                if(dom === "n") {
+                    next = r.prime < 0 ? r.prime + N : r.prime;
+                } else {
+                    next = r.prime < 0 ? (r.prime + N) << ctx.extendBits : r.prime << ctx.extendBits;
+                }
                 const index = r.prime ? `((i + ${next})%${N})` : "i"
                 if (dom === "n") {
                     return `ctx.const_n[${r.id} + ${index} * ${ctx.pilInfo.nConstants}]`;
@@ -181,7 +186,12 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
             .filter((pol, index) => pol.stage === p.stage && index < polId)
             .reduce((acc, pol) => acc + pol.dim, 0);
         const N = dom === "n" ? ctx.N : ctx.extN;
-        const next = dom === "n" ? prime : prime << ctx.extendBits;
+        let next;
+        if(dom === "n") {
+            next = prime < 0 ? prime + N : prime;
+        } else {
+            next = prime < 0 ? (prime + N) << ctx.extendBits : prime << ctx.extendBits;
+        }
         let index = prime ? `((i + ${next})%${N})` : "i";
         let size = ctx.pilInfo.mapSectionsN[p.stage];
         let stage = dom === "n" ? p.stage + "_n" : p.stage + "_ext";
