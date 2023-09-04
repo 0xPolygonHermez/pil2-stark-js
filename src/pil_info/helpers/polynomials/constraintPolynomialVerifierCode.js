@@ -5,10 +5,10 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, cExpId,
     let ctx = {
         calculated: {},
         tmpUsed: 0,
-        code: []
+        code: [],
+        evMap: [],
+        dom: "n",
     };
-
-    res.evMap = [];
 
     for(let i = 0; i < symbols.length; i++) {
         if(!symbols[i].imPol) continue;
@@ -23,7 +23,9 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, cExpId,
     let addMul = stark && res.starkStruct.verificationHashType == "GL" ? false : true;
     pilCodeGen(ctx, expressions, constraints, cExpId, 0, stark, addMul, true);
 
-    res.code.qVerifier = buildCode(ctx, res, symbols, expressions, "n", stark, true);
+    res.code.qVerifier = buildCode(ctx, symbols, expressions, stark, true);
+
+    res.evMap = ctx.evMap;
 
     if (stark) {
         for (let i = 0; i < res.qDeg; i++) {

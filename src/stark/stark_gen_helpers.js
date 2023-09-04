@@ -177,12 +177,10 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challen
     if (logger) logger.debug("··· challenges[" + xiChallengeId + "]: " + ctx.F.toString(ctx.challenges[xiChallengeId]));
 
     let LEv = [];
-    const friOpenings = Object.keys(ctx.pilInfo.fri2Id);
     for(let i = 0; i < ctx.pilInfo.openingPoints.length; i++) {
-        const opening = Number(friOpenings[i]);
-        const index = ctx.pilInfo.fri2Id[opening];
-        LEv[index] = new Array(ctx.N);
-        LEv[index][0] = 1n;
+        const opening = Number(ctx.pilInfo.openingPoints[i]);
+        LEv[i] = new Array(ctx.N);
+        LEv[i][0] = 1n;
         let w = 1n;
         for(let j = 0; j < Math.abs(opening); ++j) {
             w = ctx.F.mul(w, ctx.F.w[ctx.nBits]);
@@ -190,9 +188,9 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challen
         if(opening < 0) w = ctx.F.div(1n, w);
         const xi = ctx.F.div(ctx.F.mul(ctx.challenges[xiChallengeId], w), ctx.F.shift);
         for (let k=1; k<ctx.N; k++) {
-            LEv[index][k] = ctx.F.mul(LEv[index][k-1], xi);
+            LEv[i][k] = ctx.F.mul(LEv[i][k-1], xi);
         }
-        LEv[index] = ctx.F.ifft(LEv[index]);
+        LEv[i] = ctx.F.ifft(LEv[i]);
     }
 
     ctx.evals = [];
@@ -224,7 +222,7 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challen
                     p.buffer[(k<<ctx.extendBits)*p.size + p.offset+2]
                 ];
             }
-            acc = ctx.F.add(acc, ctx.F.mul(v, LEv[ctx.pilInfo.fri2Id[ev.prime]][k]));
+            acc = ctx.F.add(acc, ctx.F.mul(v, LEv[ctx.pilInfo.openingPoints.findIndex(p => p === ev.prime)][k]));
         }
         ctx.evals[i] = acc;
     }
@@ -237,9 +235,8 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
 
     module.exports.setChallengesStark("fri", ctx, challenge, logger);
 
-    const friOpenings = Object.keys(ctx.pilInfo.fri2Id);
     for(let i = 0; i < ctx.pilInfo.openingPoints.length; i++) {
-        const opening = friOpenings[i];
+        const opening = ctx.pilInfo.openingPoints[i];
 
         let w = 1n;
         for(let j = 0; j < Math.abs(opening); ++j) {
@@ -261,9 +258,9 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
         x = ctx.F.shift;
         for (let k=0; k < ctx.extN; k++) {
             const v = ctx.F.mul(den[k], x);
-            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + ctx.pilInfo.fri2Id[opening])] = v[0];
-            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + ctx.pilInfo.fri2Id[opening]) + 1] = v[1];
-            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + ctx.pilInfo.fri2Id[opening]) + 2] = v[2];
+            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + i)] = v[0];
+            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + i) + 1] = v[1];
+            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + i) + 2] = v[2];
     
             x = ctx.F.mul(x, ctx.F.w[ctx.nBitsExt])
         }

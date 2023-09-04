@@ -208,8 +208,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
 	
         ctxQry.xDivXSubXi = {};
         for(let i = 0; i < starkInfo.openingPoints.length; ++i) {
-            const opening = Number(Object.keys(starkInfo.fri2Id)[i]);
-            const id = starkInfo.fri2Id[opening];
+            const opening = Number(starkInfo.openingPoints[i]);
 
             let w = 1n;
             for(let j = 0; j < Math.abs(opening); ++j) {
@@ -219,7 +218,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
                 w = F.div(1n, w);
             }
 
-            ctxQry.xDivXSubXi[id] = F.div(x, F.sub(x, F.mul(ctxQry.challenges[xiChallengeId], w)));
+            ctxQry.xDivXSubXi[i] = F.div(x, F.sub(x, F.mul(ctxQry.challenges[xiChallengeId], w)));
         }
 
         const vals = [executeCode(F, ctxQry, starkInfo.code.queryVerifier.code)];
@@ -266,7 +265,7 @@ function executeCode(F, ctx, code) {
             case "number": return BigInt(r.value);
             case "public": return BigInt(ctx.publics[r.id]);
             case "challenge": return ctx.challenges[r.id];
-            case "xDivXSubXi": return ctx.xDivXSubXi[ctx.starkInfo.fri2Id[r.opening]];
+            case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
             case "x": return ctx.challenges[ctx.starkInfo.challengesMap.findIndex(c => c.stage === "evals" && c.stageId === 0)];
             case "Zi": {
                 if(r.boundary === "everyRow") {

@@ -4,12 +4,13 @@ module.exports.generatePublicsCode = function generatePublicsCode(res, symbols, 
     const ctx = {
         calculated: {},
         tmpUsed: 0,
-        code: []
+        code: [],
+        dom: "n",
     };
 
     for(let i = 0; i < publics.length; ++i) {
         pilCodeGen(ctx, expressions, constraints, publics[i].expId, 0, stark);
-        res.publicsCode[i] = buildCode(ctx, res, symbols, expressions, "n", stark);
+        res.publicsCode[i] = buildCode(ctx, symbols, expressions, stark);
         res.publicsCode[i].idx = publics[i].idx;
     }
 }
@@ -18,7 +19,8 @@ module.exports.generateFRICode = function generateFRICode(res, friExpId, symbols
     const ctxExt = {
         calculated: {},
         tmpUsed: 0,
-        code: []
+        code: [],
+        dom: "ext",
     };
 
     pilCodeGen(ctxExt, expressions, constraints, friExpId, 0, true);
@@ -27,11 +29,11 @@ module.exports.generateFRICode = function generateFRICode(res, friExpId, symbols
 
     code[code.length-1].dest = { type: "f", id: 0, dim: 3 };
 
-    res.code["fri"] = buildCode(ctxExt, res, symbols, expressions, "ext", true);
+    res.code["fri"] = buildCode(ctxExt, symbols, expressions, true);
 
     let addMul = res.starkStruct.verificationHashType == "GL" ? false : true;
     pilCodeGen(ctxExt, expressions, constraints, friExpId, 0, true, addMul);
-    res.code.queryVerifier = buildCode(ctxExt, res, symbols, expressions, "ext", true, false, true);
+    res.code.queryVerifier = buildCode(ctxExt, symbols, expressions, true, false, true);
 }
 
 
@@ -39,7 +41,8 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
     const ctxExt = {
         calculated: {},
         tmpUsed: 0,
-        code: []
+        code: [],
+        dom: "ext",
     };
 
     for(let i = 0; i < symbols.length; i++) {
@@ -56,14 +59,15 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
     const code = ctxExt.code[ctxExt.code.length-1].code;
     code[code.length-1].dest = {type: "q", id: 0, dim: res.qDim };
 
-    res.code["Q"] = buildCode(ctxExt, res, symbols, expressions, "ext", stark);
+    res.code["Q"] = buildCode(ctxExt, symbols, expressions, stark);
 }
 
 module.exports.generateStagesCode = function generateStagesCode(res, symbols, expressions, constraints, stark) {
     const ctx = {
         calculated: {},
         tmpUsed: 0,
-        code: []
+        code: [],
+        dom: "n",
     };
 
     if(res.nLibStages === 0) {
@@ -72,7 +76,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                 pilCodeGen(ctx, expressions, constraints, j, 0, stark);
             }
         }   
-        res.code[`stage1`] =  buildCode(ctx, res, symbols, expressions, "n", stark);
+        res.code[`stage1`] =  buildCode(ctx, symbols, expressions, stark);
     }
 
     for(let i = 0; i < res.nLibStages; ++i) {
@@ -82,6 +86,6 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                 pilCodeGen(ctx, expressions, constraints, j, 0, stark);
             }
         }
-        res.code[`stage${stage}`] =  buildCode(ctx, res, symbols, expressions, "n", stark);
+        res.code[`stage${stage}`] =  buildCode(ctx, symbols, expressions, stark);
     }
 }

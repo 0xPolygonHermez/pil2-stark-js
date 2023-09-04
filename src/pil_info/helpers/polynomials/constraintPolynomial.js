@@ -105,7 +105,8 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
         res.qs = [];
         for (let i=0; i<res.qDeg; i++) {
             res.qs[i] = res.nCommitments++;
-            E.cm(res.nCommitments-1, 0, res.nLibStages + 2, res.qDim);
+            symbols.push({ type: "witness", name: `Q${i}`, polId: res.qs[i], stage: "Q", dim: res.qDim });
+            E.cm(res.qs[i], 0, res.nLibStages + 2, res.qDim);
         }
     }
 

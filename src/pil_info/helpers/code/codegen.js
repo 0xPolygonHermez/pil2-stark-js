@@ -1,6 +1,3 @@
-const { getExpDim } = require("../helpers");
-const { expressionError } = require("./debug");
-
 function pilCodeGen(ctx, expressions, constraints, expId, prime, stark, addMul, verifierEvaluations) {
     if (ctx.calculated[expId] && ctx.calculated[expId][prime]) return;
 
@@ -70,22 +67,19 @@ function evalExp(codeCtx, constraints, exp, prime, stark, verifierEvaluations) {
         });
         return r;
     } else if (["cm", "const"].includes(exp.op)) {
-        // if (exp.rowOffset && prime) expressionError(codeCtx.pil, constraints, "double Prime", codeCtx.expId);
         let p = exp.rowOffset || prime; 
         return { type: exp.op, id: exp.id, prime: p, dim: exp.dim }
     } else if (exp.op === "exp") {
-        // if (exp.rowOffset && prime) expressionError(codeCtx.pil, constraints, "double Prime", codeCtx.expId);
         let p = exp.rowOffset || prime; 
         return { type: exp.op, id: exp.id, prime: p, dim: exp.dim }
     } else if (["challenge", "eval"].includes(exp.op)) {
-        if(exp.op == "challenge") { console.log(exp); }
         return { type: exp.op, id: exp.id, dim: exp.dim}
     } else if (exp.op === "public") {
         return { type: exp.op, id: exp.id, dim: 1}
     } else if (exp.op == "number") {
         return { type: "number", value: exp.value.toString(), dim: 1 }
     } else if (exp.op == "xDivXSubXi") {
-        return { type: "xDivXSubXi", opening: exp.opening, dim: 3 }
+        return { type: "xDivXSubXi", id: exp.id, opening: exp.opening, dim: 3 }
     } else if (exp.op == "Zi") {
         return { type: "Zi", boundary: exp.boundary, frameId: exp.frameId, dim: 1 }
     } else if (exp.op === "x") {
@@ -99,7 +93,6 @@ function evalExp(codeCtx, constraints, exp, prime, stark, verifierEvaluations) {
 
 function calculateDeps(ctx, expressions, constraints, exp, prime, expIdErr, stark, addMul, verifierEvaluations) {
     if (exp.op == "exp") {
-        // if (prime && exp.rowOffset) expressionError(ctx.pil, constraints, `Double prime`, expIdErr, exp.id);
         let p = exp.rowOffset || prime;
         pilCodeGen(ctx, expressions, constraints, exp.id, p, stark, addMul, verifierEvaluations);
     } else if (["add", "sub", "mul", "neg", "muladd"].includes(exp.op)) {
@@ -107,7 +100,7 @@ function calculateDeps(ctx, expressions, constraints, exp, prime, expIdErr, star
     }
 }
 
-function buildCode(ctx, res, symbols, expressions, dom, stark, verifierEvaluations = false, verifierQuery = false) {
+function buildCode(ctx, symbols, expressions, stark, verifierEvaluations = false, verifierQuery = false) {
     let resCode = {};
     resCode.tmpUsed = ctx.tmpUsed;
     resCode.first = [];
@@ -128,7 +121,7 @@ function buildCode(ctx, res, symbols, expressions, dom, stark, verifierEvaluatio
     }
     ctx.code = [];
 
-    fixProverCode(res, symbols, expressions, resCode, dom, stark, verifierEvaluations, verifierQuery);
+    fixProverCode(symbols, expressions, ctx, resCode, stark, verifierEvaluations, verifierQuery);
 
     return resCode;
 }
@@ -183,16 +176,18 @@ function iterateCode(code, dom, f) {
     }
 }
 
-function fixProverCode(res, symbols, expressions, code, dom, stark, verifierEvaluations = false, verifierQuery = false) {
-    iterateCode(code, dom, fixRef)
+function fixProverCode(symbols, expressions, ctx, code, stark, verifierEvaluations = false, verifierQuery = false) {
+    const evaluationsMap = ctx.evMap;
+
+    iterateCode(code, ctx.dom, fixRef)
 
     function fixRef(r, ctx) {
         if (r.type === "exp") {
-            fixExpression(res, r, ctx, symbols, expressions, stark, verifierEvaluations);
+            fixExpression(r, ctx, symbols, expressions, evaluationsMap, stark, verifierEvaluations);
         } else if(r.type === "cm" && verifierQuery) {
-            fixCommitsQuery(res, r);
+            fixCommitsQuery(symbols, r);
         } else if(["cm", "const"].includes(r.type) && verifierEvaluations) {
-            fixEval(res, r, stark);
+            fixEval(symbols, r, evaluationsMap, stark);
         } else if(["f", "xDivXSubXi"].includes(r.type)) {
             if(!stark) throw new Error("Invalid reference type" + r.type);
         } else if(!["cm", "const", "number", "challenge", "public", "tmp", "Zi", "eval", "x", "q", "tmpExp"].includes(r.type)) {
@@ -201,14 +196,14 @@ function fixProverCode(res, symbols, expressions, code, dom, stark, verifierEval
     }
 }
 
-function fixExpression(res, r, ctx, symbols, expressions, stark, verifierEvaluations) {
+function fixExpression(r, ctx, symbols, expressions, evMap, stark, verifierEvaluations) {
     const prime = r.prime || 0;
     const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === r.id);
     if(symbol && (symbol.imPol || (!verifierEvaluations && ctx.dom === "n"))) {
         r.type = "cm";
         r.id = symbol.polId;
         r.dim = symbol.dim;
-        if(verifierEvaluations) fixEval(res, r, stark);
+        if(verifierEvaluations) fixEval(symbols, r, evMap, stark);
     } else {
         if (!ctx.expMap[prime]) ctx.expMap[prime] = {};
         if (typeof ctx.expMap[prime][r.id] === "undefined") {
@@ -227,18 +222,21 @@ function fixExpression(res, r, ctx, symbols, expressions, stark, verifierEvaluat
     }
 }
 
-function fixEval(res, r, stark) {
+function fixEval(symbols, r, evMap, stark) {
     const prime = r.prime || 0;
-    let evalIndex = res.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === prime);
+    let evalIndex = evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === prime);
     if (evalIndex == -1) {
+        const name = r.type === "const" 
+            ? symbols.find(s => s.polId === r.id && s.type === "fixed").name
+            : symbols.find(s => s.polId === r.id && s.type !== "fixed").name;
         const rf = {
             type: r.type,
-            name: r.type === "cm" ? res.cmPolsMap[r.id].name : res.constPolsMap[r.id].name,
+            name: name,
             id: r.id,
             prime: prime
         };
-        res.evMap.push(rf);
-        evalIndex = res.evMap.length - 1;
+        evMap.push(rf);
+        evalIndex = evMap.length - 1;
     }
     delete r.prime;
     r.id = evalIndex;
@@ -247,21 +245,12 @@ function fixEval(res, r, stark) {
     return r;
 }
 
-function fixCommitsQuery(res, r) {
-    const p1 = res.cmPolsMap[r.id];
-    let index = Number(p1.stage.substr(2));
-    if (p1.stage === "cmQ") {
-        r.type = "treeQ";
-        index = res.nLibStages + 2;
-    } else {
-        if(index < 1 || index > res.nLibStages + 1) throw new Error("Invalid cm stage");
-        r.type = "tree" + index;
-    }
-            
-    const prevPolsStage = res.cmPolsMap.filter((p, index) => p.stage === p1.stage && index < r.id);
-    r.stageId = prevPolsStage.length;
-    r.treePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
-    r.dim = p1.dim;
+function fixCommitsQuery(symbols, r) {
+    const symbol = symbols.find(s => s.polId === r.id && ["tmpPol", "witness"].includes(s.type));
+    r.type = "tree" + symbol.stage;
+    r.stageId = symbol.stageId;
+    r.treePos = symbol.stagePos;
+    r.dim = symbol.dim;
 }
 
 module.exports.pilCodeGen = pilCodeGen;

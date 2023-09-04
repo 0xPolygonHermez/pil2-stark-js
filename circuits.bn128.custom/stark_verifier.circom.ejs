@@ -174,7 +174,7 @@ class Transcript {
                 return "Zframe" + r.frameId + "[" + (frame.offsetMin + frame.offsetMax - 1) + "]";
             } else throw new Error("Invalid boundary: " + r.boundary);
         } else if (r.type == "xDivXSubXi") {
-            return "xDivXSubXi[" + starkInfo.fri2Id[r.opening] + "]";
+            return "xDivXSubXi[" + r.id + "]";
         } else if (r.type == "tmp") {
             return "tmp_"+r.id;
         } else if (trees.includes(r.type)) {
@@ -541,7 +541,7 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
     signal xDivXSubXi[<%- starkInfo.openingPoints.length %>][3];
 
 <%  for(var i=0; i<starkInfo.openingPoints.length; ++i) { -%>
-<%  const opening = Number(Object.keys(starkInfo.fri2Id)[i]); -%>
+<%  const opening = Number(Object.keys(starkInfo.openingPoints[i])); -%>
 <%  if (opening) { -%>
     signal w<%- i %>[<%- opening %>][3];
     w<%- i %>[0] <== GLCMul()([roots(<%- starkStruct.nBits %>), 0, 0], challenges<%- xiChallengeId %>);
@@ -553,7 +553,7 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
 <%  } else { -%>
     signal den<%- i %>inv[3] <== GLCInv()([X - challenges<%- xiChallengeId %>[0] + p, -challenges<%- xiChallengeId %>[1] + p, -challenges<%- xiChallengeId %>[2] + p]);
 <%  } -%>
-    xDivXSubXi[<%- starkInfo.fri2Id[opening] %>] <== GLCMul()([X, 0, 0], den<%- i %>inv);
+    xDivXSubXi[<%- i %>] <== GLCMul()([X, 0, 0], den<%- i %>inv);
 
 <%  } -%>
 

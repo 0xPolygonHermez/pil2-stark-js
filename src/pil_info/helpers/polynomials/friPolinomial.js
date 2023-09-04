@@ -33,15 +33,10 @@ module.exports = function generateFRIPolynomial(res, expressions) {
         }
     }
 
-    res.fri2Id = {};
-    let nOpenings = 0;
-
     for(let i = 0; i < Object.keys(friExps).length; i++) {
         const opening = Number(Object.keys(friExps)[i]);
-        if(!res.fri2Id[opening]) {
-            res.fri2Id[opening] = nOpenings++;
-        }   
-        friExps[opening] = E.mul(friExps[opening], E.xDivXSubXi(opening));
+        const index = res.openingPoints.findIndex(p => p === opening);
+        friExps[opening] = E.mul(friExps[opening], E.xDivXSubXi(opening, index));
         if(friExp) {
             friExp = E.add(E.mul(vf1, friExp), friExps[opening]);
         } else {

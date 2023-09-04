@@ -154,7 +154,7 @@ class Transcript {
                 return "Zframe" + r.frameId + "[" + (frame.offsetMin + frame.offsetMax - 1) + "]";
             } else throw new Error("Invalid boundary: " + r.boundary);
         } else if (r.type == "xDivXSubXi") {
-            return "xDivXSubXi[" + starkInfo.fri2Id[r.opening] + "]";
+            return "xDivXSubXi[" + r.id + "]";
         } else if (r.type == "tmp") {
             return "tmp_"+r.id;
         } else if (trees.includes(r.type)) {
@@ -464,13 +464,13 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
     signal xDivXSubXi[<%- starkInfo.openingPoints.length %>][3];
 
 <%  for(var i=0; i<starkInfo.openingPoints.length; ++i) { -%>
-<%  const opening = Number(Object.keys(starkInfo.fri2Id)[i]); -%>
+<%  const opening = Number(starkInfo.openingPoints[i]); -%>
 <%  let root = "1"; -%>
 <%  for(let j = 0; j < Math.abs(opening); ++j) {
         root += ` * ${opening > 0 ? "roots" : "invroots"}(${starkStruct.nBits})`; 
    } -%>
     signal den<%- i %>inv[3] <== CInv()([xacc[<%- starkStruct.steps[0].nBits-1 %>] - <%- root %> * challenges<%- xiChallengeId %>[0], - <%- root %> * challenges<%- xiChallengeId %>[1], - <%- root %> * challenges<%- xiChallengeId %>[2]]);
-    xDivXSubXi[<%- starkInfo.fri2Id[opening] %>] <== [xacc[<%- starkStruct.steps[0].nBits-1 %>] * den<%- i %>inv[0], xacc[<%- starkStruct.steps[0].nBits-1 %>] * den<%- i %>inv[1],  xacc[<%- starkStruct.steps[0].nBits-1 %>] * den<%- i %>inv[2]];
+    xDivXSubXi[<%- i %>] <== [xacc[<%- starkStruct.steps[0].nBits-1 %>] * den<%- i %>inv[0], xacc[<%- starkStruct.steps[0].nBits-1 %>] * den<%- i %>inv[1],  xacc[<%- starkStruct.steps[0].nBits-1 %>] * den<%- i %>inv[2]];
 <%  } -%>
 
 <% const evalQ = unrollCode(starkInfo.code.queryVerifier.code) -%>

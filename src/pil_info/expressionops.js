@@ -111,10 +111,11 @@ class ExpressionOps {
         }
     }
 
-    xDivXSubXi(opening) {
+    xDivXSubXi(opening, id) {
         return {
             op: "xDivXSubXi",
-            opening: opening
+            opening,
+            id,
         }
     }
 
