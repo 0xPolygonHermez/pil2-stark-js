@@ -57,19 +57,18 @@ function mapSymbols(res, symbols) {
                 symbol.polId = nCommits++;  
                 stage = "tmpExp";      
             }
-            addPol(res, stage, symbol.name, symbol.dim, symbol.polId, im);
+            addPol(res, stage, symbol.name, symbol.dim, symbol.polId);
         } else {
             addPol(res, stage, symbol.name, symbol.dim, symbol.polId);
         }
     }
 }
 
-function addPol(res, stage, name, dim, pos, imPol) {
+function addPol(res, stage, name, dim, pos) {
     if(stage === "const") {
         res.constPolsMap[pos] = { stage, name, dim };
     } else {
         res.cmPolsMap[pos] = { stage, name, dim };
-        if(imPol) res.cmPolsMap[pos].imPol = true;
     }
     res.mapSectionsN[stage] += dim;
 }
