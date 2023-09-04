@@ -48,6 +48,8 @@ module.exports = function generateFRIPolynomial(res, expressions) {
         }
     }
 
-    res.friExpId = expressions.length;
+    let friExpId = expressions.length;
     expressions.push(friExp);
+
+    return friExpId;
 }

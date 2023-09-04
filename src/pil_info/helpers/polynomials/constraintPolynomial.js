@@ -91,10 +91,10 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
         }
     }
 
-    res.cExp = expressions.length;
+    let cExpId = expressions.length;
     expressions.push(cExp);
 
-    res.qDim = getExpDim(expressions, res.cExp, stark);
+    res.qDim = getExpDim(expressions, cExpId, stark);
 
     if(stark) {
         res.qs = [];
@@ -103,6 +103,8 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
             E.cm(res.nCommitments-1, 0, res.nLibStages + 2);
         }
     }
+
+    return cExpId;
 }
 
 function calculateImPols(expressions, _exp, maxDeg) {

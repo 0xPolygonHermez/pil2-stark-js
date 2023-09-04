@@ -42,7 +42,9 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout) {
 
     const publics = [];
 
-    return {expressions, constraints, symbols, publics};
+    const hints = [];
+
+    return {expressions, hints, constraints, symbols, publics};
 }
 
 

@@ -171,20 +171,7 @@ function findAddMul(exp) {
     }
 }
 
-function fixCode(res, symbols, stark) {
-    for (let i=0; i< res.nPublics; i++) {
-        fixProverCode(res, symbols, res.publicsCode[i], "n", stark);
-    }
-
-    for(let i = 0; i < Object.keys(res.code).length; ++i) {
-        const name = Object.keys(res.code)[i];
-        const dom = ["Q", "qVerifier" ,"fri", "queryVerifier"].includes(name) ? "ext" : "n";
-        const verifier = name === "queryVerifier" ? true : false;
-        fixProverCode(res, symbols, res.code[name], dom, stark, verifier);
-    }
-}
-
-function fixProverCode(res, symbols, code, dom, stark, verifierQuery = false) {
+module.exports.fixProverCode = function fixProverCode(res, symbols, code, dom, stark, verifierQuery = false) {
     iterateCode(code, dom, res.openingPoints.length, fixRef)
 
     function fixRef(r, ctx) {
@@ -243,6 +230,5 @@ function fixProverCode(res, symbols, code, dom, stark, verifierQuery = false) {
 }
 
 module.exports.iterateCode = iterateCode;
-module.exports.fixCode = fixCode;
 module.exports.pilCodeGen = pilCodeGen;
 module.exports.buildCode  = buildCode;

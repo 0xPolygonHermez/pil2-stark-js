@@ -78,7 +78,8 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
         switch (r.type) {
             case "tmp": return `ctx.tmp[${r.id}]`;
             case "const": {
-                const index = r.prime ? `((i + ${next + r.prime - 1})%${N})` : "i"
+                const next = dom === "n" ? r.prime : r.prime << ctx.extendBits;
+                const index = r.prime ? `((i + ${next})%${N})` : "i"
                 if (dom === "n") {
                     return `ctx.const_n[${r.id} + ${index} * ${ctx.pilInfo.nConstants}]`;
                 } else if (dom === "ext") {
@@ -89,9 +90,9 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
             }
             case "cm": {
                 if (dom=="n") {
-                    return evalMap(r.id, r.prime, false)
+                    return evalMap(r.id, r.prime, dom)
                 } else if (dom=="ext") {
-                    return evalMap(r.id, r.prime, true)
+                    return evalMap(r.id, r.prime, dom)
                 } else {
                     throw new Error("Invalid dom");
                 }
@@ -163,9 +164,9 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
                 break;
             case "cm":
                 if (dom=="n") {
-                    body.push(` ${evalMap( r.id, r.prime, false, val)};`);
+                    body.push(` ${evalMap( r.id, r.prime, dom, val)};`);
                 } else if (dom=="ext") {
-                    body.push(` ${evalMap( r.id, r.prime, true, val)};`);
+                    body.push(` ${evalMap( r.id, r.prime, dom, val)};`);
                 } else {
                     throw new Error("Invalid dom");
                 }
@@ -174,12 +175,13 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
         }
     }
 
-    function evalMap(polId, prime, extended, val) {
+    function evalMap(polId, prime, dom, val) {
         let p = ctx.pilInfo.cmPolsMap[polId];
         offset = p.stagePos;
-        let index = prime ? `((i + ${next + prime - 1})%${N})` : "i";
+        const next = dom === "n" ? prime : prime << ctx.extendBits;
+        let index = prime ? `((i + ${next})%${N})` : "i";
         let size = ctx.pilInfo.mapSectionsN[p.stage];
-        let stage = extended ? p.stage + "_ext" : p.stage + "_n";
+        let stage = dom === "n" ? p.stage + "_n" : p.stage + "_ext";
         let pos = `${offset} + ${index} * ${size}`;
         if(val) {
             if (p.dim == 1) {

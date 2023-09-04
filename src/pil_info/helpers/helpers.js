@@ -34,18 +34,7 @@ module.exports.getExpDim = function getExpDim(expressions, expId, stark) {
     }
 }
 
-module.exports.setDimensions = function setDimensions(res, stark) {
-    for (let i=0; i<res.nPublics; i++) {
-        setCodeDimensions(res.publicsCode[i], res, stark);
-    }
-    
-    for(let i = 0; i < Object.keys(res.code).length; ++i) {
-        const name = Object.keys(res.code)[i];
-        setCodeDimensions(res.code[name], res, stark);
-    }
-}
-
-function setCodeDimensions(code, pilInfo, stark) {
+module.exports.setCodeDimensions = function setCodeDimensions(code, pilInfo, stark) {
     const tmpDim = [];
 
     _setCodeDimensions(code.code);
