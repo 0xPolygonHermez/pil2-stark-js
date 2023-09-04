@@ -1,13 +1,17 @@
 const ExpressionOps = require("../../../expressionops");
 const { getExpDim } = require("../../helpers");
 
-module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symbols, hints, stark) {
+module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, hints, stark) {
     const E = new ExpressionOps();
 
-    const alpha = E.challenge("stage1_challenge0", 2);
-    const beta = E.challenge("stage1_challenge1", 2);
-    const gamma = E.challenge("stage2_challenge0", 3);
-    const delta = E.challenge("stage2_challenge1", 3);
+    const stage1 = 2;
+    const stage2 = 3;
+    const dim = stark ? 3 : 1;
+
+    const alpha = E.challenge("stage1_challenge0", stage1, dim);
+    const beta = E.challenge("stage1_challenge1", stage1, dim);
+    const gamma = E.challenge("stage2_challenge0", stage2, dim);
+    const delta = E.challenge("stage2_challenge1", stage2, dim);
 
 
     for (let i=0; i<pil.plookupIdentities.length; i++) {
@@ -16,7 +20,7 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symb
 
         let tExp = null;
         for (let j=0; j<pi.t.length; j++) {
-            const e = E.exp(pi.t[j],0,2);
+            const e = E.exp(pi.t[j],0,stage1);
             if (tExp) {
                 tExp = E.add(E.mul(alpha, tExp), e);
             } else {
@@ -25,21 +29,21 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symb
         }
         if (pi.selT !== null) {
             tExp = E.sub(tExp, beta);
-            tExp = E.mul(tExp, E.exp(pi.selT,0,2));
+            tExp = E.mul(tExp, E.exp(pi.selT,0,stage1));
             tExp = E.add(tExp, beta);
             tExp.keep = true;
         }
 
         puCtx.tExpId = pil.expressions.length;
         tExp.keep = true;
-        tExp.stage = 2;
+        tExp.stage = stage1;
         pil.expressions.push(tExp);
-        
-
+        const tDim = getExpDim(pil.expressions, puCtx.tExpId, stark);
+        pil.expressions[puCtx.tExpId].deg = tDim;
 
         fExp = null;
         for (let j=0; j<pi.f.length; j++) {
-            const e = E.exp(pi.f[j],0,2);
+            const e = E.exp(pi.f[j],0,stage1);
             if (fExp) {
                 fExp = E.add(E.mul(fExp, alpha), e);
             } else {
@@ -47,44 +51,49 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symb
             }
         }
         if (pi.selF !== null) {
-            fExp = E.sub(fExp, E.exp(puCtx.tExpId,0,2));
-            fExp = E.mul(fExp, E.exp(pi.selF,0,2));
-            fExp = E.add(fExp, E.exp(puCtx.tExpId,0,2));
+            fExp = E.sub(fExp, E.exp(puCtx.tExpId,0,stage1));
+            fExp = E.mul(fExp, E.exp(pi.selF,0,stage1));
+            fExp = E.add(fExp, E.exp(puCtx.tExpId,0,stage1));
             fExp.keep = true;
         }
 
         puCtx.fExpId = pil.expressions.length;
         fExp.keep = true;
-        fExp.stage = 2;
+        fExp.stage = stage1;
         pil.expressions.push(fExp);
+        const fDim = getExpDim(pil.expressions, puCtx.fExpId, stark);
+        pil.expressions[puCtx.fExpId].deg = fDim;
 
         puCtx.h1Id = pil.nCommitments++;
         puCtx.h2Id = pil.nCommitments++;
                 
         puCtx.zId = pil.nCommitments++;
 
-        const h1 = E.cm(puCtx.h1Id, 0, 2);
-        const h1p = E.cm(puCtx.h1Id, 1, 2);
-        const h2 =  E.cm(puCtx.h2Id, 0, 2);
-        const f = E.exp(puCtx.fExpId, 0, 2);
-        const t = E.exp(puCtx.tExpId, 0, 2);
-        const tp = E.exp(puCtx.tExpId, 1, 2);
-        const z = E.cm(puCtx.zId, 0, 3);
-        const zp = E.cm(puCtx.zId, 1, 3);
+        const h1 = E.cm(puCtx.h1Id, 0, stage1, dim);
+        const h1p = E.cm(puCtx.h1Id, 1, stage1, dim);
+        const h2 =  E.cm(puCtx.h2Id, 0, stage1, dim);
+        const f = E.exp(puCtx.fExpId, 0, stage1, dim);
+        const t = E.exp(puCtx.tExpId, 0, stage1, dim);
+        const tp = E.exp(puCtx.tExpId, 1, stage1, dim);
+        const z = E.cm(puCtx.zId, 0, stage2, dim);
+        const zp = E.cm(puCtx.zId, 1, stage2, dim);
 
         let c1;
         if(stark) {
             c1 = E.sub(z, E.number(1));
         } else {
             if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
-            const l1 = E.const(pil.references["Global.L1"].id);
+            const l1 = E.const(pil.references["Global.L1"].id, 0, 1);
             c1 = E.mul(l1,  E.sub(z, E.number(1)));
         }
 
 
         c1.deg=2;
         pil.expressions.push(c1);
-        pil.polIdentities.push({e: pil.expressions.length - 1, boundary: "firstRow"});
+        let c1Id = pil.expressions.length - 1;
+        pil.polIdentities.push({e: c1Id, boundary: "firstRow"});
+        let c1Dim = getExpDim(pil.expressions, c1Id, stark);
+        pil.expressions[c1Id].dim = c1Dim;
 
 
         const numExp = E.mul(
@@ -106,8 +115,10 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symb
         numExp.keep = true;
         puCtx.numId = pil.expressions.length;
         numExp.keep = true;
-        numExp.stage = 3;
+        numExp.stage = stage2;
         pil.expressions.push(numExp);
+        const numDim = getExpDim(pil.expressions, puCtx.numId, stark);
+        pil.expressions[puCtx.numId].dim = numDim;
 
         const denExp = E.mul(
             E.add(
@@ -134,26 +145,31 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symb
         denExp.keep = true;
         puCtx.denId = pil.expressions.length;
         denExp.keep = true;
-        denExp.stage = 3;
+        denExp.stage = stage2;
         pil.expressions.push(denExp);
+        const denDim = getExpDim(pil.expressions, puCtx.denId, stark);
+        pil.expressions[puCtx.denId].dim = denDim;
 
-        const num = E.exp(puCtx.numId,0,3);
-        const den = E.exp(puCtx.denId,0,3);
+        const num = E.exp(puCtx.numId,0,stage2);
+        const den = E.exp(puCtx.denId,0,stage2);
 
         const c2 = E.sub(  E.mul(zp, den), E.mul(z, num)  );
         c2.deg=2;
         pil.expressions.push(c2);
-        pil.polIdentities.push({e: pil.expressions.length - 1, boundary: "everyRow"});
+        let c2Id = pil.expressions.length - 1;
+        pil.polIdentities.push({e: c2Id, boundary: "everyRow"});
+        let c2Dim = getExpDim(pil.expressions, c2Id, stark);
+        pil.expressions[c2Id].dim = c2Dim;
 
         const hint1 = {
-            stage: 2,
+            stage: stage1,
             inputs: [`Plookup${i}.f`, `Plookup${i}.t`], 
             outputs: [`Plookup${i}.h1`, `Plookup${i}.h2`], 
             lib: "calculateH1H2"
         };
 
         const hint2 = {
-            stage: 3,
+            stage: stage2,
             inputs: [`Plookup${i}.num`, `Plookup${i}.den`], 
             outputs: [`Plookup${i}.z`], 
             lib: "calculateZ"
@@ -162,21 +178,15 @@ module.exports.grandProductPlookup = function grandProductPlookup(res, pil, symb
         hints.push(hint1);
         hints.push(hint2);
 
-        const fDim = getExpDim(pil.expressions, puCtx.fExpId, stark);
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.f`, expId: puCtx.fExpId, stage: 2, dim: fDim });
+        symbols.push({ type: "tmpPol", name: `Plookup${i}.f`, expId: puCtx.fExpId, stage: stage1, dim: fDim });
+        symbols.push({ type: "tmpPol", name: `Plookup${i}.t`, expId: puCtx.tExpId, stage: stage1, dim: tDim });
 
-        const tDim = getExpDim(pil.expressions, puCtx.tExpId, stark);
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.t`, expId: puCtx.tExpId, stage: 2, dim: tDim });
-
-        symbols.push({ type: "witness", name: `Plookup${i}.h1`, polId: puCtx.h1Id, stage: 2, dim: Math.max(fDim, tDim) });
-        symbols.push({ type: "witness", name: `Plookup${i}.h2`, polId: puCtx.h2Id, stage: 2, dim: Math.max(fDim, tDim)  });
+        symbols.push({ type: "witness", name: `Plookup${i}.h1`, polId: puCtx.h1Id, stage: stage1, dim: Math.max(fDim, tDim) });
+        symbols.push({ type: "witness", name: `Plookup${i}.h2`, polId: puCtx.h2Id, stage: stage1, dim: Math.max(fDim, tDim)  });
         
-        const numDim = getExpDim(pil.expressions, puCtx.numId, stark);
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.num`, expId: puCtx.numId, stage: 3, dim: numDim });
+        symbols.push({ type: "tmpPol", name: `Plookup${i}.num`, expId: puCtx.numId, stage: stage2, dim: numDim });
+        symbols.push({ type: "tmpPol", name: `Plookup${i}.den`, expId: puCtx.denId, stage: stage2, dim: denDim });
 
-        const denDim = getExpDim(pil.expressions, puCtx.denId, stark);
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.den`, expId: puCtx.denId, stage: 3, dim: denDim });
-
-        symbols.push({ type: "witness", name: `Plookup${i}.z`, polId: puCtx.zId, stage: 3, dim: Math.max(numDim, denDim) });
+        symbols.push({ type: "witness", name: `Plookup${i}.z`, polId: puCtx.zId, stage: stage2, dim: Math.max(numDim, denDim) });
     }
 }

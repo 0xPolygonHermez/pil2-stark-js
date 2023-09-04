@@ -1,12 +1,13 @@
 
 const ExpressionOps = require("../../expressionops");
+const { getExpDim } = require("../helpers");
 
 
 module.exports = function generateFRIPolynomial(res, expressions) {
     const E = new ExpressionOps();
 
-    const vf1 = E.challenge("vf1", res.nLibStages + 4);
-    const vf2 = E.challenge("vf2", res.nLibStages + 4);
+    const vf1 = E.challenge("vf1", res.nLibStages + 4, 3);
+    const vf2 = E.challenge("vf2", res.nLibStages + 4, 3);
     
     res.challengesMap.push({stage: "fri", stageId: 0, name: "vf1", globalId: vf1.id });
     res.challengesMap.push({stage: "fri", stageId: 1, name: "vf2", globalId: vf2.id });
@@ -26,9 +27,9 @@ module.exports = function generateFRIPolynomial(res, expressions) {
         const ev = res.evMap[i];
         const e = E[ev.type](ev.id);
         if (friExps[ev.prime]) {
-            friExps[ev.prime] = E.add(E.mul(friExps[ev.prime], vf2), E.sub(e,  E.eval(i)));
+            friExps[ev.prime] = E.add(E.mul(friExps[ev.prime], vf2), E.sub(e,  E.eval(i, 3)));
         } else {
-            friExps[ev.prime] = E.sub(e,  E.eval(i));
+            friExps[ev.prime] = E.sub(e,  E.eval(i, 3));
         }
     }
 
@@ -50,6 +51,8 @@ module.exports = function generateFRIPolynomial(res, expressions) {
 
     let friExpId = expressions.length;
     expressions.push(friExp);
+    let friDim = getExpDim(expressions, friExpId, true);
+    expressions[friExpId].dim = friDim;
 
     return friExpId;
 }

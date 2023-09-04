@@ -48,7 +48,7 @@ class ExpressionOps {
         }
     }
 
-    cm(id, rowOffset = 0, stage) {
+    cm(id, rowOffset = 0, stage, dim = 1) {
         if(!(id in cmStages)) {
             if(stage) {
                 cmStages[id] = stage;
@@ -58,33 +58,37 @@ class ExpressionOps {
         } 
         return {
             op: "cm",
-            id: id,
+            id,
             stage: cmStages[id],
-            rowOffset: rowOffset
+            dim,
+            rowOffset
         }
     }
 
-    const(id, rowOffset = 0) {
+    const(id, rowOffset = 0, dim = 1) {
         return {
             op: "const",
-            id: id,
-            rowOffset: rowOffset
+            id,
+            rowOffset,
+            dim
         }
     }
 
  
-    challenge(name, stage) {
+    challenge(name, stage, dim) {
         if (!name) throw new Error("Challenge name not defined");
         if (!(name in challenges)) {
             challenges[name] = {
                 id: nChallenges++,
-                stage: stage
+                stage,
+                dim,
             }
         }
         return {
             op: "challenge",
             id: challenges[name].id,
-            stage: challenges[name].stage
+            stage: challenges[name].stage,
+            dim: challenges[name].dim,
         };
     }
 
@@ -99,17 +103,11 @@ class ExpressionOps {
         }
     }
 
-    eval(n) {
+    eval(id, dim) {
         return {
             op: "eval",
-            id: n
-        }
-    }
-
-    tmp(n) {
-        return {
-            op: "tmp",
-            id: n
+            id,
+            dim,
         }
     }
 

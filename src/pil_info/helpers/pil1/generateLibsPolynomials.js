@@ -11,21 +11,21 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
     if(pil.plookupIdentities.length > 0) {
         pilLibs.push({
             nChallenges: [2,2],
-            lib: function() { grandProductPlookup(res, pil, symbols, hints, stark) },
+            lib: function() { grandProductPlookup(pil, symbols, hints, stark) },
         });
     }
 
     if(pil.connectionIdentities.length > 0) {
         pilLibs.push({
             nChallenges: [2],
-            lib: function() { grandProductConnection(res, pil, symbols, hints, stark, F)},
+            lib: function() { grandProductConnection(pil, symbols, hints, stark, F)},
         });
     }
 
     if(pil.permutationIdentities.length > 0) {
         pilLibs.push({
             nChallenges: [3],
-            lib: function() { grandProductPermutation(res, pil, symbols, hints, stark)},
+            lib: function() { grandProductPermutation(pil, symbols, hints, stark)},
         });
     }
 
@@ -42,7 +42,8 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
             if(i >= nStagesLib) continue;
             const nChallengesLib = lib.nChallenges[i];
             for(let k = nChallengesStage; k < nChallengesLib; ++k) {
-                const c = E.challenge(`stage${i+1}_challenge${k}`, stage);
+                const dimChallenge = stark ? 3 : 1;
+                const c = E.challenge(`stage${i+1}_challenge${k}`, stage, dimChallenge);
                 res.challengesMap.push({stage: stage, name: `challenge${k}`, stageId: k, globalId: c.id});
             }
             nChallengesStage = nChallengesLib;

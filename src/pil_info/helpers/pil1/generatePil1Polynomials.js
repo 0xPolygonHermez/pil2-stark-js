@@ -27,11 +27,11 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
                 const namePol = name + i;
                 const polId = polInfo.id + i;
                 symbols.push({type, name: namePol, polId, stage, dim: 1 });
-                if(type === "witness") E.cm(polId, 0, stage);
+                if(type === "witness") E.cm(polId, 0, stage, 1);
             }
         } else {
             symbols.push({type, name, polId: polInfo.id, stage, dim: 1 });
-            if(type === "witness") E.cm(polInfo.id, 0, stage);
+            if(type === "witness") E.cm(polInfo.id, 0, stage, 1);
         }
     }
 

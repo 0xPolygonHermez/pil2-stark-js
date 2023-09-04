@@ -34,7 +34,7 @@ module.exports.getExpDim = function getExpDim(expressions, expId, stark) {
     }
 }
 
-module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp) {
+module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp, stark) {
     if("expDeg" in exp) return;
 
     if (exp.op == "exp") {
@@ -45,12 +45,14 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
         if (expressions[exp.id].expDeg) {
             exp.expDeg = expressions[exp.id].expDeg;
             exp.rowsOffsets = expressions[exp.id].rowsOffsets;
+            exp.dim = expressions[exp.id].dim;
             if(!exp.stage) exp.stage = expressions[exp.id].stage;
         }
         if (!exp.expDeg) {
             addInfoExpressions(expressions, expressions[exp.id]);
             exp.expDeg = expressions[exp.id].expDeg;
             exp.rowsOffsets = expressions[exp.id].rowsOffsets || [0];
+            exp.dim = expressions[exp.id].dim;
             if(!exp.stage) exp.stage = expressions[exp.id].stage;
         }
     } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
@@ -65,17 +67,27 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
             delete exp.next;
         }
 
+        if(!exp.dim) { exp.dim = 1; } 
+
         if("rowOffset" in exp) {
             exp.rowsOffsets = [exp.rowOffset];
         }
     } else if (["number", "challenge", "public", "eval"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
         exp.expDeg = 0;
         if(exp.op !== "challenge") exp.stage = 0; 
+        if(!exp.dim) {
+            if(["number", "public", "Zi"].includes(exp.op)) {
+                exp.dim = 1;
+            } else {
+                exp.dim = stark ? 3 : 1;
+            }
+        }
     } else if(exp.op == "neg") {
         addInfoExpressions(expressions, exp.values[0]);
         exp.expDeg = exp.values[0].expDeg;
         exp.stage = exp.values[0].stage;
         exp.rowsOffsets = exp.values[0].rowsOffsets || [0];
+        exp.dim = exp.values[0].dim;
     } else if(["add", "sub", "mul"].includes(exp.op)) {
         addInfoExpressions(expressions, exp.values[0]);
         addInfoExpressions(expressions, exp.values[1]);
@@ -86,6 +98,7 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
         } else {
             exp.expDeg = Math.max(lhsDeg, rhsDeg);
         }
+        exp.dim = Math.max(exp.values[0].dim, exp.values[1].dim);
         exp.stage = Math.max(exp.values[0].stage, exp.values[1].stage);
         const lhsRowOffsets = exp.values[0].rowsOffsets || [0];
         const rhsRowOffsets = exp.values[1].rowsOffsets || [0];

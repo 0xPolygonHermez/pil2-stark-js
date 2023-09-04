@@ -32,7 +32,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
     res.hints = hints;
 
     for(let i = 0; i < constraints.length; ++i) {
-        addInfoExpressions(expressions, expressions[constraints[i].e]);
+        addInfoExpressions(expressions, expressions[constraints[i].e], stark);
     }
     
     res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
@@ -51,7 +51,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
 
     if(stark) {
         const friExpId = generateFRIPolynomial(res, expressions);
-        generateFRICode(res, friExpId, symbols, expressions, constraints, stark);
+        generateFRICode(res, friExpId, symbols, expressions, constraints);
     } 
     
     return res;

@@ -1,4 +1,4 @@
-const { buildCode, pilCodeGen, fixProverCode } = require("../code/codegen.js");
+const { buildCode, pilCodeGen } = require("../code/codegen.js");
 
 
 module.exports  = function generateConstraintPolynomialVerifierCode(res, cExpId, symbols, expressions, constraints, stark) {       
@@ -21,7 +21,7 @@ module.exports  = function generateConstraintPolynomialVerifierCode(res, cExpId,
     }
 
     let addMul = stark && res.starkStruct.verificationHashType == "GL" ? false : true;
-    pilCodeGen(ctx, expressions, constraints, cExpId, 0, addMul);
+    pilCodeGen(ctx, expressions, constraints, cExpId, 0, stark, addMul, true);
 
     res.code.qVerifier = buildCode(ctx, res, symbols, expressions, "n", stark, true);
 

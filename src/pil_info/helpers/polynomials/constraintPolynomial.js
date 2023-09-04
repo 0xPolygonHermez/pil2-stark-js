@@ -5,11 +5,13 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
 
     const E = new ExpressionOps();
 
-    const vc = E.challenge("vc", res.nLibStages + 2);
+    const dim = stark ? 3 : 1;
+
+    const vc = E.challenge("vc", res.nLibStages + 2, dim);
     res.challengesMap.push({stage: "Q", stageId: 0, name: "vc", globalId: vc.id});
 
     if(stark) {
-        const xi = E.challenge("xi", res.nLibStages + 3);
+        const xi = E.challenge("xi", res.nLibStages + 3, dim);
         res.challengesMap.push({stage: "evals", stageId: 0, name: "xi", globalId: xi.id});
     }
 
@@ -69,8 +71,9 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
         const expId = imExpsList[i];
         const stage = expressions[expId].stage;
         const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId);
+        const dim = getExpDim(expressions, expId, stark);
         if(!symbol) {
-            symbols.push({ type: "tmpPol", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage, dim: getExpDim(expressions, expId, stark), imPol: true });
+            symbols.push({ type: "tmpPol", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage, dim, imPol: true });
         } else {
             symbol.imPol = true;
             symbol.expId = expId;
@@ -80,7 +83,7 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
             op: "sub",
             values: [
                 Object.assign({}, expressions[imExpsList[i]]),
-                E.cm(res.nCommitments-1, 0, stage),
+                E.cm(res.nCommitments-1, 0, stage, dim),
             ]
         };
         if(stark) e = E.mul(E.zi("everyRow"), e);
@@ -93,14 +96,16 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
 
     let cExpId = expressions.length;
     expressions.push(cExp);
+    let cExpDim = getExpDim(expressions, cExpId, stark);
+    expressions[cExpId].dim = cExpDim;
 
-    res.qDim = getExpDim(expressions, cExpId, stark);
+    res.qDim = cExpDim;
 
     if(stark) {
         res.qs = [];
         for (let i=0; i<res.qDeg; i++) {
             res.qs[i] = res.nCommitments++;
-            E.cm(res.nCommitments-1, 0, res.nLibStages + 2);
+            E.cm(res.nCommitments-1, 0, res.nLibStages + 2, res.qDim);
         }
     }
 
