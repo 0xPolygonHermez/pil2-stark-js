@@ -28,6 +28,14 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
         ({expressions, symbols, hints, constraints, publics} = getPiloutInfo(res, pil));
     }
 
+    symbols.push({type: "challenge", name: "std_vc", stage: res.nLibStages + 2, dim: stark ? 3 : 1, stageId: 0})
+
+    if(stark) {
+        symbols.push({type: "challenge", name: "std_xi", stage: res.nLibStages + 3, dim: stark ? 3 : 1, stageId: 0})
+        symbols.push({type: "challenge", name: "std_vf1", stage: res.nLibStages + 4, dim: stark ? 3 : 1, stageId: 0})
+        symbols.push({type: "challenge", name: "std_vf2", stage: res.nLibStages + 4, dim: stark ? 3 : 1, stageId: 1})
+    }
+
     res.hints = hints;
 
     for(let i = 0; i < constraints.length; ++i) {
@@ -49,7 +57,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
     generateConstraintPolynomialVerifierCode(res, cExpId, symbols, expressions, constraints, stark);
 
     if(stark) {
-        const friExpId = generateFRIPolynomial(res, expressions);
+        const friExpId = generateFRIPolynomial(res, symbols, expressions);
         generateFRICode(res, friExpId, symbols, expressions, constraints);
     } 
     

@@ -105,7 +105,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 
     if (stark) {
         for (let i = 0; i < res.qDeg; i++) {
-            const rf = { type: "cm", id: res.qs[i], name: "Q" + i, prime: 0 };
+            const rf = { type: "cm", id: res.qs[i], name: "Q" + i, prime: 0, dim: res.qDim, stage: res.nLibStages + 2 };
             res.evMap.push(rf);
         }
     } else {

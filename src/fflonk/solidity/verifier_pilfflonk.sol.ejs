@@ -237,7 +237,7 @@ contract PilFflonkVerifier {
                 // Transcript stage <%= stage %>
 <%      const challengesStage = fflonkInfo.challengesMap.filter(c => c.stage === stage); -%>
 <%      for(let j = 0; j < challengesStage.length; ++j) { -%>
-<%          const index = challengesStage[j].globalId; -%>
+<%          const index = fflonkInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == j); -%>
                 challenge := mod(keccak256(add(pMem, pLastMem), <%= memC - pLastMem %>), q)
                 mstore(add(pMem, pChallenge<%- index %>), challenge) // Store challenge <%= index %>
                 mstore(add(pMem, pLastMem), challenge) // Add challenge to transcript

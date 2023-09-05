@@ -1,53 +1,49 @@
-const ExpressionOps = require("../../expressionops");
-const { grandProductConnection } = require("./pil1_libs/grandProductConnection.js");
-const { grandProductPermutation } = require("./pil1_libs/grandProductPermutation.js");
-const { grandProductPlookup } = require("./pil1_libs/grandProductPlookup.js");
+const { grandProductConnection, initChallengesConnection } = require("./pil1_libs/grandProductConnection.js");
+const { grandProductPermutation, initChallengesPermutation } = require("./pil1_libs/grandProductPermutation.js");
+const { grandProductPlookup, initChallengesPlookup } = require("./pil1_libs/grandProductPlookup.js");
 
 module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, stark) {
-    const E = new ExpressionOps();
 
-    let pilLibs = [];
+    const pilLibs = [];
 
-    if(pil.plookupIdentities.length > 0) {
+    res.nLibStages = 0;
+
+    if(pil.permutationIdentities.length > 0) {
         pilLibs.push({
-            nChallenges: [2,2],
-            lib: function() { grandProductPlookup(pil, symbols, hints, stark) },
+            lib: function() { grandProductPermutation(pil, symbols, hints, stark)},
         });
+        res.nLibStages = Math.max(res.nLibStages, 1);
+        const challenges = initChallengesPermutation(stark);
+        for(let i = 0; i < challenges.length; ++i) {
+            if(!symbols.find(c => c.type === "challenge" && c.name === challenges[i].name)) {
+                symbols.push({type: "challenge", ...challenges[i]});
+            }
+        }
     }
 
     if(pil.connectionIdentities.length > 0) {
         pilLibs.push({
-            nChallenges: [2],
             lib: function() { grandProductConnection(pil, symbols, hints, stark, F)},
         });
+        res.nLibStages = Math.max(res.nLibStages, 1);
+        const challenges = initChallengesConnection(stark);
+        for(let i = 0; i < challenges.length; ++i) {
+            if(!symbols.find(c => c.type === "challenge" && c.name === challenges[i].name)) {
+                symbols.push({type: "challenge", ...challenges[i]});
+            }     
+        }    
     }
 
-    if(pil.permutationIdentities.length > 0) {
+    if(pil.plookupIdentities.length > 0) {
         pilLibs.push({
-            nChallenges: [3],
-            lib: function() { grandProductPermutation(pil, symbols, hints, stark)},
+            lib: function() { grandProductPlookup(pil, symbols, hints, stark) },
         });
-    }
-
-    if(pilLibs.length > 0) {
-        res.nLibStages = Math.max(...pilLibs.map(lib => lib.nChallenges.length));
-    }
-    
-    for(let i = 0; i < res.nLibStages; ++i) {
-        const stage = 2 + i;
-        let nChallengesStage = 0;
-        for(let j = 0; j < pilLibs.length; ++j) {
-            const lib = pilLibs[j];
-            const nStagesLib = lib.nChallenges.length;
-            if(i >= nStagesLib) continue;
-            const nChallengesLib = lib.nChallenges[i];
-            for(let k = nChallengesStage; k < nChallengesLib; ++k) {
-                const dimChallenge = stark ? 3 : 1;
-                const c = E.challenge(`stage${i+1}_challenge${k}`, stage, dimChallenge);
-                res.challengesMap.push({stage: stage, name: `challenge${k}`, stageId: k, globalId: c.id});
+        res.nLibStages = 2;
+        const challenges = initChallengesPlookup(stark);
+        for(let i = 0; i < challenges.length; ++i) {
+            if(!symbols.find(c => c.type === "challenge" && c.name === challenges[i].name)) {
+                symbols.push({type: "challenge", ...challenges[i]});
             }
-            nChallengesStage = nChallengesLib;
-    
         }
     }
 

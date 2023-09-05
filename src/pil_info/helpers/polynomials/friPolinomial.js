@@ -3,29 +3,34 @@ const ExpressionOps = require("../../expressionops");
 const { getExpDim } = require("../helpers");
 
 
-module.exports = function generateFRIPolynomial(res, expressions) {
+module.exports = function generateFRIPolynomial(res, symbols, expressions) {
     const E = new ExpressionOps();
 
-    const vf1 = E.challenge("vf1", res.nLibStages + 4, 3);
-    const vf2 = E.challenge("vf2", res.nLibStages + 4, 3);
-    
-    res.challengesMap.push({stage: "fri", stageId: 0, name: "vf1", globalId: vf1.id });
-    res.challengesMap.push({stage: "fri", stageId: 1, name: "vf2", globalId: vf2.id });
+    const stage = res.nLibStages + 4;
 
+    let vf1Symbol = symbols.find(s => s.type === "challenge" && s.name === "std_vf1");
+    let vf1Id = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < vf1Symbol.stageId))).length;
+    const vf1 = E.challenge("vf1", stage, 3, vf1Id);
+
+    let vf2Symbol = symbols.find(s => s.type === "challenge" && s.name === "std_vf2");
+    let vf2Id = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < vf2Symbol.stageId))).length;
+    const vf2 = E.challenge("vf2", stage, 3, vf2Id);
 
     let friExp = null;
     for (let i=0; i<res.nCommitments; i++) {
+        const symbol = symbols[i];
         if (friExp) {
-            friExp = E.add(E.mul(vf1, friExp), E.cm(i));
+            friExp = E.add(E.mul(vf1, friExp), E.cm(i, 0, symbol.stage, symbol.dim));
         } else {
-            friExp = E.cm(i);
+            friExp = E.cm(i, 0, symbol.stage, symbol.dim);
         }
     }
     
     let friExps = {};
     for (let i=0; i<res.evMap.length; i++) {
         const ev = res.evMap[i];
-        const e = E[ev.type](ev.id);
+        console.log(ev);
+        const e = E[ev.type](ev.id, 0, ev.stage, ev.dim);
         if (friExps[ev.prime]) {
             friExps[ev.prime] = E.add(E.mul(friExps[ev.prime], vf2), E.sub(e,  E.eval(i, 3)));
         } else {

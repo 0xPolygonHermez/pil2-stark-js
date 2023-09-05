@@ -37,13 +37,16 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
     // STAGE Q. Trace Quotient Polynomials
     await stageQ(ctx, challenge, options);
     
-    challenge = await getChallenge("Q", ctx);
+    const qStage = ctx.pilInfo.nLibStages + 2;
+
+    challenge = await getChallenge(qStage, ctx);
 
     if(ctx.prover === "stark") {
         // STAGE 5. Compute Evaluations
         await computeEvalsStark(ctx, challenge, logger);
 
-        challenge = await calculateChallengeStark("evals", ctx);
+        const evalsStage = qStage + 1;
+        challenge = await calculateChallengeStark(evalsStage, ctx);
 
         // STAGE 6. Compute FRI
         await computeFRIStark(ctx, challenge, options);
@@ -105,10 +108,12 @@ async function computeStage(stage, ctx, challenge, options) {
 async function stageQ(ctx, challenge, options) {
     const logger = options.logger;
     
+    const qStage = ctx.pilInfo.nLibStages + 2;
+    
     if (logger) logger.debug("> STAGE 4. Compute Trace Quotient Polynomials");
 
     // Compute challenge a
-    setChallenges("Q", ctx, challenge, logger);
+    setChallenges(qStage, ctx, challenge, logger);
     
     // STEP 4.2 - Compute stage 4 polynomial --> Q polynomial
     await callCalculateExps("Q", "ext", ctx, options.parallelExec, options.useThreads);

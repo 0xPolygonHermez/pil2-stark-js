@@ -69,7 +69,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
         const stage = i + 2;
         const challengesStage = fflonkInfo.challengesMap.filter(c => c.stage === stage);
         for(let j = 0; j < challengesStage.length; ++j) {
-            const index = challengesStage[j].globalId;
+            const index = fflonkInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == j);
             ctx.challenges[index] = transcript.getChallenge();
             if (logger) logger.debug("··· challenges[" + index + "]: " + Fr.toString(ctx.challenges[index]));
             transcript.reset();
@@ -83,7 +83,8 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
 
     }
     
-    let qChallengeId = fflonkInfo.challengesMap.findIndex(c => c.stage === "Q" && c.stageId === 0);
+    let qStage = fflonkInfo.nLibStages + 2;
+    let qChallengeId = fflonkInfo.challengesMap.findIndex(c => c.stage === qStage && c.stageId === 0);
     ctx.challenges[qChallengeId] = transcript.getChallenge();
     if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + Fr.toString(ctx.challenges[qChallengeId]));
     transcript.reset();

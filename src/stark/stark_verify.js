@@ -74,28 +74,30 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
         const stage = i + 2;
         const challengesStage = starkInfo.challengesMap.filter(c => c.stage == stage);
         for(let j = 0; j < challengesStage.length; ++j) {
-            const index = challengesStage[j].globalId;
+            const index = starkInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == j);
             ctx.challenges[index] = transcript.getField();
             if (logger) logger.debug("··· challenges[" + index + "]: " + F.toString(ctx.challenges[index]));
         }
         transcript.put(proof["root" + stage]);
     }
     
-    let qChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === "Q" && c.stageId === 0);
+    let qStage = starkInfo.nLibStages + 2;
+    let qChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === qStage && c.stageId === 0);
     ctx.challenges[qChallengeId] = transcript.getField();
     if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + F.toString(ctx.challenges[qChallengeId]));
     transcript.put(proof.rootQ);
 
-
-    let xiChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === "evals" && c.stageId === 0);
+    let evalsStage = qStage + 1;
+    let xiChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === evalsStage && c.stageId === 0);
     ctx.challenges[xiChallengeId] = transcript.getField();
     if (logger) logger.debug("··· challenges[" + xiChallengeId + "]: " + F.toString(ctx.challenges[xiChallengeId]));
     for (let i=0; i<ctx.evals.length; i++) {
         transcript.put(ctx.evals[i]);
     }
 
-    let vf1ChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === "fri" && c.stageId === 0);
-    let vf2ChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === "fri" && c.stageId === 1);
+    let friStage = evalsStage + 1;
+    let vf1ChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === friStage && c.stageId === 0);
+    let vf2ChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === friStage && c.stageId === 1);
     ctx.challenges[vf1ChallengeId] = transcript.getField();
     if (logger) logger.debug("··· challenges[" + vf1ChallengeId + "]: " + F.toString(ctx.challenges[vf1ChallengeId]));
 
@@ -266,7 +268,7 @@ function executeCode(F, ctx, code) {
             case "public": return BigInt(ctx.publics[r.id]);
             case "challenge": return ctx.challenges[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
-            case "x": return ctx.challenges[ctx.starkInfo.challengesMap.findIndex(c => c.stage === "evals" && c.stageId === 0)];
+            case "x": return ctx.challenges[ctx.starkInfo.challengesMap.findIndex(c => c.stage === ctx.starkInfo.nLibStages + 3 && c.stageId === 0)];
             case "Zi": {
                 if(r.boundary === "everyRow") {
                     return ctx.Z;

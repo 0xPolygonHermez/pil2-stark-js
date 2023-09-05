@@ -1,6 +1,20 @@
 const ExpressionOps = require("../../../expressionops");
 const { getExpDim } = require("../../helpers");
 
+
+module.exports.initChallengesPlookup = function initChallengesPlookup(stark) {
+    const stage1 = 2;
+    const stage2 = 3;
+    const dim = stark ? 3 : 1;
+
+    const alpha = {name: "std_alpha", stage: stage1, dim, stageId: 0};
+    const beta = {name: "std_beta", stage: stage1, dim, stageId: 1};
+    const gamma = {name: "std_gamma", stage: stage2, dim, stageId: 0};
+    const delta = {name: "std_delta", stage: stage2, dim, stageId: 1};
+
+    return [alpha, beta, gamma, delta];
+}
+
 module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, hints, stark) {
     const E = new ExpressionOps();
 
@@ -8,10 +22,21 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
     const stage2 = 3;
     const dim = stark ? 3 : 1;
 
-    const alpha = E.challenge("stage1_challenge0", stage1, dim);
-    const beta = E.challenge("stage1_challenge1", stage1, dim);
-    const gamma = E.challenge("stage2_challenge0", stage2, dim);
-    const delta = E.challenge("stage2_challenge1", stage2, dim);
+    let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
+    let alphaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage1) || (s.stage == stage1 && s.stageId < alphaSymbol.stageId))).length;
+    const alpha = E.challenge("std_alpha", stage1, dim, alphaId);
+
+    let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
+    let betaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage1) || (s.stage == stage1 && s.stageId < betaSymbol.stageId))).length;
+    const beta = E.challenge("std_beta", stage1, dim, betaId);
+
+    let gammaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_gamma");
+    let gammaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage2) || (s.stage == stage2 && s.stageId < gammaSymbol.stageId))).length;
+    const gamma = E.challenge("std_gamma", stage2, dim, gammaId);
+
+    let deltaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_delta");
+    let deltaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage2) || (s.stage == stage2 && s.stageId < deltaSymbol.stageId))).length;
+    const delta = E.challenge("std_delta", stage2, dim, deltaId);
 
 
     for (let i=0; i<pil.plookupIdentities.length; i++) {
@@ -69,6 +94,9 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
                 
         puCtx.zId = pil.nCommitments++;
 
+        console.log(stage1);
+        console.log(stage2);
+
         const h1 = E.cm(puCtx.h1Id, 0, stage1, dim);
         const h1p = E.cm(puCtx.h1Id, 1, stage1, dim);
         const h2 =  E.cm(puCtx.h2Id, 0, stage1, dim);
@@ -83,7 +111,7 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
             c1 = E.sub(z, E.number(1));
         } else {
             if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
-            const l1 = E.const(pil.references["Global.L1"].id, 0, 1);
+            const l1 = E.const(pil.references["Global.L1"].id, 0, 0, 1);
             c1 = E.mul(l1,  E.sub(z, E.number(1)));
         }
 

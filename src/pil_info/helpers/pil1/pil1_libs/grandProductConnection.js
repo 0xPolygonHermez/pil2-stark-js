@@ -4,14 +4,29 @@ const { getExpDim } = require("../../helpers");
 
 const getKs = require("pilcom").getKs;
 
+module.exports.initChallengesConnection = function initChallengesConnection(stark) {
+    const stage = 2;
+    const dim = stark ? 3 : 1;
+
+    const alpha = {name: "std_alpha", stage, dim, stageId: 0};
+    const beta = {name: "std_beta", stage, dim, stageId: 1};
+
+    return [alpha, beta];
+}
+
 module.exports.grandProductConnection = function grandProductConnection(pil, symbols, hints, stark, F) {
     const E = new ExpressionOps();
 
     const stage = 2;
     const dim = stark ? 3 : 1;
 
-    const gamma = E.challenge("stage1_challenge0", stage, dim);
-    const delta = E.challenge("stage1_challenge1", stage, dim);
+    let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
+    let alphaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < alphaSymbol.stageId))).length;
+    const alpha = E.challenge("std_alpha", stage, dim, alphaId);
+
+    let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
+    let betaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < betaSymbol.stageId))).length;
+    const beta = E.challenge("std_beta", stage, dim, betaId);
 
     for (let i=0; i<pil.connectionIdentities.length; i++) {
         const ci = pil.connectionIdentities[i];
@@ -22,14 +37,14 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
         let numExp = E.add(
             E.add(
                 E.exp(ci.pols[0],0,stage),
-                E.mul(delta, E.x())
-            ), gamma);
+                E.mul(beta, E.x())
+            ), alpha);
 
         let denExp = E.add(
             E.add(
                 E.exp(ci.pols[0],0,stage),
-                E.mul(delta, E.exp(ci.connections[0],0,stage))
-            ), gamma);
+                E.mul(beta, E.exp(ci.connections[0],0,stage))
+            ), alpha);
 
         ciCtx.numId = pil.expressions.length;
         numExp.keep = true;
@@ -53,9 +68,9 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
                     E.add(
                         E.add(
                             E.exp(ci.pols[i],0,stage),
-                            E.mul(E.mul(delta, E.number(ks[i-1])), E.x())
+                            E.mul(E.mul(beta, E.number(ks[i-1])), E.x())
                         ),
-                        gamma
+                        alpha
                     )
                 );
             numExp.keep = true;
@@ -66,9 +81,9 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
                     E.add(
                         E.add(
                             E.exp(ci.pols[i]),
-                            E.mul(delta, E.exp(ci.connections[i],0,stage))
+                            E.mul(beta, E.exp(ci.connections[i],0,stage))
                         ),
-                        gamma
+                        alpha
                     )
                 );
             denExp.keep = true;
@@ -94,7 +109,7 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
             c1 = E.sub(z, E.number(1));
         } else {
             if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
-            const l1 = E.const(pil.references["Global.L1"].id, 0, 1);
+            const l1 = E.const(pil.references["Global.L1"].id, 0, 0, 1);
             c1 = E.mul(l1,  E.sub(z, E.number(1)));
         }
 

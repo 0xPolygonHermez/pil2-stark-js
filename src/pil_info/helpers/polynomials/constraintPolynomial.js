@@ -6,14 +6,11 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
     const E = new ExpressionOps();
 
     const dim = stark ? 3 : 1;
+    const stage = res.nLibStages + 2;
 
-    const vc = E.challenge("vc", res.nLibStages + 2, dim);
-    res.challengesMap.push({stage: "Q", stageId: 0, name: "vc", globalId: vc.id});
-
-    if(stark) {
-        const xi = E.challenge("xi", res.nLibStages + 3, dim);
-        res.challengesMap.push({stage: "evals", stageId: 0, name: "xi", globalId: xi.id});
-    }
+    let vcSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_vc");
+    let vcId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < vcSymbol.stageId))).length;
+    const vc = E.challenge("vc", stage, dim, vcId);
 
     res.boundaries = ["everyRow"];
 
@@ -106,7 +103,7 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
         for (let i=0; i<res.qDeg; i++) {
             res.qs[i] = res.nCommitments++;
             symbols.push({ type: "witness", name: `Q${i}`, polId: res.qs[i], stage: "Q", dim: res.qDim });
-            E.cm(res.qs[i], 0, res.nLibStages + 2, res.qDim);
+            E.cm(res.qs[i], 0, stage, res.qDim);
         }
     }
 

@@ -173,14 +173,19 @@ function fixEval(symbols, r, ctx) {
     const prime = r.prime || 0;
     let evalIndex = ctx.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === prime);
     if (evalIndex == -1) {
-        const name = r.type === "const" 
-            ? symbols.find(s => s.polId === r.id && s.type === "fixed").name
-            : symbols.find(s => s.polId === r.id && s.type !== "fixed").name;
+        const symbol = r.type === "const" 
+            ? symbols.find(s => s.polId === r.id && s.type === "fixed")
+            : symbols.find(s => s.polId === r.id && s.type !== "fixed");
+        const name = symbol.name;
+        const stage = symbol.stage;
+        const dim = symbol.dim;
         const rf = {
             type: r.type,
-            name: name,
+            name,
             id: r.id,
-            prime: prime
+            prime,
+            stage,
+            dim,
         };
         ctx.evMap.push(rf);
         evalIndex = ctx.evMap.length - 1;

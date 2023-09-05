@@ -172,7 +172,8 @@ module.exports.computeQStark = async function computeQStark(ctx, logger) {
 module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challenge, logger) {
     if (logger) logger.debug("Compute Evals");
 
-    let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === "evals" && c.stageId === 0);
+    const evalsStage = ctx.pilInfo.nLibStages + 3;
+    let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === evalsStage && c.stageId === 0);
     ctx.challenges[xiChallengeId] = challenge; // xi
     if (logger) logger.debug("··· challenges[" + xiChallengeId + "]: " + ctx.F.toString(ctx.challenges[xiChallengeId]));
 
@@ -233,7 +234,9 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
 
     if (logger) logger.debug("Compute FRI");
 
-    module.exports.setChallengesStark("fri", ctx, challenge, logger);
+    const friStage = ctx.pilInfo.nLibStages + 4;
+
+    module.exports.setChallengesStark(friStage, ctx, challenge, logger);
 
     for(let i = 0; i < ctx.pilInfo.openingPoints.length; i++) {
         const opening = ctx.pilInfo.openingPoints[i];
@@ -244,7 +247,7 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
         }
         if(opening < 0) w = ctx.F.div(1n, w);
 
-        let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === "evals" && c.stageId === 0);
+        let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === friStage - 1 && c.stageId === 0);
         let xi = ctx.F.mul(ctx.challenges[xiChallengeId], w);
 
         let den = new Array(ctx.extN);
@@ -335,7 +338,7 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, chal
     if(challengesStage.length === 0) throw new Error("No challenges needed for stage " + stage);
 
     for (let i=0; i<challengesStage.length; i++) {
-        const index = challengesStage[i].globalId;
+        const index = ctx.pilInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == i);
         if(i > 0) {
             ctx.challenges[index] = ctx.transcript.getField();
         } else {
@@ -347,7 +350,7 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, chal
 }
 
 module.exports.calculateChallengeStark = async function calculateChallengeStark(stage, ctx) {
-    if(stage === "evals") {
+    if(stage === ctx.pilInfo.nLibStages + 3) {
         for (let i=0; i<ctx.evals.length; i++) {
             ctx.transcript.put(ctx.evals[i]);
         }
@@ -360,8 +363,6 @@ module.exports.calculateChallengeStark = async function calculateChallengeStark(
             ctx.transcript.put(ctx.publics[i]);
         }
     }
-
-    if(stage === "Q") stage = ctx.pilInfo.nLibStages + 2;
 
     ctx.transcript.put(ctx.MH.root(ctx.trees[stage]));
 

@@ -226,7 +226,7 @@ module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, ch
     if(challengesStage.length === 0) throw new Error("No challenges needed for stage " + stage);
 
     for (let i=0; i<challengesStage.length; i++) {
-        const index = challengesStage[i].globalId;
+        const index = ctx.pilInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == i);
         if(i > 0) {
             ctx.transcript.reset();
             ctx.transcript.addScalar(ctx.challenges[index - 1]);
@@ -258,8 +258,8 @@ module.exports.calculateChallengeFflonk = async function calculateChallengeFflon
     let challengesStage = ctx.pilInfo.challengesMap.filter(c => c.stage === stage);
     
     if(challengesStage.length > 0) {
-        const lastChallengeStageId = challengesStage[challengesStage.length - 1].globalId;
-        const challenge = ctx.challenges[ctx.pilInfo.challengesMap[lastChallengeStageId].globalId];
+        const lastChallengeStageId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == (challengesStage.length - 1));
+        const challenge = ctx.challenges[lastChallengeStageId];
         ctx.transcript.addScalar(challenge);
     }
 
