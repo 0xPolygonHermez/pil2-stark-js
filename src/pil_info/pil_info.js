@@ -1,6 +1,5 @@
 
 const generateConstraintPolynomial = require("./helpers/polynomials/constraintPolynomial");
-const generateConstraintPolynomialVerifierCode = require("./helpers/polynomials/constraintPolynomialVerifierCode");
 
 const generateFRIPolynomial = require("./helpers/polynomials/friPolinomial");
 
@@ -8,7 +7,7 @@ const map = require("./map.js");
 
 const { addInfoExpressions } = require("./helpers/helpers.js");
 const { generatePil1Polynomials } = require("./helpers/pil1/generatePil1Polynomials");
-const { generateConstraintPolynomialCode, generateFRICode, generatePublicsCode, generateStagesCode } = require("./helpers/code/generateCode");
+const { generateConstraintPolynomialCode, generateConstraintPolynomialVerifierCode, generateFRICode, generatePublicsCode, generateStagesCode } = require("./helpers/code/generateCode");
 const { getPiloutInfo } = require("./helpers/getPiloutInfo");
 
 module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct) {

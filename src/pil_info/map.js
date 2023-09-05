@@ -21,19 +21,7 @@ module.exports = function map(res, symbols, stark) {
         setMapOffsets(res);   
     }
 
-    for(let i = 0; i < symbols.length; ++i) {
-        const symbol = symbols[i];
-        if(!["fixed", "witness", "tmpPol"].includes(symbol.type)) continue;
-        const polsMapName = symbol.type === "fixed" ? "constPolsMap" : "cmPolsMap";
-        const stage = symbol.type === "fixed" ? "const" : "cm" + symbol.stage;
-        if(symbol.type === "witness" || symbol.type === "tmpPol"){
-            const prevPolsStage = res[polsMapName]
-            .filter((p, index) => p.stage === stage && index < symbol.polId);
-
-            symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
-            symbol.stageId = prevPolsStage.length;
-        }
-    }
+    setStageInfoSymbols(res, symbols);
 }
 
 function mapSymbols(res, symbols) {
@@ -94,4 +82,20 @@ function setMapOffsets(res) {
     res.mapOffsets.q_ext = res.mapOffsets.cmQ_ext +  extN * res.mapSectionsN.cmQ;
     res.mapOffsets.f_ext = res.mapOffsets.q_ext +  extN * res.mapSectionsN.q_ext;
     res.mapTotalN = res.mapOffsets.f_ext +  extN * res.mapSectionsN.f_ext;
+}
+
+function setStageInfoSymbols(res, symbols) {
+    for(let i = 0; i < symbols.length; ++i) {
+        const symbol = symbols[i];
+        if(!["fixed", "witness", "tmpPol"].includes(symbol.type)) continue;
+        const polsMapName = symbol.type === "fixed" ? "constPolsMap" : "cmPolsMap";
+        const stage = symbol.type === "fixed" ? "const" : "cm" + symbol.stage;
+        if(symbol.type === "witness" || symbol.type === "tmpPol"){
+            const prevPolsStage = res[polsMapName]
+            .filter((p, index) => p.stage === stage && index < symbol.polId);
+
+            symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
+            symbol.stageId = prevPolsStage.length;
+        }
+    }
 }
