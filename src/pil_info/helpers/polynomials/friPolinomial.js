@@ -29,7 +29,6 @@ module.exports = function generateFRIPolynomial(res, symbols, expressions) {
     let friExps = {};
     for (let i=0; i<res.evMap.length; i++) {
         const ev = res.evMap[i];
-        console.log(ev);
         const e = E[ev.type](ev.id, 0, ev.stage, ev.dim);
         if (friExps[ev.prime]) {
             friExps[ev.prime] = E.add(E.mul(friExps[ev.prime], vf2), E.sub(e,  E.eval(i, 3)));

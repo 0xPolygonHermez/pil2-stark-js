@@ -9,6 +9,7 @@ const { addInfoExpressions } = require("./helpers/helpers.js");
 const { generatePil1Polynomials } = require("./helpers/pil1/generatePil1Polynomials");
 const { generateConstraintPolynomialCode, generateConstraintPolynomialVerifierCode, generateFRICode, generatePublicsCode, generateStagesCode } = require("./helpers/code/generateCode");
 const { getPiloutInfo } = require("./helpers/getPiloutInfo");
+const { generatePublicsPolynomials } = require("./helpers/pil1/generatePublicsPolynomials");
 
 module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct) {
 
@@ -20,20 +21,24 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
         starkStruct: starkStruct,
     };
 
-    let expressions, symbols, constraints, publics;
+    let expressions, symbols, constraints, publicsInfo;
 
     if(pil1) {
-        ({expressions, symbols, hints, constraints, publics} = generatePil1Polynomials(F, res, pil, stark));
+        ({expressions, symbols, hints, constraints, publicsInfo} = generatePil1Polynomials(F, res, pil, stark));
     } else {
-        ({expressions, symbols, hints, constraints, publics} = getPiloutInfo(res, pil));
+        ({expressions, symbols, hints, constraints, publicsInfo} = getPiloutInfo(res, pil, stark));
     }
 
-    symbols.push({type: "challenge", name: "std_vc", stage: res.nLibStages + 2, dim: stark ? 3 : 1, stageId: 0})
+    let publics = generatePublicsPolynomials(res, expressions, publicsInfo);
+
+    let dimCh = stark ? 3 : 1;
+    let qStage = res.nLibStages + 2;
+    symbols.push({type: "challenge", name: "std_vc", stage: qStage, dim: dimCh, stageId: 0})
 
     if(stark) {
-        symbols.push({type: "challenge", name: "std_xi", stage: res.nLibStages + 3, dim: stark ? 3 : 1, stageId: 0})
-        symbols.push({type: "challenge", name: "std_vf1", stage: res.nLibStages + 4, dim: stark ? 3 : 1, stageId: 0})
-        symbols.push({type: "challenge", name: "std_vf2", stage: res.nLibStages + 4, dim: stark ? 3 : 1, stageId: 1})
+        symbols.push({type: "challenge", name: "std_xi", stage: qStage + 1, dim: dimCh, stageId: 0})
+        symbols.push({type: "challenge", name: "std_vf1", stage: qStage + 2, dim: dimCh, stageId: 0})
+        symbols.push({type: "challenge", name: "std_vf2", stage: qStage + 2, dim: dimCh, stageId: 1})
     }
 
     res.hints = hints;

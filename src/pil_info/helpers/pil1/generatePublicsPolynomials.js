@@ -1,27 +1,27 @@
 
 const ExpressionOps = require("../../expressionops.js");
 
-module.exports = function generatePublicCalculators(res, pil) {
+module.exports.generatePublicsPolynomials = function generatePublicsPolynomials(res, expressions, publicsInfo) {
     const E = new ExpressionOps();
 
     const publics = [];
     res.publicsCode = [];
-    for (let i=0; i<pil.publics.length; i++) {
+    for (let i=0; i<publicsInfo.length; i++) {
         let expId;
-        if (pil.publics[i].polType == "cmP") {
-            expId = pil.expressions.findIndex(e => e.op === "cm" && e.id === pil.publics[i].polId);
+        if (publicsInfo[i].polType == "cmP") {
+            expId = expressions.findIndex(e => e.op === "cm" && e.id === publicsInfo[i].polId);
             if(expId === -1) {
                 const stage = 1;
                 const dim = 1;
-                pil.expressions.push(E.cm(pil.publics[i].polId, 0, stage, dim));
-                expId = pil.expressions.length-1;
+                expressions.push(E.cm(publicsInfo[i].polId, 0, stage, dim));
+                expId = expressions.length-1;
             }  
         } else {
-            expId = pil.publics[i].polId;
+            expId = publicsInfo[i].polId;
         }
         
-        pil.expressions[expId].dim = 1;
-        publics.push({expId, idx: pil.publics[i].idx});
+        expressions[expId].dim = 1;
+        publics.push({expId, idx: publicsInfo[i].idx});
     }
     return publics;
 }

@@ -1,7 +1,6 @@
 const { log2 } = require("pilcom/src/utils");
 const ExpressionOps = require("../../expressionops");
 const generateLibsPolynomials = require("./generateLibsPolynomials");
-const generatePublicsPolynomials = require("./generatePublicsPolynomials");
 
 module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res, _pil, stark) {
     const E = new ExpressionOps();
@@ -10,7 +9,7 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
     res.nPublics = pil.publics.length;
     res.nConstants = pil.nConstants;
 
-    const publics = generatePublicsPolynomials(res, pil);
+    const publicsInfo = pil.publics;
 
     const symbols = [];
 
@@ -59,5 +58,5 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
         }
     }
 
-    return { publics, symbols, hints, expressions, constraints };
+    return { publicsInfo, symbols, hints, expressions, constraints };
 }

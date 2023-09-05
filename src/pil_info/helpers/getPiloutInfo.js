@@ -2,8 +2,11 @@ const ExpressionOps = require("../expressionops");
 const ProtoOut = require("pilcom2/src/proto_out.js");
 const { newConstantPolsArrayPil2 } = require("pilcom/src/polsarray");
 
-module.exports.getPiloutInfo = function getPiloutInfo(res, pilout) {
+module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     const E = new ExpressionOps();
+
+    const numChallenges = pilout.symbols.filter(s => s.type === 8).reduce((acc, s) => acc[s.stage]++,[]);
+    res.nLibStages = numChallenges.length;
 
     const constraints = pilout.constraints.map(c => {
         let boundary = Object.keys(c)[0];
@@ -21,7 +24,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout) {
     });
 
     const symbols = pilout.symbols.map(s => {
-        const dim = s.dim || 1;
+        const dim = [0,1].includes(s.stage) ? 1 : stark ? 3 : 1;
         E.cm(s.id, 0, s.stage, dim);
         return {
             name: s.name,
@@ -41,11 +44,11 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout) {
         expressions[i] = formatExpression(expressions, expressions[i]);
     }
 
-    const publics = [];
+    const publicsInfo = [];
 
     const hints = [];
 
-    return {expressions, hints, constraints, symbols, publics};
+    return {expressions, hints, constraints, symbols, publicsInfo};
 }
 
 
