@@ -1,6 +1,11 @@
+constant MODULE_ID = 1;
+
 // public in1;
 // public in2;
-// public out;
+
+public out;
+challenge stage(2) std_alpha;
+challenge stage(2) std_beta;
 
 subproof Fibonacci(2**6) {
 
@@ -9,6 +14,11 @@ subproof Fibonacci(2**6) {
     col fixed L1 = [1,0...];
 
     (b' - a) * (1 - L1') === 0;
+
+    col witness stage(2) gsum;
+
+    (gsum - 'gsum * (1 - L1)) * (((((L1' * out)+ (1-L1') * a') * std_alpha + a * a + b * b) * std_alpha) + MODULE_ID + std_beta) + 1 === 0;
+
     // L1 * (b - in1) === 0;
     // L1 * (a - in2) === 0;
 

@@ -94,9 +94,6 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
                 
         puCtx.zId = pil.nCommitments++;
 
-        console.log(stage1);
-        console.log(stage2);
-
         const h1 = E.cm(puCtx.h1Id, 0, stage1, dim);
         const h1p = E.cm(puCtx.h1Id, 1, stage1, dim);
         const h2 =  E.cm(puCtx.h2Id, 0, stage1, dim);

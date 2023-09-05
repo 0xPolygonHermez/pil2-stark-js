@@ -44,11 +44,12 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
     res.hints = hints;
 
     for(let i = 0; i < constraints.length; ++i) {
-        addInfoExpressions(expressions, expressions[constraints[i].e], stark);
+        addInfoExpressions(symbols, expressions, expressions[constraints[i].e], stark);
     }
     
     res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
-        
+    
+    console.log(res.openingPoints);
     const cExpId = generateConstraintPolynomial(res, symbols, expressions, constraints, stark);
 
     map(res, symbols, stark);       

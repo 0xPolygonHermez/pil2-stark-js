@@ -18,7 +18,7 @@ module.exports = function generateFRIPolynomial(res, symbols, expressions) {
 
     let friExp = null;
     for (let i=0; i<res.nCommitments; i++) {
-        const symbol = symbols[i];
+        const symbol = symbols.find(s => ["witness", "tmpPol"].includes(s.type) && s.polId === i);
         if (friExp) {
             friExp = E.add(E.mul(vf1, friExp), E.cm(i, 0, symbol.stage, symbol.dim));
         } else {

@@ -57,7 +57,6 @@ class ExpressionOps {
     }
 
     const(id, rowOffset = 0, stage = 0, dim = 1) {
-        console.log(stage);
         if(stage !== 0) throw new Error("Const must be declared in stage 0");
         return {
             op: "const",
