@@ -544,7 +544,7 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
     signal xDivXSubXi[<%- starkInfo.openingPoints.length %>][3];
 
 <%  for(var i=0; i<starkInfo.openingPoints.length; ++i) { -%>
-<%  const opening = Number(Object.keys(starkInfo.openingPoints[i])); -%>
+<%  const opening = Number(starkInfo.openingPoints[i]); -%>
 <%  if (opening) { -%>
     signal w<%- i %>[<%- opening %>][3];
     w<%- i %>[0] <== GLCMul()([roots(<%- starkStruct.nBits %>), 0, 0], challenges<%- xiChallengeId %>);

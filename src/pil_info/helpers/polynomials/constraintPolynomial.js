@@ -8,7 +8,7 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
     const dim = stark ? 3 : 1;
     const stage = res.nLibStages + 2;
 
-    let vcSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_vc");
+    let vcSymbol = symbols.find(s => s.type === "challenge" && s.stage === stage && s.stageId === 0);
     let vcId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < vcSymbol.stageId))).length;
     const vc = E.challenge("vc", stage, dim, vcId);
 

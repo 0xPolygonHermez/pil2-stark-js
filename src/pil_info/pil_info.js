@@ -8,7 +8,7 @@ const map = require("./map.js");
 const { addInfoExpressions } = require("./helpers/helpers.js");
 const { generatePil1Polynomials } = require("./helpers/pil1/generatePil1Polynomials");
 const { generateConstraintPolynomialCode, generateConstraintPolynomialVerifierCode, generateFRICode, generatePublicsCode, generateStagesCode } = require("./helpers/code/generateCode");
-const { getPiloutInfo } = require("./helpers/getPiloutInfo");
+const { getPiloutInfo } = require("./helpers/pil2/piloutInfo");
 const { generatePublicsPolynomials } = require("./helpers/pil1/generatePublicsPolynomials");
 
 module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct) {

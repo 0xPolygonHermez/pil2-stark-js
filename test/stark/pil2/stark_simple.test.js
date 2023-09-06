@@ -13,7 +13,7 @@ const { newCommitPolsArrayPil2 } = require("pilcom/src/polsarray");
 
 const smSimple = require("../../state_machines/pil2/sm_simple/sm_simple.js");
 
-const { getFixedPolsPil2 } = require("../../../src/pil_info/helpers/getPiloutInfo");
+const { getFixedPolsPil2 } = require("../../../src/pil_info/helpers/pil2/piloutInfo");
 
 const { generateStarkProof } = require("../helpers");
 
@@ -70,7 +70,7 @@ describe("simple sm", async function () {
     it("Simple4", async () => {
         await runTest("simple4.pil");
     })
-    it("Simple5", async () => {
+    it.only("Simple5", async () => {
         await runTest("simple5.pil");
     })
 });

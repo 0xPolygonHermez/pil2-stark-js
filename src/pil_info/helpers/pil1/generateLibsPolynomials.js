@@ -15,7 +15,7 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
         res.nLibStages = Math.max(res.nLibStages, 1);
         const challenges = initChallengesPermutation(stark);
         for(let i = 0; i < challenges.length; ++i) {
-            if(!symbols.find(c => c.type === "challenge" && c.name === challenges[i].name)) {
+            if(!symbols.find(c => c.type === "challenge" && c.stage === challenges[i].stage && c.stageId === challenges[i].stageId)) {
                 symbols.push({type: "challenge", ...challenges[i]});
             }
         }
@@ -28,7 +28,7 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
         res.nLibStages = Math.max(res.nLibStages, 1);
         const challenges = initChallengesConnection(stark);
         for(let i = 0; i < challenges.length; ++i) {
-            if(!symbols.find(c => c.type === "challenge" && c.name === challenges[i].name)) {
+            if(!symbols.find(c => c.type === "challenge" && c.stage === challenges[i].stage && c.stageId === challenges[i].stageId)) {
                 symbols.push({type: "challenge", ...challenges[i]});
             }     
         }    
@@ -41,7 +41,7 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
         res.nLibStages = 2;
         const challenges = initChallengesPlookup(stark);
         for(let i = 0; i < challenges.length; ++i) {
-            if(!symbols.find(c => c.type === "challenge" && c.name === challenges[i].name)) {
+            if(!symbols.find(c => c.type === "challenge" && c.stage === challenges[i].stage && c.stageId === challenges[i].stageId)) {
                 symbols.push({type: "challenge", ...challenges[i]});
             }
         }

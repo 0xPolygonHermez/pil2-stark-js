@@ -1,5 +1,3 @@
-const chai = require("chai");
-const assert = chai.assert;
 const F3g = require("../../../src/helpers/f3g");
 const path = require("path");
 
@@ -13,9 +11,8 @@ const { newCommitPolsArrayPil2 } = require("pilcom/src/polsarray");
 
 const smFibonacci = require("../../state_machines/pil2/sm_fibonacci/sm_fibonacci.js");
 
-const { getFixedPolsPil2 } = require("../../../src/pil_info/helpers/getPiloutInfo");
-
 const { generateStarkProof } = require("../helpers");
+const { getFixedPolsPil2 } = require("../../../src/pil_info/helpers/pil2/piloutInfo");
 
 describe("test fibonacci pil2 sm", async function () {
     this.timeout(10000000);
