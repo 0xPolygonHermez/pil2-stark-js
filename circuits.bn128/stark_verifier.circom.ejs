@@ -303,7 +303,6 @@ for(let i=0; i < starkInfo.nLibStages; i++) {
     const challengesStage = starkInfo.challengesMap.filter(c => c.stage === stage);
     for(let j = 0; j < challengesStage.length; ++j) {
         const index = starkInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == j);
-        challengeIndexes.push(index);
         transcript.getField("challenges[" + index + "]", 3);
     }
     transcript.put("root" + stage);
@@ -414,7 +413,7 @@ template parallel VerifyEvaluations() {
     }
 
     // Store the vanishing polynomial Zh = x^nBits - 1 evaluated at z
-    signal Z[3] <== GLCInv()([zMul[<%- starkStruct.nBits - 1 %>][0] -1 + p, zMul[<%- starkStruct.nBits - 1 %>][1], zMul[<%- starkStruct.nBits - 1 %>][2]]);
+    signal Zh[3] <== GLCInv()([zMul[<%- starkStruct.nBits - 1 %>][0] -1 + p, zMul[<%- starkStruct.nBits - 1 %>][1], zMul[<%- starkStruct.nBits - 1 %>][2]]);
 
 <%  if(starkInfo.boundaries.includes("firstRow")) { -%>
     signal Zfirst[3] <== GLCInv()([challenges<%- xiChallengeId %>[0] - 1, challenges<%- xiChallengeId %>[1], challenges<%- xiChallengeId %>[2]]);
@@ -469,6 +468,7 @@ template parallel VerifyEvaluations() {
     // Note: Each Qi has degree < n. qDeg determines the number of polynomials of degree < n needed to define Q
     // Calculate Q(X) = Q1(X) + X^n*Q2(X) + X^(2n)*Q3(X) + ..... X^((qDeg-1)n)*Q(X) evaluated at z 
     for (var i=0; i< <%- starkInfo.qDeg %>; i++) {
+<%      const evId = starkInfo.evMap.findIndex(e => e.type === "cm" && e.id === starkInfo.qs[0]); -%>
         if (i==0) {
             xAcc[0] <== [1, 0, 0];
             qAcc[0] <== evals[<%- evId %>+i];
@@ -485,7 +485,7 @@ template parallel VerifyEvaluations() {
     // Final normalization
     signal normC[3] <== GLCNorm()([<%- evalP %>[0] - qAcc[<%- starkInfo.qDeg-1 %>][0], <%- evalP %>[1] - qAcc[<%- starkInfo.qDeg-1 %>][1],<%- evalP %>[2] - qAcc[<%- starkInfo.qDeg-1 %>][2]]);
 
-    // Final Verification. Check that Q(X)*Zh(X) = sum of linear combination of q_i, which is stored at <%- evalP %> 
+    // Final Verification. Check that Q(X) = sum of linear combination of q_i, which is stored at <%- evalP %> 
     enable * normC[0] === 0;
     enable * normC[1] === 0;
     enable * normC[2] === 0;

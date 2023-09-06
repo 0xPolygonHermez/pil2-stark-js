@@ -124,8 +124,6 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 
 
 module.exports.generateFRICode = function generateFRICode(res, friExpId, symbols, expressions, constraints) {
-    let addMul = res.starkStruct.verificationHashType == "GL" ? false : true;
-
     const ctxExt = {
         calculated: {},
         tmpUsed: 0,
@@ -133,14 +131,16 @@ module.exports.generateFRICode = function generateFRICode(res, friExpId, symbols
         expMap: [],
         dom: "ext",
         stark: true,
-        addMul,
     };
 
     pilCodeGen(ctxExt, symbols, expressions, constraints, friExpId, 0);
     res.code.fri = buildCode(ctxExt, expressions);
     res.code.fri.code[res.code.fri.code.length-1].dest = { type: "f", id: 0, dim: 3 };
 
+    let addMul = res.starkStruct.verificationHashType == "GL" ? false : true;
+
     ctxExt.verifierQuery = true;
+    ctxExt.addMul = addMul;
     pilCodeGen(ctxExt, symbols, expressions, constraints, friExpId, 0);
     res.code.queryVerifier = buildCode(ctxExt, expressions);
 }

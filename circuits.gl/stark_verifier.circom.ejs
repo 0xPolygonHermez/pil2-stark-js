@@ -442,10 +442,10 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
 <% for(let i = 0; i < starkInfo.nLibStages; ++i) { -%>
 <%  const stage = i + 2; -%>
     signal input tree<%- stage %>[<%- starkInfo.mapSectionsN[`cm${stage}`] %>];
-<% } -%>                                    
+<% } -%>
     signal input treeQ[<%- starkInfo.mapSectionsN.cmQ %>];
     signal input consts[<%- starkInfo.nConstants %>];
-    signal input s0_vals[1<< nextStep][3];
+    signal input s0_vals[1 << nextStep][3];
     signal input enable;
     
 
@@ -457,7 +457,7 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
 <% for(let i = 0; i < starkInfo.nLibStages; ++i) { -%>
 <%  const stage = i + 2; -%>
     mapValues.vals<%- stage %> <== tree<%- stage %>;
-<% } -%>   
+<% } -%>
     mapValues.valsQ <== treeQ;
 
     signal xacc[<%- starkStruct.steps[0].nBits %>];

@@ -65,7 +65,8 @@ async function run() {
         let arity = Number(argv.arity) || 16;
         let custom = argv.custom || false;
 
-        options = {arity, custom};
+        options.arity = arity;
+        options.custom = custom;
 
         console.log(`Arity: ${arity}, Custom: ${custom}`);
         MH = await buildMerkleHashBN128(arity, custom);
