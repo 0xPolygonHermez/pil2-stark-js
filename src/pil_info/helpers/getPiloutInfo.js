@@ -38,7 +38,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
                 if (!previousPols[i].dim) {
                     polId++;
                 } else {
-                    polId += previousPols[i].lengths[0];
+                    polId += previousPols[i].lengths.reduce((acc, l) => acc * l, 1);
                 }
             };
             if(!s.dim) {
@@ -53,20 +53,9 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
                     dim
                 }  
             } else {
-                const pols = [];
-                for(let i = 0; i < s.lengths[0]; ++i) {
-                    const stageId = s.id + i;
-                    E.cm(polId + i, 0, s.stage, dim);
-                    pols.push({
-                        name: s.name,
-                        stage: s.stage,
-                        type,
-                        polId: polId + i,
-                        stageId,
-                        dim,
-                    });
-                }
-                return pols;
+                const multiArraySymbols = [];
+                generateMultiArraySymbols(E, multiArraySymbols, [], s, dim, polId, 0);
+                return multiArraySymbols;
             }
         } else if(s.type === 8) {
             return {
@@ -84,7 +73,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
                 id: s.id,
             }
         }
-    });
+    }); 
     
     res.nCommitments = symbols.filter(s => s.type === "witness").length;
     res.nConstants = symbols.filter(s => s.type === "fixed").length;
@@ -102,6 +91,27 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     return {expressions, hints, constraints, symbols, publicsInfo};
 }
 
+function generateMultiArraySymbols(E, symbols, indexes, sym, dim, polId, shift) {
+    if (indexes.length === sym.lengths.length) {
+        const type = sym.type === 1 ? "fixed" : "witness";
+        E.cm(polId + shift, 0, sym.stage, dim);
+        symbols.push({
+            name: sym.name,
+            stage: sym.stage,
+            type,
+            polId: polId + shift,
+            stageId: sym.id + shift,
+            dim,
+        });
+        return shift + 1;
+    }
+
+    for (let i = 0; i < sym.lengths[indexes.length]; i++) {
+        shift = generateMultiArraySymbols(E, symbols, [...indexes, i], sym, dim, polId, shift);
+    }
+
+    return shift;
+}
 
 function formatExpression(symbols, expressions, exp) {
     const P = new ProtoOut();

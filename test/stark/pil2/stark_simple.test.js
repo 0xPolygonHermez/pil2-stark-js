@@ -46,7 +46,11 @@ async function runTest(pilFile) {
 
         const cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
 
-        await smSimple.execute(pil.numRows, cmPols.Simple, F);
+        if(pilFile === "simple5.pil") {
+            await smSimple.execute2(pil.numRows, cmPols.Simple, F);
+        } else {
+            await smSimple.execute(pil.numRows, cmPols.Simple, F);
+        }
         
         await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: false});
 }
@@ -63,7 +67,10 @@ describe("simple sm", async function () {
     it("Simple3", async () => {
         await runTest("simple3.pil");
     });
-    it.only("Simple4", async () => {
+    it("Simple4", async () => {
         await runTest("simple4.pil");
+    })
+    it("Simple5", async () => {
+        await runTest("simple5.pil");
     })
 });
