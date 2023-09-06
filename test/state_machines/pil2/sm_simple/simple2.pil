@@ -1,0 +1,6 @@
+subproof Simple(2**6) {
+
+    col witness a,b;
+
+    a'3*a'3 === b'3; 
+}

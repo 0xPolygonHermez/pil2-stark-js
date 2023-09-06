@@ -28,19 +28,45 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
         return constraint;
     });
 
-    const symbols = pilout.symbols.map(s => {
+    const symbols = pilout.symbols.flatMap(s => {
         if([1, 3].includes(s.type)) {
             const dim = [0,1].includes(s.stage) ? 1 : stark ? 3 : 1;
             const type = s.type === 1 ? "fixed" : "witness";
-            const polId = pilout.symbols.filter(si => si.type === 3 && ((si.stage < s.stage) || (si.stage === s.stage && si.id < s.id))).length;
-            E.cm(polId, 0, s.stage, dim);
-            return {
-                name: s.name,
-                stage: s.stage,
-                type,
-                polId: polId,
-                stageId: s.id,
-                dim
+            const previousPols = pilout.symbols.filter(si => si.type === s.type && ((si.stage < s.stage) || (si.stage === s.stage && si.id < s.id)));
+            let polId = 0;
+            for(let i = 0; i < previousPols.length; ++i) {
+                if (!previousPols[i].dim) {
+                    polId++;
+                } else {
+                    polId += previousPols[i].lengths[0];
+                }
+            };
+            if(!s.dim) {
+                const stageId = s.id;
+                E.cm(polId, 0, s.stage, dim);
+                return {
+                    name: s.name,
+                    stage: s.stage,
+                    type,
+                    polId,
+                    stageId,
+                    dim
+                }  
+            } else {
+                const pols = [];
+                for(let i = 0; i < s.lengths[0]; ++i) {
+                    const stageId = s.id + i;
+                    E.cm(polId + i, 0, s.stage, dim);
+                    pols.push({
+                        name: s.name,
+                        stage: s.stage,
+                        type,
+                        polId: polId + i,
+                        stageId,
+                        dim,
+                    });
+                }
+                return pols;
             }
         } else if(s.type === 8) {
             return {
