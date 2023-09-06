@@ -27,14 +27,13 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
         stark,
     };
 
-    if(res.nLibStages === 0) {
-        for(let j = 0; j < expressions.length; ++j) {
-            if(expressions[j].stage === 1) {
-                pilCodeGen(ctx, symbols, expressions, constraints, j, 0);
-            }
-        }   
-        res.code[`stage1`] =  buildCode(ctx, expressions);
-    }
+    for(let j = 0; j < expressions.length; ++j) {
+        if(expressions[j].stage === 1 && symbols.find(s => s.stage === 1 && s.expId === j)) {
+            pilCodeGen(ctx, symbols, expressions, constraints, j, 0);
+        }
+    }   
+    res.code[`stage1`] =  buildCode(ctx, expressions);
+    
 
     for(let i = 0; i < res.nLibStages; ++i) {
         const stage = 2 + i;

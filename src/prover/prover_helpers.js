@@ -60,7 +60,7 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
             case 'sub': exp = `ctx.F.sub(${src[0]}, ${src[1]})`; break;
             case 'mul': exp = `ctx.F.mul(${src[0]}, ${src[1]})`; break;
             case 'copy': exp = `${src[0]}`; break;
-            default: throw new Error("Invalid op:"+ c[j].op);
+            default: throw new Error("Invalid op:"+ code[j].op);
         }
         setRef(code[j].dest, exp);
     }

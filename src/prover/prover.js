@@ -65,9 +65,7 @@ async function stage1(ctx, options) {
 
     calculatePublics(ctx);
 
-    if(ctx.pilInfo.nLibStages === 0) {
-        if(logger) logger.debug("> Calculating intermediate polynomials");
-
+    if(ctx.pilInfo.code.stage1.code.length > 0) {
         await callCalculateExps("stage1", "n", ctx, options.parallelExec, options.useThreads);
     }
 
