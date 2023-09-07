@@ -55,6 +55,7 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
             exp.rowsOffsets = [exp.rowOffset];
         }
     } else if (["challenge", "eval"].includes(exp.op)) {
+        exp.expDeg = 0;
         exp.dim = stark ? 3 : 1;
     } else if (["number", "public"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
         exp.expDeg = 0;

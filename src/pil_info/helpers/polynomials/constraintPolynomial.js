@@ -1,5 +1,7 @@
 const ExpressionOps = require("../../expressionops");
 const { getExpDim } = require("../helpers");
+const { calculateIntermediatePolynomials } = require("./imPolynomials");
+const _ = require("lodash");
 
 module.exports = function generateConstraintPolynomial(res, symbols, expressions, constraints, stark) {
 
@@ -34,12 +36,11 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
         }
         let e = E.exp(constraints[i].e);
         if(stark) e = E.mul(zi, e);
-        if (cExp) {
-            cExp = E.add(E.mul(vc, cExp), e);
-        } else {
-            cExp = e;
-        }
+        cExp = cExp ? E.add(E.mul(vc, cExp), e) : e;
     }
+
+    let cExpId = expressions.length;
+    expressions.push(cExp);
 
     let maxDeg;
     if(stark) {
@@ -47,25 +48,20 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
     } else {
         maxDeg = Math.pow(2,3) + 1;
     }
-    let d = 2;
-    let [imExps, qDeg] = calculateImPols(expressions, cExp, d++);
-    while(Object.keys(imExps).length > 0 && d <= maxDeg) {
-        let [imExpsP, qDegP] = calculateImPols(expressions, cExp, d++);
-        if ((maxDeg && (Object.keys(imExpsP).length + qDegP < Object.keys(imExps).length + qDeg)) 
-            || (!maxDeg && Object.keys(imExpsP).length === 0)) {
-            [imExps, qDeg] = [imExpsP, qDegP];
-        }
-        if(Object.keys(imExpsP).length === 0) break;
-    }
 
-    console.log("Number of intermediate expressions: " + Object.keys(imExps).length);
+    const _expressions = _.cloneDeep(expressions);
+
+    const {newExpressions, qDeg, imExps} = calculateIntermediatePolynomials(constraints, _expressions, cExpId, maxDeg);
+
+    expressions.splice(0, expressions.length, ...newExpressions);
+    
+    console.log("Number of intermediate expressions: " + imExps.length);
     console.log("Q degree: " + qDeg);
 
     res.qDeg = qDeg;
 
-    let imExpsList = Object.keys(imExps).map(Number);
-    for (let i=0; i<imExpsList.length; i++) {
-        const expId = imExpsList[i];
+    for (let i=0; i<imExps.length; i++) {
+        const expId = imExps[i];
         const stage = expressions[expId].stage;
         const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId);
         const dim = getExpDim(expressions, expId, stark);
@@ -79,20 +75,14 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
         let e = {
             op: "sub",
             values: [
-                Object.assign({}, expressions[imExpsList[i]]),
+                Object.assign({}, expressions[imExps[i]]),
                 E.cm(res.nCommitments-1, 0, stage, dim),
             ]
         };
         if(stark) e = E.mul(E.zi("everyRow"), e);
-        if (cExp) {
-            cExp = E.add(E.mul(vc, cExp), e);
-        } else {
-            cExp = e;
-        }
+        expressions[cExpId] = E.add(E.mul(vc, expressions[cExpId]), e);
     }
 
-    let cExpId = expressions.length;
-    expressions.push(cExp);
     let cExpDim = getExpDim(expressions, cExpId, stark);
     expressions[cExpId].dim = cExpDim;
 
@@ -108,91 +98,4 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
     }
 
     return cExpId;
-}
-
-function calculateImPols(expressions, _exp, maxDeg) {
-
-    const imPols = {};
-    const absoluteMax = maxDeg;
-    let absMaxD = 0;
-
-    [re, rd] = _calculateImPols(expressions, _exp, imPols, maxDeg);
-
-    console.log(`maxDeg: ${maxDeg}, nIm: ${Object.keys(re).length}, d: ${rd}`);
-
-    return [re, Math.max(rd, absMaxD) - 1];  // We divide the exp polynomial by 1.
-
-    function _calculateImPols(expressions, exp, imPols, maxDeg) {
-        if (imPols === false) {
-            return [false, -1];
-        }
-        if (exp.op === "neg") {
-            return _calculateImPols(expressions, exp.values[0], imPols, maxDeg);
-        } else if (["add", "sub"].indexOf(exp.op) >=0 ) {
-            let md = 0;
-            for (let i=0; i<exp.values.length; i++) {
-                [imPols , d] = _calculateImPols(expressions, exp.values[i], imPols, maxDeg);
-                if (d>md) md = d;
-            }
-            return [imPols, md];
-        } else if (["number", "public", "challenge"].indexOf(exp.op) >=0 || (exp.op === "Zi" && exp.boundary === "everyRow")) {
-            return [imPols, 0];
-        } else if (["x", "const", "cm"].indexOf(exp.op) >= 0 || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
-            if (maxDeg < 1) return [false, -1];
-            return [imPols, 1];
-        } else if (exp.op == "mul") {
-            let eb = false;
-            let ed = -1;
-            if (["number", "public", "challenge"].indexOf(exp.values[0].op) >= 0 ) {
-                return _calculateImPols(expressions, exp.values[1], imPols, maxDeg);
-            }
-            if (["number", "public", "challenge"].indexOf(exp.values[1].op) >= 0 ) {
-                return _calculateImPols(expressions, exp.values[0], imPols, maxDeg);
-            }
-            const maxDegHere = exp.expDeg;
-            if (maxDegHere <= maxDeg) {
-                return [imPols, maxDegHere];
-            }
-            for (let l=0; l<=maxDeg; l++) {
-                let r = maxDeg-l;
-                const [e1, d1] = _calculateImPols(expressions, exp.values[0], imPols, l);
-                const [e2, d2] = _calculateImPols(expressions, exp.values[1], e1, r );
-                if(e2 !== false && (eb === false || Object.keys(e2).length < Object.keys(eb).length)) {
-                    eb = e2;
-                    ed = d1+d2;
-                } 
-            
-                if (eb !== false && Object.keys(eb).length == Object.keys(imPols).length) return [eb, ed];  // Cannot do it better.
-            }
-            return [eb, ed];
-        } else if (exp.op == "exp") {
-            if (maxDeg < 1) {
-                return [false, -1];
-            }
-            if (imPols[exp.id]) return [imPols, 1];
-            let e,d;
-            if(exp.res && exp.res[absoluteMax] && exp.res[absoluteMax][JSON.stringify(imPols)]) {
-                [e,d] = exp.res[absoluteMax][JSON.stringify(imPols)];
-            } else {
-                [e,d] = _calculateImPols(expressions, expressions[exp.id], imPols, absoluteMax);
-            }
-            if (e === false) {
-                return [false, -1];
-            }
-            if (d > maxDeg) {
-                const ce = Object.assign({}, e);
-                ce[exp.id] = true;
-                if (d>absMaxD) absMaxD = d;
-                return [ce, 1];
-            } else {
-                if(!exp.res) exp.res = {};
-                if(!exp.res[absoluteMax]) exp.res[absoluteMax] = {};
-                exp.res[absoluteMax][JSON.stringify(imPols)] = [e, d];
-                return exp.res[absoluteMax][JSON.stringify(imPols)];
-            }
-        } else {
-            throw new Error("Exp op not defined: "+ exp.op);
-        }
-    }
-
 }
