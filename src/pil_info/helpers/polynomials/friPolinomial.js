@@ -6,7 +6,7 @@ const { getExpDim } = require("../helpers");
 module.exports = function generateFRIPolynomial(res, symbols, expressions) {
     const E = new ExpressionOps();
 
-    const stage = res.nLibStages + 4;
+    const stage = res.numChallenges.length + 3;
 
     let vf1Symbol = symbols.find(s => s.type === "challenge" && s.stage === stage && s.stageId === 0);
     let vf1Id = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < vf1Symbol.stageId))).length;

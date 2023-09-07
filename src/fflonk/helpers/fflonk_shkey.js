@@ -6,7 +6,7 @@ module.exports = async function fflonkShkey(ptauFile, fflonkInfo, options) {
 
     if(logger) logger.info("> Starting fflonk shkey generation");
 
-    const nStages = fflonkInfo.nLibStages + 2;
+    const nStages = fflonkInfo.numChallenges.length + 1;
     let fiNames = {};
     let fiIndex = 0;
 

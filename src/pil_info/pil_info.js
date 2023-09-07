@@ -17,7 +17,6 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
         cmPolsMap: [],
         challengesMap: [],
         code: {},
-        nLibStages: 0,
         starkStruct: starkStruct,
     };
 
@@ -32,7 +31,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
     let publics = generatePublicsPolynomials(res, expressions, publicsInfo);
 
     let dimCh = stark ? 3 : 1;
-    let qStage = res.nLibStages + 2;
+    let qStage = res.numChallenges.length + 1;
     symbols.push({type: "challenge", name: "std_vc", stage: qStage, dim: dimCh, stageId: 0})
 
     if(stark) {

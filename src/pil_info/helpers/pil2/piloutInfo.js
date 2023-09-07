@@ -3,12 +3,6 @@ const { newConstantPolsArrayPil2 } = require("pilcom/src/polsarray");
 const { formatExpressions, formatConstraints, formatSymbols } = require("./utils");
 
 module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
-    if(!pilout.numChallenges) {
-        res.nLibStages = 0;
-    } else {
-        res.nLibStages = pilout.numChallenges.length - 1;
-    }
-
     const constraints = formatConstraints(pilout);
     const symbols = formatSymbols(pilout, stark);
     const expressions = formatExpressions(pilout, stark);

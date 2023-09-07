@@ -232,7 +232,7 @@ contract PilFflonkVerifier {
 
                 let challenge
 
-<%  for(let i = 0; i < fflonkInfo.nLibStages; ++i) { -%>
+<%  for(let i = 0; i < fflonkInfo.numChallenges.length - 1; ++i) { -%>
 <%      const stage = i + 2 -%>
                 // Transcript stage <%= stage %>
 <%      const challengesStage = fflonkInfo.challengesMap.filter(c => c.stage === stage); -%>
@@ -262,13 +262,13 @@ contract PilFflonkVerifier {
 
                 // Compute xiSeed
 <%  for(let i = 0; i < vk.f.length; ++i) { -%>
-<%  if(vk.f[i].stages[0].stage === fflonkInfo.nLibStages + 2) { -%>
+<%  if(vk.f[i].stages[0].stage === fflonkInfo.numChallenges.length + 1) { -%>
                 mstore(add(pMem, <%= memC %>), calldataload(pf<%- vk.f[i].index %>))
                 mstore(add(pMem, <%= memC + 32 %>), calldataload(add(pf<%- vk.f[i].index %>, 32)))
 <%  memC += 64 -%>
 <%  } -%>
 <%  } -%>
-                let xiSeed := mod(keccak256(add(pMem, pLastMem), <%- 32 + vk.f.filter(fi => fi.stages[0].stage === fflonkInfo.nLibStages + 2).length * 64  %>), q)
+                let xiSeed := mod(keccak256(add(pMem, pLastMem), <%- 32 + vk.f.filter(fi => fi.stages[0].stage === fflonkInfo.numChallenges.length + 1).length * 64  %>), q)
                 mstore(add(pMem, pXiSeed), xiSeed)
                                 
                 // Compute xin
@@ -360,7 +360,7 @@ contract PilFflonkVerifier {
 <%  if(vk.maxQDegree > 0) { -%>
                 tmp := 0
                 let xAcc := 1
-<%  const nPolsQ = vk.f.filter(fi => fi.stages[0].stage === fflonkInfo.nLibStages + 2).map(fi => fi.pols).flat(Infinity).length; -%>
+<%  const nPolsQ = vk.f.filter(fi => fi.stages[0].stage === fflonkInfo.numChallenges.length + 1).map(fi => fi.pols).flat(Infinity).length; -%>
 <%  for(let i = 0; i < nPolsQ; ++i) { -%>
                 tmp := addmod(tmp, mulmod(calldataload(pEval_Q<%- i %>), xAcc, q), q)
 <%  if(i < nPolsQ - 1) { -%>

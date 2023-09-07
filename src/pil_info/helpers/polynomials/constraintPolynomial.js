@@ -6,7 +6,7 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
     const E = new ExpressionOps();
 
     const dim = stark ? 3 : 1;
-    const stage = res.nLibStages + 2;
+    const stage = res.numChallenges.length + 1;
 
     let vcSymbol = symbols.find(s => s.type === "challenge" && s.stage === stage && s.stageId === 0);
     let vcId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < vcSymbol.stageId))).length;

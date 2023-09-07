@@ -46,9 +46,8 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
         logger.debug(`  VerificationType: ${starkStruct.verificationHashType}`);
         logger.debug(`  Domain size: ${N} (2^${nBits})`);
         logger.debug(`  Const  pols:   ${starkInfo.nConstants}`);
-        logger.debug(`  Stage 1 pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == "cm1").length}`);
-        for(let i = 0; i < starkInfo.nLibStages; i++) {
-            const stage = i + 2;
+        for(let i = 0; i < starkInfo.numChallenges.length; i++) {
+            const stage = i + 1;
             logger.debug(`  Stage ${stage} pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == "cm" + stage).length}`);
         }
         logger.debug(`  Stage Q pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == "cmQ").length}`);
@@ -68,10 +67,8 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
         transcript.put(publics[i]);
     }
 
-    transcript.put(proof.root1);
-
-    for(let i=0; i < starkInfo.nLibStages; i++) {
-        const stage = i + 2;
+    for(let i=0; i < starkInfo.numChallenges.length; i++) {
+        const stage = i + 1;
         const challengesStage = starkInfo.challengesMap.filter(c => c.stage == stage);
         for(let j = 0; j < challengesStage.length; ++j) {
             const index = starkInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == j);
@@ -81,7 +78,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
         transcript.put(proof["root" + stage]);
     }
     
-    let qStage = starkInfo.nLibStages + 2;
+    let qStage = starkInfo.numChallenges.length + 1;
     let qChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === qStage && c.stageId === 0);
     ctx.challenges[qChallengeId] = transcript.getField();
     if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + F.toString(ctx.challenges[qChallengeId]));
@@ -172,14 +169,8 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
             return false;
         }
 
-        res = MH.verifyGroupProof(proof.root1, query[1][1], idx, query[1][0]);
-        if (!res) {
-            if(logger) logger.warn(`Invalid root1`);
-            return false;
-        }
-    
-        for(let i = 0; i < starkInfo.nLibStages; ++i) {
-            const stage = i + 2;
+        for(let i = 0; i < starkInfo.numChallenges.length; ++i) {
+            const stage = i + 1;
             let res = MH.verifyGroupProof(proof[`root${stage}`], query[stage][1], idx, query[stage][0]);
             if (!res) {
                 if(logger) logger.warn(`Invalid root${stage}`);
@@ -187,7 +178,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
             }
         }
         
-        res = MH.verifyGroupProof(proof.rootQ, query[starkInfo.nLibStages + 2][1], idx, query[starkInfo.nLibStages + 2][0]);
+        res = MH.verifyGroupProof(proof.rootQ, query[starkInfo.numChallenges.length + 1][1], idx, query[starkInfo.numChallenges.length + 1][0]);
         if (!res) {
             if(logger) logger.warn(`Invalid rootQ`);
             return false;
@@ -195,12 +186,11 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
         
         const ctxQry = {};
         ctxQry.consts = query[0][0];
-        ctxQry.tree1 = query[1][0];
-        for(let i = 0; i < starkInfo.nLibStages; ++i) {
-            const stage = i + 2;
-            ctxQry[`tree${stage}`] = query[i + 2][0];
+        for(let i = 0; i < starkInfo.numChallenges.length; ++i) {
+            const stage = i + 1;
+            ctxQry[`tree${stage}`] = query[stage][0];
         }
-        ctxQry.treeQ = query[starkInfo.nLibStages + 2][0];
+        ctxQry.treeQ = query[starkInfo.numChallenges.length + 1][0];
         ctxQry.evals = ctx.evals;
         ctxQry.publics = ctx.publics;
         ctxQry.challenges = ctx.challenges;
@@ -268,7 +258,7 @@ function executeCode(F, ctx, code) {
             case "public": return BigInt(ctx.publics[r.id]);
             case "challenge": return ctx.challenges[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
-            case "x": return ctx.challenges[ctx.starkInfo.challengesMap.findIndex(c => c.stage === ctx.starkInfo.nLibStages + 3 && c.stageId === 0)];
+            case "x": return ctx.challenges[ctx.starkInfo.challengesMap.findIndex(c => c.stage === ctx.starkInfo.numChallenges.length + 2 && c.stageId === 0)];
             case "Zi": {
                 if(r.boundary === "everyRow") {
                     return ctx.Z;

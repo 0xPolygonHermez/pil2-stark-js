@@ -35,7 +35,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
     res.code[`stage1`] =  buildCode(ctx, expressions);
     
 
-    for(let i = 0; i < res.nLibStages; ++i) {
+    for(let i = 0; i < res.numChallenges.length - 1; ++i) {
         const stage = 2 + i;
         for(let j = 0; j < expressions.length; ++j) {
             if(expressions[j].stage === stage) {
@@ -104,7 +104,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 
     if (stark) {
         for (let i = 0; i < res.qDeg; i++) {
-            const rf = { type: "cm", id: res.qs[i], name: "Q" + i, prime: 0, dim: res.qDim, stage: res.nLibStages + 2 };
+            const rf = { type: "cm", id: res.qs[i], name: "Q" + i, prime: 0, dim: res.qDim, stage: res.numChallenges.length + 1 };
             res.evMap.push(rf);
         }
     } else {

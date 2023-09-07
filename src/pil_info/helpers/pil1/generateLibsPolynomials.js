@@ -6,48 +6,49 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
 
     const pilLibs = [];
 
-    res.nLibStages = 0;
+    res.numChallenges = [0];
 
     if(pil.permutationIdentities.length > 0) {
         pilLibs.push({
             lib: function() { grandProductPermutation(pil, symbols, hints, stark)},
         });
-        res.nLibStages = Math.max(res.nLibStages, 1);
         const challenges = initChallengesPermutation(stark);
-        for(let i = 0; i < challenges.length; ++i) {
-            if(!symbols.find(c => c.type === "challenge" && c.stage === challenges[i].stage && c.stageId === challenges[i].stageId)) {
-                symbols.push({type: "challenge", ...challenges[i]});
-            }
-        }
+        calculateChallenges(res, symbols, challenges);
     }
 
     if(pil.connectionIdentities.length > 0) {
         pilLibs.push({
             lib: function() { grandProductConnection(pil, symbols, hints, stark, F)},
         });
-        res.nLibStages = Math.max(res.nLibStages, 1);
         const challenges = initChallengesConnection(stark);
-        for(let i = 0; i < challenges.length; ++i) {
-            if(!symbols.find(c => c.type === "challenge" && c.stage === challenges[i].stage && c.stageId === challenges[i].stageId)) {
-                symbols.push({type: "challenge", ...challenges[i]});
-            }     
-        }    
+        calculateChallenges(res, symbols, challenges);
+
     }
 
     if(pil.plookupIdentities.length > 0) {
         pilLibs.push({
             lib: function() { grandProductPlookup(pil, symbols, hints, stark) },
         });
-        res.nLibStages = 2;
         const challenges = initChallengesPlookup(stark);
-        for(let i = 0; i < challenges.length; ++i) {
-            if(!symbols.find(c => c.type === "challenge" && c.stage === challenges[i].stage && c.stageId === challenges[i].stageId)) {
-                symbols.push({type: "challenge", ...challenges[i]});
-            }
-        }
+        calculateChallenges(res, symbols, challenges);
     }
 
     for(let i = 0; i < pilLibs.length; ++i) {
         pilLibs[i].lib();
     }
+}
+
+function calculateChallenges(res, symbols, challenges) {
+    for(let i = 0; i < challenges.length; ++i) {
+        if(!symbols.find(c => c.type === "challenge" && c.stage === challenges[i].stage && c.stageId === challenges[i].stageId)) {
+            symbols.push({type: "challenge", ...challenges[i]});
+        }
+    }
+    const numChallenges = challenges.map(c => c.stage - 1).reduce((acc, s) => {
+        if(!acc[s]) acc[s] = 0;
+        acc[s]++;
+        return acc;
+    },[0]);
+    res.numChallenges = [...Array(Math.max(res.numChallenges.length, numChallenges.length))]
+        .map((_, i) => Math.max(res.numChallenges[i] || 0, numChallenges[i] || 0));
 }

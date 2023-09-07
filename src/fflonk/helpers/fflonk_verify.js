@@ -30,7 +30,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
     const domainSize = ctx.N;
     const power = vk.power;
 
-    const nStages = fflonkInfo.nLibStages + 2;
+    const nStages = fflonkInfo.numChallenges.length + 1;
 
     const nPolsQ = vk.f.filter(fi => fi.stages[0].stage === nStages).map(fi => fi.pols).flat(Infinity);
 
@@ -41,7 +41,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
         logger.debug(`  Domain size:   ${domainSize} (2^${power})`);
         logger.debug(`  Const  pols:   ${fflonkInfo.nConstants}`);
         logger.debug(`  Stage 1 pols:   ${fflonkInfo.mapSectionsN.cm1}`);
-        for(let i = 0; i < fflonkInfo.nLibStages; i++) {
+        for(let i = 0; i < fflonkInfo.numChallenges.length - 1; i++) {
             const stage = i + 2;
             logger.debug(`  Stage ${stage} pols:   ${fflonkInfo.mapSectionsN[`cm${stage}`]}`);
         }
@@ -65,7 +65,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
         transcript.addPolCommitment(stage1CommitPols[i]);
     }
     
-    for(let i=0; i < fflonkInfo.nLibStages; i++) {
+    for(let i=0; i < fflonkInfo.numChallenges.length - 1; i++) {
         const stage = i + 2;
         const challengesStage = fflonkInfo.challengesMap.filter(c => c.stage === stage);
         for(let j = 0; j < challengesStage.length; ++j) {
@@ -83,7 +83,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
 
     }
     
-    let qStage = fflonkInfo.nLibStages + 2;
+    let qStage = fflonkInfo.numChallenges.length + 1;
     let qChallengeId = fflonkInfo.challengesMap.findIndex(c => c.stage === qStage && c.stageId === 0);
     ctx.challenges[qChallengeId] = transcript.getChallenge();
     if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + Fr.toString(ctx.challenges[qChallengeId]));

@@ -29,7 +29,7 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
 
     let challenge = await getChallenge(1, ctx);
     
-    for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
+    for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
         await computeStage(i, ctx, challenge, options);
         challenge = await getChallenge(i + 2, ctx);
     }
@@ -37,7 +37,7 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
     // STAGE Q. Trace Quotient Polynomials
     await stageQ(ctx, challenge, options);
     
-    const qStage = ctx.pilInfo.nLibStages + 2;
+    const qStage = ctx.pilInfo.numChallenges.length + 1;
 
     challenge = await getChallenge(qStage, ctx);
 
@@ -106,7 +106,7 @@ async function computeStage(stage, ctx, challenge, options) {
 async function stageQ(ctx, challenge, options) {
     const logger = options.logger;
     
-    const qStage = ctx.pilInfo.nLibStages + 2;
+    const qStage = ctx.pilInfo.numChallenges.length + 1;
     
     if (logger) logger.debug("> STAGE 4. Compute Trace Quotient Polynomials");
 

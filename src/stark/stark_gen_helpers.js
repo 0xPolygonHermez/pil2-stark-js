@@ -51,7 +51,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         logger.debug(`  Domain size ext: ${ctx.extN} (2^${ctx.nBitsExt})`);
         logger.debug(`  Const  pols:   ${ctx.pilInfo.nConstants}`);
         logger.debug(`  Stage 1 pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1").length}`);
-        for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
+        for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
             const stage = i + 2;
             logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm" + stage).length}`);
         }
@@ -79,9 +79,8 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.fri = new FRI( ctx.pilInfo.starkStruct, ctx.MH );
 
     ctx.const_n = new Proxy(new BigBuffer(ctx.pilInfo.nConstants*ctx.N), BigBufferHandlerBigInt);
-    ctx.cm1_n = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1*ctx.N), BigBufferHandlerBigInt);
-    for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
-        const stage = i + 2;
+    for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+        const stage = i + 1;
         ctx[`cm${stage}_n`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.N), BigBufferHandlerBigInt);
     }
     ctx.tmpExp_n = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp*ctx.N), BigBufferHandlerBigInt);
@@ -89,9 +88,8 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
 
     
     ctx.const_ext = new Proxy(constTree.elements, BigBufferHandlerBigInt);
-    ctx.cm1_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1*ctx.extN), BigBufferHandlerBigInt);
-    for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
-        const stage = i + 2;
+    for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+        const stage = i + 1;
         ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.extN), BigBufferHandlerBigInt);
     }
     ctx.cmQ_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ*ctx.extN), BigBufferHandlerBigInt);
@@ -166,13 +164,13 @@ module.exports.computeQStark = async function computeQStark(ctx, logger) {
     if (logger) logger.debug("··· Merkelizing Q polynomial tree");
 
     const nPolsQ = ctx.pilInfo.mapSectionsN.cmQ || 0;
-    ctx.trees[ctx.pilInfo.nLibStages + 2] = await ctx.MH.merkelize(ctx.cmQ_ext, nPolsQ, ctx.extN);
+    ctx.trees[ctx.pilInfo.numChallenges.length + 1] = await ctx.MH.merkelize(ctx.cmQ_ext, nPolsQ, ctx.extN);
 }
 
 module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challenge, logger) {
     if (logger) logger.debug("Compute Evals");
 
-    const evalsStage = ctx.pilInfo.nLibStages + 3;
+    const evalsStage = ctx.pilInfo.numChallenges.length + 2;
     let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === evalsStage && c.stageId === 0);
     ctx.challenges[xiChallengeId] = challenge; // xi
     if (logger) logger.debug("··· challenges[" + xiChallengeId + "]: " + ctx.F.toString(ctx.challenges[xiChallengeId]));
@@ -234,7 +232,7 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
 
     if (logger) logger.debug("Compute FRI");
 
-    const friStage = ctx.pilInfo.nLibStages + 4;
+    const friStage = ctx.pilInfo.numChallenges.length + 3;
 
     module.exports.setChallengesStark(friStage, ctx, challenge, logger);
 
@@ -285,12 +283,10 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
         const queriesPols = [];
 
         queriesPols.push(ctx.MH.getGroupProof(ctx.constTree, idx));
-        queriesPols.push(ctx.MH.getGroupProof(ctx.trees[1], idx));
-        for(let i = 0; i < ctx.pilInfo.nLibStages; ++i) {
-            const stage = i + 2;
+        for(let i = 0; i < ctx.pilInfo.numChallenges.length + 1; ++i) {
+            const stage = i + 1;
             queriesPols.push(ctx.MH.getGroupProof(ctx.trees[stage], idx));
         }
-        queriesPols.push(ctx.MH.getGroupProof(ctx.trees[ctx.pilInfo.nLibStages + 2], idx));
        
         return queriesPols;
     }
@@ -302,14 +298,13 @@ module.exports.genProofStark = async function genProof(ctx, logger) {
     if(logger) logger.debug("Generating proof");
 
     const proof = {
-        root1: ctx.MH.root(ctx.trees[1]),
-        rootQ: ctx.MH.root(ctx.trees[ctx.pilInfo.nLibStages + 2]),
+        rootQ: ctx.MH.root(ctx.trees[ctx.pilInfo.numChallenges.length + 1]),
         evals: ctx.evals,
         fri: ctx.friProof
     };
 
-    for(let i = 0; i < ctx.pilInfo.nLibStages; ++i) {
-        const stage = i + 2;
+    for(let i = 0; i < ctx.pilInfo.numChallenges.length; ++i) {
+        const stage = i + 1;
         proof["root" + stage] = ctx.MH.root(ctx.trees[stage]);
     }
 
@@ -350,7 +345,7 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, chal
 }
 
 module.exports.calculateChallengeStark = async function calculateChallengeStark(stage, ctx) {
-    if(stage === ctx.pilInfo.nLibStages + 3) {
+    if(stage === ctx.pilInfo.numChallenges.length + 2) {
         for (let i=0; i<ctx.evals.length; i++) {
             ctx.transcript.put(ctx.evals[i]);
         }

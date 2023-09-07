@@ -307,12 +307,10 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     };
 
     const execStages = [];
-    for(let i = 0; i < ctx.pilInfo.nLibStages; ++i) {
-        const stage = 2 + i;
+    for(let i = 0; i < ctx.pilInfo.numChallenges.length; ++i) {
+        const stage = 1 + i;
         execStages.push(`stage${stage}`);
     }
-
-    if(ctx.pilInfo.nLibStages === 0) execStages.push("stage1");
 
     const ziPols = ["Zi_ext"];
     if(ctx.pilInfo.boundaries.includes("firstRow")) ziPols.push("Zi_fr_ext");
@@ -323,22 +321,19 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     
     if (execStages.includes(execPart)) {
         execInfo.inputSections.push({ name: "const_n" });
-        execInfo.inputSections.push({ name: "cm1_n" });
         execInfo.inputSections.push({ name: "x_n" });
-        for(let j = 0; j < ctx.pilInfo.nLibStages; j++) {
-            const stage = j + 2;
+        for(let j = 0; j < ctx.pilInfo.numChallenges.length; j++) {
+            const stage = j + 1;
             execInfo.inputSections.push({ name: `cm${stage}_n` });
             execInfo.outputSections.push({ name: `cm${stage}_n` });
         }
         execInfo.inputSections.push({ name: "tmpExp_n" });
         execInfo.outputSections.push({ name: "tmpExp_n" });
-        if(execPart === "stage1") execInfo.outputSections.push({ name: "cm1_n" });
         dom = "n";
     } else if (execPart == "Q") {
         execInfo.inputSections.push({ name: "const_ext" });
-        execInfo.inputSections.push({ name: "cm1_ext" });
-        for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
-            const stage = i + 2;
+        for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+            const stage = i + 1;
             execInfo.inputSections.push({ name: `cm${stage}_ext` });
         }
         execInfo.inputSections.push({ name: "x_ext" });
@@ -351,9 +346,8 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         dom = "ext";
     } else if (execPart == "fri") {
         execInfo.inputSections.push({ name: "const_ext" });
-        execInfo.inputSections.push({ name: "cm1_ext" });
-        for(let i = 0; i < ctx.pilInfo.nLibStages; i++) {
-            const stage = i + 2;
+        for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+            const stage = i + 1;
             execInfo.inputSections.push({ name: `cm${stage}_ext` });
         }
         execInfo.inputSections.push({ name: "cmQ_ext" });
