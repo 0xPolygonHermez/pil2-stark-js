@@ -1,6 +1,0 @@
-subproof Simple(2**6) {
-
-    col witness a[2], b;
-
-    a[0]*a[1] === b; 
-}

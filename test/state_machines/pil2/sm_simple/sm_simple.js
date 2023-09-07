@@ -14,6 +14,15 @@ module.exports.execute = async function (N, pols, F) {
 module.exports.execute2 = async function (N, pols, F) {
     for (let i=0; i<N; i++) {
         const v = BigInt(i);
+        pols.a[i] = v;
+        pols.c[(i + 3)%N] = v + 1n;
+        pols.b[(i + N - 2)%N] = F.mul(v, v + 1n);
+    }
+}
+
+module.exports.execute3 = async function (N, pols, F) {
+    for (let i=0; i<N; i++) {
+        const v = BigInt(i);
         pols.a[0][0][i] = v;
         pols.a[0][1][i] = v + 1n;
         pols.a[0][2][i] = v + 2n;

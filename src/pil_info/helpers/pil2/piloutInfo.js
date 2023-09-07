@@ -11,7 +11,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
         expressions = e.expressions;
         symbols = formatSymbols(pilout, stark);
     } else {
-        const e = formatExpressions(pilout, stark);
+        const e = formatExpressions(pilout, stark, true);
         expressions = e.expressions;
         symbols = e.symbols;
     }
