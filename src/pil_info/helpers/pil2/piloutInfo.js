@@ -4,12 +4,22 @@ const { formatExpressions, formatConstraints, formatSymbols } = require("./utils
 
 module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     const constraints = formatConstraints(pilout);
-    const symbols = formatSymbols(pilout, stark);
-    const expressions = formatExpressions(pilout, stark);
     
+    let expressions, symbols;
+    if(pilout.symbols) {
+        const e = formatExpressions(pilout, stark);
+        expressions = e.expressions;
+        symbols = formatSymbols(pilout, stark);
+    } else {
+        const e = formatExpressions(pilout, stark);
+        expressions = e.expressions;
+        symbols = e.symbols;
+    }
+   
     res.nCommitments = symbols.filter(s => s.type === "witness").length;
     res.nConstants = symbols.filter(s => s.type === "fixed").length;
     res.nPublics = symbols.filter(s => s.type === "public").length;
+    res.numChallenges = pilout.numChallenges || [0];
 
     const publicsInfo = [];
 

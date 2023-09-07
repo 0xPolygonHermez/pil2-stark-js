@@ -67,9 +67,11 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
         }
     }
 
+    const qStage = res.numChallenges.length + 1;
+
     pilCodeGen(ctxExt, symbols, expressions, constraints, cExpId, 0);
-    res.code.Q = buildCode(ctxExt, expressions);
-    res.code.Q.code[res.code.Q.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
+    res.code[`stage${qStage}`] = buildCode(ctxExt, expressions);
+    res.code[`stage${qStage}`].code[res.code[`stage${qStage}`].code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
 }
 
 module.exports.generateConstraintPolynomialVerifierCode = function generateConstraintPolynomialVerifierCode(res, cExpId, symbols, expressions, constraints, stark) {       

@@ -1,73 +1,92 @@
 const ProtoOut = require("pilcom2/src/proto_out.js");
 const ExpressionOps = require("../../expressionops");
 
-module.exports.formatExpressions = function formatExpressions(pilout, stark) {
+module.exports.formatExpressions = function formatExpressions(pilout, stark, saveSymbols = false) {
     const P = new ProtoOut();
 
+    const symbols = [];
+
     const expressions = pilout.expressions.map(e => formatExpression(e));
-    return expressions;
+    
+    if(!saveSymbols) {
+        return { expressions };
+    } else {
+        return { expressions, symbols};
+    }
 
     function formatExpression(exp) {    
         if(exp.op) return exp;
-    
+
         let op = Object.keys(exp)[0];
     
         if(op === "expression") {
-            exp = {
-                op: "exp",
-                id: exp[op].idx,
-            }
+            const id = exp[op].idx;
+            exp = { op: "exp", id };
         } else if(["add", "mul", "sub"].includes(op)) {
-            const lhs = exp[op].lhs;
-            const rhs = exp[op].rhs;
-            exp = {
-                op: op,
-                values: [
-                    formatExpression(lhs),
-                    formatExpression(rhs),
-                ]
-            }
+            const lhs = formatExpression(exp[op].lhs);
+            const rhs = formatExpression(exp[op].rhs);
+            exp = { op, values: [lhs, rhs] };
         } else if (op === "constant") {
-            exp = {
-                op: "number",
-                value: P.buf2bint(exp.constant.value).toString(),
-            }
+            const value = P.buf2bint(exp.constant.value).toString();
+            exp = { op: "number", value };
         } else if (op === "witnessCol") {
             const id =  exp[op].colIdx + pilout.stageWidths.slice(0, exp[op].stage - 1).reduce((acc, c) => acc + c, 0);
             const dim = exp[op].stage === 1 ? 1 : stark ? 3 : 1;
-            exp = {
-                op: "cm",
-                id,
-                stageId: exp[op].colIdx,
-                rowOffset: exp[op].rowOffset,
-                stage: exp[op].stage,
-                dim, 
-            }
+            const stageId = exp[op].colIdx;
+            const rowOffset = exp[op].rowOffset;
+            const stage = exp[op].stage;
+            exp = { op: "cm", id, stageId, rowOffset, stage, dim };
         } else if (op === "fixedCol") {
-            exp = {
-                op: "const",
-                id: exp[op].idx,
-                rowOffset: exp[op].rowOffset,
-                stage: 0,
-                dim: 1, 
-            }
+            const id = exp[op].idx;
+            const rowOffset = exp[op].rowOffset;
+            exp = { op: "const", id, rowOffset, stage: 0, dim: 1 };
         } else if (op === "publicValue") {
-            exp = {
-                op: "public",
-                id: exp[op].idx,
-            }
+            const id = exp[op].idx;
+            exp = { op: "public", id };
         } else if (op === "challenge") {
             const id = exp[op].idx + pilout.numChallenges.slice(0, exp[op].stage - 1).reduce((acc, c) => acc + c, 0);
-            exp = {
-                op: "challenge",
-                stage: exp[op].stage, 
-                stageId: exp[op].idx,
-                id,
-            }
+            const stageId = exp[op].idx;
+            const stage = exp[op].stage;
+            exp = { op: "challenge", stage, stageId, id };
         } else throw new Error("Unknown op: " + op);
     
+        if(saveSymbols) {
+            addSymbol(symbols, exp, stark);
+        }
+
         return exp;
     }
+}
+
+function addSymbol(symbols, exp, stark) {
+    if(exp.op === "public") {
+        const publicSymbol = symbols.find(s => s.type === "public" && s.id === exp.id);
+        if(!publicSymbol) {
+            const name = "public_" + exp.id;
+            symbols.push({type: "public", dim: 1, id: exp.id, name });
+        }
+    } else if(exp.op === "challenge") {
+        const challengeSymbol = symbols.find(s => s.type === "challenge" && s.stage === exp.stage && s.stageId === exp.stageId);
+        if(!challengeSymbol) {
+            const dim = stark ? 3 : 1;
+            const name = "challenge_" + exp.stage + "_" + exp.stageId;
+            symbols.push({ type: "challenge", stageId: exp.stageId, stage: exp.stage, dim, name});
+        }
+    } else if(exp.op === "const") {
+        const fixedSymbol = symbols.find(s => s.type === "fixed" && s.stage === exp.stage && s.stageId === exp.stageId);
+        if(!fixedSymbol) {
+            const name = "fixed_" + exp.stageId;
+            symbols.push({ type: "fixed", polId: exp.stageId, stageId: exp.stageId, stage: exp.stage, dim: 1, name});
+        }
+    } else if(exp.op === "cm") {
+        const witnessSymbol = symbols.find(s => s.type === "witness" && s.stage === exp.stage && s.stageId === exp.stageId);
+        if(!witnessSymbol) {
+            const name = "witness_" + exp.stage + "_" + exp.stageId;
+            const dim = (exp.stage === 1 || !stark) ? 1 : 3;
+            symbols.push({ type: "witness", polId: exp.id, stageId: exp.stageId, stage: exp.stage, dim, name});
+        }
+    }
+    return;
 }
 
 
@@ -95,7 +114,7 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
 
     const symbols = pilout.symbols.flatMap(s => {
         if([1, 3].includes(s.type)) {
-            const dim = [0,1].includes(s.stage) ? 1 : stark ? 3 : 1;
+            const dim = ([0,1].includes(s.stage) || !stark) ? 1 : 3;
             const type = s.type === 1 ? "fixed" : "witness";
             const previousPols = pilout.symbols.filter(si => si.type === s.type && ((si.stage < s.stage) || (si.stage === s.stage && si.id < s.id)));
             let polId = 0;

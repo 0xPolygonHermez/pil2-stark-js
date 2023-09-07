@@ -7,7 +7,9 @@ const { PILFFLONK_PROTOCOL_ID } = require("../zkey/zkey_constants");
 
 const { stringifyBigInts } = utils;
 
-module.exports.initProverFflonk = async function initProver(pilInfo, zkey, logger) {
+module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey, options) {
+
+    const logger = options.logger;
 
     const ctx = {};
 

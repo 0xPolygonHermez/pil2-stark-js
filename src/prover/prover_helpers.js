@@ -224,7 +224,7 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
     }
 }
 
-module.exports.setPol = function setPol(ctx, idPol, pol, dom) {
+function setPol(ctx, idPol, pol, dom) {
     const p = module.exports.getPolRef(ctx, idPol, dom);
 
     if (p.dim == 1) {
@@ -271,7 +271,7 @@ module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
     return polRef;
 }
 
-module.exports.getPol = function getPol(ctx, idPol, dom) {
+function getPol(ctx, idPol, dom) {
     const p = module.exports.getPolRef(ctx, idPol, dom);
     const res = new Array(p.deg);
     if (p.dim == 1) {
@@ -312,6 +312,8 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         execStages.push(`stage${stage}`);
     }
 
+    const qStage = ctx.pilInfo.numChallenges.length + 1;
+
     const ziPols = ["Zi_ext"];
     if(ctx.pilInfo.boundaries.includes("firstRow")) ziPols.push("Zi_fr_ext");
     if(ctx.pilInfo.boundaries.includes("lastRow")) ziPols.push("Zi_lr_ext");
@@ -330,7 +332,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         execInfo.inputSections.push({ name: "tmpExp_n" });
         execInfo.outputSections.push({ name: "tmpExp_n" });
         dom = "n";
-    } else if (execPart == "Q") {
+    } else if (execPart === `stage${qStage}`) {
         execInfo.inputSections.push({ name: "const_ext" });
         for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
             const stage = i + 1;
@@ -473,7 +475,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     await pool.terminate();
 }
 
-module.exports.hintFunctions = async function hintFunctions(functionName, F, inputs) {
+async function hintFunctions(functionName, F, inputs) {
     if(functionName === "calculateZ") {
         return calculateZ(F, ...inputs);
     } else if(functionName === "calculateH1H2") {
@@ -481,7 +483,25 @@ module.exports.hintFunctions = async function hintFunctions(functionName, F, inp
     } else {
         throw new Error("Invalid function name: " + functionName);
     }
+}
 
+module.exports.applyHints = async function applyHints(stage, ctx) {
+    for(let i = 0; i < ctx.pilInfo.hints.length; i++) {
+        const hint = ctx.pilInfo.hints[i];
+        if(hint.stage !== stage) continue;
+
+        const inputs = [];
+        for(let j = 0; j < hint.inputs.length; ++j) {
+            const inputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.inputs[j]);
+            const pol = getPol(ctx, inputIdx, "n")
+            inputs.push(pol);
+        } 
+        const outputs = await hintFunctions(hint.lib,ctx.F, inputs);
+        for(let j = 0; j < hint.outputs.length; ++j) {
+            const outputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.outputs[j]);
+            setPol(ctx, outputIdx, outputs[j], "n");
+        }    
+    }
 }
 
 

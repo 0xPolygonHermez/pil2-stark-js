@@ -1,6 +1,6 @@
 const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk, genProofFflonk, setChallengesFflonk, calculateChallengeFflonk } = require("../fflonk/helpers/fflonk_prover_helpers");
-const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, calculateChallengeStark } = require("../stark/stark_gen_helpers");
-const { setPol, getPol, calculatePublics, callCalculateExps, hintFunctions } = require("./prover_helpers");
+const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, calculateChallengeStark, computeFRIProof } = require("../stark/stark_gen_helpers");
+const { calculatePublics, callCalculateExps, applyHints } = require("./prover_helpers");
 
 module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, zkey, options) {
     const logger = options.logger;
@@ -14,7 +14,7 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
         throw new Error("Invalid parameters");
     }
 
-    let ctx = stark ? await initProverStark(pilInfo, constPols, constTree, options) : await initProverFflonk(pilInfo, zkey, logger);
+    let ctx = await initProver(pilInfo, constTree, constPols, zkey, stark, options);
     
     if(ctx.prover === "stark") {
         // Read committed polynomials
@@ -24,32 +24,38 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
         await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1);
     }
    
-    // STAGE 1. Compute Trace Column Polynomials
-    await stage1(ctx, options);
+    calculatePublics(ctx);
 
-    let challenge = await getChallenge(1, ctx);
-    
-    for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
-        await computeStage(i, ctx, challenge, options);
-        challenge = await getChallenge(i + 2, ctx);
-    }
-
-    // STAGE Q. Trace Quotient Polynomials
-    await stageQ(ctx, challenge, options);
+    let challenge;
     
     const qStage = ctx.pilInfo.numChallenges.length + 1;
 
-    challenge = await getChallenge(qStage, ctx);
+    for(let i = 1; i <= qStage; i++) {
+        const stage = i;
+        if(stage !== 1) {
+            setChallenges(stage, ctx, challenge, logger);
+        }
+        await computeStage(stage, ctx, options);
+        if(stage === qStage) {
+            await computeQ(ctx, logger);
+        } else {
+            await extend(stage, ctx, logger);
+        }
+        challenge = await getChallenge(stage, ctx);
+    }
 
     if(ctx.prover === "stark") {
         // STAGE 5. Compute Evaluations
         await computeEvalsStark(ctx, challenge, logger);
 
-        const evalsStage = qStage + 1;
-        challenge = await calculateChallengeStark(evalsStage, ctx);
+        challenge = await calculateChallengeStark(ctx.pilInfo.numChallenges.length + 2, ctx);
+
+        setChallengesStark(ctx.pilInfo.numChallenges.length + 3, ctx, challenge, logger);
 
         // STAGE 6. Compute FRI
         await computeFRIStark(ctx, challenge, options);
+
+        await computeFRIProof(ctx);
     } else {
         await computeOpeningsFflonk(ctx, challenge, logger);
     }
@@ -59,64 +65,40 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
     return {proof, publics};
 }
 
-async function stage1(ctx, options) {
-    const logger = options.logger;
-    if (logger) logger.debug("> STAGE 1. Compute Trace Column Polynomials");
-
-    calculatePublics(ctx);
-
-    if(ctx.pilInfo.code.stage1.code.length > 0) {
-        await callCalculateExps("stage1", "n", ctx, options.parallelExec, options.useThreads);
+async function initProver(pilInfo, constTree, constPols, zkey, stark, options) {
+    if(stark) {
+        return await initProverStark(pilInfo, constPols, constTree, options);
+    } else {
+        return await initProverFflonk(pilInfo, zkey, options)
     }
-
-    ctx.prover === "stark" ? await extendAndMerkelize(1, ctx) : await extendAndCommit(1, ctx, logger);
 }
 
-async function computeStage(stage, ctx, challenge, options) {
+async function computeStage(stage, ctx, options) {
     const logger = options.logger;
 
-    const genStage = stage + 2;
+    if (logger) logger.debug(`> STAGE ${stage}`);
 
-    setChallenges(genStage, ctx, challenge, logger);
+    const dom = stage === ctx.pilInfo.numChallenges.length + 1 ? "ext" : "n";
 
-    if (logger) logger.debug(`> STAGE ${genStage}`);
+    await callCalculateExps(`stage${stage}`, dom, ctx, options.parallelExec, options.useThreads);
 
-    await callCalculateExps(`stage${genStage}`, "n", ctx, options.parallelExec, options.useThreads);
-
-    for(let i = 0; i < ctx.pilInfo.hints.length; i++) {
-        const hint = ctx.pilInfo.hints[i];
-        if(hint.stage !== genStage) continue;
-
-        const inputs = [];
-        for(let j = 0; j < hint.inputs.length; ++j) {
-            const inputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.inputs[j]);
-            const pol = getPol(ctx, inputIdx, "n")
-            inputs.push(pol);
-        } 
-        const outputs = await hintFunctions(hint.lib,ctx.F, inputs);
-        for(let j = 0; j < hint.outputs.length; ++j) {
-            const outputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.outputs[j]);
-            setPol(ctx, outputIdx, outputs[j], "n");
-        }    
-    }
-
-    ctx.prover === "stark" ? await extendAndMerkelize(genStage, ctx, logger) : await extendAndCommit(genStage, ctx, logger);
+    await applyHints(stage, ctx);
 }
 
-async function stageQ(ctx, challenge, options) {
-    const logger = options.logger;
-    
-    const qStage = ctx.pilInfo.numChallenges.length + 1;
-    
-    if (logger) logger.debug("> STAGE 4. Compute Trace Quotient Polynomials");
+async function computeQ(ctx, logger) {
+    if(ctx.prover === "stark") {
+        await computeQStark(ctx, logger);
+    } else {
+        await computeQFflonk(ctx, logger);
+    }
+}
 
-    // Compute challenge a
-    setChallenges(qStage, ctx, challenge, logger);
-    
-    // STEP 4.2 - Compute stage 4 polynomial --> Q polynomial
-    await callCalculateExps("Q", "ext", ctx, options.parallelExec, options.useThreads);
-
-    ctx.prover === "stark" ? await computeQStark(ctx, logger) : await computeQFflonk(ctx, logger);    
+async function extend(stage, ctx, logger) {
+    if(ctx.prover === "stark")   {
+        await extendAndMerkelize(stage, ctx, logger)
+    } else {
+        await extendAndCommit(stage, ctx, logger);
+    }
 }
 
 async function getChallenge(stage, ctx) {
@@ -127,10 +109,17 @@ async function getChallenge(stage, ctx) {
     }
 }
 
-async function setChallenges(stage, ctx, challenge, logger) {
+function setChallenges(stage, ctx, challenge, logger) {
     if(ctx.prover === "stark") {
         setChallengesStark(stage, ctx, challenge, logger);
     } else {
         setChallengesFflonk(stage, ctx, challenge, logger);
     }
 }
+
+module.exports.initProver = initProver;
+module.exports.computeStage = computeStage;
+module.exports.computeQ = computeQ;
+module.exports.extend = extend;
+module.exports.setChallenges = setChallenges;
+module.exports.getChallenge = getChallenge;

@@ -171,9 +171,8 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challen
     if (logger) logger.debug("Compute Evals");
 
     const evalsStage = ctx.pilInfo.numChallenges.length + 2;
+    module.exports.setChallengesStark(evalsStage, ctx, challenge, logger);
     let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === evalsStage && c.stageId === 0);
-    ctx.challenges[xiChallengeId] = challenge; // xi
-    if (logger) logger.debug("··· challenges[" + xiChallengeId + "]: " + ctx.F.toString(ctx.challenges[xiChallengeId]));
 
     let LEv = [];
     for(let i = 0; i < ctx.pilInfo.openingPoints.length; i++) {
@@ -227,14 +226,10 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challen
     }
 }
 
-module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, options) {
+module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
     const logger = options.logger;
 
     if (logger) logger.debug("Compute FRI");
-
-    const friStage = ctx.pilInfo.numChallenges.length + 3;
-
-    module.exports.setChallengesStark(friStage, ctx, challenge, logger);
 
     for(let i = 0; i < ctx.pilInfo.openingPoints.length; i++) {
         const opening = ctx.pilInfo.openingPoints[i];
@@ -245,7 +240,8 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
         }
         if(opening < 0) w = ctx.F.div(1n, w);
 
-        let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === friStage - 1 && c.stageId === 0);
+        let evalsStage = ctx.pilInfo.numChallenges.length + 2;
+        let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === evalsStage && c.stageId === 0);
         let xi = ctx.F.mul(ctx.challenges[xiChallengeId], w);
 
         let den = new Array(ctx.extN);
@@ -268,7 +264,9 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, challenge, 
     }
 
     await callCalculateExps("fri", "ext", ctx, options.parallelExec, options.useThreads);
+}
 
+module.exports.computeFRIProof = async function computeFRIProof(ctx) {
     const friPol = new Array(ctx.extN);
 
     for (let i=0; i<ctx.extN; i++) {
