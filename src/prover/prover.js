@@ -45,15 +45,17 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
     }
 
     if(ctx.prover === "stark") {
+        setChallengesStark(ctx.pilInfo.numChallenges.length + 2, ctx, challenge, logger);
+
         // STAGE 5. Compute Evaluations
-        await computeEvalsStark(ctx, challenge, logger);
+        await computeEvalsStark(ctx, logger);
 
         challenge = await calculateChallengeStark(ctx.pilInfo.numChallenges.length + 2, ctx);
 
         setChallengesStark(ctx.pilInfo.numChallenges.length + 3, ctx, challenge, logger);
 
         // STAGE 6. Compute FRI
-        await computeFRIStark(ctx, challenge, options);
+        await computeFRIStark(ctx, options);
 
         await computeFRIProof(ctx);
     } else {

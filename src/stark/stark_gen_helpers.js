@@ -167,12 +167,10 @@ module.exports.computeQStark = async function computeQStark(ctx, logger) {
     ctx.trees[ctx.pilInfo.numChallenges.length + 1] = await ctx.MH.merkelize(ctx.cmQ_ext, nPolsQ, ctx.extN);
 }
 
-module.exports.computeEvalsStark = async function computeEvalsStark(ctx, challenge, logger) {
+module.exports.computeEvalsStark = async function computeEvalsStark(ctx, logger) {
     if (logger) logger.debug("Compute Evals");
 
-    const evalsStage = ctx.pilInfo.numChallenges.length + 2;
-    module.exports.setChallengesStark(evalsStage, ctx, challenge, logger);
-    let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === evalsStage && c.stageId === 0);
+    let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === ctx.pilInfo.numChallenges.length + 2 && c.stageId === 0);
 
     let LEv = [];
     for(let i = 0; i < ctx.pilInfo.openingPoints.length; i++) {
