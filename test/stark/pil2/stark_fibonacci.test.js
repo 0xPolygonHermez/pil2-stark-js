@@ -41,7 +41,8 @@ describe("test fibonacci pil2 sm", async function () {
         
         const pil = pilout.subproofs[0].airs[0];
         pil.symbols = pilout.symbols;
-              
+        pil.numChallenges = pilout.numChallenges;
+        
         const constPols = getFixedPolsPil2(pil, F);
 
         const cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);

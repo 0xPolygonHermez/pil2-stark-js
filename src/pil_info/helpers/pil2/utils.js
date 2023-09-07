@@ -1,7 +1,7 @@
 const ProtoOut = require("pilcom2/src/proto_out.js");
 const ExpressionOps = require("../../expressionops");
 
-module.exports.formatExpressions = function formatExpressions(pilout, symbols, stark) {
+module.exports.formatExpressions = function formatExpressions(pilout, stark) {
     const P = new ProtoOut();
 
     const expressions = pilout.expressions.map(e => formatExpression(e));
@@ -33,14 +33,15 @@ module.exports.formatExpressions = function formatExpressions(pilout, symbols, s
                 value: P.buf2bint(exp.constant.value).toString(),
             }
         } else if (op === "witnessCol") {
-            const witnessCol = symbols.find(s => s.type === "witness" && s.stage === exp[op].stage && s.stageId === exp[op].colIdx).polId;
+            const id =  exp[op].colIdx + pilout.stageWidths.slice(0, exp[op].stage - 1).reduce((acc, c) => acc + c, 0);
             const dim = exp[op].stage === 1 ? 1 : stark ? 3 : 1;
             exp = {
                 op: "cm",
-                id: witnessCol,
+                id,
+                stageId: exp[op].colIdx,
                 rowOffset: exp[op].rowOffset,
-                dim: dim, 
                 stage: exp[op].stage,
+                dim, 
             }
         } else if (op === "fixedCol") {
             exp = {
@@ -56,10 +57,12 @@ module.exports.formatExpressions = function formatExpressions(pilout, symbols, s
                 id: exp[op].idx,
             }
         } else if (op === "challenge") {
+            const id = exp[op].idx + pilout.numChallenges.slice(0, exp[op].stage - 1).reduce((acc, c) => acc + c, 0);
             exp = {
                 op: "challenge",
                 stage: exp[op].stage, 
-                id: symbols.filter(s => s.type === "challenge" && ((s.stage < exp[op].stage) || (s.stage === exp[op].stage && s.stageId < exp[op].idx))).length,
+                stageId: exp[op].idx,
+                id,
             }
         } else throw new Error("Unknown op: " + op);
     

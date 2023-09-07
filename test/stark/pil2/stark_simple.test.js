@@ -41,6 +41,7 @@ async function runTest(pilFile) {
         
         const pil = pilout.subproofs[0].airs[0];
         pil.symbols = pilout.symbols;
+        pil.numChallenges = pilout.numChallenges;
               
         const constPols = getFixedPolsPil2(pil, F);
 
@@ -70,7 +71,7 @@ describe("simple sm", async function () {
     it("Simple4", async () => {
         await runTest("simple4.pil");
     })
-    it.only("Simple5", async () => {
+    it("Simple5", async () => {
         await runTest("simple5.pil");
     })
 });
