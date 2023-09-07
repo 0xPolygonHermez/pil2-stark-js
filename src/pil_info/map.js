@@ -2,7 +2,6 @@
 module.exports = function map(res, symbols, stark) {  
     res.cmPolsMap = [];
     res.constPolsMap = [];
-    res.challengesMap = [];
 
     res.mapSectionsN = {};
 
@@ -29,10 +28,7 @@ function mapSymbols(res, symbols) {
     let nCommits = res.nCommitments;
     for(let i = 0; i < symbols.length; ++i) {
         let symbol = symbols[i];
-        if(symbol.type === "challenge") {
-            let pos = symbols.filter(s => s.type === "challenge" && ((s.stage < symbol.stage) || (s.stage == symbol.stage && s.stageId < symbol.stageId))).length;
-            res.challengesMap[pos] = { name: symbol.name, stage: symbol.stage, stageId: symbol.stageId }; 
-        } else if(["witness", "fixed", "tmpPol"].includes(symbol.type)) {
+        if(["witness", "fixed", "tmpPol"].includes(symbol.type)) {
             let stage;
             if(symbol.type === "fixed") {
                 stage = "const";

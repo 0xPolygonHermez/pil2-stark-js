@@ -223,12 +223,17 @@ module.exports.genProofFflonk = async function genProof(ctx, logger) {
 }
 
 module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, challenge, logger) {
-    let challengesStage = ctx.pilInfo.challengesMap.filter(c => c.stage === stage);
+    let nChallengesStage, prevChallenges;
+    if(stage === ctx.pilInfo.numChallenges.length + 1) {
+        nChallengesStage = 1;
+        prevChallenges = ctx.pilInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
+    } else if (stage <= ctx.pilInfo.numChallenges.length){ 
+        nChallengesStage = ctx.pilInfo.numChallenges[stage - 1];
+        prevChallenges = ctx.pilInfo.numChallenges.slice(0, stage - 1).reduce((acc, cur) => acc + cur, 0);
+    } else throw new Error("Invalid stage");
 
-    if(challengesStage.length === 0) throw new Error("No challenges needed for stage " + stage);
-
-    for (let i=0; i<challengesStage.length; i++) {
-        const index = ctx.pilInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == i);
+    for (let i=0; i<nChallengesStage; i++) {
+        const index = prevChallenges + i;
         if(i > 0) {
             ctx.transcript.reset();
             ctx.transcript.addScalar(ctx.challenges[index - 1]);
@@ -257,10 +262,15 @@ module.exports.calculateChallengeFflonk = async function calculateChallengeFflon
         }
     }
 
-    let challengesStage = ctx.pilInfo.challengesMap.filter(c => c.stage === stage);
+    let lastChallengeStageId;
+    if(stage === ctx.pilInfo.numChallenges.length + 1) {
+        lastChallengeStageId = ctx.pilInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
+    } else if (stage <= ctx.pilInfo.numChallenges.length){ 
+        lastChallengeStageId = ctx.pilInfo.numChallenges.slice(0, stage - 1).reduce((acc, cur) => acc + cur, 0) 
+            + ctx.pilInfo.numChallenges[stage - 1] - 1;
+    } else throw new Error("Invalid stage");
     
-    if(challengesStage.length > 0) {
-        const lastChallengeStageId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == (challengesStage.length - 1));
+    if(lastChallengeStageId >= 0) {
         const challenge = ctx.challenges[lastChallengeStageId];
         ctx.transcript.addScalar(challenge);
     }

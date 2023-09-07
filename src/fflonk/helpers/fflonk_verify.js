@@ -60,16 +60,12 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
         transcript.addScalar(publics[i]);
     }
 
-    const stage1CommitPols = vk.f.filter(fi => fi.stages[0].stage === 1).map(fi => proof.polynomials[`f${fi.index}`]);
-    for(let i = 0; i < stage1CommitPols.length; i++) {
-        transcript.addPolCommitment(stage1CommitPols[i]);
-    }
-    
-    for(let i=0; i < fflonkInfo.numChallenges.length - 1; i++) {
-        const stage = i + 2;
-        const challengesStage = fflonkInfo.challengesMap.filter(c => c.stage === stage);
-        for(let j = 0; j < challengesStage.length; ++j) {
-            const index = fflonkInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == j);
+    for(let i=0; i < fflonkInfo.numChallenges.length; i++) {
+        const stage = i + 1;
+        const nChallengesStage = fflonkInfo.numChallenges[i];
+        const prevChallenges = fflonkInfo.numChallenges.slice(0, i).reduce((acc, cur) => acc + cur, 0);
+        for(let j = 0; j < nChallengesStage; ++j) {
+            const index = prevChallenges + j;
             ctx.challenges[index] = transcript.getChallenge();
             if (logger) logger.debug("··· challenges[" + index + "]: " + Fr.toString(ctx.challenges[index]));
             transcript.reset();
@@ -83,8 +79,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
 
     }
     
-    let qStage = fflonkInfo.numChallenges.length + 1;
-    let qChallengeId = fflonkInfo.challengesMap.findIndex(c => c.stage === qStage && c.stageId === 0);
+    let qChallengeId = fflonkInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
     ctx.challenges[qChallengeId] = transcript.getChallenge();
     if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + Fr.toString(ctx.challenges[qChallengeId]));
     transcript.reset();

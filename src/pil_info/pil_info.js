@@ -15,7 +15,6 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct
 
     const res = {
         cmPolsMap: [],
-        challengesMap: [],
         code: {},
         starkStruct: starkStruct,
     };

@@ -166,7 +166,8 @@ contract PilFflonkVerifier {
     // Memory data
     // Challenges
 <%  let challengeCount = 0; -%>
-<%  for(let i = 0; i < fflonkInfo.challengesMap.length; ++i) { -%>
+<%  let nChallenges = fflonkInfo.numChallenges.reduce((acc, cur) => acc + cur, 1); -%>
+<%  for(let i = 0; i < nChallenges; ++i) { -%>
     uint16 constant pChallenge<%- i %> = <%- challengeCount %>;
 <%  challengeCount += 32; -%>
 <%  } -%>
@@ -232,12 +233,13 @@ contract PilFflonkVerifier {
 
                 let challenge
 
-<%  for(let i = 0; i < fflonkInfo.numChallenges.length - 1; ++i) { -%>
-<%      const stage = i + 2 -%>
+<%  for(let i = 0; i < fflonkInfo.numChallenges.length; ++i) { -%>
+<%      const stage = i + 1 -%>
+<%      const nChallengesStage = fflonkInfo.numChallenges[i]; -%>
+<%      const prevChallenges = fflonkInfo.numChallenges.slice(0, i).reduce((acc, cur) => acc + cur, 0); -%>
                 // Transcript stage <%= stage %>
-<%      const challengesStage = fflonkInfo.challengesMap.filter(c => c.stage === stage); -%>
-<%      for(let j = 0; j < challengesStage.length; ++j) { -%>
-<%          const index = fflonkInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == j); -%>
+<%      for(let j = 0; j < nChallengesStage; ++j) { -%>
+<%          const index = prevChallenges + j; -%>
                 challenge := mod(keccak256(add(pMem, pLastMem), <%= memC - pLastMem %>), q)
                 mstore(add(pMem, pChallenge<%- index %>), challenge) // Store challenge <%= index %>
                 mstore(add(pMem, pLastMem), challenge) // Add challenge to transcript
@@ -256,7 +258,7 @@ contract PilFflonkVerifier {
 
                 // Compute challenge quotient polynomial
                 challenge := mod(keccak256(add(pMem, pLastMem), <%= memC - pLastMem %>), q)
-                mstore(add(pMem, pChallenge<%- fflonkInfo.challengesMap.length - 1 %>), challenge)
+                mstore(add(pMem, pChallenge<%- nChallenges %>), challenge)
                 mstore(add(pMem, pLastMem), challenge)
 <%  memC = pLastMem + 32; -%>
 

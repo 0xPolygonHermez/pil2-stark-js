@@ -170,7 +170,7 @@ module.exports.computeQStark = async function computeQStark(ctx, logger) {
 module.exports.computeEvalsStark = async function computeEvalsStark(ctx, logger) {
     if (logger) logger.debug("Compute Evals");
 
-    let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === ctx.pilInfo.numChallenges.length + 2 && c.stageId === 0);
+    let xiChallengeId = ctx.pilInfo.numChallenges.reduce((acc, cur) => acc + cur, 0) + 1;
 
     let LEv = [];
     for(let i = 0; i < ctx.pilInfo.openingPoints.length; i++) {
@@ -238,8 +238,7 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
         }
         if(opening < 0) w = ctx.F.div(1n, w);
 
-        let evalsStage = ctx.pilInfo.numChallenges.length + 2;
-        let xiChallengeId = ctx.pilInfo.challengesMap.findIndex(c => c.stage === evalsStage && c.stageId === 0);
+        let xiChallengeId = ctx.pilInfo.numChallenges.reduce((acc, cur) => acc + cur, 0) + 1;
         let xi = ctx.F.mul(ctx.challenges[xiChallengeId], w);
 
         let den = new Array(ctx.extN);
@@ -324,12 +323,26 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
 }
 
 module.exports.setChallengesStark = function setChallengesStark(stage, ctx, challenge, logger) {
-    let challengesStage = ctx.pilInfo.challengesMap.filter(c => c.stage === stage);
+    let nChallengesStage, prevChallenges;
+    if(stage > ctx.pilInfo.numChallenges.length) {
+        const numChallengesStages = ctx.pilInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
+        if(stage === ctx.pilInfo.numChallenges.length + 1) {
+            nChallengesStage = 1;
+            prevChallenges = numChallengesStages;
+        } else if(stage === ctx.pilInfo.numChallenges.length + 2) {
+            nChallengesStage = 1;
+            prevChallenges = numChallengesStages + 1;
+        } else if(stage === ctx.pilInfo.numChallenges.length + 3) {
+            nChallengesStage = 2;
+            prevChallenges = numChallengesStages + 2;
+        } else throw new Error("Invalid stage");
+    } else {
+        nChallengesStage = ctx.pilInfo.numChallenges[stage - 1];
+        prevChallenges = ctx.pilInfo.numChallenges.slice(0, stage - 1).reduce((acc, cur) => acc + cur, 0);
+    }
 
-    if(challengesStage.length === 0) throw new Error("No challenges needed for stage " + stage);
-
-    for (let i=0; i<challengesStage.length; i++) {
-        const index = ctx.pilInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == i);
+    for (let i=0; i<nChallengesStage; i++) {
+        const index = prevChallenges + i;
         if(i > 0) {
             ctx.challenges[index] = ctx.transcript.getField();
         } else {

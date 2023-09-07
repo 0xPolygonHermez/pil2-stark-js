@@ -126,13 +126,11 @@ class Transcript {
 }
 
 -%>
-<% let qStage = starkInfo.numChallenges.length + 1; -%>
-<% let qChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === qStage && c.stageId === 0) -%>
-<% let evalsStage = qStage + 1; -%>
-<% let xiChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === evalsStage && c.stageId === 0) -%>
-<% let friStage = evalsStage + 1; -%>
-<% let vf1ChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === friStage && c.stageId === 0) -%>
-<% let vf2ChallengeId = starkInfo.challengesMap.findIndex(c => c.stage === friStage && c.stageId === 1) -%>
+<% let numChallengesStages = starkInfo.numChallenges.reduce((acc, cur) => acc + cur, 0); -%>
+<% let qChallengeId = numChallengesStages; -%>
+<% let xiChallengeId = numChallengesStages + 1; -%>
+<% let vf1ChallengeId = numChallengesStages + 2; -%>
+<% let vf2ChallengeId = numChallengesStages + 3; -%>
 <% function unrollCode(code) {                                                          -%>
 <%
     function ref(r) {
@@ -148,7 +146,7 @@ class Transcript {
         } else if (r.type == "public") {
             return "publics[" + r.id + "]";
         } else if (r.type == "x") {
-            return "challenges" + starkInfo.challengesMap.findIndex(c => c.stage === evalsStage && c.stageId === 0);
+            return "challenges" + xiChallengeId;
         } else if (r.type == "Zi") {
             if(r.boundary === "everyRow") {
                 return "Zh";
@@ -239,7 +237,7 @@ template Transcript() {
     signal input s<%- s %>_root[4];
 <% }                                                     -%>
     signal input finalPol[<%- 1 << starkStruct.steps[starkStruct.steps.length-1].nBits %>][3];
-    signal output challenges[<%- starkInfo.challengesMap.length %>][3];  
+    signal output challenges[<%- numChallengesStages + 4 %>][3];  
     signal output ys[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
 <% for (let s=0; s<starkStruct.steps.length; s++) {   -%>
     signal output s<%- s %>_specialX[3];
@@ -250,9 +248,10 @@ template Transcript() {
     transcript.put("publics", starkInfo.nPublics);
     for(let i=0; i < starkInfo.numChallenges.length; i++) {
         const stage = i + 1;
-        const challengesStage = starkInfo.challengesMap.filter(c => c.stage === stage);
-        for(let j = 0; j < challengesStage.length; ++j) {
-            const index = starkInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == j);
+        const nChallengesStage = starkInfo.numChallenges[i];
+        const prevChallenges = starkInfo.numChallenges.slice(0, i).reduce((acc, cur) => acc + cur, 0);
+        for(let j = 0; j < nChallengesStage; ++j) {
+            const index = prevChallenges + j;
             transcript.getField("challenges[" + index + "]", 3);
         }
         transcript.put("root" + stage, 4);
@@ -322,11 +321,12 @@ template parallel VerifyFRI(nBitsExt, prevStepBits, currStepBits, nextStepBits, 
 */
 
 <%  const challengeIndexes = [];
-    for(let i = 0; i < starkInfo.numChallenges.length - 1; ++i) {
-        const stage = i + 2;
-        const challengesStage = starkInfo.challengesMap.filter(c => c.stage === stage);
-        for(let j = 0; j < challengesStage.length; ++j) {
-            const index = starkInfo.challengesMap.findIndex(c => c.stage === stage && c.stageId == j);
+    for(let i = 0; i < starkInfo.numChallenges.length; ++i) {
+        const stage = i + 1;
+        const nChallengesStage = starkInfo.numChallenges[i];
+        const prevChallenges = starkInfo.numChallenges.slice(0, i).reduce((acc, cur) => acc + cur, 0);
+        for(let j = 0; j < nChallengesStage; ++j) {
+            const index = prevChallenges + j;
             challengeIndexes.push(index);
         }
     }
@@ -622,7 +622,7 @@ template StarkVerifier() {
     // Challenge 7 -> Used to compute the evaluation challenge z (uses previous output + root committed in round 4)
     // Challenge 5 + 6 -> Used to compute combination challenge required for FRI (uses the evaluations values. 
     // Remember that each evaluation has three values since we are in an extended field GF(p^3))
-    signal challenges[<%- starkInfo.challengesMap.length %>][3];
+    signal challenges[<%- numChallengesStages + 4 %>][3];
 
     //(s_i)_special contains the random value provided by the verifier at each step of the folding so that 
     // the prover can commit the polynomial.
