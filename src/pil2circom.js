@@ -27,11 +27,11 @@ module.exports = async function pil2circom(constRoot, starkInfo, options) {
 
 
     const obj = {
-        F: F,
-        starkInfo: starkInfo,
-        starkStruct: starkStruct,
-        constRoot: constRoot,
-        options: options,
+        F,
+        starkInfo,
+        starkStruct,
+        constRoot,
+        options,
         arity: Number(options.arity),
         transcriptArity: Number(options.transcriptArity),
         nBitsArity: log2(options.arity),

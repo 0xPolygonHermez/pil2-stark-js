@@ -4,7 +4,7 @@ const { fromObjectVk, fromObjectProof } = require("./helpers");
 const { unstringifyBigInts } = utils;
 
 
-module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInfo, options) {
+module.exports = async function fflonkVerify(vk, publicSignals, proof, challenges, fflonkInfo, options) {
     const logger = options.logger;
 
     const curve = await getCurveFromName(vk.curve);
@@ -24,7 +24,6 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
     ctx.evals = [];
     ctx.proof = proof;
     ctx.publics = publics;
-    ctx.challenges = [];
     ctx.curve = curve;
     ctx.N = 1 << vk.power;
     ctx.nBits = vk.power;
@@ -49,7 +48,13 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
         logger.debug("------------------------------");
     }
 
-    calculateTranscript(ctx, vk, logger);
+    if(!options.vadcop) {
+        ctx.challenges = [];
+        if (logger) logger.debug("Calculating transcript");
+        calculateTranscript(ctx, vk, logger);
+    } else {
+        ctx.challenges = challenges;
+    }
 
     // Store the polynomial commits to its corresponding fi
     for(let i = 0; i < vk.f.length; ++i) {

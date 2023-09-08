@@ -28,7 +28,7 @@ module.exports.generateFflonkProof = async function generateFflonkProof(constPol
 
     const {proof, publics} = await fflonkProve(zkey, cmPols, fflonkInfo, {logger});
 
-    const isValid = await fflonkVerify(vk, publics, proof, fflonkInfo, {logger});
+    const isValid = await fflonkVerify(vk, publics, proof, [], fflonkInfo, {logger});
 
     assert(isValid);
 }

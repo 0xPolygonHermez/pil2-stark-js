@@ -41,7 +41,7 @@ async function run() {
 
     } 
     
-    const resV = await starkVerify(proof, public, constRoot, starkInfo, options);
+    const resV = await starkVerify(proof, public, constRoot, [], starkInfo, options);
 
     if (resV === true) {
         console.log("Verification Ok!!")

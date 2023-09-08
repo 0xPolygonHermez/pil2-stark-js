@@ -307,8 +307,8 @@ module.exports.computeFRIChallenge = function computeFRIChallenge(step, ctx, log
     return challenge;
 }
 
-module.exports.computeFRIQueries = function computeFRIQueries(ctx, ys) {
-    ctx.fri.proofQueries(ctx.friProof, ctx.friTrees, ys);
+module.exports.computeFRIQueries = function computeFRIQueries(ctx, friQueries) {
+    ctx.fri.proofQueries(ctx.friProof, ctx.friTrees, friQueries);
 }
 
 module.exports.genProofStark = async function genProof(ctx, logger) {

@@ -37,7 +37,7 @@ async function run() {
         publicSignals = JSONbig.parse(publicSignalsRaw);
     }
 
-    const resV = await fflonkVerify(verificationKey, publicSignals, proof, fflonkInfo, options);
+    const resV = await fflonkVerify(verificationKey, publicSignals, proof, [], fflonkInfo, options);
     
     if (resV === true) {
         console.log("Verification Ok!!")

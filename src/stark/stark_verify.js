@@ -7,7 +7,7 @@ const { assert } = require("chai");
 const buildPoseidonGL = require("../helpers/hash/poseidon/poseidon");
 const buildPoseidonBN128 = require("circomlibjs").buildPoseidon;
 
-module.exports = async function starkVerify(proof, publics, constRoot, starkInfo, options = {}) {
+module.exports = async function starkVerify(proof, publics, constRoot, challenges, starkInfo, options = {}) {
     const logger = options.logger;
 
     const starkStruct = starkInfo.starkStruct;
@@ -57,7 +57,6 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
     const F = poseidon.F;
 
     ctx = {
-        challenges: [],
         evals: proof.evals,
         publics,
         starkInfo,
@@ -65,7 +64,13 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
         F,
     };
 
-    calculateTranscript(transcript, ctx, logger);
+    if(!options.vadcop) {
+        ctx.challenges = [];
+        if (logger) logger.debug("Calculating transcript");
+        calculateTranscript(transcript, ctx, logger);
+    } else {
+        ctx.challenges = challenges;
+    }   
 
     if (logger) logger.debug("Verifying evaluations");
 

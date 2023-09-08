@@ -31,6 +31,7 @@ async function run() {
 
     const options = {
         skipMain: argv.skipMain || false,
+        vadcop: argv.vadcop || false,
         enableInput: argv.enableInput || false,
         verkeyInput: argv.verkeyInput || false,
         custom: argv.custom || false,
