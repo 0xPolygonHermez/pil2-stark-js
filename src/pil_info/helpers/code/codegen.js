@@ -31,16 +31,15 @@ function evalExp(ctx, symbols, expressions, constraints, exp, prime) {
     prime = prime || 0;
     if (["add", "sub", "mul", "muladd", "neg"].includes(exp.op)) {
         const values = exp.values.map(v => evalExp(ctx, symbols, expressions, constraints, v, prime));
-        let op = exp.op;
         if(exp.op == "neg") {
             values.unshift({type: "number", value: "0", dim: 1 });
-            op = "sub";
+            exp.op = "sub";
         }
         let dim = Math.max(...values.map(v => v.dim));        
         const r = { type: "tmp", id: ctx.tmpUsed++, dim };
         if(ctx.verifierEvaluations && ctx.stark) r.dim = 3;
         ctx.code.push({
-            op: op,
+            op: exp.op,
             dest: r,
             src: values,
         });

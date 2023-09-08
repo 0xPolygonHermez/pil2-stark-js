@@ -9,8 +9,6 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
     res.nPublics = pil.publics.length;
     res.nConstants = pil.nConstants;
 
-    const publicsInfo = pil.publics;
-
     const symbols = [];
 
     const hints = [];
@@ -41,6 +39,7 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
 
     const expressions = [...pil.expressions];
     const constraints = [...pil.polIdentities]
+    const publicsInfo = pil.publics;
 
     for(let i = 0; i < constraints.length; i++) {
         if(!constraints[i].boundary) {

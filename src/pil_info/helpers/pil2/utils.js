@@ -26,6 +26,9 @@ module.exports.formatExpressions = function formatExpressions(pilout, stark, sav
             const lhs = formatExpression(exp[op].lhs);
             const rhs = formatExpression(exp[op].rhs);
             exp = { op, values: [lhs, rhs] };
+        } else if(["neg"].includes(op)) {
+            const value = formatExpression(exp[op].value);
+            exp = { op, values: [value] };
         } else if (op === "constant") {
             const value = P.buf2bint(exp.constant.value).toString();
             exp = { op: "number", value };
