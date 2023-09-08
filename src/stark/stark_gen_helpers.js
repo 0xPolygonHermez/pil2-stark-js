@@ -229,6 +229,15 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
 
     if (logger) logger.debug("Compute FRI");
 
+    ctx.friPol = [];
+    ctx.friProof = [];
+    ctx.friTrees = [];
+
+    const s0_trees = [ctx.constTree];
+    for(let i = 0; i < ctx.pilInfo.numChallenges.length + 1; ++i) s0_trees.push(ctx.trees[i + 1]);
+    ctx.friTrees[0] = s0_trees;
+    ctx.friProof[0] = {};
+
     for(let i = 0; i < ctx.pilInfo.openingPoints.length; i++) {
         const opening = ctx.pilInfo.openingPoints[i];
 
@@ -261,32 +270,45 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
     }
 
     await callCalculateExps("fri", "ext", ctx, options.parallelExec, options.useThreads);
-}
 
-module.exports.computeFRIProof = async function computeFRIProof(ctx) {
-    const friPol = new Array(ctx.extN);
-
+    ctx.friPol[0] = new Array(ctx.extN);
     for (let i=0; i<ctx.extN; i++) {
-        friPol[i] = [
+        ctx.friPol[0][i] = [
             ctx.f_ext[i*3],
             ctx.f_ext[i*3 + 1],
             ctx.f_ext[i*3 + 2],
         ];
     }
+}
 
-    const queryPol = (idx) => {
-        const queriesPols = [];
+module.exports.computeFRIFolding = async function computeFRIFolding(step, ctx, challenge) {
+    let stepProof = await ctx.fri.fold(step, ctx.friPol[step], challenge);
 
-        queriesPols.push(ctx.MH.getGroupProof(ctx.constTree, idx));
-        for(let i = 0; i < ctx.pilInfo.numChallenges.length + 1; ++i) {
-            const stage = i + 1;
-            queriesPols.push(ctx.MH.getGroupProof(ctx.trees[stage], idx));
-        }
-       
-        return queriesPols;
+    ctx.friPol[step+1] = stepProof.pol;
+    ctx.friProof[step+1] = stepProof.proof;
+    if(step < ctx.pilInfo.starkStruct.steps.length - 1) {
+        ctx.friTrees[step+1] = stepProof.tree;
     }
+}
 
-    ctx.friProof = await ctx.fri.prove(ctx.transcript, friPol, queryPol);
+module.exports.computeFRIChallenge = function computeFRIChallenge(step, ctx, logger) {
+    let challenge;
+    if (step < ctx.pilInfo.starkStruct.steps.length) {
+        if(step > 0) ctx.transcript.put(ctx.friProof[step].root);
+        challenge = ctx.transcript.getField();
+        if (logger) logger.debug("··· challenges FRI folding step " + step + ": " + ctx.F.toString(challenge));
+    } else {
+        for (let i=0; i<ctx.friPol[step].length; i++) {
+            ctx.transcript.put(ctx.friPol[step][i]);
+        }
+        challenge = ctx.transcript.getPermutations(ctx.pilInfo.starkStruct.nQueries, ctx.pilInfo.starkStruct.steps[0].nBits);
+        if (logger) logger.debug("··· FRI queries: [" + challenge.join(",") + "]");
+    }
+    return challenge;
+}
+
+module.exports.computeFRIQueries = function computeFRIQueries(ctx, ys) {
+    ctx.fri.proofQueries(ctx.friProof, ctx.friTrees, ys);
 }
 
 module.exports.genProofStark = async function genProof(ctx, logger) {

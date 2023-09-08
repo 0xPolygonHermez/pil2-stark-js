@@ -1,5 +1,5 @@
 
-module.exports.calculateIntermediatePolynomials = function calculateIntermediatePolynomials(constraints, expressions, cExpId, maxQDeg) {
+module.exports.calculateIntermediatePolynomials = function calculateIntermediatePolynomials(expressions, cExpId, maxQDeg) {
     let d = 2;
 
     const cExp = expressions[cExpId];

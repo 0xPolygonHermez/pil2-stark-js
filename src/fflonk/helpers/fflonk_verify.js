@@ -20,7 +20,9 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
     }
 
     const ctx = {};
+    ctx.fflonkInfo = fflonkInfo;
     ctx.evals = [];
+    ctx.proof = proof;
     ctx.publics = publics;
     ctx.challenges = [];
     ctx.curve = curve;
@@ -30,9 +32,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
     const domainSize = ctx.N;
     const power = vk.power;
 
-    const nStages = fflonkInfo.numChallenges.length + 1;
-
-    const nPolsQ = vk.f.filter(fi => fi.stages[0].stage === nStages).map(fi => fi.pols).flat(Infinity);
+    const nPolsQ = vk.f.filter(fi => fi.stages[0].stage === fflonkInfo.numChallenges.length + 1).map(fi => fi.pols).flat(Infinity);
 
     if (logger) {
         logger.debug("------------------------------");
@@ -49,49 +49,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
         logger.debug("------------------------------");
     }
 
-    const transcript = new Keccak256Transcript(curve);
-
-    const cnstCommitPols = Object.keys(vk).filter(k => k.match(/^f\d/));
-    for(let i = 0; i < cnstCommitPols.length; ++i) {
-        transcript.addPolCommitment(vk[cnstCommitPols[i]]);
-    }
-
-    for (let i=0; i<publics.length; i++) {
-        transcript.addScalar(publics[i]);
-    }
-
-    for(let i=0; i < fflonkInfo.numChallenges.length; i++) {
-        const stage = i + 1;
-        const nChallengesStage = fflonkInfo.numChallenges[i];
-        const prevChallenges = fflonkInfo.numChallenges.slice(0, i).reduce((acc, cur) => acc + cur, 0);
-        for(let j = 0; j < nChallengesStage; ++j) {
-            const index = prevChallenges + j;
-            ctx.challenges[index] = transcript.getChallenge();
-            if (logger) logger.debug("··· challenges[" + index + "]: " + Fr.toString(ctx.challenges[index]));
-            transcript.reset();
-            transcript.addScalar(ctx.challenges[index]);
-        }
-
-        const stageCommitPols = vk.f.filter(fi => fi.stages[0].stage === stage).map(fi => proof.polynomials[`f${fi.index}`]);
-        for(let i = 0; i < stageCommitPols.length; i++) {
-            transcript.addPolCommitment(stageCommitPols[i]);
-        }
-
-    }
-    
-    let qChallengeId = fflonkInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
-    ctx.challenges[qChallengeId] = transcript.getChallenge();
-    if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + Fr.toString(ctx.challenges[qChallengeId]));
-    transcript.reset();
-    transcript.addScalar(ctx.challenges[qChallengeId]);
-
-    const stageQCommitPols = vk.f.filter(fi => fi.stages[0].stage === nStages).map(fi => proof.polynomials[`f${fi.index}`]);
-    for(let i = 0; i < stageQCommitPols.length; i++) {
-        transcript.addPolCommitment(stageQCommitPols[i]);
-    }
-
-    let challengeXiSeed = transcript.getChallenge();
-    if (logger) logger.debug("··· challengesXiSeed: " + Fr.toString(challengeXiSeed));
+    calculateTranscript(ctx, vk, logger);
 
     // Store the polynomial commits to its corresponding fi
     for(let i = 0; i < vk.f.length; ++i) {
@@ -108,12 +66,9 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
         ctx.evals[i] = proof.evaluations[polName]; 
     }
     
-    let challengeXi = curve.Fr.exp(challengeXiSeed, vk.powerW);
-    ctx.x = challengeXi;
-
     const execCode = executeCode(curve.Fr, ctx, fflonkInfo.code.qVerifier.code);
 
-    const xN = curve.Fr.exp(challengeXi, ctx.N);
+    const xN = curve.Fr.exp(ctx.x, ctx.N);
     ctx.Z = curve.Fr.sub(xN, curve.Fr.one);   
 
     if(!curve.Fr.eq(curve.Fr.mul(ctx.Z, proof.evaluations["invZh"]), curve.Fr.one)) {
@@ -144,10 +99,61 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, fflonkInf
     }
 
 
-    const res = verifyOpenings(vk, proof.polynomials, proof.evaluations, curve, {logger, xiSeed: challengeXiSeed, nonCommittedPols});
+    const res = verifyOpenings(vk, proof.polynomials, proof.evaluations, curve, {logger, xiSeed: ctx.challengeXiSeed, nonCommittedPols});
     await curve.terminate();
 
     return res;
+}
+
+function calculateTranscript(ctx, vk, logger) {
+    const transcript = new Keccak256Transcript(ctx.curve);
+
+    const cnstCommitPols = Object.keys(vk).filter(k => k.match(/^f\d/));
+    for(let i = 0; i < cnstCommitPols.length; ++i) {
+        transcript.addPolCommitment(vk[cnstCommitPols[i]]);
+    }
+
+    for (let i=0; i<ctx.publics.length; i++) {
+        transcript.addScalar(ctx.publics[i]);
+    }
+
+    for(let i=0; i < ctx.fflonkInfo.numChallenges.length; i++) {
+        const stage = i + 1;
+        const nChallengesStage = ctx.fflonkInfo.numChallenges[i];
+        const prevChallenges = ctx.fflonkInfo.numChallenges.slice(0, i).reduce((acc, cur) => acc + cur, 0);
+        for(let j = 0; j < nChallengesStage; ++j) {
+            const index = prevChallenges + j;
+            ctx.challenges[index] = transcript.getChallenge();
+            if (logger) logger.debug("··· challenges[" + index + "]: " + ctx.curve.Fr.toString(ctx.challenges[index]));
+            transcript.reset();
+            transcript.addScalar(ctx.challenges[index]);
+        }
+
+        const stageCommitPols = vk.f.filter(fi => fi.stages[0].stage === stage).map(fi => ctx.proof.polynomials[`f${fi.index}`]);
+        for(let i = 0; i < stageCommitPols.length; i++) {
+            transcript.addPolCommitment(stageCommitPols[i]);
+        }
+
+    }
+    
+    let qChallengeId = ctx.fflonkInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
+    ctx.challenges[qChallengeId] = transcript.getChallenge();
+    if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + ctx.curve.Fr.toString(ctx.challenges[qChallengeId]));
+    transcript.reset();
+    transcript.addScalar(ctx.challenges[qChallengeId]);
+
+    const stageQCommitPols = vk.f
+        .filter(fi => fi.stages[0].stage === ctx.fflonkInfo.numChallenges.length + 1)
+        .map(fi => ctx.proof.polynomials[`f${fi.index}`]);
+    for(let i = 0; i < stageQCommitPols.length; i++) {
+        transcript.addPolCommitment(stageQCommitPols[i]);
+    }
+
+    ctx.challengeXiSeed = transcript.getChallenge();
+    if (logger) logger.debug("··· challengesXiSeed: " + ctx.curve.Fr.toString(ctx.challengeXiSeed));
+
+    let challengeXi = ctx.curve.Fr.exp(ctx.challengeXiSeed, vk.powerW);
+    ctx.x = challengeXi;
 }
 
 function executeCode(F, ctx, code) {

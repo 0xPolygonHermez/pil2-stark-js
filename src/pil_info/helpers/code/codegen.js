@@ -10,29 +10,17 @@ function pilCodeGen(ctx, symbols, expressions, constraints, expId, prime) {
 
     if (!ctx.expMap[prime]) ctx.expMap[prime] = {};
 
+    const r =  { type: "exp", prime, id: expId, dim: e.dim };
+
     if (retRef.type === "tmp") {
-        const r = {
-            type: "exp",
-            prime,
-            dim: e.dim,
-            id: expId,
-        }
         ctx.tmpUsed--;
         fixExpression(r, ctx, symbols, expressions);
         ctx.code[ctx.code.length - 1].dest = r;
     } else {
-        const r =  {
-            type: "exp",
-            prime: prime,
-            id: expId,
-            dim: e.dim,
-        };
-        fixExpression(r, ctx, symbols, expressions);
-        ctx.code.push({
-            op: "copy",
-            dest: r,
-            src: [ retRef ]
-        })
+        if(ctx.publics || expressions[expId].op === "exp") {
+            fixExpression(r, ctx, symbols, expressions);
+            ctx.code.push({ op: "copy", dest: r, src: [ retRef ] })
+        }        
     }
 
     if(!ctx.calculated[expId]) ctx.calculated[expId] = {};
@@ -57,12 +45,13 @@ function evalExp(ctx, symbols, expressions, constraints, exp, prime) {
             src: values,
         });
         return r;
-    } else if (["cm", "const"].includes(exp.op)) {
-        let p = exp.rowOffset || prime; 
-        const r = { type: exp.op, id: exp.id, prime: p, dim: exp.dim }
+    } else if (["cm", "const"].includes(exp.op) || (exp.op === "exp" && ["cm", "const"].includes(expressions[exp.id].op))) {
+        const expr = exp.op === "exp" ? expressions[exp.id] : exp;
+        let p = expr.rowOffset || prime; 
+        const r = { type: expr.op, id: expr.id, prime: p, dim: expr.dim }
         if(ctx.verifierEvaluations) {
             fixEval(symbols, r, ctx);
-        } else if(ctx.verifierQuery && exp.op === "cm") {
+        } else if(ctx.verifierQuery && expr.op === "cm") {
             fixCommitsQuery(symbols, r);
         }
         return r;
@@ -97,20 +86,6 @@ function calculateDeps(ctx, symbols, expressions, constraints, exp, prime, expId
     } else if (["add", "sub", "mul", "neg", "muladd"].includes(exp.op)) {
         exp.values.map(v => calculateDeps(ctx, symbols, expressions, constraints, v, prime, expId));
     }
-}
-
-function buildCode(ctx, expressions) {
-    // Expressions that are not saved, cannot be reused later on
-    for (let i=0; i<expressions.length; i++) {
-        const e = expressions[i];
-        if (!e.keep) delete ctx.calculated[i];
-    }
-
-    let code = { tmpUsed: ctx.tmpUsed, code: ctx.code };
-
-    ctx.code = [];
-
-    return code;
 }
 
 function findAddMul(exp) {
@@ -203,6 +178,20 @@ function fixCommitsQuery(symbols, r) {
     r.stageId = symbol.stageId;
     r.treePos = symbol.stagePos;
     r.dim = symbol.dim;
+}
+
+function buildCode(ctx, expressions) {
+    // Expressions that are not saved, cannot be reused later on
+    for (let i=0; i<expressions.length; i++) {
+        const e = expressions[i];
+        if (!e.keep) delete ctx.calculated[i];
+    }
+
+    let code = { tmpUsed: ctx.tmpUsed, code: ctx.code };
+
+    ctx.code = [];
+
+    return code;
 }
 
 module.exports.pilCodeGen = pilCodeGen;

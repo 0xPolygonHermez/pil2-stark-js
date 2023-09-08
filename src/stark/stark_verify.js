@@ -59,48 +59,17 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
     ctx = {
         challenges: [],
         evals: proof.evals,
-        publics: publics,
-        starkInfo: starkInfo,
+        publics,
+        starkInfo,
+        proof,
+        F,
     };
 
-    for (let i=0; i<publics.length; i++) {
-        transcript.put(publics[i]);
-    }
-
-    for(let i=0; i < starkInfo.numChallenges.length; i++) {
-        const stage = i + 1;
-        const nChallengesStage = starkInfo.numChallenges[i];
-        const prevChallenges = starkInfo.numChallenges.slice(0, i).reduce((acc, cur) => acc + cur, 0);
-        for(let j = 0; j < nChallengesStage; ++j) {
-            const index = prevChallenges + j;
-            ctx.challenges[index] = transcript.getField();
-            if (logger) logger.debug("··· challenges[" + index + "]: " + F.toString(ctx.challenges[index]));
-        }
-        transcript.put(proof["root" + stage]);
-    }
-    
-    let qChallengeId = starkInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
-    ctx.challenges[qChallengeId] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + F.toString(ctx.challenges[qChallengeId]));
-    transcript.put(proof.rootQ);
-
-    let xiChallengeId = qChallengeId + 1;
-    ctx.challenges[xiChallengeId] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + xiChallengeId + "]: " + F.toString(ctx.challenges[xiChallengeId]));
-    for (let i=0; i<ctx.evals.length; i++) {
-        transcript.put(ctx.evals[i]);
-    }
-
-    let vf1ChallengeId = xiChallengeId + 1;
-    let vf2ChallengeId = xiChallengeId + 2;
-    ctx.challenges[vf1ChallengeId] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + vf1ChallengeId + "]: " + F.toString(ctx.challenges[vf1ChallengeId]));
-
-    ctx.challenges[vf2ChallengeId] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + vf2ChallengeId + "]: " + F.toString(ctx.challenges[vf2ChallengeId]));
+    calculateTranscript(transcript, ctx, logger);
 
     if (logger) logger.debug("Verifying evaluations");
 
+    const xiChallengeId = ctx.starkInfo.numChallenges.reduce((acc, cur) => acc + cur, 0) + 1;
     const xi = ctx.challenges[xiChallengeId];
 
     const xN = F.exp(xi, N);
@@ -216,10 +185,65 @@ module.exports = async function starkVerify(proof, publics, constRoot, starkInfo
         return vals;
     }
 
-    return fri.verify(transcript, proof.fri, checkQuery);
+    return fri.verify(ctx.friChallenges, ctx.friQueries, proof.fri, checkQuery);
 
 }
 
+function calculateTranscript(transcript, ctx, logger) {
+    for (let i=0; i<ctx.publics.length; i++) {
+        transcript.put(ctx.publics[i]);
+    }
+
+    for(let i=0; i < ctx.starkInfo.numChallenges.length; i++) {
+        const stage = i + 1;
+        const nChallengesStage = ctx.starkInfo.numChallenges[i];
+        const prevChallenges = ctx.starkInfo.numChallenges.slice(0, i).reduce((acc, cur) => acc + cur, 0);
+        for(let j = 0; j < nChallengesStage; ++j) {
+            const index = prevChallenges + j;
+            ctx.challenges[index] = transcript.getField();
+            if (logger) logger.debug("··· challenges[" + index + "]: " + ctx.F.toString(ctx.challenges[index]));
+        }
+        transcript.put(ctx.proof["root" + stage]);
+    }
+    
+    let qChallengeId = ctx.starkInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
+    ctx.challenges[qChallengeId] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + ctx.F.toString(ctx.challenges[qChallengeId]));
+    transcript.put(ctx.proof.rootQ);
+
+    let xiChallengeId = qChallengeId + 1;
+    ctx.challenges[xiChallengeId] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + xiChallengeId + "]: " + ctx.F.toString(ctx.challenges[xiChallengeId]));
+    for (let i=0; i<ctx.evals.length; i++) {
+        transcript.put(ctx.evals[i]);
+    }
+
+    let vf1ChallengeId = xiChallengeId + 1;
+    let vf2ChallengeId = xiChallengeId + 2;
+    ctx.challenges[vf1ChallengeId] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + vf1ChallengeId + "]: " + ctx.F.toString(ctx.challenges[vf1ChallengeId]));
+
+    ctx.challenges[vf2ChallengeId] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + vf2ChallengeId + "]: " + ctx.F.toString(ctx.challenges[vf2ChallengeId]));
+
+
+    ctx.friChallenges = [];
+    for (let step=0; step<ctx.starkInfo.starkStruct.steps.length; step++) {
+        ctx.friChallenges[step] = transcript.getField();
+        if (logger) logger.debug("··· challenges FRI folding step " + step + ": " + ctx.F.toString(ctx.friChallenges[step]));
+
+        if (step < ctx.starkInfo.starkStruct.steps.length - 1) {
+            transcript.put(ctx.proof.fri[step+1].root);
+        } else {
+            for (let i=0; i<ctx.proof.fri[ctx.proof.fri.length-1].length; i++) {
+                transcript.put(ctx.proof.fri[ctx.proof.fri.length-1][i]);
+            }
+        }
+    }
+
+    ctx.friQueries = transcript.getPermutations(ctx.starkInfo.starkStruct.nQueries, ctx.starkInfo.starkStruct.steps[0].nBits);
+    if (logger) logger.debug("··· FRI queries: [" + ctx.friQueries.join(",") + "]");
+}
 
 function executeCode(F, ctx, code) {
     const tmp = [];

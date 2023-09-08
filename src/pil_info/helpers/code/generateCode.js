@@ -8,10 +8,11 @@ module.exports.generatePublicsCode = function generatePublicsCode(res, symbols, 
         expMap: [],
         dom: "n",
         stark,
+        publics: true,
     };
 
     for(let i = 0; i < publics.length; ++i) {
-        pilCodeGen(ctx, symbols, expressions, constraints, publics[i].expId, 0, stark);
+        pilCodeGen(ctx, symbols, expressions, constraints, publics[i].expId, 0);
         res.publicsCode[i] = buildCode(ctx, expressions);
         res.publicsCode[i].idx = publics[i].idx;
     }

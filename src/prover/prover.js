@@ -1,5 +1,5 @@
 const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk, genProofFflonk, setChallengesFflonk, calculateChallengeFflonk } = require("../fflonk/helpers/fflonk_prover_helpers");
-const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, calculateChallengeStark, computeFRIProof } = require("../stark/stark_gen_helpers");
+const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, calculateChallengeStark, computeFRIChallenge, computeFRIFolding, computeFRIQueries } = require("../stark/stark_gen_helpers");
 const { calculatePublics, callCalculateExps, applyHints } = require("./prover_helpers");
 
 module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, zkey, options) {
@@ -57,7 +57,17 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
         // STAGE 6. Compute FRI
         await computeFRIStark(ctx, options);
 
-        await computeFRIProof(ctx);
+        for (let step = 0; step < ctx.pilInfo.starkStruct.steps.length; step++) {
+
+            challenge = computeFRIChallenge(step, ctx, logger);
+    
+            await computeFRIFolding(step, ctx, challenge);
+        }
+    
+        const friQueries = computeFRIChallenge(ctx.pilInfo.starkStruct.steps.length, ctx, logger);
+    
+        computeFRIQueries(ctx, friQueries);
+
     } else {
         await computeOpeningsFflonk(ctx, challenge, logger);
     }

@@ -51,7 +51,7 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
 
     const _expressions = _.cloneDeep(expressions);
 
-    const {newExpressions, qDeg, imExps} = calculateIntermediatePolynomials(constraints, _expressions, cExpId, maxDeg);
+    const {newExpressions, qDeg, imExps} = calculateIntermediatePolynomials(_expressions, cExpId, maxDeg);
 
     expressions.splice(0, expressions.length, ...newExpressions);
     
