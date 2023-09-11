@@ -28,10 +28,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     return {expressions, hints, constraints, symbols, publicsInfo};
 }
 
-module.exports.getFixedPolsPil2 = function getFixedPolsPil2(pil, F) {
-
-    const cnstPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
-        
+module.exports.getFixedPolsPil2 = function getFixedPolsPil2(pil, cnstPols, F) {        
     const P = new ProtoOut();
 
     for(let i = 0; i < cnstPols.$$defArray.length; ++i) {
@@ -48,7 +45,5 @@ module.exports.getFixedPolsPil2 = function getFixedPolsPil2(pil, F) {
             }
         }
     }
-
-    return cnstPols;
 }
     

@@ -43,7 +43,8 @@ describe("test fibonacci pil2 sm", async function () {
         pil.symbols = pilout.symbols;
         pil.numChallenges = pilout.numChallenges;
         
-        const constPols = getFixedPolsPil2(pil, F);
+        const cnstPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
+        getFixedPolsPil2(pil, cnstPols, F);
 
         const cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
         await smFibonacci.execute(pil.numRows, cmPols.Fibonacci, F);
