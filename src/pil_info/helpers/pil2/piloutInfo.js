@@ -1,5 +1,4 @@
 const ProtoOut = require("pilcom2/src/proto_out.js");
-const { newConstantPolsArrayPil2 } = require("pilcom/src/polsarray");
 const { formatExpressions, formatConstraints, formatSymbols } = require("./utils");
 
 module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
