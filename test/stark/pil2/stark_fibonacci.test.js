@@ -7,7 +7,7 @@ const protobuf = require('protobufjs');
 const Logger = require('logplease');
 
 const fs = require("fs");
-const { newCommitPolsArrayPil2 } = require("pilcom/src/polsarray");
+const { newCommitPolsArrayPil2, newConstantPolsArrayPil2 } = require("pilcom/src/polsarray");
 
 const smFibonacci = require("../../state_machines/pil2/sm_fibonacci/sm_fibonacci.js");
 
@@ -43,11 +43,12 @@ describe("test fibonacci pil2 sm", async function () {
         pil.symbols = pilout.symbols;
         pil.numChallenges = pilout.numChallenges;
         
-        const constPols = getFixedPolsPil2(pil, F);
+        const cnstPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
+        getFixedPolsPil2(pil, cnstPols, F);
 
         const cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
         await smFibonacci.execute(pil.numRows, cmPols.Fibonacci, F);
 
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: false});
+        await generateStarkProof(cnstPols, cmPols, pil, starkStruct, {logger, F, pil1: false});
     });
 });
