@@ -11,6 +11,7 @@ module.exports = function generateConstraintPolynomial(res, symbols, expressions
     const stage = res.numChallenges.length + 1;
 
     const vc = E.challenge("vc", stage, dim, 0);
+    vc.expDeg = 0;
 
     res.boundaries = ["everyRow"];
 

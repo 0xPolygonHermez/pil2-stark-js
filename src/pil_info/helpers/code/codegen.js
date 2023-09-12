@@ -29,25 +29,18 @@ function pilCodeGen(ctx, symbols, expressions, constraints, expId, prime) {
 
 function evalExp(ctx, symbols, expressions, constraints, exp, prime) {
     prime = prime || 0;
-    if (["add", "sub", "mul", "muladd", "neg"].includes(exp.op)) {
+    if (["add", "sub", "mul", "muladd"].includes(exp.op)) {
         const values = exp.values.map(v => evalExp(ctx, symbols, expressions, constraints, v, prime));
         let dim = Math.max(...values.map(v => v.dim));        
         const r = { type: "tmp", id: ctx.tmpUsed++, dim };
         if(ctx.verifierEvaluations && ctx.stark) r.dim = 3;
 
-        if(exp.op == "neg") {
-            ctx.code.push({
-                op: "sub",
-                dest: r,
-                src: [{type: "number", value: "0", dim: 1}, values[0]]
-            });
-        } else {
-            ctx.code.push({
-                op: exp.op,
-                dest: r,
-                src: values,
-            });
-        }
+        ctx.code.push({
+            op: exp.op,
+            dest: r,
+            src: values,
+        });
+        
         return r;
     } else if (["cm", "const"].includes(exp.op) || (exp.op === "exp" && ["cm", "const"].includes(expressions[exp.id].op))) {
         const expr = exp.op === "exp" ? expressions[exp.id] : exp;
@@ -89,7 +82,7 @@ function calculateDeps(ctx, symbols, expressions, constraints, exp, prime, expId
     if (exp.op == "exp") {
         let p = exp.rowOffset || prime;
         pilCodeGen(ctx, symbols, expressions, constraints, exp.id, p);
-    } else if (["add", "sub", "mul", "neg", "muladd"].includes(exp.op)) {
+    } else if (["add", "sub", "mul", "muladd"].includes(exp.op)) {
         exp.values.map(v => calculateDeps(ctx, symbols, expressions, constraints, v, prime, expId));
     }
 }

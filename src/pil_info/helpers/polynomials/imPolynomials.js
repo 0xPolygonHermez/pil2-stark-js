@@ -33,27 +33,21 @@ function calculateImPols(expressions, _exp, maxDeg) {
         if (imPols === false) {
             return [false, -1];
         }
-        if (exp.op === "neg") {
-            return _calculateImPols(expressions, exp.values[0], imPols, maxDeg);
-        } else if (["add", "sub"].indexOf(exp.op) >=0 ) {
+
+        if (["add", "sub"].indexOf(exp.op) >=0 ) {
             let md = 0;
             for (let i=0; i<exp.values.length; i++) {
                 [imPols , d] = _calculateImPols(expressions, exp.values[i], imPols, maxDeg);
                 if (d>md) md = d;
             }
             return [imPols, md];
-        } else if (["number", "public", "challenge"].indexOf(exp.op) >=0 || (exp.op === "Zi" && exp.boundary === "everyRow")) {
-            return [imPols, 0];
-        } else if (["x", "const", "cm"].indexOf(exp.op) >= 0 || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
-            if (maxDeg < 1) return [false, -1];
-            return [imPols, 1];
         } else if (exp.op == "mul") {
             let eb = false;
             let ed = -1;
-            if (["number", "public", "challenge"].indexOf(exp.values[0].op) >= 0 ) {
+            if(!["add", "mul", "sub", "exp"].includes(exp.values[0].op) && exp.values[0].expDeg === 0) { 
                 return _calculateImPols(expressions, exp.values[1], imPols, maxDeg);
             }
-            if (["number", "public", "challenge"].indexOf(exp.values[1].op) >= 0 ) {
+            if(!["add", "mul", "sub", "exp"].includes(exp.values[1].op) && exp.values[1].expDeg === 0) { 
                 return _calculateImPols(expressions, exp.values[0], imPols, maxDeg);
             }
             const maxDegHere = exp.expDeg;
@@ -96,7 +90,13 @@ function calculateImPols(expressions, _exp, maxDeg) {
                 return exp.res[absoluteMax][JSON.stringify(imPols)];
             }
         } else {
-            throw new Error("Exp op not defined: "+ exp.op);
+            if(exp.expDeg === 0) {
+                return [imPols, 0];
+            } else if (maxDeg < 1) {
+                return [false, -1];
+            } else {
+                return [imPols, 1];
+            }
         }
     }
 }
