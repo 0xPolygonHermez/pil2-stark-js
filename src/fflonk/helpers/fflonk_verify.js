@@ -125,13 +125,12 @@ function calculateTranscript(ctx, vk, logger) {
     for(let i=0; i < ctx.fflonkInfo.numChallenges.length; i++) {
         const stage = i + 1;
         const nChallengesStage = ctx.fflonkInfo.numChallenges[i];
-        const prevChallenges = ctx.fflonkInfo.numChallenges.slice(0, i).reduce((acc, cur) => acc + cur, 0);
+        ctx.challenges[stage - 1] = [];
         for(let j = 0; j < nChallengesStage; ++j) {
-            const index = prevChallenges + j;
-            ctx.challenges[index] = transcript.getChallenge();
-            if (logger) logger.debug("··· challenges[" + index + "]: " + ctx.curve.Fr.toString(ctx.challenges[index]));
+            ctx.challenges[stage - 1][j] = transcript.getChallenge();
+            if (logger) logger.debug("··· challenges[" + (stage - 1) + "][" + j + "]: " + ctx.curve.Fr.toString(ctx.challenges[stage - 1][j]));
             transcript.reset();
-            transcript.addScalar(ctx.challenges[index]);
+            transcript.addScalar(ctx.challenges[stage - 1][j]);
         }
 
         const stageCommitPols = vk.f.filter(fi => fi.stages[0].stage === stage).map(fi => ctx.proof.polynomials[`f${fi.index}`]);
@@ -140,12 +139,13 @@ function calculateTranscript(ctx, vk, logger) {
         }
 
     }
-    
-    let qChallengeId = ctx.fflonkInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
-    ctx.challenges[qChallengeId] = transcript.getChallenge();
-    if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + ctx.curve.Fr.toString(ctx.challenges[qChallengeId]));
+
+    let qStage = ctx.fflonkInfo.numChallenges.length;
+    ctx.challenges[qStage] = [];
+    ctx.challenges[qStage][0] = transcript.getChallenge();
+    if (logger) logger.debug("··· challenges[" + qStage + "][0]: " + ctx.curve.Fr.toString(ctx.challenges[qStage][0]));
     transcript.reset();
-    transcript.addScalar(ctx.challenges[qChallengeId]);
+    transcript.addScalar(ctx.challenges[qStage][0]);
 
     const stageQCommitPols = vk.f
         .filter(fi => fi.stages[0].stage === ctx.fflonkInfo.numChallenges.length + 1)
@@ -189,7 +189,7 @@ function executeCode(F, ctx, code) {
                 return ctx.evals[r.id];
             case "number": return ctx.curve.Fr.e(`${r.value}`);
             case "public": return ctx.curve.Fr.e(ctx.publics[r.id]);
-            case "challenge": return ctx.challenges[r.id];
+            case "challenge": return ctx.challenges[r.stage - 1][r.id];
             case "x": return ctx.x;
             default: throw new Error("Invalid reference type get: " + r.type);
         }

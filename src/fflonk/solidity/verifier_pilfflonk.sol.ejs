@@ -38,7 +38,11 @@ pragma solidity >=0.7.0 <0.9.0;
         } else if (r.type === "public") {
             return `calldataload(add(pPublic,${r.id*32}))`;
         } else if (r.type === "challenge") {
-            return `mload(add(pMem, pChallenge${r.id}))`;
+            if(r.stage === fflonkInfo.numChallenges.length + 1) {
+                return `mload(add(pMem, pChallengeQ))`;
+            } else {
+                return `mload(add(pMem, pChallengeStage${r.stage}_${r.id}))`;
+            }
         } else if (r.type === "x") {
             return "challengeXi";
         } else {
@@ -47,12 +51,12 @@ pragma solidity >=0.7.0 <0.9.0;
     } -%>
 
 <%  const codeCopy = code.filter(c => c.op === "copy"); -%>
-<%  const codeNoCopy = code.filter(c => c.op !== "copy"); -%>
 <%  for(let i=0; i<codeCopy.length; i++) { -%>
-<%      let inst = codeCopy[i]; -%>
-<%      copyObject[inst.dest.id] = ref(inst.src[0]); -%>
-<%  } -%>
+    <%      let inst = codeCopy[i]; -%>
+    <%      copyObject[inst.dest.id] = ref(inst.src[0]); -%>
+    <%  } -%>
 
+<%  const codeNoCopy = code.filter(c => c.op !== "copy"); -%>
 <%  function getDestRef(i) {
     let dest = i === codeNoCopy.length - 1 || (i < codeNoCopy.length - 1
         && ((codeNoCopy[i+1].src[0] && JSON.stringify(codeNoCopy[i+1].src[0]) === JSON.stringify(codeNoCopy[i].dest)) 
@@ -166,11 +170,15 @@ contract PilFflonkVerifier {
     // Memory data
     // Challenges
 <%  let challengeCount = 0; -%>
-<%  let nChallenges = fflonkInfo.numChallenges.reduce((acc, cur) => acc + cur, 1); -%>
-<%  for(let i = 0; i < nChallenges; ++i) { -%>
-    uint16 constant pChallenge<%- i %> = <%- challengeCount %>;
-<%  challengeCount += 32; -%>
+<%  for(let i = 0; i < fflonkInfo.numChallenges.length; ++i) { -%>
+<%      let stage = i + 1; -%>
+<%      for(let j = 0; j < fflonkInfo.numChallenges[i]; ++j) { -%>
+    uint16 constant pChallengeStage<%- stage %>_<%- j %> = <%- challengeCount %>;
+<%          challengeCount += 32; -%>
+<%      } -%>
 <%  } -%>
+    uint16 constant pChallengeQ = <%- challengeCount %>;
+<%  challengeCount += 32; -%>
     uint16 constant pXiSeed = <%- challengeCount %>;
     uint16 constant pXi = <%- challengeCount + 32 %>;
 <%  challengeCount += 64; -%>
@@ -223,25 +231,16 @@ contract PilFflonkVerifier {
 <%  memC += 32 -%>
 <%  }  %>  
 <%  } -%>
-<%  for(let i = 0; i < vk.f.length; ++i) { -%>
-<%  if(vk.f[i].stages[0].stage === 1) { -%>
-                mstore(add(pMem, <%= memC %>), calldataload(pf<%- vk.f[i].index %>))
-                mstore(add(pMem, <%= memC + 32 %>), calldataload(add(pf<%- vk.f[i].index %>, 32)))
-<%  memC += 64 -%>
-<%  } -%>
-<%  } -%>
 
                 let challenge
 
 <%  for(let i = 0; i < fflonkInfo.numChallenges.length; ++i) { -%>
 <%      const stage = i + 1 -%>
 <%      const nChallengesStage = fflonkInfo.numChallenges[i]; -%>
-<%      const prevChallenges = fflonkInfo.numChallenges.slice(0, i).reduce((acc, cur) => acc + cur, 0); -%>
                 // Transcript stage <%= stage %>
 <%      for(let j = 0; j < nChallengesStage; ++j) { -%>
-<%          const index = prevChallenges + j; -%>
                 challenge := mod(keccak256(add(pMem, pLastMem), <%= memC - pLastMem %>), q)
-                mstore(add(pMem, pChallenge<%- index %>), challenge) // Store challenge <%= index %>
+                mstore(add(pMem, pChallengeStage<%- stage %>_<%- j %>), challenge) // Store challengeStage<%- stage %>_<%= j %>
                 mstore(add(pMem, pLastMem), challenge) // Add challenge to transcript
 <%              memC = pLastMem + 32; -%>
 
@@ -258,7 +257,7 @@ contract PilFflonkVerifier {
 
                 // Compute challenge quotient polynomial
                 challenge := mod(keccak256(add(pMem, pLastMem), <%= memC - pLastMem %>), q)
-                mstore(add(pMem, pChallenge<%- nChallenges %>), challenge)
+                mstore(add(pMem, pChallengeQ), challenge)
                 mstore(add(pMem, pLastMem), challenge)
 <%  memC = pLastMem + 32; -%>
 

@@ -223,25 +223,20 @@ module.exports.genProofFflonk = async function genProof(ctx, logger) {
 }
 
 module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, challenge, logger) {
-    let nChallengesStage, prevChallenges;
-    if(stage === ctx.pilInfo.numChallenges.length + 1) {
-        nChallengesStage = 1;
-        prevChallenges = ctx.pilInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
-    } else if (stage <= ctx.pilInfo.numChallenges.length){ 
-        nChallengesStage = ctx.pilInfo.numChallenges[stage - 1];
-        prevChallenges = ctx.pilInfo.numChallenges.slice(0, stage - 1).reduce((acc, cur) => acc + cur, 0);
-    } else throw new Error("Invalid stage");
+    let qStage = ctx.pilInfo.numChallenges.length + 1;
 
+    let nChallengesStage = qStage === stage ? 1 : ctx.pilInfo.numChallenges[stage - 1];
+ 
+    ctx.challenges[stage - 1] = [];
     for (let i=0; i<nChallengesStage; i++) {
-        const index = prevChallenges + i;
         if(i > 0) {
             ctx.transcript.reset();
-            ctx.transcript.addScalar(ctx.challenges[index - 1]);
-            ctx.challenges[index] = ctx.transcript.getChallenge();
+            ctx.transcript.addScalar(ctx.challenges[stage - 1][i - 1]);
+            ctx.challenges[stage - 1][i] = ctx.transcript.getChallenge();
         } else {
-            ctx.challenges[index] = challenge;
+            ctx.challenges[stage - 1][i] = challenge;
         }
-        if (logger) logger.debug("··· challenges[" + index + "]: " + ctx.F.toString(ctx.challenges[index]));
+        if (logger) logger.debug("··· challenges[" + (stage - 1) + "][" + i + "]: " + ctx.F.toString(ctx.challenges[stage - 1][i]));
     }
     return;
 }
@@ -249,6 +244,10 @@ module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, ch
 
 module.exports.calculateChallengeFflonk = async function calculateChallengeFflonk(stage, ctx) {
     ctx.transcript.reset();
+
+    let qStage = ctx.pilInfo.numChallenges.length + 1;
+
+    if(stage === "Q") stage = qStage;
 
     if(stage === 1) {
         const commitsStage0 = ctx.zkey.f.filter(f => f.stages[0].stage === 0).map(f => `f${f.index}_0`);
@@ -261,21 +260,11 @@ module.exports.calculateChallengeFflonk = async function calculateChallengeFflon
             ctx.transcript.addScalar(ctx.publics[i]);
         }
     }
-
-    let lastChallengeStageId;
-    if(stage === ctx.pilInfo.numChallenges.length + 1) {
-        lastChallengeStageId = ctx.pilInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
-    } else if (stage <= ctx.pilInfo.numChallenges.length){ 
-        lastChallengeStageId = ctx.pilInfo.numChallenges.slice(0, stage - 1).reduce((acc, cur) => acc + cur, 0) 
-            + ctx.pilInfo.numChallenges[stage - 1] - 1;
-    } else throw new Error("Invalid stage");
     
-    if(lastChallengeStageId >= 0) {
-        const challenge = ctx.challenges[lastChallengeStageId];
+    if(stage > 1) {
+        const challenge = ctx.challenges[stage - 1][ctx.challenges[stage - 1].length - 1];
         ctx.transcript.addScalar(challenge);
     }
-
-    if(stage === "Q") stage = ctx.pilInfo.numChallenges.length + 1;
 
     const commitsStage = ctx.zkey.f.filter(f => f.stages[0].stage === stage).map(f => `f${f.index}_${stage}`);
     for(let i = 0; i < commitsStage.length; i++) {
