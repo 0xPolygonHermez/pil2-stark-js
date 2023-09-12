@@ -21,12 +21,10 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
     const dim = stark ? 3 : 1;
 
     let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
-    let alphaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < alphaSymbol.stageId))).length;
-    const alpha = E.challenge("std_alpha", stage, dim, alphaId);
+    const alpha = E.challenge("std_alpha", stage, dim, alphaSymbol.stageId);
 
     let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
-    let betaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < betaSymbol.stageId))).length;
-    const beta = E.challenge("std_beta", stage, dim, betaId);
+    const beta = E.challenge("std_beta", stage, dim, betaSymbol.stageId);
 
     for (let i=0; i<pil.connectionIdentities.length; i++) {
         const ci = pil.connectionIdentities[i];

@@ -8,13 +8,9 @@ module.exports = function generateFRIPolynomial(res, symbols, expressions) {
 
     const stage = res.numChallenges.length + 3;
 
-    let vf1Symbol = symbols.find(s => s.type === "challenge" && s.stage === stage && s.stageId === 0);
-    let vf1Id = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < vf1Symbol.stageId))).length;
-    const vf1 = E.challenge("vf1", stage, 3, vf1Id);
+    const vf1 = E.challenge("vf1", stage, 3, 0);
 
-    let vf2Symbol = symbols.find(s => s.type === "challenge" && s.stage === stage && s.stageId === 1);
-    let vf2Id = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < vf2Symbol.stageId))).length;
-    const vf2 = E.challenge("vf2", stage, 3, vf2Id);
+    const vf2 = E.challenge("vf2", stage, 3, 1);
 
     let friExp = null;
     for (let i=0; i<res.nCommitments; i++) {

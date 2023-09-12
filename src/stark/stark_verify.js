@@ -74,8 +74,8 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     if (logger) logger.debug("Verifying evaluations");
 
-    const xiChallengeId = ctx.starkInfo.numChallenges.reduce((acc, cur) => acc + cur, 0) + 1;
-    const xi = ctx.challenges[xiChallengeId];
+    let evalsStage = ctx.starkInfo.numChallenges.length + 1;
+    const xi = ctx.challenges[evalsStage][0];
 
     const xN = F.exp(xi, N);
     ctx.Z = F.inv(F.sub(xN, 1n));
@@ -182,7 +182,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
                 w = F.div(1n, w);
             }
 
-            ctxQry.xDivXSubXi[i] = F.div(x, F.sub(x, F.mul(ctxQry.challenges[xiChallengeId], w)));
+            ctxQry.xDivXSubXi[i] = F.div(x, F.sub(x, F.mul(ctxQry.challenges[evalsStage][0], w)));
         }
 
         const vals = [executeCode(F, ctxQry, starkInfo.code.queryVerifier.code)];
@@ -202,34 +202,35 @@ function calculateTranscript(transcript, ctx, logger) {
     for(let i=0; i < ctx.starkInfo.numChallenges.length; i++) {
         const stage = i + 1;
         const nChallengesStage = ctx.starkInfo.numChallenges[i];
-        const prevChallenges = ctx.starkInfo.numChallenges.slice(0, i).reduce((acc, cur) => acc + cur, 0);
+        ctx.challenges[stage - 1] = [];
         for(let j = 0; j < nChallengesStage; ++j) {
-            const index = prevChallenges + j;
-            ctx.challenges[index] = transcript.getField();
-            if (logger) logger.debug("··· challenges[" + index + "]: " + ctx.F.toString(ctx.challenges[index]));
+            ctx.challenges[stage - 1][j] = transcript.getField();
+            if (logger) logger.debug("··· challenges[" + (stage - 1) + "][" + j + "]: " + ctx.F.toString(ctx.challenges[stage - 1][j]));
         }
         transcript.put(ctx.proof["root" + stage]);
     }
     
-    let qChallengeId = ctx.starkInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
-    ctx.challenges[qChallengeId] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + qChallengeId + "]: " + ctx.F.toString(ctx.challenges[qChallengeId]));
+    let qStage = ctx.starkInfo.numChallenges.length;
+    ctx.challenges[qStage] = [];
+    ctx.challenges[qStage][0] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + qStage + "][0]: " + ctx.F.toString(ctx.challenges[qStage][0]));
     transcript.put(ctx.proof.rootQ);
-
-    let xiChallengeId = qChallengeId + 1;
-    ctx.challenges[xiChallengeId] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + xiChallengeId + "]: " + ctx.F.toString(ctx.challenges[xiChallengeId]));
+    
+    let evalsStage = ctx.starkInfo.numChallenges.length + 1;
+    ctx.challenges[evalsStage] = [];
+    ctx.challenges[evalsStage][0] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + evalsStage + "][0]: " + ctx.F.toString(ctx.challenges[evalsStage][0]));
     for (let i=0; i<ctx.evals.length; i++) {
         transcript.put(ctx.evals[i]);
     }
 
-    let vf1ChallengeId = xiChallengeId + 1;
-    let vf2ChallengeId = xiChallengeId + 2;
-    ctx.challenges[vf1ChallengeId] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + vf1ChallengeId + "]: " + ctx.F.toString(ctx.challenges[vf1ChallengeId]));
+    let friStage = ctx.starkInfo.numChallenges.length + 2;
+    ctx.challenges[friStage] = [];
+    ctx.challenges[friStage][0] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + friStage + "][0]: " + ctx.F.toString(ctx.challenges[friStage][0]));
 
-    ctx.challenges[vf2ChallengeId] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + vf2ChallengeId + "]: " + ctx.F.toString(ctx.challenges[vf2ChallengeId]));
+    ctx.challenges[friStage][1] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + friStage + "][1]: " + ctx.F.toString(ctx.challenges[friStage][1]));
 
 
     ctx.friChallenges = [];
@@ -283,9 +284,12 @@ function executeCode(F, ctx, code) {
             case "eval": return ctx.evals[r.id];
             case "number": return BigInt(r.value);
             case "public": return BigInt(ctx.publics[r.id]);
-            case "challenge": return ctx.challenges[r.id];
+            case "challenge": return ctx.challenges[r.stage - 1][r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
-            case "x": return ctx.challenges[ctx.starkInfo.numChallenges.reduce((acc, cur) => acc + cur, 0) + 1];
+            case "x": {
+                let evalsStage = ctx.starkInfo.numChallenges.length + 1;
+                return ctx.challenges[evalsStage][0];
+            }
             case "Zi": {
                 if(r.boundary === "everyRow") {
                     return ctx.Z;

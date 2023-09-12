@@ -23,20 +23,16 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
     const dim = stark ? 3 : 1;
 
     let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
-    let alphaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage1) || (s.stage == stage1 && s.stageId < alphaSymbol.stageId))).length;
-    const alpha = E.challenge("std_alpha", stage1, dim, alphaId);
+    const alpha = E.challenge("std_alpha", stage1, dim, alphaSymbol.stageId);
 
     let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
-    let betaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage1) || (s.stage == stage1 && s.stageId < betaSymbol.stageId))).length;
-    const beta = E.challenge("std_beta", stage1, dim, betaId);
+    const beta = E.challenge("std_beta", stage1, dim, betaSymbol.stageId);
 
     let gammaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_gamma");
-    let gammaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage2) || (s.stage == stage2 && s.stageId < gammaSymbol.stageId))).length;
-    const gamma = E.challenge("std_gamma", stage2, dim, gammaId);
+    const gamma = E.challenge("std_gamma", stage2, dim, gammaSymbol.stageId);
 
     let deltaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_delta");
-    let deltaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage2) || (s.stage == stage2 && s.stageId < deltaSymbol.stageId))).length;
-    const delta = E.challenge("std_delta", stage2, dim, deltaId);
+    const delta = E.challenge("std_delta", stage2, dim, deltaSymbol.stageId);
 
 
     for (let i=0; i<pil.plookupIdentities.length; i++) {

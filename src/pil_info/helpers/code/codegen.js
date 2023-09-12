@@ -31,18 +31,23 @@ function evalExp(ctx, symbols, expressions, constraints, exp, prime) {
     prime = prime || 0;
     if (["add", "sub", "mul", "muladd", "neg"].includes(exp.op)) {
         const values = exp.values.map(v => evalExp(ctx, symbols, expressions, constraints, v, prime));
-        if(exp.op == "neg") {
-            values.unshift({type: "number", value: "0", dim: 1 });
-            exp.op = "sub";
-        }
         let dim = Math.max(...values.map(v => v.dim));        
         const r = { type: "tmp", id: ctx.tmpUsed++, dim };
         if(ctx.verifierEvaluations && ctx.stark) r.dim = 3;
-        ctx.code.push({
-            op: exp.op,
-            dest: r,
-            src: values,
-        });
+
+        if(exp.op == "neg") {
+            ctx.code.push({
+                op: "sub",
+                dest: r,
+                src: [{type: "number", value: "0", dim: 1}, values[0]]
+            });
+        } else {
+            ctx.code.push({
+                op: exp.op,
+                dest: r,
+                src: values,
+            });
+        }
         return r;
     } else if (["cm", "const"].includes(exp.op) || (exp.op === "exp" && ["cm", "const"].includes(expressions[exp.id].op))) {
         const expr = exp.op === "exp" ? expressions[exp.id] : exp;
@@ -59,19 +64,21 @@ function evalExp(ctx, symbols, expressions, constraints, exp, prime) {
         const r = { type: exp.op, expId: exp.id, id: exp.id, prime: p, dim: exp.dim };
         fixExpression(r, ctx, symbols, expressions);
         return r;
-    } else if (["challenge", "eval"].includes(exp.op)) {
+    } else if (exp.op === "eval") {
         return { type: exp.op, id: exp.id, dim: exp.dim}
+    } else if (exp.op === "challenge") {
+        return { type: exp.op, id: exp.id, dim: exp.dim, stage: exp.stage }
     } else if (exp.op === "public") {
         return { type: exp.op, id: exp.id, dim: 1}
     } else if (exp.op == "number") {
-        return { type: "number", value: exp.value.toString(), dim: 1 }
+        return { type: exp.op, value: exp.value.toString(), dim: 1 }
     } else if (exp.op == "xDivXSubXi") {
-        return { type: "xDivXSubXi", id: exp.id, opening: exp.opening, dim: 3 }
+        return { type: exp.op, id: exp.id, opening: exp.opening, dim: 3 }
     } else if (exp.op == "Zi") {
-        return { type: "Zi", boundary: exp.boundary, frameId: exp.frameId, dim: 1 }
+        return { type: exp.op, boundary: exp.boundary, frameId: exp.frameId, dim: 1 }
     } else if (exp.op === "x") {
         const dim = ctx.stark ? 3 : 1;
-        return { type: "x", dim}
+        return { type: exp.op, dim}
     } else {
         throw new Error(`Invalid op: ${exp.op}`);
     }

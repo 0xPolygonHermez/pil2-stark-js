@@ -19,16 +19,13 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
     const dim = stark ? 3 : 1;
 
     let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
-    let alphaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < alphaSymbol.stageId))).length;
-    const alpha = E.challenge("std_alpha", stage, dim, alphaId);
+    const alpha = E.challenge("std_alpha", stage, dim, alphaSymbol.stageId);
 
     let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
-    let betaId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < betaSymbol.stageId))).length;
-    const beta = E.challenge("std_beta", stage, dim, betaId);
+    const beta = E.challenge("std_beta", stage, dim, betaSymbol.stageId);
 
     let epsilonSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_epsilon");
-    let epsilonId = symbols.filter(s => s.type === "challenge" && ((s.stage < stage) || (s.stage == stage && s.stageId < epsilonSymbol.stageId))).length;
-    const epsilon = E.challenge("std_epsilon", stage, dim, epsilonId);
+    const epsilon = E.challenge("std_epsilon", stage, dim, epsilonSymbol.stageId);
     
 
     for (let i=0; i<pil.permutationIdentities.length; i++) {

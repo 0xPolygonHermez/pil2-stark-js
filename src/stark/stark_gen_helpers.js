@@ -170,7 +170,8 @@ module.exports.computeQStark = async function computeQStark(ctx, logger) {
 module.exports.computeEvalsStark = async function computeEvalsStark(ctx, logger) {
     if (logger) logger.debug("Compute Evals");
 
-    let xiChallengeId = ctx.pilInfo.numChallenges.reduce((acc, cur) => acc + cur, 0) + 1;
+    let evalsStage = ctx.pilInfo.numChallenges.length + 1;
+    let xiChallenge = ctx.challenges[evalsStage][0];
 
     let LEv = [];
     for(let i = 0; i < ctx.pilInfo.openingPoints.length; i++) {
@@ -182,7 +183,7 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, logger)
             w = ctx.F.mul(w, ctx.F.w[ctx.nBits]);
         }
         if(opening < 0) w = ctx.F.div(1n, w);
-        const xi = ctx.F.div(ctx.F.mul(ctx.challenges[xiChallengeId], w), ctx.F.shift);
+        const xi = ctx.F.div(ctx.F.mul(xiChallenge, w), ctx.F.shift);
         for (let k=1; k<ctx.N; k++) {
             LEv[i][k] = ctx.F.mul(LEv[i][k-1], xi);
         }
@@ -247,8 +248,10 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
         }
         if(opening < 0) w = ctx.F.div(1n, w);
 
-        let xiChallengeId = ctx.pilInfo.numChallenges.reduce((acc, cur) => acc + cur, 0) + 1;
-        let xi = ctx.F.mul(ctx.challenges[xiChallengeId], w);
+        let evalsStage = ctx.pilInfo.numChallenges.length + 1;
+        let xiChallenge = ctx.challenges[evalsStage][0];
+
+        let xi = ctx.F.mul(xiChallenge, w);
 
         let den = new Array(ctx.extN);
         let x = ctx.F.shift;
@@ -345,32 +348,28 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
 }
 
 module.exports.setChallengesStark = function setChallengesStark(stage, ctx, challenge, logger) {
-    let nChallengesStage, prevChallenges;
-    if(stage > ctx.pilInfo.numChallenges.length) {
-        const numChallengesStages = ctx.pilInfo.numChallenges.reduce((acc, cur) => acc + cur, 0);
-        if(stage === ctx.pilInfo.numChallenges.length + 1) {
-            nChallengesStage = 1;
-            prevChallenges = numChallengesStages;
-        } else if(stage === ctx.pilInfo.numChallenges.length + 2) {
-            nChallengesStage = 1;
-            prevChallenges = numChallengesStages + 1;
-        } else if(stage === ctx.pilInfo.numChallenges.length + 3) {
-            nChallengesStage = 2;
-            prevChallenges = numChallengesStages + 2;
-        } else throw new Error("Invalid stage");
+    let nChallengesStage;
+
+    let qStage = ctx.pilInfo.numChallenges.length + 1;
+    let evalsStage = ctx.pilInfo.numChallenges.length + 2;
+    let friStage = ctx.pilInfo.numChallenges.length + 3;
+
+    if([qStage, evalsStage].includes(stage)) {
+        nChallengesStage = 1;
+    } else if(stage === friStage) {
+        nChallengesStage = 2;
     } else {
         nChallengesStage = ctx.pilInfo.numChallenges[stage - 1];
-        prevChallenges = ctx.pilInfo.numChallenges.slice(0, stage - 1).reduce((acc, cur) => acc + cur, 0);
     }
 
+    ctx.challenges[stage - 1] = [];
     for (let i=0; i<nChallengesStage; i++) {
-        const index = prevChallenges + i;
         if(i > 0) {
-            ctx.challenges[index] = ctx.transcript.getField();
+            ctx.challenges[stage - 1][i] = ctx.transcript.getField();
         } else {
-            ctx.challenges[index] = challenge;
+            ctx.challenges[stage - 1][0] = challenge;
         }
-        if (logger) logger.debug("··· challenges[" + index + "]: " + ctx.F.toString(ctx.challenges[index]));
+        if (logger) logger.debug("··· challenges[" + (stage - 1) + "][" + i + "]: " + ctx.F.toString(ctx.challenges[stage - 1][i]));
     }
     return;
 }
