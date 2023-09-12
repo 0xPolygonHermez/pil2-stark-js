@@ -170,7 +170,7 @@ function generateMultiArraySymbols(E, symbols, indexes, sym, dim, polId, shift) 
         const type = sym.type === 1 ? "fixed" : "witness";
         E.cm(polId + shift, 0, sym.stage, dim);
         symbols.push({
-            name: sym.name,
+            name: sym.name + shift,
             stage: sym.stage,
             type,
             polId: polId + shift,

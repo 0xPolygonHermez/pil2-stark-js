@@ -14,7 +14,8 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
         expressions = e.expressions;
         symbols = e.symbols;
     }
-   
+
+    res.pilPower = Math.log2(pilout.numRows);
     res.nCommitments = symbols.filter(s => s.type === "witness").length;
     res.nConstants = symbols.filter(s => s.type === "fixed").length;
     res.nPublics = symbols.filter(s => s.type === "public").length;

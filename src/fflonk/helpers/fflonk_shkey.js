@@ -10,9 +10,12 @@ module.exports = async function fflonkShkey(ptauFile, fflonkInfo, options) {
     let fiNames = {};
     let fiIndex = 0;
 
-    const polsXi = []; 
-    const polsWXi = []; 
-    
+    const polDefs = [];
+    for(let i = 0; i < fflonkInfo.openingPoints.length; ++i) {
+        let opening = fflonkInfo.openingPoints[i];
+        polDefs[opening] = [];
+    }
+
     const pilPower = fflonkInfo.pilPower;
     const domainSize = 2 ** pilPower;
 
@@ -47,20 +50,18 @@ module.exports = async function fflonkShkey(ptauFile, fflonkInfo, options) {
     
     if(!maxQDegree || (domainSizeQ - blindCoefs) <= maxQDegree * domainSize) {
         maxQDegree = 0;
-        polsXi.push({name: "Q", stage: nStages, degree: domainSizeQ, fi: fiIndex});
+        polDefs[0].push({name: "Q", stage: nStages, degree: domainSizeQ, fi: fiIndex});
         polsNames[nStages].push("Q")
     } else if((domainSizeQ - blindCoefs) / domainSize > maxQDegree) {
         const nQ = Math.ceil((domainSizeQ - blindCoefs) / (maxQDegree * domainSize));
         for(let i = 0; i < nQ; ++i) {
             let degree = i === nQ - 1 ? domainSizeQ - i*maxQDegree*domainSize : maxQDegree * domainSize + 2;
         
-            polsXi.push({name: `Q${i}`, stage: nStages, degree: degree, fi: fiIndex});
+            polDefs[0].push({name: `Q${i}`, stage: nStages, degree: degree, fi: fiIndex});
             polsNames[nStages].push(`Q${i}`)
         } 
     }
     
-    polDefs = [polsXi, polsWXi];
-
     const config = {
         power: pilPower, 
         polDefs,
@@ -102,32 +103,28 @@ module.exports = async function fflonkShkey(ptauFile, fflonkInfo, options) {
         if(fflonkInfo.evMap.find(ev => ev.type === type && ev.id === id)) {
             let degree = domainSize;
           
+            const openings = fflonkInfo.evMap.filter(ev => ev.type === type && ev.id === id).map(ev => ev.prime).sort((a,b) => a - b);
 
-            const openXi = fflonkInfo.evMap.find(ev => ev.type === type && ev.id === id && !ev.prime);
-            const openWXi = fflonkInfo.evMap.find(ev => ev.type === type && ev.id === id && ev.prime);
-            
             if(type === "cm") {
-                ++degree;
-                if(openXi) ++degree;
-                if(openWXi) ++degree;
+                degree += openings.length + 1;
             }
 
-            const openName = openXi && openWXi ? "0,1" : openXi ? "0" : "1";
+            const openName = openings.join(",");
+
             if(!fiMap[stage][openName]) fiMap[stage][openName] = 0;
             ++fiMap[stage][openName];
 
             polsNames[stage].push(name);
-            if(openXi) {
-                polsXi.push({name: name, stage: stage, degree: degree, open: openName})
-            }
-            if(openWXi) {
-                polsWXi.push({name: name, stage: stage, degree: degree, open: openName})
+            for(let i = 0; i < fflonkInfo.openingPoints.length; ++i) {
+                const opening = fflonkInfo.openingPoints[i];
+                polDefs[opening].push({name: name, stage: stage, degree: degree, open: openName})
             }
         } else {
             polsNames[stage].push(name);
         }
     }
 
+    // TODO: Needs to be done again
     function fixFIndex(minPols = 3) {
         for(let stage = 0; stage < nStages; ++stage) {
             const openings = Object.keys(fiMap[stage]);
@@ -136,43 +133,38 @@ module.exports = async function fflonkShkey(ptauFile, fflonkInfo, options) {
             if(!fiMap[stage]["0,1"] && fiMap[stage]["0"] >= minPols && fiMap[stage]["1"] >= minPols) continue;
     
             if(fiMap[stage]["0"] && fiMap[stage]["0"] < minPols) {
-                for(let i = 0; i < polsXi.length; ++i) {
-                    if(polsXi[i].stage === stage) {
-                        polsXi[i].open = "0,1";
-                        if(!polsWXi.find(wxi => JSON.stringify(wxi) === JSON.stringify(polsXi[i]))) {
-                            if(stage !== 0) polsXi[i].degree += 1;
-                            polsWXi.push(polsXi[i]);
+                for(let i = 0; i < polDefs[0].length; ++i) {
+                    if(polDefs[0][i].stage === stage) {
+                        polDefs[0][i].open = "0,1";
+                        if(!polDefs[1].find(wxi => JSON.stringify(wxi) === JSON.stringify(polDefs[0][i]))) {
+                            if(stage !== 0) polDefs[0][i].degree += 1;
+                            polDefs[1].push(polDefs[0][i]);
                         }
                     }
                 }
             } 
             
             if(fiMap[stage]["1"] && fiMap[stage]["1"] < minPols) {
-                for(let i = 0; i < polsWXi.length; ++i) {
-                    if(polsWXi[i].stage === stage) {
-                        polsWXi[i].open = "0,1";
-                        if(!polsXi.find(xi => JSON.stringify(xi) === JSON.stringify(polsWXi[i]))) {
-                            if(stage !== 0) polsWXi[i].degree += 1;
-                            polsXi.push(polsWXi[i]);
+                for(let i = 0; i < polDefs[1].length; ++i) {
+                    if(polDefs[1][i].stage === stage) {
+                        polDefs[1][i].open = "0,1";
+                        if(!polDefs[0].find(xi => JSON.stringify(xi) === JSON.stringify(polDefs[1][i]))) {
+                            if(stage !== 0) polDefs[1][i].degree += 1;
+                            polDefs[0].push(polDefs[1][i]);
                         }
                     }
                 }
             }
         }
 
-        for(let i = 0; i < polsXi.length; ++i) {
-            const fiName = `${polsXi[i].stage}_${polsXi[i].open}`;
-            if(!fiNames.hasOwnProperty(fiName)) fiNames[fiName] = fiIndex++;
-            polsXi[i].fi = fiNames[fiName];
+        for(let i = 0; i < fflonkInfo.openingPoints.length; ++i) {
+            const opening = fflonkInfo.openingPoints[i];
+            for(let j = 0; j < polDefs[opening].length; ++j) {
+                const fiName = `${polDefs[opening][j].stage}_${polDefs[opening][j].open}`;
+                if(!fiNames.hasOwnProperty(fiName)) fiNames[fiName] = fiIndex++;
+                polDefs[opening][j].fi = fiNames[fiName];
+                delete polDefs[opening][j].open;
+            }
         }
-
-        for(let i = 0; i < polsWXi.length; ++i) {
-            const fiName = `${polsWXi[i].stage}_${polsWXi[i].open}`;
-            if(!fiNames.hasOwnProperty(fiName)) fiNames[fiName] = fiIndex++;
-            polsWXi[i].fi = fiNames[fiName];
-        }
-
-        polsXi.forEach(p => delete p.open);
-        polsWXi.forEach(p => delete p.open);
     }
 }
