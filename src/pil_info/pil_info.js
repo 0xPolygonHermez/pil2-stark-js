@@ -9,7 +9,7 @@ const { addInfoExpressions } = require("./helpers/helpers.js");
 const { generatePil1Polynomials } = require("./helpers/pil1/generatePil1Polynomials");
 const { generateConstraintPolynomialCode, generateConstraintPolynomialVerifierCode, generateFRICode, generatePublicsCode, generateStagesCode } = require("./helpers/code/generateCode");
 const { getPiloutInfo } = require("./helpers/pil2/piloutInfo");
-const { generatePublicsPolynomials } = require("./helpers/pil1/generatePublicsPolynomials");
+const { generatePublicsPolynomials } = require("./helpers/polynomials/publicsPolynomials");
 
 module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct) {
 

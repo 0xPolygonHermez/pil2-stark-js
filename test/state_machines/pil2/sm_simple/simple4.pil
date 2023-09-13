@@ -1,6 +1,18 @@
+public in1;
+public in2;
+
 subproof Simple(2**6) {
 
     col witness a,b;
 
+    col fixed L2 = [0,1,0...];
+    col fixed LLAST = [0...,1];
+
+    @public {reference: in1, expression: b, row_index: 1}
+    @public {reference: in2, expression: a*a*a, row_index: 63}
+
     a*a*a*a*a === b*b*a; 
+
+    L2 * (b - in1) === 0;
+    LLAST * (a*a*a - in2) === 0;
 }
