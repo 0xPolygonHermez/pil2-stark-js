@@ -1,11 +1,10 @@
 
 const ExpressionOps = require("../../expressionops.js");
 
-module.exports.generatePublicsPolynomials = function generatePublicsPolynomials(res, expressions, publicsInfo) {
+module.exports.generatePublicsPolynomials = function generatePublicsPolynomials(expressions, publicsInfo) {
     const E = new ExpressionOps();
 
     const publics = [];
-    res.publicsCode = [];
     for (let i=0; i<publicsInfo.length; i++) {
         let expId;
         if (publicsInfo[i].polType == "cmP") {

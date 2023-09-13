@@ -33,14 +33,14 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
             exp.expDeg = expressions[exp.id].expDeg;
             exp.rowsOffsets = expressions[exp.id].rowsOffsets;
             exp.dim = expressions[exp.id].dim;
-            exp.stage = expressions[exp.id].stage;
+            if(!exp.stage) exp.stage = expressions[exp.id].stage;
         }
         if (!exp.expDeg) {
             addInfoExpressions(symbols, expressions, expressions[exp.id], stark);
             exp.expDeg = expressions[exp.id].expDeg;
             exp.rowsOffsets = expressions[exp.id].rowsOffsets || [0];
             exp.dim = expressions[exp.id].dim;
-            exp.stage = expressions[exp.id].stage;
+            if(!exp.stage) exp.stage = expressions[exp.id].stage;
         }
 
         if(["cm", "const"].includes(expressions[exp.id].op)) {

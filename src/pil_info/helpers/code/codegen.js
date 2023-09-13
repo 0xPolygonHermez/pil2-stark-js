@@ -1,12 +1,12 @@
-function pilCodeGen(ctx, symbols, expressions, constraints, expId, prime) {
+function pilCodeGen(ctx, symbols, expressions, expId, prime) {
     if (ctx.calculated[expId] && ctx.calculated[expId][prime]) return;
 
-    calculateDeps(ctx, symbols, expressions, constraints, expressions[expId], prime, expId);
+    calculateDeps(ctx, symbols, expressions, expressions[expId], prime, expId);
 
     let e = expressions[expId];
     if (ctx.addMul) e = findAddMul(e);
     
-    const retRef = evalExp(ctx, symbols, expressions, constraints, e, prime);
+    const retRef = evalExp(ctx, symbols, expressions, e, prime);
 
     if (!ctx.expMap[prime]) ctx.expMap[prime] = {};
 
@@ -27,10 +27,10 @@ function pilCodeGen(ctx, symbols, expressions, constraints, expId, prime) {
     ctx.calculated[expId][prime] = true;
 }
 
-function evalExp(ctx, symbols, expressions, constraints, exp, prime) {
+function evalExp(ctx, symbols, expressions, exp, prime) {
     prime = prime || 0;
     if (["add", "sub", "mul", "muladd"].includes(exp.op)) {
-        const values = exp.values.map(v => evalExp(ctx, symbols, expressions, constraints, v, prime));
+        const values = exp.values.map(v => evalExp(ctx, symbols, expressions, v, prime));
         let dim = Math.max(...values.map(v => v.dim));        
         const r = { type: "tmp", id: ctx.tmpUsed++, dim };
         if(ctx.verifierEvaluations && ctx.stark) r.dim = 3;
@@ -78,12 +78,12 @@ function evalExp(ctx, symbols, expressions, constraints, exp, prime) {
 }
 
 
-function calculateDeps(ctx, symbols, expressions, constraints, exp, prime, expId) {
+function calculateDeps(ctx, symbols, expressions, exp, prime, expId) {
     if (exp.op == "exp") {
         let p = exp.rowOffset || prime;
-        pilCodeGen(ctx, symbols, expressions, constraints, exp.id, p);
+        pilCodeGen(ctx, symbols, expressions, exp.id, p);
     } else if (["add", "sub", "mul", "muladd"].includes(exp.op)) {
-        exp.values.map(v => calculateDeps(ctx, symbols, expressions, constraints, v, prime, expId));
+        exp.values.map(v => calculateDeps(ctx, symbols, expressions, v, prime, expId));
     }
 }
 

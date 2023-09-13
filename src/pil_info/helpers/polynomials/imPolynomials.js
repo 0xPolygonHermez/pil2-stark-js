@@ -1,4 +1,60 @@
 
+const ExpressionOps = require("../../expressionops");
+
+const { getExpDim } = require("../helpers");
+
+module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(res, expressions, symbols, imExps, qDeg, stark) {
+    const E = new ExpressionOps();
+
+    console.log("Number of intermediate expressions: " + imExps.length);
+    console.log("Q degree: " + qDeg);
+    
+    res.qDeg = qDeg;
+
+    const dim = stark ? 3 : 1;
+    const stage = res.numChallenges.length + 1;
+
+    const vc = E.challenge("vc", stage, dim, 0);
+    vc.expDeg = 0;
+    
+    for (let i=0; i<imExps.length; i++) {
+        const expId = imExps[i];
+        const stage = expressions[expId].stage;
+        const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId);
+        const dim = getExpDim(expressions, expId, stark);
+        if(!symbol) {
+            symbols.push({ type: "tmpPol", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage, dim, imPol: true });
+        } else {
+            symbol.imPol = true;
+            symbol.expId = expId;
+            symbol.polId = res.nCommitments++;
+        };
+        let e = {
+            op: "sub",
+            values: [
+                Object.assign({}, expressions[imExps[i]]),
+                E.cm(res.nCommitments-1, 0, stage, dim),
+            ]
+        };
+        if(stark) e = E.mul(E.zi("everyRow"), e);
+        expressions[res.cExpId] = E.add(E.mul(vc, expressions[res.cExpId]), e);
+    }
+
+    let cExpDim = getExpDim(expressions, res.cExpId, stark);
+    expressions[res.cExpId].dim = cExpDim;
+
+    res.qDim = cExpDim;
+
+    if(stark) {
+        res.qs = [];
+        for (let i=0; i<res.qDeg; i++) {
+            res.qs[i] = res.nCommitments++;
+            symbols.push({ type: "witness", name: `Q${i}`, polId: res.qs[i], stage: "Q", dim: res.qDim });
+            E.cm(res.qs[i], 0, stage, res.qDim);
+        }
+    }
+}
+
 module.exports.calculateIntermediatePolynomials = function calculateIntermediatePolynomials(expressions, cExpId, maxQDeg) {
     let d = 2;
 

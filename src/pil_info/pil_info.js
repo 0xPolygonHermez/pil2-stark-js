@@ -1,68 +1,26 @@
+const {calculateIntermediatePolynomials} = require("./helpers/polynomials/imPolynomials");
 
-const generateConstraintPolynomial = require("./helpers/polynomials/constraintPolynomial");
-
-const generateFRIPolynomial = require("./helpers/polynomials/friPolinomial");
-
-const map = require("./map.js");
-
-const { addInfoExpressions } = require("./helpers/helpers.js");
-const { generatePil1Polynomials } = require("./helpers/pil1/generatePil1Polynomials");
-const { generateConstraintPolynomialCode, generateConstraintPolynomialVerifierCode, generateFRICode, generatePublicsCode, generateStagesCode } = require("./helpers/code/generateCode");
-const { getPiloutInfo } = require("./helpers/pil2/piloutInfo");
-const { generatePublicsPolynomials } = require("./helpers/polynomials/publicsPolynomials");
+const { preparePil } = require("./helpers/preparePil");
+const { generatePilCode } = require("./helpers/generatePilCode");
 
 module.exports = function pilInfo(F, pil, stark = true, pil1 = true, starkStruct) {
 
-    const res = {
-        cmPolsMap: [],
-        code: {},
-        starkStruct: starkStruct,
-    };
+    const infoPil = preparePil(F, pil, stark, pil1, starkStruct);
 
-    let expressions, symbols, constraints, publicsInfo;
+    const expressions = infoPil.expressions;
+    const symbols = infoPil.symbols;
+    const res = infoPil.res;
 
-    if(pil1) {
-        ({expressions, symbols, hints, constraints, publicsInfo} = generatePil1Polynomials(F, res, pil, stark));
+    let maxDeg;
+    if(stark) {
+        maxDeg = (1 << (res.starkStruct.nBitsExt- res.starkStruct.nBits)) + 1;
     } else {
-        ({expressions, symbols, hints, constraints, publicsInfo} = getPiloutInfo(res, pil, stark));
-    }
-
-    let publics = generatePublicsPolynomials(res, expressions, publicsInfo);
-
-    let dimCh = stark ? 3 : 1;
-    let qStage = res.numChallenges.length + 1;
-    symbols.push({type: "challenge", name: "std_vc", stage: qStage, dim: dimCh, stageId: 0})
-
-    if(stark) {
-        symbols.push({type: "challenge", name: "std_xi", stage: qStage + 1, dim: dimCh, stageId: 0})
-        symbols.push({type: "challenge", name: "std_vf1", stage: qStage + 2, dim: dimCh, stageId: 0})
-        symbols.push({type: "challenge", name: "std_vf2", stage: qStage + 2, dim: dimCh, stageId: 1})
-    }
-
-    res.hints = hints;
-
-    for(let i = 0; i < constraints.length; ++i) {
-        addInfoExpressions(symbols, expressions, expressions[constraints[i].e], stark);
+        maxDeg = Math.pow(2,3) + 1;
     }
     
-    res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
-    
-    const cExpId = generateConstraintPolynomial(res, symbols, expressions, constraints, stark);
+    const {newExpressions, qDeg, imExps} = calculateIntermediatePolynomials(expressions, res.cExpId, maxDeg);
 
-    map(res, symbols, stark);       
-
-    generatePublicsCode(res, symbols, expressions, constraints, publics, stark);
-
-    generateStagesCode(res, symbols, expressions, constraints, stark);
-
-    generateConstraintPolynomialCode(res, cExpId, symbols, expressions, constraints, stark);
-
-    generateConstraintPolynomialVerifierCode(res, cExpId, symbols, expressions, constraints, stark);
-
-    if(stark) {
-        const friExpId = generateFRIPolynomial(res, symbols, expressions);
-        generateFRICode(res, friExpId, symbols, expressions, constraints);
-    } 
+    generatePilCode(res, symbols, newExpressions, qDeg, imExps, stark);
     
     return res;
 
