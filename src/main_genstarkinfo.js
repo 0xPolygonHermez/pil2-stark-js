@@ -35,7 +35,7 @@ async function run() {
 
     const starkStruct = JSON.parse(await fs.promises.readFile(starkStructFile, "utf8"));
 
-    const starkInfo = pilInfo(F, pil, true, !pil2, starkStruct);
+    const starkInfo = pilInfo(F, pil, true, !pil2, false, starkStruct);
 
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
 

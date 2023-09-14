@@ -18,24 +18,49 @@ module.exports.calculatePublics = async function calculatePublics(ctx) {
     }
 }
 
-module.exports.callCalculateExps = async function callCalculateExps(step, dom, ctx, parallelExec, useThreads) {
+module.exports.callCalculateExps = async function callCalculateExps(step, code, dom, ctx, parallelExec, useThreads, debug) {
     if (parallelExec) {
-        await module.exports.calculateExpsParallel(ctx, step, useThreads);
+        await module.exports.calculateExpsParallel(ctx, step, code, useThreads, debug);
     } else {
-        module.exports.calculateExps(ctx, ctx.pilInfo.code[step], dom);
+        module.exports.calculateExps(ctx, code, dom, debug);
     }
 }
 
-module.exports.calculateExps = function calculateExps(ctx, code, dom) {
+module.exports.calculateExps = function calculateExps(ctx, code, dom, debug) {
     ctx.tmp = new Array(code.tmpUsed);
 
-    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.code, dom));
+    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.code, dom, debug));
 
     const N = dom=="n" ? ctx.N : ctx.extN;
+    
+    if(!debug) {
+        for (let i=0; i<N; i++) {
+            cEveryRow(ctx, i);
+        }
+    } else {
+        let first, last;
+        if(code.boundary === "everyRow") {
+            first = 0;
+            last = N;
+        } else if(code.boundary === "firstRow") {
+            first = 0;
+            last = 1;
+        } else if(code.boundary === "lastRow") {
+            first = N-1;
+            last = N;
+        } else if(code.boundary === "everyFrame") {
+            first = code.offsetMin;
+            last = N - code.offsetMax;
+        } else throw new Error("Invalid boundary: " + code.boundary);
 
-    for (let i=0; i<N; i++) {
-        cEveryRow(ctx, i);
-    }
+        for(let i = first; i < last; i++) {
+            const v = cEveryRow(ctx, i);
+            if (!ctx.F.isZero(v)) {
+                ctx.errors.push(`${code.filename}:${code.line}: identity does not match w=${i} val=${ctx.F.toString(v)} `);
+                return;
+            }
+        }
+    }  
 }
 
 module.exports.calculateExpAtPoint = function calculateExpAtPoint(ctx, code, i) {
@@ -295,12 +320,11 @@ function getPol(ctx, idPol, dom) {
 }
 
 
-module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx, execPart, useThreads) {
+module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx, execPart, code, useThreads, debug) {
 
     const pool = workerpool.pool(__dirname + '/prover_worker.js');
 
     let dom;
-    let code = ctx.pilInfo.code[execPart];
     let execInfo = {
         inputSections: [],
         outputSections: []
@@ -381,9 +405,29 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     for (let i = 0; i < execInfo.inputSections.length; i++) setWidth(execInfo.inputSections[i]);
     for (let i = 0; i < execInfo.outputSections.length; i++) setWidth(execInfo.outputSections[i]);
 
-    const cEveryRow = module.exports.compileCode(ctx, code.code, dom, false);
+    const cEveryRow = module.exports.compileCode(ctx, code.code, dom, debug);
 
     const N = dom === "n" ? ctx.N : ctx.extN;
+
+    let first, last;
+    if(debug) {
+        if(code.boundary === "everyRow") {
+            first = 0;
+            last = N;
+        } else if(code.boundary === "firstRow") {
+            first = 0;
+            last = 1;
+        } else if(code.boundary === "lastRow") {
+            first = N-1;
+            last = N;
+        } else if(code.boundary === "everyFrame") {
+            first = code.offsetMin;
+            last = N - code.offsetMax;
+        } else throw new Error("Invalid boundary: " + code.boundary);
+    } else {
+        first = 0;
+        last = N;
+    }
 
     let nPerThread = Math.floor((N - 1) / pool.maxWorkers) + 1;
     if (nPerThread > maxNperThread) nPerThread = maxNperThread;
@@ -399,6 +443,10 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
                 publics: ctx.publics,
                 challenges: ctx.challenges
             };
+            if(debug) {
+                ctxIn.filename = code.filename;
+                ctxIn.line = code.line;
+            }
             for (let s = 0; s < execInfo.inputSections.length; s++) {
                 const si = execInfo.inputSections[s];
                 ctxIn[si.name] = new BigUint64Array(curN * si.width);
@@ -414,9 +462,9 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             }
     
             if (useThreads) {
-                promises.push(pool.exec("proofgen_execute", [ctxIn, true, cEveryRow, curN, execInfo, execPart, i, N]));
+                promises.push(pool.exec("proofgen_execute", [ctxIn, true, cEveryRow, curN, execInfo, execPart, first, last, debug]));
             } else {
-                res.push(await proofgen_execute(ctxIn, true, cEveryRow, curN, execInfo, execPart, i, N));
+                res.push(await proofgen_execute(ctxIn, true, cEveryRow, curN, execInfo, execPart, first, last, debug));
             }
         }
         if (useThreads) {
@@ -438,6 +486,10 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
                 publics: ctx.publics,
                 challenges: ctx.challenges
             };
+            if(debug) {
+                ctxIn.filename = code.filename;
+                ctxIn.line = code.line;
+            }
             for (let s = 0; s < execInfo.inputSections.length; s++) {
                 const si = execInfo.inputSections[s];
                 ctxIn[si.name] = new BigBuffer(curN * si.width * ctx.F.n8);
@@ -455,9 +507,9 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             }
     
             if (useThreads) {
-                promises.push(pool.exec("proofgen_execute", [ctxIn, false, cEveryRow, curN, execInfo, execPart, i, N]));
+                promises.push(pool.exec("proofgen_execute", [ctxIn, false, cEveryRow, curN, execInfo, execPart, first, last, debug]));
             } else {
-                res.push(await proofgen_execute(ctxIn, false, cEveryRow, curN, execInfo, execPart, i, N));
+                res.push(await proofgen_execute(ctxIn, false, cEveryRow, curN, execInfo, execPart, first, last, debug));
             }
         }
         if (useThreads) {

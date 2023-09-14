@@ -21,7 +21,9 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
 
     ctx.prover = "stark";
 
-    if (logger) logger.info("PIL-STARK PROVER STARTED");
+    if (logger && !options.debug) logger.info("PIL-STARK PROVER STARTED");
+
+    if (logger && options.debug) logger.info("PIL-STARK PROVER CHECK CONSTRAINTS");
 
     ctx.F = new F3g();
 
@@ -30,17 +32,19 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.constTree = constTree;
 
     ctx.pilInfo = pilInfo;
-    ctx.nBits = ctx.pilInfo.starkStruct.nBits;
-    ctx.nBitsExt = ctx.pilInfo.starkStruct.nBitsExt;
-
-    ctx.extendBits = ctx.nBitsExt - ctx.nBits;
-
-    ctx.N = 1 << ctx.pilInfo.starkStruct.nBits;
-    ctx.extN = 1 << ctx.pilInfo.starkStruct.nBitsExt;
+    ctx.nBits = ctx.pilInfo.pilPower;
+    
+    ctx.N = 1 << ctx.pilInfo.pilPower;
     ctx.tmp = [];
     ctx.challenges = [];
 
-    if (logger) {
+    if(!options.debug) {
+        ctx.nBitsExt = ctx.pilInfo.starkStruct.nBitsExt;
+        ctx.extN = 1 << ctx.pilInfo.starkStruct.nBitsExt;
+        ctx.extendBits = ctx.nBitsExt - ctx.nBits;
+    }
+
+    if (logger && !options.debug) {
         logger.debug("-----------------------------");
         logger.debug("  PIL-STARK PROVE SETTINGS");
         logger.debug(`  Blow up factor: ${ctx.extendBits}`);
@@ -60,23 +64,31 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         logger.debug("-----------------------------");
     }
 
-    if (ctx.pilInfo.starkStruct.verificationHashType == "GL") {
+    let verificationHashType;
+    let splitLinearHash;
+    if(ctx.pilInfo.starkStruct) {
+        verificationHashType = ctx.pilInfo.starkStruct.verificationHashType;
+        splitLinearHash = ctx.pilInfo.starkStruct.splitLinearHash;
+    } else {
+        verificationHashType = options.verificationHashType || "GL";
+        splitLinearHash = options.splitLinearHash || false;
+    }
+
+    if (verificationHashType == "GL") {
         const poseidon = await buildPoseidonGL();
-        ctx.MH = await buildMerkleHashGL(ctx.pilInfo.starkStruct.splitLinearHash);
+        ctx.MH = await buildMerkleHashGL(splitLinearHash);
         ctx.transcript = new Transcript(poseidon);
-    } else if (ctx.pilInfo.starkStruct.verificationHashType == "BN128") {
+    } else if (verificationHashType == "BN128") {
         const poseidonBN128 = await buildPoseidonBN128();
         let arity = options.arity || 16;
         let custom = options.custom || false;
         let transcriptArity = custom ? arity : 16;
-        console.log(`Arity: ${arity},  transcriptArity: ${transcriptArity}, Custom: ${custom}`);
+        logger.debug(`Arity: ${arity},  transcriptArity: ${transcriptArity}, Custom: ${custom}`);
         ctx.MH = await buildMerkleHashBN128(arity, custom);
         ctx.transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
-        throw new Error("Invalid Hash Type: "+ ctx.pilInfo.starkStruct.verificationHashType);
+        throw new Error("Invalid Hash Type: "+ verificationHashType);
     }
-
-    ctx.fri = new FRI( ctx.pilInfo.starkStruct, ctx.MH );
 
     ctx.const_n = new Proxy(new BigBuffer(ctx.pilInfo.nConstants*ctx.N), BigBufferHandlerBigInt);
     for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
@@ -86,20 +98,6 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.tmpExp_n = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp*ctx.N), BigBufferHandlerBigInt);
     ctx.x_n = new Proxy(new BigBuffer(ctx.N), BigBufferHandlerBigInt);
 
-    
-    ctx.const_ext = new Proxy(constTree.elements, BigBufferHandlerBigInt);
-    for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
-        const stage = i + 1;
-        ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.extN), BigBufferHandlerBigInt);
-    }
-    ctx.cmQ_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ*ctx.extN), BigBufferHandlerBigInt);
-    ctx.q_ext = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.extN), BigBufferHandlerBigInt);
-    ctx.f_ext = new Proxy(new BigBuffer(3*ctx.extN), BigBufferHandlerBigInt);
-    ctx.x_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt);
-    ctx.Zi_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt);
-
-    ctx.xDivXSubXi_ext = new Proxy(new BigBuffer(3*ctx.extN*ctx.pilInfo.openingPoints.length), BigBufferHandlerBigInt);
-
     // Build x_n
     let xx = ctx.F.one;
     for (let i=0; i<ctx.N; i++) {
@@ -107,35 +105,52 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         xx = ctx.F.mul(xx, ctx.F.w[ctx.nBits])
     }
 
-    // Build x_ext
-    xx = ctx.F.shift;
-    for (let i=0; i<ctx.extN; i++) {
-        ctx.x_ext[i] = xx;
-        xx = ctx.F.mul(xx, ctx.F.w[ctx.nBitsExt]);
-    }
-
-    // Build ZHInv
-    buildZhInv(ctx.Zi_ext, ctx.F, ctx.nBits, ctx.nBitsExt, true);    
-    if(ctx.pilInfo.boundaries.includes("firstRow")) {
-        ctx.Zi_fr_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
-        buildOneRowZerofierInv(ctx.Zi_fr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, 0, true);
-    } 
-
-    if(ctx.pilInfo.boundaries.includes("lastRow")) {
-        ctx.Zi_lr_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
-        buildOneRowZerofierInv(ctx.Zi_lr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1, true);
-    }
-
-    if(ctx.pilInfo.boundaries.includes("everyFrame")) {
-        for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) {
-            ctx[`Zi_frame${i}_ext`] = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
-            buildFrameZerofierInv(ctx[`Zi_frame${i}_ext`], ctx.F, ctx.Zi_ext, ctx.nBits, ctx.nBitsExt, ctx.pilInfo.constraintFrames[i], true);
-        }   
-    }
-
     // Read const coefs
     constPols.writeToBigBuffer(ctx.const_n);
 
+    if(!options.debug) {
+        ctx.const_ext = new Proxy(constTree.elements, BigBufferHandlerBigInt);
+        for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+            const stage = i + 1;
+            ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.extN), BigBufferHandlerBigInt);
+        }
+        ctx.cmQ_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ*ctx.extN), BigBufferHandlerBigInt);
+        ctx.q_ext = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.extN), BigBufferHandlerBigInt);
+        ctx.f_ext = new Proxy(new BigBuffer(3*ctx.extN), BigBufferHandlerBigInt);
+        ctx.x_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt);
+        ctx.Zi_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt);
+
+        ctx.xDivXSubXi_ext = new Proxy(new BigBuffer(3*ctx.extN*ctx.pilInfo.openingPoints.length), BigBufferHandlerBigInt);
+        
+        // Build x_ext
+        let x_ext = ctx.F.shift;
+        for (let i=0; i<ctx.extN; i++) {
+            ctx.x_ext[i] = x_ext;
+            x_ext = ctx.F.mul(x_ext, ctx.F.w[ctx.nBitsExt]);
+        }
+
+        // Build ZHInv
+        buildZhInv(ctx.Zi_ext, ctx.F, ctx.nBits, ctx.nBitsExt, true);    
+        if(ctx.pilInfo.boundaries.includes("firstRow")) {
+            ctx.Zi_fr_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
+            buildOneRowZerofierInv(ctx.Zi_fr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, 0, true);
+        } 
+
+        if(ctx.pilInfo.boundaries.includes("lastRow")) {
+            ctx.Zi_lr_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
+            buildOneRowZerofierInv(ctx.Zi_lr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1, true);
+        }
+
+        if(ctx.pilInfo.boundaries.includes("everyFrame")) {
+            for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) {
+                ctx[`Zi_frame${i}_ext`] = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
+                buildFrameZerofierInv(ctx[`Zi_frame${i}_ext`], ctx.F, ctx.Zi_ext, ctx.nBits, ctx.nBitsExt, ctx.pilInfo.constraintFrames[i], true);
+            }   
+        }
+
+        ctx.fri = new FRI( ctx.pilInfo.starkStruct, ctx.MH );
+    }
+    
     return ctx;
 }
 
@@ -272,7 +287,7 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
         }
     }
 
-    await callCalculateExps("fri", "ext", ctx, options.parallelExec, options.useThreads);
+    await callCalculateExps("fri", ctx.pilInfo.code[`fri`], "ext", ctx, options.parallelExec, options.useThreads, false);
 
     ctx.friPol[0] = new Array(ctx.extN);
     for (let i=0; i<ctx.extN; i++) {
@@ -347,7 +362,7 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
     ctx.trees[stage] = await ctx.MH.merkelize(buffTo, nPols, ctx.extN);
 }
 
-module.exports.setChallengesStark = function setChallengesStark(stage, ctx, challenge, logger) {
+module.exports.setChallengesStark = function setChallengesStark(stage, ctx, challenge, options) {
     let nChallengesStage;
 
     let qStage = ctx.pilInfo.numChallenges.length + 1;
@@ -369,7 +384,7 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, chal
         } else {
             ctx.challenges[stage - 1][0] = challenge;
         }
-        if (logger) logger.debug("··· challenges[" + (stage - 1) + "][" + i + "]: " + ctx.F.toString(ctx.challenges[stage - 1][i]));
+        if (options.logger && !options.debug) options.logger.debug("··· challenges[" + (stage - 1) + "][" + i + "]: " + ctx.F.toString(ctx.challenges[stage - 1][i]));
     }
     return;
 }

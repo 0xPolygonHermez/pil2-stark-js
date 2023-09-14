@@ -3,18 +3,28 @@ const workerpool = require('workerpool');
 const F3g = require("../helpers/f3g.js");
 
 
-async function proofgen_execute(ctx, stark, cEveryRowSrc, n, execInfo, st_name, st_i, st_n) {
+async function proofgen_execute(ctx, stark, cEveryRowSrc, n, execInfo, st_name, first, last, debug) {
 
     cEveryRow = new Function("ctx", "i", cEveryRowSrc);
 
-    console.log(`start exec ${st_name}... ${st_i}/${st_n} `);
+    console.log(`start exec ${st_name}...`);
     if(stark) {
         ctx.F = new F3g();
     }
     ctx.tmp = [];
 
-    for (let i=0; i<n; i++) {
-        cEveryRow(ctx, i);
+    if(debug) {
+        for (let i=first; i<Math.min(n, last); i++) {
+            const v = cEveryRow(ctx, i);
+            if (!ctx.F.isZero(v)) {
+                ctx.errors.push(`${ctx.filename}:${ctx.line}: identity does not match w=${i} val=${ctx.F.toString(v)} `);
+                return;
+            }        
+        }
+    } else {
+        for (let i=0; i<n; i++) {
+            cEveryRow(ctx, i);
+        }
     }
 
     const ctxOut = {}
@@ -23,7 +33,7 @@ async function proofgen_execute(ctx, stark, cEveryRowSrc, n, execInfo, st_name, 
         ctxOut[si.name] = ctx[si.name];
     }
 
-    console.log(`end exec ${st_name}... ${st_i}/${st_n} `);
+    console.log(`end exec ${st_name}...`);
     return ctxOut;
 }
 

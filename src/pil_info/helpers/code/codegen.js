@@ -1,7 +1,7 @@
-function pilCodeGen(ctx, symbols, expressions, expId, prime) {
+function pilCodeGen(ctx, symbols, expressions, expId, prime, debug) {
     if (ctx.calculated[expId] && ctx.calculated[expId][prime]) return;
 
-    calculateDeps(ctx, symbols, expressions, expressions[expId], prime, expId);
+    calculateDeps(ctx, symbols, expressions, expressions[expId], prime, expId, debug);
 
     let e = expressions[expId];
     if (ctx.addMul) e = findAddMul(e);
@@ -17,7 +17,7 @@ function pilCodeGen(ctx, symbols, expressions, expId, prime) {
         fixExpression(r, ctx, symbols, expressions);
         ctx.code[ctx.code.length - 1].dest = r;
     } else {
-        if(ctx.publics || expressions[expId].op === "exp") {
+        if(ctx.publics || debug || expressions[expId].op === "exp") {
             fixExpression(r, ctx, symbols, expressions);
             ctx.code.push({ op: "copy", dest: r, src: [ retRef ] })
         }        
@@ -78,12 +78,12 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
 }
 
 
-function calculateDeps(ctx, symbols, expressions, exp, prime, expId) {
+function calculateDeps(ctx, symbols, expressions, exp, prime, expId, debug) {
     if (exp.op == "exp") {
         let p = exp.rowOffset || prime;
-        pilCodeGen(ctx, symbols, expressions, exp.id, p);
+        pilCodeGen(ctx, symbols, expressions, exp.id, p, debug);
     } else if (["add", "sub", "mul", "muladd"].includes(exp.op)) {
-        exp.values.map(v => calculateDeps(ctx, symbols, expressions, v, prime, expId));
+        exp.values.map(v => calculateDeps(ctx, symbols, expressions, v, prime, expId, debug));
     }
 }
 

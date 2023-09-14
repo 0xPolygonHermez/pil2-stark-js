@@ -15,7 +15,9 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
 
     ctx.prover = "fflonk";
 
-    if (logger) logger.info("PIL-FFLONK PROVER STARTED");
+    if (logger && !options.debug) logger.info("PIL-FFLONK PROVER STARTED");
+
+    if (logger && options.debug) logger.info("PIL-FFLONK PROVER CHECK CONSTRAINTS");
 
     if (zkey.protocolId !== PILFFLONK_PROTOCOL_ID) {
         throw new Error("zkey file is not fflonk");
@@ -47,7 +49,7 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
     ctx.domainSizeQ = ctx.pilInfo.qDeg * ctx.N + blindCoefs;
     ctx.nQ = ctx.zkey.maxQDegree ? Math.ceil((ctx.domainSizeQ - blindCoefs) / (ctx.zkey.maxQDegree * ctx.N)) : 1;
 
-    if (logger) {
+    if (logger && !options.debug) {
         logger.debug("-----------------------------");
         logger.debug("  PIL-FFLONK PROVE SETTINGS");
         logger.debug(`  Curve:         ${ctx.curve.name}`);
@@ -84,26 +86,30 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
         ctx[`cm${stage}_coefs`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.NCoefs * ctx.F.n8), BigBufferHandler);
     }  
 
-    // Reserve big buffers for the polynomial evaluations in the extended
-    ctx.const_ext = new Proxy(new BigBuffer(ctx.pilInfo.nConstants * ctx.extN * ctx.F.n8), BigBufferHandler);
-    ctx.cm1_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.extN * ctx.F.n8), BigBufferHandler);
-    for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
-        const stage = i + 2;
-        ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.extN * ctx.F.n8), BigBufferHandler);
-    }
-    ctx.q_ext = new Proxy(new BigBuffer(ctx.extN * ctx.F.n8), BigBufferHandler);
-    ctx.x_ext = new Proxy(new BigBuffer(ctx.extN * ctx.F.n8), BigBufferHandler); // Omegas a l'extès
-
-    
-    // Read const coefs and extended evals
     ctx.const_n.set(ctx.zkey.constPolsEvals);
     ctx.const_coefs.set(ctx.zkey.constPolsCoefs);
-    ctx.const_ext.set(ctx.zkey.constPolsEvalsExt);
 
-    // Read x_n and x_ext
     ctx.x_n.set(ctx.zkey.x_n);
-    ctx.x_ext.set(ctx.zkey.x_ext);
 
+    if(!options.debug) {
+        // Reserve big buffers for the polynomial evaluations in the extended
+        ctx.const_ext = new Proxy(new BigBuffer(ctx.pilInfo.nConstants * ctx.extN * ctx.F.n8), BigBufferHandler);
+        ctx.cm1_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.extN * ctx.F.n8), BigBufferHandler);
+        for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
+            const stage = i + 2;
+            ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.extN * ctx.F.n8), BigBufferHandler);
+        }
+        ctx.q_ext = new Proxy(new BigBuffer(ctx.extN * ctx.F.n8), BigBufferHandler);
+        ctx.x_ext = new Proxy(new BigBuffer(ctx.extN * ctx.F.n8), BigBufferHandler); // Omegas a l'extès
+
+        
+        // Read const_ext
+        ctx.const_ext.set(ctx.zkey.constPolsEvalsExt);
+
+        // Read  x_ext
+        ctx.x_ext.set(ctx.zkey.x_ext);
+    }
+    
     ctx.transcript = new Keccak256Transcript(ctx.curve);
 
     // Add constant composed polynomials
@@ -222,7 +228,7 @@ module.exports.genProofFflonk = async function genProof(ctx, logger) {
     return {proof, publics};
 }
 
-module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, challenge, logger) {
+module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, challenge, options) {
     let qStage = ctx.pilInfo.numChallenges.length + 1;
 
     let nChallengesStage = qStage === stage ? 1 : ctx.pilInfo.numChallenges[stage - 1];
@@ -236,7 +242,7 @@ module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, ch
         } else {
             ctx.challenges[stage - 1][i] = challenge;
         }
-        if (logger) logger.debug("··· challenges[" + (stage - 1) + "][" + i + "]: " + ctx.F.toString(ctx.challenges[stage - 1][i]));
+        if (options.logger && !options.debug) options.logger.debug("··· challenges[" + (stage - 1) + "][" + i + "]: " + ctx.F.toString(ctx.challenges[stage - 1][i]));
     }
     return;
 }

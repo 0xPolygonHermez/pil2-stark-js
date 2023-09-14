@@ -35,6 +35,6 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
     return {
         constTree: constTree,
         constRoot: MH.root(constTree),
-        starkInfo: pilInfo(F, pil, true, pil1, starkStruct)
+        starkInfo: pilInfo(F, pil, true, pil1, false, starkStruct)
     }
 }

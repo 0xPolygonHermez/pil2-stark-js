@@ -1,8 +1,6 @@
-const chai = require("chai");
-const assert = chai.assert;
 const {F1Field} = require("ffjavascript");
 const path = require("path");
-const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
+const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
 
 const smSimple = require("../../test/state_machines/sm_simple/sm_simple.js");
 
@@ -29,17 +27,7 @@ async function runTest(pilFile) {
 
     await smSimple.execute(N, cmPols.Simple, F);
 
-    const res = await verifyPil(F, pil, cmPols , constPols);
-
-    if (res.length != 0) {
-        console.log("Pil does not pass");
-        for (let i=0; i<res.length; i++) {
-            console.log(res[i]);
-        }
-        assert(0);
-    }
-
-    await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 0});
+    await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 0, debug: true});
 }
 
 

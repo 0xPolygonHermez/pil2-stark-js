@@ -9,12 +9,25 @@ const { proof2zkin } = require("../../src/proof2zkin");
 const wasm_tester = require("circom_tester/wasm/tester");
 const tmp = require('tmp-promise');
 const fs = require("fs");
+const { pilInfo } = require("../../index.js");
 
 module.exports.generateStarkProof = async function generateStarkProof(constPols, cmPols, pil, starkStruct, options) {
     const logger = options.logger;
+    const debug = options.debug;
     const F = options.F;
     const pil1 = options.pil1;
     const skip = options.skip || false;
+
+    if(debug) {
+        const verificationHashType = "GL";
+        const splitLinearHash = false;
+
+        const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
+
+        const starkInfo = pilInfo(F, pil, true, pil1, debug, {});
+        const pilVerification = await starkGen(cmPols, constPols, {}, starkInfo, optionsPilVerify);
+        assert(pilVerification==true);
+    }
 
     const setup = await starkSetup(constPols, pil, starkStruct, {F, pil1});
 

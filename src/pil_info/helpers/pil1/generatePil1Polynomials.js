@@ -47,15 +47,5 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
         }   
     }
 
-    if(stark) {
-        if (res.starkStruct.nBits != res.pilPower) {
-            throw new Error(`starkStruct and pilfile have degree mismatch (starkStruct:${res.starkStruct.nBits} pilfile:${res.pilPower})`);
-        }
-
-        if (res.starkStruct.nBitsExt != res.starkStruct.steps[0].nBits) {
-            throw new Error(`starkStruct.nBitsExt and first step of starkStruct have a mismatch (nBitsExt:${res.starkStruct.nBitsExt} pil:${res.starkStruct.steps[0].nBits})`);
-        }
-    }
-
     return { publicsInfo, symbols, hints, expressions, constraints };
 }

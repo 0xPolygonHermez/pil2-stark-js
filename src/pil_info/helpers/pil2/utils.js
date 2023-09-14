@@ -137,7 +137,7 @@ module.exports.formatConstraints = function formatConstraints(pilout) {
         let constraint = {
             boundary,
             e: c[boundary].expressionIdx.idx,
-            debugLine: c[boundary].debugLine,
+            line: c[boundary].debugLine,
         }
 
         if(boundary === "everyFrame") {

@@ -7,12 +7,8 @@ const { generateConstraintPolynomial } = require("./polynomials/constraintPolyno
 const { generatePublicsPolynomials } = require("./polynomials/publicsPolynomials.js");
 
 
-module.exports.preparePil = function preparePil(F, pil, stark, pil1, starkStruct) {
-    const res = {
-        cmPolsMap: [],
-        code: {},
-        starkStruct: starkStruct,
-    };
+module.exports.preparePil = function preparePil(F, pil, stark, pil1, debug, starkStruct) {
+    const res = {};
 
     let expressions, symbols, constraints, publicsInfo;
 
@@ -20,6 +16,17 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil1, starkStruct
         ({expressions, symbols, hints, constraints, publicsInfo} = generatePil1Polynomials(F, res, pil, stark));
     } else {
         ({expressions, symbols, hints, constraints, publicsInfo} = getPiloutInfo(res, pil, stark));
+    }
+
+    if(stark && !debug) {
+        res.starkStruct = starkStruct;
+        if (res.starkStruct.nBits != res.pilPower) {
+            throw new Error(`starkStruct and pilfile have degree mismatch (starkStruct:${res.starkStruct.nBits} pilfile:${res.pilPower})`);
+        }
+
+        if (res.starkStruct.nBitsExt != res.starkStruct.steps[0].nBits) {
+            throw new Error(`starkStruct.nBitsExt and first step of starkStruct have a mismatch (nBitsExt:${res.starkStruct.nBitsExt} pil:${res.starkStruct.steps[0].nBits})`);
+        }
     }
 
     res.publics = generatePublicsPolynomials(expressions, publicsInfo);
@@ -36,13 +43,16 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil1, starkStruct
 
     for(let i = 0; i < constraints.length; ++i) {
         addInfoExpressions(symbols, expressions, expressions[constraints[i].e], stark);
+        constraints[i].stage = expressions[constraints[i].e].stage;
     }
-        
-    generateConstraintPolynomial(res, expressions, constraints, stark);
-
+    
     res.hints = hints;
 
-    res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
+    if(!debug) {
+        generateConstraintPolynomial(res, expressions, constraints, stark);
 
-    return {res, expressions, symbols}
+        res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
+    }
+
+    return {res, expressions, constraints, symbols}
 }

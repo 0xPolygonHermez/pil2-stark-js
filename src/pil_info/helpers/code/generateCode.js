@@ -20,7 +20,7 @@ module.exports.generatePublicsCode = function generatePublicsCode(res, symbols, 
     }
 }
 
-module.exports.generateStagesCode = function generateStagesCode(res, symbols, expressions, stark) {
+module.exports.generateStagesCode = function generateStagesCode(res, symbols, constraints, expressions, stark) {
     const ctx = {
         calculated: {},
         tmpUsed: 0,
@@ -46,6 +46,24 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
             }
         }
         res.code[`stage${stage}`] =  buildCode(ctx, expressions);
+    }
+
+    for(let i = 0; i < res.numChallenges.length; ++i) {
+        const stage = i + 1;
+        const stageConstraints = constraints.filter(c => c.stage === stage);
+        res.constraints[`stage${stage}`] = [];
+        for(let j = 0; j < stageConstraints.length; ++j) {
+            pilCodeGen(ctx, symbols, expressions, stageConstraints[j].e, 0, true);
+            const constraint = buildCode(ctx, expressions);
+            constraint.boundary = stageConstraints[j].boundary;
+            constraint.line = stageConstraints[j].line;
+            constraint.filename = stageConstraints[j].fileName;
+            if(stageConstraints[j].boundary === "everyFrame") {
+                constraint.offsetMin = stageConstraints[j].offsetMin;
+                constraint.offsetMax = stageConstraints[j].offsetMax;
+            }
+            res.constraints[`stage${stage}`][j] = constraint;
+        }
     }
 }
 

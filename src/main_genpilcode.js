@@ -2,6 +2,8 @@ const fs = require("fs");
 const version = require("../package").version;
 
 const { generatePilCode } = require("./pil_info/helpers/generatePilCode");
+const { addIntermediatePolynomials } = require("./pil_info/helpers/polynomials/imPolynomials");
+const map = require("./pil_info/map");
 
 const argv = require("yargs")
     .version(version)
@@ -22,11 +24,19 @@ async function run() {
 
     const res = infoPil.res;
     const symbols = infoPil.symbols;
+    const constraints = infoPil.constraints;
     const expressions = imPols.newExpressions;
     const qDeg = imPols.qDeg;
     const imExps = imPols.imExps;
 
-    const starkInfo = generatePilCode(res, symbols, expressions, qDeg, imExps, true);
+    const stark = true;
+    const debug = false;
+
+    addIntermediatePolynomials(res, expressions, symbols, imExps, qDeg, stark);
+    
+    map(res, symbols, stark, debug);       
+
+    const starkInfo = generatePilCode(res, symbols, constraints, expressions, debug, stark);
 
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
 

@@ -112,7 +112,7 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
         c1.deg=2;
         pil.expressions.push(c1);
         let c1Id = pil.expressions.length - 1;
-        pil.polIdentities.push({e: c1Id, boundary: "firstRow"});
+        pil.polIdentities.push({e: c1Id, boundary: "firstRow", fileName: pi.fileName, line: pi.line });
         let c1Dim = getExpDim(pil.expressions, c1Id, stark);
         pil.expressions[c1Id].dim = c1Dim;
 
@@ -178,7 +178,7 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
         c2.deg=2;
         pil.expressions.push(c2);
         let c2Id = pil.expressions.length - 1;
-        pil.polIdentities.push({e: c2Id, boundary: "everyRow"});
+        pil.polIdentities.push({e: c2Id, boundary: "everyRow", fileName: pi.fileName, line: pi.line });
         let c2Dim = getExpDim(pil.expressions, c2Id, stark);
         pil.expressions[c2Id].dim = c2Dim;
 

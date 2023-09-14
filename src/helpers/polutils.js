@@ -112,7 +112,7 @@ module.exports.calculateH1H2 = function calculateH1H2(F, f, t) {
     for (i=0; i<f.length; i++) {
         const idx = idx_t[f[i]];
         if (isNaN(idx)) {
-            throw new Error(`Number not included: ${F.toString(f[i])}`);
+            throw new Error(`Number not included: w:${i}, value:${F.toString(f[i])}`);
         }
         s.push([f[i], idx]);
     }

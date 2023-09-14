@@ -1,9 +1,7 @@
-const chai = require("chai");
-const assert = chai.assert;
 const F3g = require("../../src/helpers/f3g");
 const path = require("path");
 
-const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
+const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
 
 const Logger = require('logplease');
 
@@ -38,18 +36,7 @@ async function runTest(pilFile) {
 
     const cmPols = newCommitPolsArray(pil, F);
 
-    const result = await smSimple.execute(N, cmPols.Simple, F);
-    console.log("Result: " + result);
-
-    const res = await verifyPil(F, pil, cmPols , constPols);
-
-    if (res.length != 0 && !["simple5.pil", "simple6.pil"].includes(pilFile)) {
-        console.log("Pil does not pass");
-        for (let i=0; i<res.length; i++) {
-            console.log(res[i]);
-        }
-        assert(0);
-    }
+    await smSimple.execute(N, cmPols.Simple, F);
 
     if (pilFile === "simple5.pil") {
         pil.polIdentities[0].boundary = "firstRow";
@@ -58,7 +45,7 @@ async function runTest(pilFile) {
     }
     
     const skipVerifierCircom = pilFile === "simple1.pil" ? true : false;
-    await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: true, skip: skipVerifierCircom});
+    await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: true, skip: skipVerifierCircom, debug: true});
 }
 
 describe("simple sm", async function () {

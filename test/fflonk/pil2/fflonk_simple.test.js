@@ -1,5 +1,3 @@
-const chai = require("chai");
-const assert = chai.assert;
 const { F1Field } = require("ffjavascript");
 const path = require("path");
 
@@ -48,7 +46,7 @@ async function runTest(pilFile) {
         await smSimple.execute(pil.numRows, cmPols.Simple, F);
     }
 
-    await generateFflonkProof(cnstPols, cmPols, pil, {F, logger, extraMuls: 0, maxQDegree: 1, pil1: false});
+    await generateFflonkProof(cnstPols, cmPols, pil, {F, logger, extraMuls: 0, maxQDegree: 1, pil1: false, debug: true});
 }
 
 describe("simple sm", async function () {

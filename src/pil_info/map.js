@@ -1,5 +1,5 @@
 
-module.exports = function map(res, symbols, stark) {  
+module.exports = function map(res, symbols, stark, debug) {  
     res.cmPolsMap = [];
     res.constPolsMap = [];
 
@@ -18,7 +18,7 @@ module.exports = function map(res, symbols, stark) {
         }
         res.mapSectionsN["f_ext"] = 3;
 
-        setMapOffsets(res);   
+        if(!debug) setMapOffsets(res);   
     }
 
     setStageInfoSymbols(res, symbols);

@@ -1,9 +1,7 @@
-const chai = require("chai");
-const assert = chai.assert;
 const F3g = require("../../src/helpers/f3g");
 const path = require("path");
 
-const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
+const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
 
 const Logger = require('logplease');
 
@@ -54,17 +52,7 @@ describe("test fibonacci sm", async function () {
 
         await smFibonacci.execute(N, cmPols.Fibonacci, [1,2], F);
 
-        const res = await verifyPil(F, pil, cmPols , constPols);
-
-        // if (res.length != 0) {
-        //     console.log("Pil does not pass");
-        //     for (let i=0; i<res.length; i++) {
-        //         console.log(res[i]);
-        //     }
-        //     assert(0);
-        // }
-
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: true});
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: true, debug: true});
     });
 
 });

@@ -1,8 +1,6 @@
-const chai = require("chai");
-const assert = chai.assert;
 const {F1Field} = require("ffjavascript");
 const path = require("path");
-const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
+const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
 
 const smFibonacci = require("../../test/state_machines/sm_fibonacci/sm_fibonacci.js");
 
@@ -38,17 +36,7 @@ describe("Fflonk Fibonacci sm", async function () {
 
         await smFibonacci.execute(N, cmPols.Fibonacci, [1,2], F);
 
-        const res = await verifyPil(F, pil, cmPols , constPols);
-
-        if (res.length != 0) {
-            console.log("Pil does not pass");
-            for (let i=0; i<res.length; i++) {
-                console.log(res[i]);
-            }
-            assert(0);
-        }
-
-        await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 1});
+        await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 1, debug: true});
 
     });
 

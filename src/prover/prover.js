@@ -30,19 +30,40 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
     
     const qStage = ctx.pilInfo.numChallenges.length + 1;
 
+    if(options.debug) ctx.errors = [];
+
     for(let i = 1; i <= qStage; i++) {
         const stage = i;
+        if(stage === qStage && options.debug) continue;
         if(stage !== 1) {
-            setChallenges(stage, ctx, challenge, logger);
+            setChallenges(stage, ctx, challenge, options);
         }
         await computeStage(stage, ctx, options);
-        if(stage === qStage) {
-            await computeQ(ctx, logger);
+
+        if(!options.debug) {
+            if(stage === qStage) {
+                await computeQ(ctx, logger);
+            } else {
+                await extend(stage, ctx, logger);
+            }
+            challenge = await getChallenge(stage, ctx);
         } else {
-            await extend(stage, ctx, logger);
+            challenge = ctx.F.random();
         }
-        challenge = await getChallenge(stage, ctx);
     }
+
+    if(options.debug) {
+        if (ctx.errors.length != 0) {
+            logger.error("Pil does not pass");
+            for (let i=0; i<ctx.errors.length; i++) {
+                logger.error(ctx.errors[i]);
+            }
+            return false;
+        } else {
+            logger.debug("PIL OK!");
+        }
+        return true;
+    };
 
     if(ctx.prover === "stark") {
         setChallengesStark(ctx.pilInfo.numChallenges.length + 2, ctx, challenge, logger);
@@ -90,11 +111,21 @@ async function computeStage(stage, ctx, options) {
 
     if (logger) logger.debug(`> STAGE ${stage}`);
 
-    const dom = stage === ctx.pilInfo.numChallenges.length + 1 ? "ext" : "n";
+    const qStage = ctx.pilInfo.numChallenges.length + 1;
+    const dom = stage === qStage ? "ext" : "n";
 
-    await callCalculateExps(`stage${stage}`, dom, ctx, options.parallelExec, options.useThreads);
-
+    await callCalculateExps(`stage${stage}`, ctx.pilInfo.code[`stage${stage}`], dom, ctx, options.parallelExec, options.useThreads, false);
+    
     await applyHints(stage, ctx);
+
+    if(stage !== qStage && options.debug) {
+        const nConstraintsStage = ctx.pilInfo.constraints[`stage${stage}`].length;
+        for(let i = 0; i < nConstraintsStage; i++) {
+            const constraint = ctx.pilInfo.constraints[`stage${stage}`][i];
+            if(logger) logger.debug(` Checking constraint ${i + 1}/${nConstraintsStage}: line ${constraint.line} `);
+            await callCalculateExps(`stage${stage}`, constraint, dom, ctx, options.parallelExec, options.useThreads, true);
+        }
+    }
 }
 
 async function computeQ(ctx, logger) {
@@ -121,11 +152,11 @@ async function getChallenge(stage, ctx) {
     }
 }
 
-function setChallenges(stage, ctx, challenge, logger) {
+function setChallenges(stage, ctx, challenge, options) {
     if(ctx.prover === "stark") {
-        setChallengesStark(stage, ctx, challenge, logger);
+        setChallengesStark(stage, ctx, challenge, options);
     } else {
-        setChallengesFflonk(stage, ctx, challenge, logger);
+        setChallengesFflonk(stage, ctx, challenge, options);
     }
 }
 

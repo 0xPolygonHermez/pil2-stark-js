@@ -136,9 +136,12 @@ module.exports = async function fflonkShkey(ptauFile, fflonkInfo, options) {
                 for(let i = 0; i < polDefs[0].length; ++i) {
                     if(polDefs[0][i].stage === stage) {
                         polDefs[0][i].open = "0,1";
-                        if(!polDefs[1].find(wxi => JSON.stringify(wxi) === JSON.stringify(polDefs[0][i]))) {
+                        const pol = polDefs[1].find(wxi => wxi.name === polDefs[0][i].name);
+                        if(!pol) {
                             if(stage !== 0) polDefs[0][i].degree += 1;
                             polDefs[1].push(polDefs[0][i]);
+                        } else {
+                            pol.open = "0,1";
                         }
                     }
                 }
@@ -148,9 +151,12 @@ module.exports = async function fflonkShkey(ptauFile, fflonkInfo, options) {
                 for(let i = 0; i < polDefs[1].length; ++i) {
                     if(polDefs[1][i].stage === stage) {
                         polDefs[1][i].open = "0,1";
-                        if(!polDefs[0].find(xi => JSON.stringify(xi) === JSON.stringify(polDefs[1][i]))) {
+                        const pol = polDefs[0].find(xi => xi.name === polDefs[1][i].name);
+                        if(!pol) {
                             if(stage !== 0) polDefs[1][i].degree += 1;
                             polDefs[0].push(polDefs[1][i]);
+                        } else {
+                            pol.open = "0,1";
                         }
                     }
                 }

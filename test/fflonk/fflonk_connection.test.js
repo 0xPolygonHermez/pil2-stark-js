@@ -1,9 +1,7 @@
-const chai = require("chai");
-const assert = chai.assert;
 const {F1Field} = require("ffjavascript");
 const path = require("path");
 
-const { newConstantPolsArray, newCommitPolsArray, compile, verifyPil } = require("pilcom");
+const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
 
 const smGlobal = require("../state_machines/sm/sm_global.js");
 const smConnection = require("../state_machines/sm_connection/sm_connection.js");
@@ -33,17 +31,7 @@ describe("Fflonk connection sm", async function () {
 
         await smConnection.execute(N, cmPols.Connection);
 
-        const res = await verifyPil(F, pil, cmPols , constPols);
-
-        if (res.length != 0) {
-            console.log("Pil does not pass");
-            for (let i=0; i<res.length; i++) {
-                console.log(res[i]);
-            }
-            assert(0);
-        }
-
-        await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 1});
+        await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 1, debug: true});
 
     });
 });
