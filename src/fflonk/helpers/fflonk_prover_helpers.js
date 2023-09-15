@@ -134,7 +134,9 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
     return ctx;
 }
 
-module.exports.computeQFflonk = async function computeQ(ctx, logger) {
+module.exports.computeQFflonk = async function computeQ(ctx, options) {
+    const logger = options.logger;
+
     if (logger) logger.debug("Compute Trace Quotient Polynomials");
 
     ctx["Q"] = await Polynomial.fromEvaluations(ctx.q_ext, ctx.curve, logger);
@@ -179,6 +181,21 @@ module.exports.computeQFflonk = async function computeQ(ctx, logger) {
     commitsStageQ.forEach((com) => ctx.committedPols[`${com.index}`] = { commit: com.commit, pol: com.pol });
 
     commitsStageQ.forEach((com) => console.log(com.index, ctx.curve.G1.toString(com.commit)));
+
+    let commitsTranscript = [];
+    if(qStage > 1) commitsTranscript.push({value:ctx.challenges[qStage - 1][ctx.challenges[qStage - 1].length - 1]});
+
+    const stageCommits = [];
+    commitsStageQ.forEach((com) => stageCommits.push({value: com.commit, commit: true}));
+
+    if(options.hashCommits) {
+        const hash = await module.exports.calculateHashFflonk(ctx, stageCommits);
+        commitsTranscript.push(hash);
+    } else {
+        commitsTranscript.push(...stageCommits);
+    }
+
+    return commitsTranscript;
 }
 
 module.exports.computeOpeningsFflonk = async function computeOpenings(ctx,challenge, logger) {
@@ -228,7 +245,7 @@ module.exports.genProofFflonk = async function genProof(ctx, logger) {
     return {proof, publics};
 }
 
-module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, challenge, options) {
+module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, transcript, challenge, options) {
     let qStage = ctx.pilInfo.numChallenges.length + 1;
 
     let nChallengesStage = qStage === stage ? 1 : ctx.pilInfo.numChallenges[stage - 1];
@@ -236,54 +253,50 @@ module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, ch
     ctx.challenges[stage - 1] = [];
     for (let i=0; i<nChallengesStage; i++) {
         if(i > 0) {
-            ctx.transcript.reset();
-            ctx.transcript.addScalar(ctx.challenges[stage - 1][i - 1]);
-            ctx.challenges[stage - 1][i] = ctx.transcript.getChallenge();
+            transcript.addScalar(ctx.challenges[stage - 1][i - 1]);
+            ctx.challenges[stage - 1][i] = transcript.getChallenge();
         } else {
             ctx.challenges[stage - 1][i] = challenge;
         }
+        transcript.reset();
         if (options.logger && !options.debug) options.logger.debug("··· challenges[" + (stage - 1) + "][" + i + "]: " + ctx.F.toString(ctx.challenges[stage - 1][i]));
     }
     return;
 }
 
-
-module.exports.calculateChallengeFflonk = async function calculateChallengeFflonk(stage, ctx) {
-    ctx.transcript.reset();
-
-    let qStage = ctx.pilInfo.numChallenges.length + 1;
-
-    if(stage === "Q") stage = qStage;
-
-    if(stage === 1) {
-        const commitsStage0 = ctx.zkey.f.filter(f => f.stages[0].stage === 0).map(f => `f${f.index}_0`);
-        for (let i = 0; i < commitsStage0.length; ++i) {
-            ctx.transcript.addPolCommitment(ctx.committedPols[commitsStage0[i]].commit);
+module.exports.addTranscriptFflonk = function addTranscriptStark(transcript, inputs) {
+    for(let i = 0; i < inputs.length; i++) {
+        if(inputs[i].commit) {
+            transcript.addPolCommitment(inputs[i].value);
+        } else {
+            transcript.addScalar(inputs[i].value);
         }
-    
-        // Add all the publics to the transcript
-        for (let i = 0; i < ctx.pilInfo.nPublics; i++) {
-            ctx.transcript.addScalar(ctx.publics[i]);
-        }
-    }
-    
-    if(stage > 1) {
-        const challenge = ctx.challenges[stage - 1][ctx.challenges[stage - 1].length - 1];
-        ctx.transcript.addScalar(challenge);
-    }
+    } 
+}
 
-    const commitsStage = ctx.zkey.f.filter(f => f.stages[0].stage === stage).map(f => `f${f.index}_${stage}`);
-    for(let i = 0; i < commitsStage.length; i++) {
-        ctx.transcript.addPolCommitment(ctx.committedPols[commitsStage[i]].commit);
-    }
-
-    const nextChallenge = ctx.transcript.getChallenge();
-    ctx.transcript.reset();
+module.exports.getChallengeFflonk = function getChallengeFflonk(transcript) {
+    const nextChallenge = transcript.getChallenge();
+    transcript.reset();
 
     return nextChallenge;
 }
 
-module.exports.extendAndCommit = async function extendAndCommit(stage, ctx, logger) {
+module.exports.calculateHashFflonk = async function calculateHashFflonk(ctx, inputs) {
+    let transcript = new Keccak256Transcript(ctx.curve);
+
+    for (let i=0; i<inputs.length; i++) {
+        if(inputs[i].commit) {
+            transcript.addPolCommitment(inputs[i].value);
+        } else {
+            transcript.addScalar(inputs[i].value);
+        }
+    }
+
+    return {value: transcript.getChallenge()};
+}
+
+module.exports.extendAndCommit = async function extendAndCommit(stage, ctx, options) {
+    const logger = options.logger;
     
     const buffFrom = ctx["cm" + stage + "_n"];
     const buffCoefs = ctx["cm" + stage + "_coefs"];
@@ -319,6 +332,22 @@ module.exports.extendAndCommit = async function extendAndCommit(stage, ctx, logg
     commits.forEach((com) => ctx.committedPols[`${com.index}`] = { commit: com.commit, pol: com.pol });
 
     commits.forEach((com) => console.log(com.index, ctx.curve.G1.toString(com.commit)));
+    
+    let commitsTranscript = [];
+    if(stage > 1) commitsTranscript.push({value: ctx.challenges[stage - 1][ctx.challenges[stage - 1].length - 1]});
+
+    const stageCommits = [];
+    commits.forEach((com) => stageCommits.push({value: com.commit, commit: true}));
+
+    if(options.hashCommits) {
+        const hash = await module.exports.calculateHashFflonk(ctx, stageCommits);
+        commitsTranscript.push(hash);
+    } else {
+        commitsTranscript.push(...stageCommits);
+    }
+
+    return commitsTranscript;
+
 
     function findNumberOpenings(f, name, stage) {
         for(let i = 0; i < f.length; ++i) {

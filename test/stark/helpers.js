@@ -14,6 +14,7 @@ const { pilInfo } = require("../../index.js");
 module.exports.generateStarkProof = async function generateStarkProof(constPols, cmPols, pil, starkStruct, options) {
     const logger = options.logger;
     const debug = options.debug;
+    const hashCommits = options.hashCommits;
     const F = options.F;
     const pil1 = options.pil1;
     const skip = options.skip || false;
@@ -31,14 +32,14 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
 
     const setup = await starkSetup(constPols, pil, starkStruct, {F, pil1});
 
-    const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, {logger});
+    const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, {logger, hashCommits});
 
-    const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, [], setup.starkInfo, {logger});
+    const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, [], setup.starkInfo, {logger, hashCommits});
 
     assert(resV==true);
 
     if(!skip) {
-        const verifier = await pil2circom(setup.constRoot, setup.starkInfo, {});
+        const verifier = await pil2circom(setup.constRoot, setup.starkInfo, {hashCommits});
 
         const fileName = await tmp.tmpName();
         await fs.promises.writeFile(fileName, verifier, "utf8");

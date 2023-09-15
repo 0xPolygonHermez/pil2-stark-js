@@ -1,5 +1,5 @@
-const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk, genProofFflonk, setChallengesFflonk, calculateChallengeFflonk } = require("../fflonk/helpers/fflonk_prover_helpers");
-const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, calculateChallengeStark, computeFRIChallenge, computeFRIFolding, computeFRIQueries } = require("../stark/stark_gen_helpers");
+const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk, genProofFflonk, setChallengesFflonk, addTranscriptFflonk, getChallengeFflonk, calculateHashFflonk } = require("../fflonk/helpers/fflonk_prover_helpers");
+const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, computeFRIFolding, computeFRIQueries, calculateHashStark, addTranscriptStark, getChallengeStark } = require("../stark/stark_gen_helpers");
 const { calculatePublics, callCalculateExps, applyHints } = require("./prover_helpers");
 
 module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, zkey, options) {
@@ -24,7 +24,7 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
         await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1);
     }
    
-    calculatePublics(ctx);
+    computePublics(ctx, stark, options);
 
     let challenge;
     
@@ -36,17 +36,22 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
         const stage = i;
         if(stage === qStage && options.debug) continue;
         if(stage !== 1) {
-            setChallenges(stage, ctx, challenge, options);
+            setChallenges(stage, ctx, ctx.transcript, challenge, options);
         }
         await computeStage(stage, ctx, options);
 
         if(!options.debug) {
+            let commits;
             if(stage === qStage) {
-                await computeQ(ctx, logger);
+                commits = await computeQ(ctx, options);
             } else {
-                await extend(stage, ctx, logger);
+                commits = await extend(stage, ctx, options);
             }
-            challenge = await getChallenge(stage, ctx);
+
+            addTranscript(ctx.transcript, commits, stark);
+
+            challenge = getChallenge(ctx.transcript, stark);
+
         } else {
             challenge = ctx.F.random();
         }
@@ -66,26 +71,36 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
     };
 
     if(ctx.prover === "stark") {
-        setChallengesStark(ctx.pilInfo.numChallenges.length + 2, ctx, challenge, logger);
+        const evalsStage = ctx.pilInfo.numChallenges.length + 2;
+        setChallengesStark(evalsStage, ctx, ctx.transcript, challenge, options);
 
         // STAGE 5. Compute Evaluations
-        await computeEvalsStark(ctx, logger);
+        const evalsCommits = await computeEvalsStark(ctx, options);
 
-        challenge = await calculateChallengeStark(ctx.pilInfo.numChallenges.length + 2, ctx);
+        addTranscriptStark(ctx.transcript, evalsCommits, stark);
 
-        setChallengesStark(ctx.pilInfo.numChallenges.length + 3, ctx, challenge, logger);
+        challenge = getChallengeStark(ctx.transcript);
+
+        const friStage = ctx.pilInfo.numChallenges.length + 3;
+        setChallengesStark(friStage, ctx, ctx.transcript, challenge, options);
 
         // STAGE 6. Compute FRI
         await computeFRIStark(ctx, options);
 
         for (let step = 0; step < ctx.pilInfo.starkStruct.steps.length; step++) {
 
-            challenge = computeFRIChallenge(step, ctx, logger);
-    
-            await computeFRIFolding(step, ctx, challenge);
+            challenge = getChallengeStark(ctx.transcript);
+            
+            if (logger) logger.debug("··· challenges FRI folding step " + step + ": " + ctx.F.toString(challenge));
+
+            const friCommits = await computeFRIFolding(step, ctx, challenge, options);
+
+            addTranscriptStark(ctx.transcript, friCommits, stark);
         }
-    
-        const friQueries = computeFRIChallenge(ctx.pilInfo.starkStruct.steps.length, ctx, logger);
+
+        const friQueries = ctx.transcript.getPermutations(ctx.pilInfo.starkStruct.nQueries, ctx.pilInfo.starkStruct.steps[0].nBits);
+
+        if (logger) logger.debug("··· FRI queries: [" + friQueries.join(",") + "]");
     
         computeFRIQueries(ctx, friQueries);
 
@@ -104,6 +119,49 @@ async function initProver(pilInfo, constTree, constPols, zkey, stark, options) {
     } else {
         return await initProverFflonk(pilInfo, zkey, options)
     }
+}
+
+async function computePublics(ctx, stark, options) {
+    calculatePublics(ctx);
+
+    // Transcript publics
+
+    let publicsCommits = [];
+    if(options.hashCommits) {
+        if(!stark) {
+            const commitsStage0 = ctx.zkey.f.filter(f => f.stages[0].stage === 0).map(f => `f${f.index}_0`);
+            const constInputs = [];
+            for(let i = 0; i < commitsStage0.length; ++i) {
+                constInputs.push({commit: true, value: ctx.committedPols[commitsStage0[i]].commit});
+            }
+
+            const constRoot = await calculateHash(ctx, constInputs);
+            publicsCommits.push(constRoot);
+
+            const publicInputs = [];
+            for(let i = 0; i < ctx.publics.length; ++i) {
+                publicInputs.push({value: ctx.publics[i]});
+            }
+            const publicsRoot = await calculateHash(ctx, publicInputs);
+            publicsCommits.push(publicsRoot); 
+        } else {
+            const publicsRoot = await calculateHash(ctx, ctx.publics);
+            publicsCommits.push(publicsRoot); 
+        }
+        
+
+    } else {
+        if(stark) {
+            publicsCommits.push(...ctx.publics);
+        } else {
+            const commitsStage0 = ctx.zkey.f.filter(f => f.stages[0].stage === 0).map(f => `f${f.index}_0`);
+            publicsCommits.push(...commitsStage0.map(p => {return { commit: true, value: ctx.committedPols[p].commit }}));
+            publicsCommits.push(...ctx.publics.map(p => {return { value: p }}));
+
+        }
+    }
+
+    addTranscript(ctx.transcript, publicsCommits, stark);
 }
 
 async function computeStage(stage, ctx, options) {
@@ -128,35 +186,57 @@ async function computeStage(stage, ctx, options) {
     }
 }
 
-async function computeQ(ctx, logger) {
+async function computeQ(ctx, options) {
+    let commits;
     if(ctx.prover === "stark") {
-        await computeQStark(ctx, logger);
+        commits = await computeQStark(ctx, options);
     } else {
-        await computeQFflonk(ctx, logger);
+        commits = await computeQFflonk(ctx, options);
     }
+    return commits;
 }
 
-async function extend(stage, ctx, logger) {
+async function extend(stage, ctx, options) {
+    let commits;
     if(ctx.prover === "stark")   {
-        await extendAndMerkelize(stage, ctx, logger)
+        commits = await extendAndMerkelize(stage, ctx, options)
     } else {
-        await extendAndCommit(stage, ctx, logger);
+        commits = await extendAndCommit(stage, ctx, options);
+    }
+    return commits;
+}
+
+async function calculateHash(ctx, inputs) {
+    let hash;
+    if(ctx.prover === "stark") {
+        hash = await calculateHashStark(ctx, inputs);
+    } else {
+        hash = await calculateHashFflonk(ctx, inputs);
+    }
+    return hash;
+}
+
+function addTranscript(transcript, inputs, stark) {
+    if(stark) {
+        addTranscriptStark(transcript, inputs);
+    } else {
+        addTranscriptFflonk(transcript, inputs);
     }
 }
 
-async function getChallenge(stage, ctx) {
-    if(ctx.prover === "stark") {
-        return calculateChallengeStark(stage, ctx);
+function getChallenge(transcript, stark) {
+    if(stark) {
+        return getChallengeStark(transcript);
     } else {
-        return calculateChallengeFflonk(stage, ctx);
+        return getChallengeFflonk(transcript);
     }
 }
 
-function setChallenges(stage, ctx, challenge, options) {
+function setChallenges(stage, ctx, transcript, challenge, options) {
     if(ctx.prover === "stark") {
-        setChallengesStark(stage, ctx, challenge, options);
+        setChallengesStark(stage, ctx, transcript, challenge, options);
     } else {
-        setChallengesFflonk(stage, ctx, challenge, options);
+        setChallengesFflonk(stage, ctx, transcript, challenge, options);
     }
 }
 

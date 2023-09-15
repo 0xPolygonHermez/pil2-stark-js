@@ -15,7 +15,7 @@ include "rangecheck.circom";
 
 <%
 class Transcript {
-    constructor() {
+    constructor(name) {
         this.state = "0";
         this.pending = [];
         this.out = [];
@@ -25,7 +25,9 @@ class Transcript {
         this.hiCnt =0;
         this.n2bCnt =0;
         this.bn1togl3Cnt =0;
-
+        this.lastCodePrinted = 0;
+        this.name = name;
+        
         this.code = [];
     }
 
@@ -62,23 +64,25 @@ class Transcript {
     }
 
     updateState() {
+        let signalName = "transcriptHash";
+        if(this.name) signalName += "_" + this.name;
         if(this.hCnt > 0) {
             const firstUnused = Math.max(this.hiCnt, 1);
             if(firstUnused < (arity + 1)) {
                 this.code.push(`for(var i = ${firstUnused}; i < ${arity + 1}; i++){
-        _ <== transcriptHash_${this.hCnt -1}[i]; // Unused transcript values        
+        _ <== ${signalName}_${this.hCnt -1}[i]; // Unused transcript values        
     }`)
             }
         }
         while (this.pending.length < arity) {
             this.pending.push("0");
         }
-        this.code.push(`\n    signal transcriptHash_${this.hCnt++}[${Number(arity) + 1}] <== CustomPoseidon(${arity})([${this.pending.join(',')}], ${this.state});`);
+        this.code.push(`\n    signal ${signalName}_${this.hCnt++}[${Number(arity) + 1}] <== CustomPoseidon(${arity})([${this.pending.join(',')}], ${this.state});`);
         for (let i=0; i<arity+1; i++) {
-            this.out[i] = `transcriptHash_${this.hCnt-1}[${i}]`;
+            this.out[i] = `${signalName}_${this.hCnt-1}[${i}]`;
         }
         this.out3 = [];
-        this.state = `transcriptHash_${this.hCnt-1}[0]`;
+        this.state = `${signalName}_${this.hCnt-1}[0]`;
         this.pending = [];
         this.hiCnt = 0;
     }
@@ -104,6 +108,8 @@ class Transcript {
     }
 
     getPermutations(v, n, nBits) {
+        let signalName = "transcriptHash";
+        if(this.name) signalName += "_" + this.name;
         const totalBits = n*nBits;
         const NFields = Math.floor((totalBits - 1)/253)+1;
         const n2b = [];
@@ -114,7 +120,7 @@ class Transcript {
         }
         if(this.hiCnt < arity + 1) {
             this.code.push(`for(var i = ${this.hiCnt}; i < ${arity + 1}; i++){
-        _ <== transcriptHash_${this.hCnt - 1}[i]; // Unused transcript values           
+        _ <== ${signalName}_${this.hCnt - 1}[i]; // Unused transcript values           
     }\n`)
         }
         this.code.push(`// From each transcript hash converted to bits, we assign those bits to queriesFRI[q] to define the query positions`)
@@ -141,8 +147,10 @@ class Transcript {
     }
 
     getCode() {
-        for (let i=0; i<this.code.length; i++) this.code[i] = "    "+this.code[i];
-        return this.code.join("\n");
+        for (let i=this.lastCodePrinted; i<this.code.length; i++) this.code[i] = "    "+this.code[i];
+        let code = this.code.slice(this.lastCodePrinted, this.code.length).join("\n");
+        this.lastCodePrinted = this.code.length;
+        return code;
     }
 
 } -%>
@@ -305,40 +313,74 @@ template Transcript() {
     signal output challengesFRISteps[<%- starkStruct.steps.length %>][3];
     signal output queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
 
-<%
-const transcript = new Transcript();
-transcript.put("publics", starkInfo.nPublics);
-for(let i=0; i < starkInfo.numChallenges.length; i++) {
-    const stage = i + 1;
-    for(let j = 0; j < starkInfo.numChallenges[i]; ++j) {
-        transcript.getField("challengesStage" + stage + "[" + j + "]", 3);
-    }
-    transcript.put("root" + stage);
-}    
+    <%  if(options.hashCommits) { -%> 
+    signal publicsHash[3];
+    signal evalsHash[3];
+    signal lastPolFRIHash[3];
+<%  } -%>
+<%  const transcript = new Transcript(); -%>
+<%   if(!options.hashCommits) { -%>
+<%         transcript.put("publics", starkInfo.nPublics); -%>
+<%   } else { -%>
+<%-      transcript.getCode(); %>
+<%      const transcriptPublics = new Transcript("publics");
+        transcriptPublics.put("publics", starkInfo.nPublics);
+        transcriptPublics.getField("publicsHash", 3); -%>
+<%-      transcriptPublics.getCode(); %>
+<%      transcript.put("publicsHash", 3); -%>
+<%  } -%>
 
-transcript.getField("challengeQ", 3);
-transcript.put("rootQ");
-
-transcript.getField("challengeXi", 3);
-for (let i=0; i<starkInfo.evMap.length; i++) {
-    transcript.put(`evals[${i}]`, 3);
-}
-transcript.getField("challengesFRI[0]", 3);
-transcript.getField("challengesFRI[1]", 3);
-for (let si=0; si<starkStruct.steps.length; si++) {
-    transcript.getField(`challengesFRISteps[${si}]`, 3);
-    if (si < starkStruct.steps.length-1) {
-        transcript.put(`s${si+1}_root`);
-    } else {
-        for (let j=0; j< 1<<starkStruct.steps[starkStruct.steps.length-1].nBits; j++ ) {
-            transcript.put(`finalPol[${j}]`, 3);
+<%   for(let i=0; i < starkInfo.numChallenges.length; i++) {
+        const stage = i + 1;
+        for(let j = 0; j < starkInfo.numChallenges[i]; ++j) {
+            transcript.getField("challengesStage" + stage + "[" + j + "]", 3);
         }
-    }
-}
-transcript.getPermutations("queriesFRI", starkStruct.nQueries, starkStruct.steps[0].nBits);
+        transcript.put("root" + stage, 4);
+    }    
+    
+    transcript.getField("challengeQ", 3);
+    transcript.put("rootQ", 4);
 
--%>
-
+    transcript.getField("challengeXi", 3); -%>
+<%   if(!options.hashCommits) { -%>
+<%      for (let i=0; i<starkInfo.evMap.length; i++) {
+            transcript.put(`evals[${i}]`, 3);
+        } -%>
+<%   } else { -%>
+<%-      transcript.getCode(); %>
+<%      const transcriptEvals = new Transcript("evals");
+        for (let i=0; i<starkInfo.evMap.length; i++) {
+            transcriptEvals.put(`evals[${i}]`, 3);
+        }
+        transcriptEvals.getField("evalsHash", 3); -%>
+<%-      transcriptEvals.getCode(); %>
+<%      transcript.put("evalsHash", 3); -%>
+<%  } -%>
+    
+<%  transcript.getField("challengesFRI[0]", 3);
+    transcript.getField("challengesFRI[1]", 3); -%>
+<%  for (let si=0; si<starkStruct.steps.length; si++) { -%>
+<%      transcript.getField(`challengesFRISteps[${si}]`, 3); -%>
+<%      if (si < starkStruct.steps.length-1) { -%>
+<%          transcript.put(`s${si+1}_root`, 4); -%>
+<%        } else { -%>
+<%          if(!options.hashCommits) { -%>
+<%              for (let j=0; j< 1<<starkStruct.steps[starkStruct.steps.length-1].nBits; j++ ) {
+                    transcript.put(`finalPol[${j}]`, 3);
+                } -%>
+<%          } else { -%>
+<%-             transcript.getCode(); %>
+<%              const transcriptLastPolFRI = new Transcript("lastPolFRI");
+                for (let j=0; j< 1<<starkStruct.steps[starkStruct.steps.length-1].nBits; j++ ) {
+                    transcriptLastPolFRI.put(`finalPol[${j}]`, 3);
+                }
+                transcriptLastPolFRI.getField("lastPolFRIHash", 3); -%>
+<%-              transcriptLastPolFRI.getCode(); %>
+<%              transcript.put("lastPolFRIHash", 3); -%>
+<%          } -%>
+<%      } -%>
+<%  } -%>
+<% transcript.getPermutations("queriesFRI", starkStruct.nQueries, starkStruct.steps[0].nBits); -%>
 <%- transcript.getCode() %>
 
 }

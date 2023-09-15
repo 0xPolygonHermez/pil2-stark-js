@@ -80,12 +80,12 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         ctx.transcript = new Transcript(poseidon);
     } else if (verificationHashType == "BN128") {
         const poseidonBN128 = await buildPoseidonBN128();
-        let arity = options.arity || 16;
-        let custom = options.custom || false;
-        let transcriptArity = custom ? arity : 16;
-        logger.debug(`Arity: ${arity},  transcriptArity: ${transcriptArity}, Custom: ${custom}`);
-        ctx.MH = await buildMerkleHashBN128(arity, custom);
-        ctx.transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
+        ctx.arity = options.arity || 16;
+        ctx.custom = options.custom || false;
+        ctx.transcriptArity = ctx.custom ? ctx.arity : 16;
+        logger.debug(`Arity: ${ctx.arity},  transcriptArity: ${ctx.transcriptArity}, Custom: ${ctx.custom}`);
+        ctx.MH = await buildMerkleHashBN128(ctx.arity, ctx.custom);
+        ctx.transcript = new TranscriptBN128(poseidonBN128, ctx.transcriptArity);
     } else {
         throw new Error("Invalid Hash Type: "+ verificationHashType);
     }
@@ -154,9 +154,12 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     return ctx;
 }
 
-module.exports.computeQStark = async function computeQStark(ctx, logger) {
+module.exports.computeQStark = async function computeQStark(ctx, options) {
+    const logger = options.logger;
+    
     if (logger) logger.debug("Compute Trace Quotient Polynomials");
 
+    const qStage = ctx.pilInfo.numChallenges.length + 1;
     const qq1 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.extN), BigBufferHandlerBigInt);
     const qq2 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.pilInfo.qDeg*ctx.extN), BigBufferHandlerBigInt);
     await ifft(ctx.q_ext, ctx.pilInfo.qDim, ctx.nBitsExt, qq1);
@@ -179,11 +182,12 @@ module.exports.computeQStark = async function computeQStark(ctx, logger) {
     if (logger) logger.debug("··· Merkelizing Q polynomial tree");
 
     const nPolsQ = ctx.pilInfo.mapSectionsN.cmQ || 0;
-    ctx.trees[ctx.pilInfo.numChallenges.length + 1] = await ctx.MH.merkelize(ctx.cmQ_ext, nPolsQ, ctx.extN);
+    ctx.trees[qStage] = await ctx.MH.merkelize(ctx.cmQ_ext, nPolsQ, ctx.extN);
+    return [ctx.MH.root(ctx.trees[qStage])];
 }
 
-module.exports.computeEvalsStark = async function computeEvalsStark(ctx, logger) {
-    if (logger) logger.debug("Compute Evals");
+module.exports.computeEvalsStark = async function computeEvalsStark(ctx, options) {
+    if (options.logger) options.logger.debug("Compute Evals");
 
     let evalsStage = ctx.pilInfo.numChallenges.length + 1;
     let xiChallenge = ctx.challenges[evalsStage][0];
@@ -237,6 +241,13 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, logger)
             acc = ctx.F.add(acc, ctx.F.mul(v, LEv[ctx.pilInfo.openingPoints.findIndex(p => p === ev.prime)][k]));
         }
         ctx.evals[i] = acc;
+    }
+
+    if(options.hashCommits) {
+        const evalsHash = await module.exports.calculateHashStark(ctx, ctx.evals);
+        return [evalsHash];
+    } else {
+        return ctx.evals;
     }
 }
 
@@ -299,7 +310,7 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
     }
 }
 
-module.exports.computeFRIFolding = async function computeFRIFolding(step, ctx, challenge) {
+module.exports.computeFRIFolding = async function computeFRIFolding(step, ctx, challenge, options) {
     let stepProof = await ctx.fri.fold(step, ctx.friPol[step], challenge);
 
     ctx.friPol[step+1] = stepProof.pol;
@@ -307,22 +318,17 @@ module.exports.computeFRIFolding = async function computeFRIFolding(step, ctx, c
     if(step < ctx.pilInfo.starkStruct.steps.length - 1) {
         ctx.friTrees[step+1] = stepProof.tree;
     }
-}
 
-module.exports.computeFRIChallenge = function computeFRIChallenge(step, ctx, logger) {
-    let challenge;
-    if (step < ctx.pilInfo.starkStruct.steps.length) {
-        if(step > 0) ctx.transcript.put(ctx.friProof[step].root);
-        challenge = ctx.transcript.getField();
-        if (logger) logger.debug("··· challenges FRI folding step " + step + ": " + ctx.F.toString(challenge));
+    if (step+1 < ctx.pilInfo.starkStruct.steps.length) {
+        return [ctx.friProof[step+1].root];
     } else {
-        for (let i=0; i<ctx.friPol[step].length; i++) {
-            ctx.transcript.put(ctx.friPol[step][i]);
+        if(options.hashCommits) {
+            const lastPolHash = await module.exports.calculateHashStark(ctx, ctx.friPol[step+1]);
+            return [lastPolHash];
+        } else {
+            return ctx.friPol[step+1];
         }
-        challenge = ctx.transcript.getPermutations(ctx.pilInfo.starkStruct.nQueries, ctx.pilInfo.starkStruct.steps[0].nBits);
-        if (logger) logger.debug("··· FRI queries: [" + challenge.join(",") + "]");
     }
-    return challenge;
 }
 
 module.exports.computeFRIQueries = function computeFRIQueries(ctx, friQueries) {
@@ -348,7 +354,8 @@ module.exports.genProofStark = async function genProof(ctx, logger) {
     return {proof, publics};
 }
 
-module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ctx, logger) {
+module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ctx, options) {
+    const logger = options.logger;
 
     const buffFrom = ctx["cm" + stage + "_n"];
     const buffTo = ctx["cm" + stage + "_ext"];
@@ -360,9 +367,11 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
     
     if (logger) logger.debug("··· Merkelizing Stage " + stage);
     ctx.trees[stage] = await ctx.MH.merkelize(buffTo, nPols, ctx.extN);
+
+    return [ctx.MH.root(ctx.trees[stage])];
 }
 
-module.exports.setChallengesStark = function setChallengesStark(stage, ctx, challenge, options) {
+module.exports.setChallengesStark = function setChallengesStark(stage, ctx, transcript, challenge, options) {
     let nChallengesStage;
 
     let qStage = ctx.pilInfo.numChallenges.length + 1;
@@ -380,7 +389,7 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, chal
     ctx.challenges[stage - 1] = [];
     for (let i=0; i<nChallengesStage; i++) {
         if(i > 0) {
-            ctx.challenges[stage - 1][i] = ctx.transcript.getField();
+            ctx.challenges[stage - 1][i] = transcript.getField();
         } else {
             ctx.challenges[stage - 1][0] = challenge;
         }
@@ -389,23 +398,34 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, chal
     return;
 }
 
-module.exports.calculateChallengeStark = async function calculateChallengeStark(stage, ctx) {
-    if(stage === ctx.pilInfo.numChallenges.length + 2) {
-        for (let i=0; i<ctx.evals.length; i++) {
-            ctx.transcript.put(ctx.evals[i]);
-        }
-    
-        return ctx.transcript.getField();
+module.exports.calculateHashStark = async function calculateHashStark(ctx, inputs) {
+    const verificationHashType = ctx.pilInfo.starkStruct.verificationHashType;
+    let transcript;
+    if (verificationHashType == "GL") {
+        const poseidon = await buildPoseidonGL();
+        transcript = new Transcript(poseidon);
+    } else if (verificationHashType == "BN128") {
+        let transcriptArity = ctx.custom ? ctx.arity : 16;
+        transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
+    } else {
+        throw new Error("Invalid Hash Type: "+ verificationHashType);
     }
 
-    if(stage === 1) {
-        for (let i=0; i<ctx.pilInfo.nPublics; i++) {
-            ctx.transcript.put(ctx.publics[i]);
-        }
+    for (let i=0; i<inputs.length; i++) {
+        transcript.put(inputs[i]);
     }
 
-    ctx.transcript.put(ctx.MH.root(ctx.trees[stage]));
+    const hash = transcript.getField();
+    return hash;
+}
 
-    return ctx.transcript.getField();
+module.exports.addTranscriptStark = function addTranscriptStark(transcript, inputs) {
+    for(let i = 0; i < inputs.length; i++) {
+        transcript.put(inputs[i]);
+    }
+}
+
+module.exports.getChallengeStark = function getChallengeStark(transcript) {
+    return transcript.getField();
 }
 

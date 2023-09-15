@@ -14,6 +14,7 @@ module.exports.generateFflonkProof = async function generateFflonkProof(constPol
     const debug = options.debug;
     const extraMuls = options.extraMuls || 0;
     const maxQDegree = options.maxQDegree;
+    const hashCommits = options.hashCommits;
     const pil1 = options.pil1;
     const F = options.F;
 
@@ -34,9 +35,9 @@ module.exports.generateFflonkProof = async function generateFflonkProof(constPol
         assert(pilVerification==true);
     }
 
-    const {proof, publics} = await fflonkProve(zkey, cmPols, fflonkInfo, {logger});
+    const {proof, publics} = await fflonkProve(zkey, cmPols, fflonkInfo, {logger, hashCommits});
 
-    const isValid = await fflonkVerify(vk, publics, proof, [], fflonkInfo, {logger});
+    const isValid = await fflonkVerify(vk, publics, proof, [], fflonkInfo, {logger, hashCommits});
 
     assert(isValid);
 }

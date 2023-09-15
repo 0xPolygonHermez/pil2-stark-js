@@ -22,10 +22,10 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         transcript = new Transcript(poseidonGL);
     } else if (starkStruct.verificationHashType == "BN128") {
         const poseidonBN128 = await buildPoseidonBN128();
-        let arity = options.arity || 16;
-        let custom = options.custom || false; 
-        let transcriptArity = custom ? arity : 16;   
-        MH = await buildMerkleHashBN128(arity, custom);
+        ctx.arity = options.arity || 16;
+        ctx.custom = options.custom || false; 
+        ctx.transcriptArity = ctx.custom ? ctx.arity : 16;   
+        MH = await buildMerkleHashBN128(ctx.arity, ctx.custom);
         transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
         throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
@@ -67,7 +67,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
     if(!options.vadcop) {
         ctx.challenges = [];
         if (logger) logger.debug("Calculating transcript");
-        calculateTranscript(transcript, ctx, logger);
+        await calculateTranscript(transcript, ctx, options);
     } else {
         ctx.challenges = challenges;
     }   
@@ -194,9 +194,16 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
 }
 
-function calculateTranscript(transcript, ctx, logger) {
-    for (let i=0; i<ctx.publics.length; i++) {
-        transcript.put(ctx.publics[i]);
+async function calculateTranscript(transcript, ctx, options) {
+    const logger = options.logger;
+
+    if(!options.hashCommits) {
+        for (let i=0; i<ctx.publics.length; i++) {
+            transcript.put(ctx.publics[i]);
+        }
+    } else {
+        const commitsHash = await hashCommits(ctx, ctx.publics, options);
+        transcript.put(commitsHash);
     }
 
     for(let i=0; i < ctx.starkInfo.numChallenges.length; i++) {
@@ -220,8 +227,14 @@ function calculateTranscript(transcript, ctx, logger) {
     ctx.challenges[evalsStage] = [];
     ctx.challenges[evalsStage][0] = transcript.getField();
     if (logger) logger.debug("··· challenges[" + evalsStage + "][0]: " + ctx.F.toString(ctx.challenges[evalsStage][0]));
-    for (let i=0; i<ctx.evals.length; i++) {
-        transcript.put(ctx.evals[i]);
+    
+    if(!options.hashCommits) {
+        for (let i=0; i<ctx.evals.length; i++) {
+            transcript.put(ctx.evals[i]);
+        }
+    } else {
+        const commitsHash = await hashCommits(ctx, ctx.evals, options);
+        transcript.put(commitsHash);
     }
 
     let friStage = ctx.starkInfo.numChallenges.length + 2;
@@ -241,14 +254,39 @@ function calculateTranscript(transcript, ctx, logger) {
         if (step < ctx.starkInfo.starkStruct.steps.length - 1) {
             transcript.put(ctx.proof.fri[step+1].root);
         } else {
-            for (let i=0; i<ctx.proof.fri[ctx.proof.fri.length-1].length; i++) {
-                transcript.put(ctx.proof.fri[ctx.proof.fri.length-1][i]);
+            if(!options.hashCommits) {
+                for (let i=0; i<ctx.proof.fri[ctx.proof.fri.length-1].length; i++) {
+                    transcript.put(ctx.proof.fri[ctx.proof.fri.length-1][i]);
+                }
+            } else {
+                const commitsHash = await hashCommits(ctx, ctx.proof.fri[ctx.proof.fri.length-1], options);
+                transcript.put(commitsHash);
             }
         }
     }
 
     ctx.friQueries = transcript.getPermutations(ctx.starkInfo.starkStruct.nQueries, ctx.starkInfo.starkStruct.steps[0].nBits);
     if (logger) logger.debug("··· FRI queries: [" + ctx.friQueries.join(",") + "]");
+}
+
+async function hashCommits(ctx, inputs) {
+    let transcript;
+    if (ctx.starkInfo.starkStruct.verificationHashType == "GL") {
+        const poseidonGL = await buildPoseidonGL();
+        transcript = new Transcript(poseidonGL);
+    } else if (ctx.starkInfo.starkStruct.verificationHashType == "BN128") {
+        const poseidonBN128 = await buildPoseidonBN128();
+        transcript = new TranscriptBN128(poseidonBN128, ctx.transcriptArity);
+    } else {
+        throw new Error("Invalid Hash Type: "+ ctx.starkInfo.starkStruct.verificationHashType == "GL");
+    }
+
+    for (let i=0; i<inputs.length; i++) {
+        transcript.put(inputs[i]);
+    }
+
+    const hash = transcript.getField();
+    return hash;
 }
 
 function executeCode(F, ctx, code) {

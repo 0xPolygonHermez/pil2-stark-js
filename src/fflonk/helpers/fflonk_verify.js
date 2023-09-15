@@ -51,7 +51,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, challenge
     if(!options.vadcop) {
         ctx.challenges = [];
         if (logger) logger.debug("Calculating transcript");
-        calculateTranscript(ctx, vk, logger);
+        await calculateTranscript(ctx, vk, options);
     } else {
         ctx.challenges = challenges;
     }
@@ -110,17 +110,40 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, challenge
     return res;
 }
 
-function calculateTranscript(ctx, vk, logger) {
+async function calculateTranscript(ctx, vk, options) {
+    const logger = options.logger;
     const transcript = new Keccak256Transcript(ctx.curve);
 
     const cnstCommitPols = Object.keys(vk).filter(k => k.match(/^f\d/));
-    for(let i = 0; i < cnstCommitPols.length; ++i) {
-        transcript.addPolCommitment(vk[cnstCommitPols[i]]);
-    }
 
-    for (let i=0; i<ctx.publics.length; i++) {
-        transcript.addScalar(ctx.publics[i]);
+    if(!options.hashCommits) {
+        for(let i = 0; i < cnstCommitPols.length; ++i) {
+            transcript.addPolCommitment(vk[cnstCommitPols[i]]);
+        }
+    
+        for (let i=0; i<ctx.publics.length; i++) {
+            transcript.addScalar(ctx.publics[i]);
+        }
+
+    } else {
+        const constInputs = [];
+
+        for(let i = 0; i < cnstCommitPols.length; ++i) {
+            constInputs.push({commit: true, value: vk[cnstCommitPols[i]]});
+        }
+
+        let constHash = await hashCommits(ctx, constInputs);
+        transcript.addScalar(constHash);
+    
+        const publicInputs = [];
+        for (let i=0; i<ctx.publics.length; i++) {
+            publicInputs.push({value: ctx.publics[i]});
+        }
+
+        let publicHash = await hashCommits(ctx, publicInputs);
+        transcript.addScalar(publicHash);
     }
+   
 
     for(let i=0; i < ctx.fflonkInfo.numChallenges.length; i++) {
         const stage = i + 1;
@@ -134,8 +157,18 @@ function calculateTranscript(ctx, vk, logger) {
         }
 
         const stageCommitPols = vk.f.filter(fi => fi.stages[0].stage === stage).map(fi => ctx.proof.polynomials[`f${fi.index}`]);
-        for(let i = 0; i < stageCommitPols.length; i++) {
-            transcript.addPolCommitment(stageCommitPols[i]);
+        if(!options.hashCommits) {
+            for(let i = 0; i < stageCommitPols.length; i++) {
+                transcript.addPolCommitment(stageCommitPols[i]);
+            }
+        } else {
+            const challengeInputs = [];
+            for(let i = 0; i < stageCommitPols.length; i++) {
+                challengeInputs.push({commit: true, value: stageCommitPols[i]});
+            }
+            let hash = await hashCommits(ctx, challengeInputs);
+
+            transcript.addScalar(hash);
         }
 
     }
@@ -150,15 +183,41 @@ function calculateTranscript(ctx, vk, logger) {
     const stageQCommitPols = vk.f
         .filter(fi => fi.stages[0].stage === ctx.fflonkInfo.numChallenges.length + 1)
         .map(fi => ctx.proof.polynomials[`f${fi.index}`]);
-    for(let i = 0; i < stageQCommitPols.length; i++) {
-        transcript.addPolCommitment(stageQCommitPols[i]);
+    
+    if(!options.hashCommits) {
+        for(let i = 0; i < stageQCommitPols.length; i++) {
+            transcript.addPolCommitment(stageQCommitPols[i]);
+        }
+    } else {
+        const challengeInputs = [];
+        for(let i = 0; i < stageQCommitPols.length; i++) {
+            challengeInputs.push({commit: true, value: stageQCommitPols[i]});
+        }
+        let hash = await hashCommits(ctx, challengeInputs);
+        transcript.addScalar(hash);
     }
+   
 
     ctx.challengeXiSeed = transcript.getChallenge();
     if (logger) logger.debug("··· challengesXiSeed: " + ctx.curve.Fr.toString(ctx.challengeXiSeed));
 
     let challengeXi = ctx.curve.Fr.exp(ctx.challengeXiSeed, vk.powerW);
     ctx.x = challengeXi;
+}
+
+async function hashCommits(ctx, inputs) {
+    const transcript = new Keccak256Transcript(ctx.curve);
+    
+    for (let i=0; i<inputs.length; i++) {
+        if(inputs[i].commit) {
+            transcript.addPolCommitment(inputs[i].value);
+        } else {
+            transcript.addScalar(inputs[i].value);
+        }
+    }
+
+    const hash = transcript.getChallenge();
+    return hash;
 }
 
 function executeCode(F, ctx, code) {
