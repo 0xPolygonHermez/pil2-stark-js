@@ -5,6 +5,7 @@ const buildMerkleHashGL = require("../helpers/hash/merklehash/merklehash_p.js");
 const buildMerkleHashBN128 = require("../helpers/hash/merklehash/merklehash_bn128_p.js");
 const { assert } = require("chai");
 const buildPoseidonGL = require("../helpers/hash/poseidon/poseidon");
+const { calculateTranscript } = require("./calculateTranscriptVerify");
 const buildPoseidonBN128 = require("circomlibjs").buildPoseidon;
 
 module.exports = async function starkVerify(proof, publics, constRoot, challenges, starkInfo, options = {}) {
@@ -26,7 +27,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         ctx.custom = options.custom || false; 
         ctx.transcriptArity = ctx.custom ? ctx.arity : 16;   
         MH = await buildMerkleHashBN128(ctx.arity, ctx.custom);
-        transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
+        transcript = new TranscriptBN128(poseidonBN128, ctx.transcriptArity);
     } else {
         throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
     }
@@ -67,9 +68,14 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
     if(!options.vadcop) {
         ctx.challenges = [];
         if (logger) logger.debug("Calculating transcript");
-        await calculateTranscript(transcript, ctx, options);
+        const challenges = await calculateTranscript(F, starkInfo, proof, publics, options);
+        ctx.challenges = challenges.challenges;
+        ctx.challengesFRISteps = challenges.challengesFRISteps;
+        ctx.friQueries = challenges.friQueries;
     } else {
-        ctx.challenges = challenges;
+        ctx.challenges = challenges.challenges;
+        ctx.challengesFRISteps = challenges.challengesFRISteps;
+        ctx.friQueries = challenges.friQueries; 
     }   
 
     if (logger) logger.debug("Verifying evaluations");
@@ -190,103 +196,8 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         return vals;
     }
 
-    return fri.verify(ctx.friChallenges, ctx.friQueries, proof.fri, checkQuery);
+    return fri.verify(ctx.challengesFRISteps, ctx.friQueries, proof.fri, checkQuery);
 
-}
-
-async function calculateTranscript(transcript, ctx, options) {
-    const logger = options.logger;
-
-    if(!options.hashCommits) {
-        for (let i=0; i<ctx.publics.length; i++) {
-            transcript.put(ctx.publics[i]);
-        }
-    } else {
-        const commitsHash = await hashCommits(ctx, ctx.publics, options);
-        transcript.put(commitsHash);
-    }
-
-    for(let i=0; i < ctx.starkInfo.numChallenges.length; i++) {
-        const stage = i + 1;
-        const nChallengesStage = ctx.starkInfo.numChallenges[i];
-        ctx.challenges[stage - 1] = [];
-        for(let j = 0; j < nChallengesStage; ++j) {
-            ctx.challenges[stage - 1][j] = transcript.getField();
-            if (logger) logger.debug("··· challenges[" + (stage - 1) + "][" + j + "]: " + ctx.F.toString(ctx.challenges[stage - 1][j]));
-        }
-        transcript.put(ctx.proof["root" + stage]);
-    }
-    
-    let qStage = ctx.starkInfo.numChallenges.length;
-    ctx.challenges[qStage] = [];
-    ctx.challenges[qStage][0] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + qStage + "][0]: " + ctx.F.toString(ctx.challenges[qStage][0]));
-    transcript.put(ctx.proof.rootQ);
-    
-    let evalsStage = ctx.starkInfo.numChallenges.length + 1;
-    ctx.challenges[evalsStage] = [];
-    ctx.challenges[evalsStage][0] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + evalsStage + "][0]: " + ctx.F.toString(ctx.challenges[evalsStage][0]));
-    
-    if(!options.hashCommits) {
-        for (let i=0; i<ctx.evals.length; i++) {
-            transcript.put(ctx.evals[i]);
-        }
-    } else {
-        const commitsHash = await hashCommits(ctx, ctx.evals, options);
-        transcript.put(commitsHash);
-    }
-
-    let friStage = ctx.starkInfo.numChallenges.length + 2;
-    ctx.challenges[friStage] = [];
-    ctx.challenges[friStage][0] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + friStage + "][0]: " + ctx.F.toString(ctx.challenges[friStage][0]));
-
-    ctx.challenges[friStage][1] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + friStage + "][1]: " + ctx.F.toString(ctx.challenges[friStage][1]));
-
-
-    ctx.friChallenges = [];
-    for (let step=0; step<ctx.starkInfo.starkStruct.steps.length; step++) {
-        ctx.friChallenges[step] = transcript.getField();
-        if (logger) logger.debug("··· challenges FRI folding step " + step + ": " + ctx.F.toString(ctx.friChallenges[step]));
-
-        if (step < ctx.starkInfo.starkStruct.steps.length - 1) {
-            transcript.put(ctx.proof.fri[step+1].root);
-        } else {
-            if(!options.hashCommits) {
-                for (let i=0; i<ctx.proof.fri[ctx.proof.fri.length-1].length; i++) {
-                    transcript.put(ctx.proof.fri[ctx.proof.fri.length-1][i]);
-                }
-            } else {
-                const commitsHash = await hashCommits(ctx, ctx.proof.fri[ctx.proof.fri.length-1], options);
-                transcript.put(commitsHash);
-            }
-        }
-    }
-
-    ctx.friQueries = transcript.getPermutations(ctx.starkInfo.starkStruct.nQueries, ctx.starkInfo.starkStruct.steps[0].nBits);
-    if (logger) logger.debug("··· FRI queries: [" + ctx.friQueries.join(",") + "]");
-}
-
-async function hashCommits(ctx, inputs) {
-    let transcript;
-    if (ctx.starkInfo.starkStruct.verificationHashType == "GL") {
-        const poseidonGL = await buildPoseidonGL();
-        transcript = new Transcript(poseidonGL);
-    } else if (ctx.starkInfo.starkStruct.verificationHashType == "BN128") {
-        const poseidonBN128 = await buildPoseidonBN128();
-        transcript = new TranscriptBN128(poseidonBN128, ctx.transcriptArity);
-    } else {
-        throw new Error("Invalid Hash Type: "+ ctx.starkInfo.starkStruct.verificationHashType == "GL");
-    }
-
-    for (let i=0; i<inputs.length; i++) {
-        transcript.put(inputs[i]);
-    }
-
-    const hash = transcript.getField();
-    return hash;
 }
 
 function executeCode(F, ctx, code) {

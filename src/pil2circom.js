@@ -35,6 +35,7 @@ module.exports = async function pil2circom(constRoot, starkInfo, options) {
         arity: Number(options.arity),
         transcriptArity: Number(options.transcriptArity),
         nBitsArity: log2(options.arity),
+        vadcop: options.vadcop || false,
     };
 
     return ejs.render(template ,  obj);

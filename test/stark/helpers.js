@@ -5,16 +5,18 @@ const starkGen = require("../../src/stark/stark_gen.js");
 const starkVerify = require("../../src/stark/stark_verify.js");
 
 const pil2circom = require("../../src/pil2circom");
-const { proof2zkin } = require("../../src/proof2zkin");
+const { proof2zkin, challenges2zkin } = require("../../src/proof2zkin");
 const wasm_tester = require("circom_tester/wasm/tester");
 const tmp = require('tmp-promise');
 const fs = require("fs");
 const { pilInfo } = require("../../index.js");
+const { calculateTranscript } = require("../../src/stark/calculateTranscriptVerify.js");
 
 module.exports.generateStarkProof = async function generateStarkProof(constPols, cmPols, pil, starkStruct, options) {
     const logger = options.logger;
     const debug = options.debug;
     const hashCommits = options.hashCommits;
+    const vadcop = options.vadcop;
     const F = options.F;
     const pil1 = options.pil1;
     const skip = options.skip || false;
@@ -39,14 +41,20 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
     assert(resV==true);
 
     if(!skip) {
-        const verifier = await pil2circom(setup.constRoot, setup.starkInfo, {hashCommits});
+        const verifier = await pil2circom(setup.constRoot, setup.starkInfo, {hashCommits, vadcop});
 
         const fileName = await tmp.tmpName();
         await fs.promises.writeFile(fileName, verifier, "utf8");
 
         const circuit = await wasm_tester(fileName, {O:1, prime: "goldilocks", include: "circuits.gl", verbose: true});
 
-        const input = proof2zkin(resP.proof, setup.starkInfo);
+        let input = proof2zkin(resP.proof, setup.starkInfo);
+
+        if(vadcop) {
+            const challenges = await calculateTranscript(F, setup.starkInfo, resP.proof, resP.publics, {hashCommits});
+            input = challenges2zkin(challenges, setup.starkInfo, input);
+        }
+
         input.publics = resP.publics;
 
         await circuit.calculateWitness(input, true);

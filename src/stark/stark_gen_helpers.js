@@ -429,3 +429,22 @@ module.exports.getChallengeStark = function getChallengeStark(transcript) {
     return transcript.getField();
 }
 
+module.exports.getPermutationsStark = async function getPermutationsStark(ctx, challenge) {
+    const verificationHashType = ctx.pilInfo.starkStruct.verificationHashType;
+    let transcript;
+    if (verificationHashType == "GL") {
+        const poseidon = await buildPoseidonGL();
+        transcript = new Transcript(poseidon);
+    } else if (verificationHashType == "BN128") {
+        let transcriptArity = ctx.custom ? ctx.arity : 16;
+        transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
+    } else {
+        throw new Error("Invalid Hash Type: "+ verificationHashType);
+    }
+
+    transcript.put(challenge);
+
+    const friQueries = transcript.getPermutations(ctx.pilInfo.starkStruct.nQueries, ctx.pilInfo.starkStruct.steps[0].nBits);
+    
+    return friQueries;
+}

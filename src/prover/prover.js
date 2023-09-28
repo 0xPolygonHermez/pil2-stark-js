@@ -1,5 +1,5 @@
 const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk, genProofFflonk, setChallengesFflonk, addTranscriptFflonk, getChallengeFflonk, calculateHashFflonk } = require("../fflonk/helpers/fflonk_prover_helpers");
-const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, computeFRIFolding, computeFRIQueries, calculateHashStark, addTranscriptStark, getChallengeStark } = require("../stark/stark_gen_helpers");
+const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, computeFRIFolding, computeFRIQueries, calculateHashStark, addTranscriptStark, getChallengeStark, getPermutationsStark } = require("../stark/stark_gen_helpers");
 const { calculatePublics, callCalculateExps, applyHints } = require("./prover_helpers");
 
 module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, zkey, options) {
@@ -98,7 +98,9 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
             addTranscriptStark(ctx.transcript, friCommits, stark);
         }
 
-        const friQueries = ctx.transcript.getPermutations(ctx.pilInfo.starkStruct.nQueries, ctx.pilInfo.starkStruct.steps[0].nBits);
+        const challengeFRIQueries = getChallengeStark(ctx.transcript);
+
+        const friQueries = await getPermutationsStark(ctx, challengeFRIQueries);
 
         if (logger) logger.debug("··· FRI queries: [" + friQueries.join(",") + "]");
     

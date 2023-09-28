@@ -13,6 +13,7 @@ include "bn1togl3.circom";
 include "compconstant64.circom";
 include "rangecheck.circom";
 
+<%  const NFields = Math.floor(((starkStruct.nQueries *  starkStruct.steps[0].nBits) - 1)/253)+1; -%>
 <%
 class Transcript {
     constructor(name) {
@@ -111,7 +112,6 @@ class Transcript {
         let signalName = "transcriptHash";
         if(this.name) signalName += "_" + this.name;
         const totalBits = n*nBits;
-        const NFields = Math.floor((totalBits - 1)/253)+1;
         const n2b = [];
         for (let i=0; i<NFields; i++) {
             const f = this.getFields253();
@@ -284,6 +284,21 @@ class Transcript {
 <% return ref(code[code.length-1].dest);                                                -%>
 <% }                                                                                    -%>
 
+/* 
+    Calculate FRI Queries
+*/
+template calculateFRIQueries() {
+    
+    signal input challengeFRIQueries[3];
+    signal output queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
+
+<%  const transcriptQueries = new Transcript("friQueries"); -%>
+<%  transcriptQueries.put("challengeFRIQueries", 3); -%>
+
+<% transcriptQueries.getPermutations("queriesFRI", starkStruct.nQueries, starkStruct.steps[0].nBits, true); -%>
+<%- transcriptQueries.getCode(); %>
+}
+
 <% if (!options.vadcop) { -%>
 
 /* 
@@ -303,7 +318,8 @@ template Transcript() {
 <% }                                                     -%>
     signal input finalPol[<%- 1 << starkStruct.steps[starkStruct.steps.length-1].nBits %>][3];
 
-<%  for(let i = 1; i < starkInfo.numChallenges.length; ++i) { -%>
+<%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+<%  if(starkInfo.numChallenges[i] === 0) continue; -%>
     signal output challengesStage<%- i + 1 %>[<%- starkInfo.numChallenges[i] %>][3];
 <%  } -%>
 
@@ -380,9 +396,13 @@ template Transcript() {
 <%          } -%>
 <%      } -%>
 <%  } -%>
-<% transcript.getPermutations("queriesFRI", starkStruct.nQueries, starkStruct.steps[0].nBits); -%>
 <%- transcript.getCode() %>
 
+    signal challengeFRIQueries[3];
+<%  transcript.getField("challengeFRIQueries", 3); -%>
+<%- transcript.getCode() %>
+
+    queriesFRI <== calculateFRIQueries()(challengeFRIQueries);
 }
 
 <% } -%>
@@ -748,7 +768,8 @@ template StarkVerifier() {
 
 <% if (!options.vadcop) { -%>
 <%  let challengeNames = []; -%>
-<%  for(let i = 1; i < starkInfo.numChallenges.length; ++i) { -%>
+<%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+<%  if(starkInfo.numChallenges[i] === 0) continue; -%>
     signal challengesStage<%- i + 1 %>[<%- starkInfo.numChallenges[i] %>][3];
 <%      challengeNames.push("challengesStage" + (i + 1)); -%>
 <%  }-%>
@@ -777,8 +798,9 @@ template StarkVerifier() {
     (<%- challengeNames.join(",") %>,challengesFRISteps,queriesFRI) <== Transcript()(publics,<%- stageRoots.join(",") %>,rootQ,evals, <%- si_roots.join(",") %>,finalPol);
 
 <% } else { -%>
-<%  for(let i = 1; i < starkInfo.numChallenges.length; ++i) { -%>
-    signal input challengesStage<%- i + 1 %>[<% starkInfo.numChallenges[i] -%>[3];
+<%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+<%  if(starkInfo.numChallenges[i] === 0) continue; -%>
+    signal input challengesStage<%- i + 1 %>[<% starkInfo.numChallenges[i] -%>][3];
 <%  }-%>
 
     signal input challengeQ[3];
@@ -792,8 +814,9 @@ template StarkVerifier() {
     // verifier provides a random X so that the prover can commit it. This value is stored here.
     signal input challengesFRISteps[<%- starkStruct.steps.length -%>][3];
 
-    // Each of the queries values represented in binary
-    signal input queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
+    signal input challengeFRIQueries[3];
+
+    signal queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>] <== calculateFRIQueries()(challengeFRIQueries);
 
 <% } -%>
 
@@ -804,7 +827,8 @@ template StarkVerifier() {
     ///////////
 
 <%  const challengesEvaluations = []; -%>
-<%  for(let i = 1; i < starkInfo.numChallenges.length; ++i) { -%>
+<%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+<%  if(starkInfo.numChallenges[i] === 0) continue; -%>
 <%      const stage = i + 1; -%>
 <%      challengesEvaluations.push("challengesStage" + stage); -%>
 <%  } -%> 
@@ -972,11 +996,18 @@ template Main() {
     signal input finalPol[<%- 1 << starkStruct.steps[starkStruct.steps.length-1].nBits %>][3];
 
 <% if(options.vadcop) { -%>
-    signal input challenges[<%- numChallengesStages + 4 %>][3];
-    signal input challengesFRISteps[<%- starkStruct.steps.length -%>][3];
-    signal input queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
-<% } -%>
+<%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+<%  if(starkInfo.numChallenges[i] === 0) continue; -%>
+    signal input challengesStage<%- i + 1 %>[<% starkInfo.numChallenges[i] -%>][3];
+<%  }-%>
+    signal input challengeQ[3];
+    signal input challengeXi[3];
+    signal input challengesFRI[2][3];
 
+    signal input challengesFRISteps[<%- starkStruct.steps.length -%>][3];
+
+    signal input challengeFRIQueries[3];
+<% } -%>
     component sv = StarkVerifier();
 
     sv.publics <== publics;
@@ -1012,9 +1043,16 @@ template Main() {
     sv.finalPol <== finalPol;
 
 <% if(options.vadcop) { -%>
-    sv.challenges = challenges;
-    sv.challengesFRISteps = challengesFRISteps;
-    sv.queriesFRI = queriesFRI;
+<%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+<%  if(starkInfo.numChallenges[i] === 0) continue; -%>
+    sv.challengesStage<%- i + 1 %> <== challengesStage<%- i + 1 %>;
+<%  }-%>
+    sv.challengeQ <== challengeQ;
+    sv.challengeXi <== challengeXi;
+    sv.challengesFRI <== challengesFRI;
+
+    sv.challengesFRISteps <== challengesFRISteps;
+    sv.challengeFRIQueries <== challengeFRIQueries;
 <% } -%>
 
     //////

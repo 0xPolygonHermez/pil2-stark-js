@@ -1,5 +1,5 @@
 
-module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
+module.exports.proof2zkin = function proof2zkin(p, starkInfo, c) {
     const zkin = {};
     zkin.root1 = p.root1;
     for(let i = 0; i < starkInfo.numChallenges.length - 1; ++i) {
@@ -58,6 +58,32 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
     }
 
     zkin.finalPol = friProof[friProof.length-1];
+
+    if(c) module.exports.challenges2zkin(c, starkInfo, zkin);
+     
+    return zkin;
+}
+
+module.exports.challenges2zkin = function challenges2zkin(challenges, starkInfo, zkin) {
+    for(let i=0; i < starkInfo.numChallenges.length; i++) {
+        if(starkInfo.numChallenges[i] === 0) continue;
+        zkin[`challengesStage${i+1}`] = [];
+        for(let j = 0; j < starkInfo.numChallenges[i]; ++j) {
+            zkin[`challengesStage${i+1}`][j] = challenges.challenges[i][j];
+        }       
+    }
+    
+    let qStage = starkInfo.numChallenges.length;     
+    let evalsStage = starkInfo.numChallenges.length + 1; 
+    let friStage = starkInfo.numChallenges.length + 2;
+
+
+    zkin.challengeQ = challenges.challenges[qStage];
+    zkin.challengeXi = challenges.challenges[evalsStage];
+    zkin.challengesFRI = challenges.challenges[friStage];
+
+    zkin.challengesFRISteps = challenges.challengesFRISteps;
+    zkin.challengeFRIQueries = challenges.challengeFRIQueries;
 
     return zkin;
 }

@@ -87,7 +87,7 @@ describe("test All sm", async function () {
         await smPermutation.execute(N, cmPols.Permutation);
         await smConnection.execute(N, cmPols.Connection);
 
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: true, debug: true, hashCommits: true});
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: true, debug: true, hashCommits: true, vadcop: true});
     });
 
 });
