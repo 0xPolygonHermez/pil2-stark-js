@@ -87,10 +87,12 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
         // STAGE 6. Compute FRI
         await computeFRIStark(ctx, options);
 
+        ctx.challengesFRISteps = [];
         for (let step = 0; step < ctx.pilInfo.starkStruct.steps.length; step++) {
 
             challenge = getChallengeStark(ctx.transcript);
-            
+            ctx.challengesFRISteps.push(challenge);
+
             if (logger) logger.debug("··· challenges FRI folding step " + step + ": " + ctx.F.toString(challenge));
 
             const friCommits = await computeFRIFolding(step, ctx, challenge, options);
@@ -99,6 +101,7 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
         }
 
         const challengeFRIQueries = getChallengeStark(ctx.transcript);
+        ctx.challengesFRISteps.push(challengeFRIQueries);
 
         const friQueries = await getPermutationsStark(ctx, challengeFRIQueries);
 
@@ -112,7 +115,13 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
     
     const {proof, publics} = ctx.prover === "stark" ? await genProofStark(ctx, logger) : await genProofFflonk(ctx, logger);
 
-    return {proof, publics};
+    const proofObject = {proof, publics};
+
+    if(options.vadcop) {
+        proofObject.challenges = ctx.challenges.flat();
+        proofObject.challengesFRISteps = ctx.challengesFRISteps;
+    }
+    return proofObject;
 }
 
 async function initProver(pilInfo, constTree, constPols, zkey, stark, options) {

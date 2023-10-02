@@ -89,7 +89,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
         }
     }
 
-    let challengeFRIQueries = transcript.getField();
+    challengesFRISteps[starkInfo.starkStruct.steps.length] = transcript.getField();
 
     let transcriptFRIQuery;
     if (starkInfo.starkStruct.verificationHashType == "GL") {
@@ -102,12 +102,12 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
         throw new Error("Invalid Hash Type: "+ starkInfo.starkStruct.verificationHashType == "GL");
     }
 
-    transcriptFRIQuery.put(challengeFRIQueries);
+    transcriptFRIQuery.put(challengesFRISteps[starkInfo.starkStruct.steps.length]);
 
     let friQueries = transcriptFRIQuery.getPermutations(starkInfo.starkStruct.nQueries, starkInfo.starkStruct.steps[0].nBits);
     if (logger) logger.debug("··· FRI queries: [" + friQueries.join(",") + "]");
 
-    return {challenges, challengesFRISteps, challengeFRIQueries, friQueries};
+    return {challenges, challengesFRISteps, friQueries};
 }
 
 async function hashCommits(starkInfo, inputs, options) {

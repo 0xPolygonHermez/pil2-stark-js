@@ -1,0 +1,332 @@
+pragma circom 2.1.0;
+pragma custom_templates;
+
+include "poseidon.circom";
+include "<%- basicCircuitName %>.verifier.circom";
+
+<%
+class Transcript {
+    constructor(name) {
+        this.state = ["0", "0", "0", "0"];
+        this.pending = [];
+        this.out = [];
+        this.stCnt =0;
+        this.hCnt =0;
+        this.hiCnt =0;
+        this.n2bCnt =0;
+        this.lastCodePrinted = 0;
+        this.name = name;
+
+        this.code = [];
+    }
+
+
+    getField(v) {
+        this.code.push(`${v} <== [${this.getFields1()}, ${this.getFields1()}, ${this.getFields1()}];`);    
+    }
+
+    updateState()  {
+        let signalName = "transcriptHash";
+        if(this.name) signalName += "_" + this.name;
+        if(this.hCnt > 0) {
+            const firstUnused = Math.max(this.hiCnt, 4);
+            if(firstUnused < 12) {
+                this.code.push(`for(var i = ${firstUnused}; i < 12; i++){
+        _ <== ${signalName}_${this.hCnt -1}[i]; // Unused transcript values 
+    }`)
+            }  
+        }
+        this.code.push(`\n    signal ${signalName}_${this.hCnt++}[12] <== Poseidon(12)([${this.pending.join(',')}], [${this.state.join(',')}]);`);
+        for (let i=0; i<12; i++) {
+            this.out[i] = `${signalName}_${this.hCnt-1}[${i}]`;
+        }
+        for (let i=0; i<4; i++) {
+            this.state[i] = `${signalName}_${this.hCnt-1}[${i}]`;
+        } 
+        this.pending = [];
+        this.hiCnt = 0;
+    }
+
+    getFields1() {
+        if (this.out.length == 0) {
+            while (this.pending.length<8) {
+                this.pending.push("0");
+            }
+            this.updateState();
+        }
+        const res = this.out.shift();
+        this.hiCnt++;
+        return res;
+    }
+
+    put(a, l) {
+        if (typeof l !== "undefined") {
+            for (let i=0; i<l; i++) {
+                this._add1(`${a}[${i}]`);
+            }
+        } else {
+            this._add1(a);
+        }
+    }
+
+    _add1(a) {
+        this.out = [];
+        this.pending.push(a);
+        if (this.pending.length == 8) {
+            this.updateState();
+        }
+    }
+
+    getPermutations(v, n, nBits) {
+        let signalName = "transcriptHash";
+        if(this.name) signalName += "_" + this.name;
+        const totalBits = n*nBits;
+        const n2b = [];
+        for (let i=0; i<NFields; i++) {
+            const f = this.getFields1();
+            n2b[i] = `transcriptN2b_${this.n2bCnt++}`;
+            this.code.push(`signal ${n2b[i]}[64] <== Num2Bits_strict()(${f});`);
+        }
+        if(this.hiCnt < 12) {
+            this.code.push(`for(var i = ${this.hiCnt}; i < 12; i++){
+        _ <== ${signalName}_${this.hCnt - 1}[i]; // Unused transcript values        
+    }\n`)
+        }
+        this.code.push(`// From each transcript hash converted to bits, we assign those bits to queriesFRI[q] to define the query positions`)
+        this.code.push(`var q = 0; // Query number `)
+        this.code.push(`var b = 0; // Bit number `)
+        for(let i = 0; i<NFields; i++) {
+            const nBits = i + 1 == NFields ? totalBits - 63*i : 63;
+            this.code.push(`for(var j = 0; j < ${nBits}; j++) {
+        ${v}[q][b] <== ${n2b[i]}[j];
+        b++;
+        if(b == ${starkStruct.steps[0].nBits}) {
+            b = 0; 
+            q++;
+        }
+    }`);
+            if(nBits === 63) {
+                this.code.push(`_ <== ${n2b[i]}[63]; // Unused last bit\n`); 
+            } else {
+                this.code.push(`for(var j = ${nBits}; j < 64; j++) {
+        _ <== ${n2b[i]}[j]; // Unused bits        
+    }`);
+            }
+        }
+    }
+
+    getCode() {
+        for (let i=this.lastCodePrinted; i<this.code.length; i++) this.code[i] = "    "+this.code[i];
+        let code = this.code.slice(this.lastCodePrinted, this.code.length).join("\n");
+        this.lastCodePrinted = this.code.length;
+        return code;
+    }
+}
+-%>
+
+template CalculatePublicsHash() {
+    signal input publics[<%- starkInfo.nPublics %>];
+
+    signal output sv_publicsHash[3];
+
+<%      const transcriptPublics = new Transcript("publics");
+        transcriptPublics.put("publics", starkInfo.nPublics);
+        transcriptPublics.getField("sv_publicsHash", 3); -%>
+<%-     transcriptPublics.getCode(); %>
+}
+
+template CalculateEvalsHash() {
+    signal input evals[<%- starkInfo.evMap.length %>][3];
+
+    signal output sv_evalsHash[3];
+
+<%      const transcriptEvals = new Transcript("evals");
+        for (let i=0; i<starkInfo.evMap.length; i++) {
+            transcriptEvals.put(`evals[${i}]`, 3);
+        }
+        transcriptEvals.getField("sv_evalsHash", 3); -%>
+<%-     transcriptEvals.getCode(); %>
+}
+
+template CalculateFinalPolHash() {
+    signal input finalPol[<%- 1 << starkInfo.starkStruct.steps[starkInfo.starkStruct.steps.length-1].nBits %>][3];
+
+    signal output sv_finalPolHash[3];
+
+<%      const transcriptFinalPol = new Transcript("finalPol");
+        for (let j=0; j< 1<<starkInfo.starkStruct.steps[starkInfo.starkStruct.steps.length-1].nBits; j++ ) {
+            transcriptFinalPol.put(`finalPol[${j}]`, 3);
+        }
+        transcriptFinalPol.getField("sv_finalPolHash", 3); -%>
+<%-     transcriptFinalPol.getCode(); %>
+}
+
+template CalculateRootHash() {
+    signal input root[4];
+
+    signal output rootHash[3];
+
+    component hash = Poseidon(12);
+
+    for(var i = 0; i < 4; i++) {
+        hash.in[i] <== root[i];
+        hash.in[4+i] <== 0;
+        hash.capacity[i] <== 0;
+    }
+
+    rootHash <== [hash.out[0], hash.out[1], hash.out[2]];
+
+    for(var i = 3; i < 12; i++) {
+        _ <== hash.out[i]; // Unused hash values
+    }
+}
+
+template Main() {
+
+    signal input publics[<%- starkInfo.nPublics %>];
+
+    signal input rootCRecursive2[4];
+
+<%  let nChallenges = starkInfo.numChallenges.reduce((curr, acc) => curr + acc, 0) + 4; -%>
+    signal input challenges[<%- nChallenges %>][3];
+
+<%  let nChallengesFRI = starkInfo.starkStruct.steps.length + 1; -%>
+    signal input challengesFRISteps[<%- nChallengesFRI %>][3];
+
+<% for (let i = 0; i < starkInfo.numChallenges.length+1; ++i) { -%>
+<%      let index = i === starkInfo.numChallenges.length ? 'Q' : i+1; -%>
+    signal input root<%- index %>[4];
+<% } -%>
+
+<% for (let i = 0; i < starkInfo.numChallenges.length+1; ++i) { -%>
+<%      let index = i === starkInfo.numChallenges.length ? 'Q' : i+1; -%>
+    signal input s0_vals<%- index %>[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${index}`] %>];
+<% } -%>
+    signal input s0_valsC[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.nConstants %>];
+
+<% for (let i = 0; i < starkInfo.numChallenges.length+1; ++i) { -%>
+<%      let index = i === starkInfo.numChallenges.length ? 'Q' : i+1; -%>
+    signal input s0_siblings<%- index %>[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.starkStruct.steps[0].nBits %>][4];
+<% } -%>
+    signal input s0_siblingsC[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.starkStruct.steps[0].nBits %>][4];
+
+    signal input evals[<%- starkInfo.evMap.length %>][3];
+
+<% for(let i = 1; i < starkInfo.starkStruct.steps.length; i++) { -%>
+    signal input s<%- i %>_root[4];
+<% } -%>
+
+<% for(let i = 1; i < starkInfo.starkStruct.steps.length; i++) { -%>
+    signal input s<%- i %>_vals[<%- starkInfo.starkStruct.nQueries %>][<%- (1 << (starkInfo.starkStruct.steps[i-1].nBits - starkInfo.starkStruct.steps[i].nBits))*3 %>];
+<% } -%>
+
+<% for(let i = 1; i < starkInfo.starkStruct.steps.length; i++) { -%>
+    signal input s<%- i %>_siblings[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.starkStruct.steps[i].nBits %>][4];
+<% } -%>
+
+    signal input finalPol[<%- 1 << starkInfo.starkStruct.steps[starkInfo.starkStruct.steps.length-1].nBits %>][3];
+
+    signal input subAirValue[3];
+
+<%  let transcriptValues = []; -%>
+<%  let scope = vadcop ? 'output' : 'input'; -%>
+    signal <%- scope %> sv_circuitType;
+<%  transcriptValues.push("circuitType"); -%>
+    signal <%- scope %> sv_aggregationType;
+<%  transcriptValues.push("aggregationType"); -%>
+    signal <%- scope %> sv_subAirValue[3];
+<%  transcriptValues.push("sv_subAirValue"); -%>
+    signal <%- scope %> sv_publicsHash[3];
+<%  transcriptValues.push("sv_publicsHash"); -%>
+<%  for (let i = 0; i < starkInfo.numChallenges.length + 1; ++i) { -%>
+<%      let index = i === starkInfo.numChallenges.length ? 'Q' : i+1; -%>
+    signal <%- scope %> sv_root<%- index %>[3];
+<%      transcriptValues.push(`sv_root${index}`); -%>
+<%  } -%>
+    signal <%- scope %> sv_evalsHash[3];
+<%  transcriptValues.push("sv_evalsHash"); -%>
+<%      for(let i = 1; i < starkInfo.starkStruct.steps.length; i++) { -%>
+    signal <%- scope %> sv_s<%- i %>_root[3];
+<%  transcriptValues.push(`sv${i}_root`); -%>
+<%      } -%>
+    signal <%- scope %> sv_finalPolHash[3];
+<%  transcriptValues.push("sv_finalPolHash"); -%>
+
+<%  if(scope === "output") { -%>
+    sv_circuitType <== <%- circuitType %>;
+    sv_aggregationType <== <%- aggregationType %>;
+    sv_subAirValue <== subAirValue;
+    sv_publicsHash <== CalculatePublicsHash()(publics);
+<%  for (let i = 0; i < starkInfo.numChallenges.length + 1; ++i) { -%>
+<%      let index = i === starkInfo.numChallenges.length ? 'Q' : i+1; -%>
+    sv_root<%- index %> <== CalculateRootHash()(root<%- index %>);
+<%  } -%>
+    sv_evalsHash <== CalculateEvalsHash()(evals);
+<%      for(let i = 1; i < starkInfo.starkStruct.steps.length; i++) { -%>
+    sv_s<%- i %>_root <== CalculateRootHash()(s<%- i %>_root);
+<%      } -%>
+    sv_finalPolHash <== CalculateFinalPolHash()(finalPol);
+<% } -%>
+
+    component sv = StarkVerifier();
+
+<% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+    sv.root<%- i+1 %> <== root<%- i + 1 %>;
+<% } -%>
+    sv.rootQ <== rootQ;
+
+<% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+    sv.s0_siblings<%- i+1 %> <== s0_siblings<%- i+1 %>;
+<% } -%>
+    sv.s0_siblingsQ <== s0_siblingsQ;
+    sv.s0_siblingsC <== s0_siblingsC;
+
+<% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+    sv.s0_vals<%- i+1 %> <== s0_vals<%- i+1 %>;
+<% } -%>
+    sv.s0_valsQ <== s0_valsQ;
+    sv.s0_valsC <== s0_valsC;
+
+    sv.evals <== evals;
+    
+<% for(let i = 1; i < starkInfo.starkStruct.steps.length; i++) { -%>
+    sv.s<%- i %>_root <== s<%- i %>_root;
+<% } -%>
+
+<% for(let i = 1; i < starkInfo.starkStruct.steps.length; i++) { -%>
+    sv.s<%- i %>_siblings <== s<%- i %>_siblings;
+<% } -%>
+
+<% for(let i = 1; i < starkInfo.starkStruct.steps.length; i++) { -%>
+    sv.s<%- i %>_vals <== s<%- i %>_vals;
+<% } -%>
+
+    for(var i = 0; i < <%- starkInfo.nPublics %>; i++) {
+        sv.publics[i] <== publics[i];
+    }
+
+<%  let c = 0; -%>
+<%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+<%      if(starkInfo.numChallenges[i] === 0) continue; -%>
+<%      for(let j = 0; j < starkInfo.numChallenges[i]; ++j) { -%>
+    sv.challengesStage<%- i + 1 %>[<%-j %>] <== challenges[<%- c++ %>];
+<%      } -%>
+<%  } -%>
+
+    sv.challengeQ <== challenges[<%- c++ %>];
+    sv.challengeXi <== challenges[<%- c++ %>];
+    sv.challengesFRI[0] <== challenges[<%- c++ %>];
+    sv.challengesFRI[1] <== challenges[<%- c++ %>];
+
+<%  c = 0; %>
+<%  for(let i = 0; i < starkInfo.starkStruct.steps.length + 1; ++i) { -%>
+    sv.challengesFRISteps[<%- i %>] <== challengesFRISteps[<%- c++ %>];
+<%  } -%>
+
+    sv.finalPol <== finalPol;
+   
+}
+
+<% const publics = ["publics", "rootCRecursive2", "challenges", "challengesFRISteps"]; -%>
+<% if(scope === "input") publics.push(...transcriptValues); -%>
+component main {public [<%- publics.join(", ") %>]} = Main();

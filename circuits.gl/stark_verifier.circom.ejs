@@ -278,7 +278,7 @@ template Transcript() {
     signal output challengeQ[3];
     signal output challengeXi[3];
     signal output challengesFRI[2][3];
-    signal output challengesFRISteps[<%- starkStruct.steps.length %>][3];
+    signal output challengesFRISteps[<%- starkStruct.steps.length + 1 %>][3];
     signal output queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
 
 <%  if(options.hashCommits) { -%> 
@@ -350,11 +350,10 @@ template Transcript() {
 <%      } -%>
 <%  } -%>
 
-    signal challengeFRIQueries[3];
-<%  transcript.getField("challengeFRIQueries", 3); -%>
+<%  transcript.getField(`challengesFRISteps[${starkStruct.steps.length}]`, 3); -%>
 <%- transcript.getCode() %>
 
-    queriesFRI <== calculateFRIQueries()(challengeFRIQueries);
+    queriesFRI <== calculateFRIQueries()(challengesFRISteps[<%- starkStruct.steps.length %>]);
 }
 
 <% } -%>
@@ -679,7 +678,7 @@ template StarkVerifier() {
 
 <% if (options.enableInput) { -%>
     signal input enable;
-    enable * (enable -1 ) === 0;
+    enable * (enable -1) === 0;
 <% } else { -%>
     signal enable <== 1;
 <% } -%>
@@ -702,7 +701,7 @@ template StarkVerifier() {
     // the prover can commit the polynomial.
     // Remember that, when folding, the prover does as follows: f0 = g_0 + X*g_1 + ... + (X^b)*g_b and then the 
     // verifier provides a random X so that the prover can commit it. This value is stored here.
-    signal challengesFRISteps[<%- starkStruct.steps.length -%>][3];
+    signal challengesFRISteps[<%- starkStruct.steps.length + 1 -%>][3];
 
     // Challenges from which we derive all the queries
     signal queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
@@ -730,12 +729,9 @@ template StarkVerifier() {
     // the prover can commit the polynomial.
     // Remember that, when folding, the prover does as follows: f0 = g_0 + X*g_1 + ... + (X^b)*g_b and then the 
     // verifier provides a random X so that the prover can commit it. This value is stored here.
-    signal input challengesFRISteps[<%- starkStruct.steps.length -%>][3];
+    signal input challengesFRISteps[<%- starkStruct.steps.length + 1 -%>][3];
 
-    // Each of the queries values represented in binary
-    signal input challengeFRIQueries[3];
-
-    signal queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>] <== calculateFRIQueries()(challengeFRIQueries);
+    signal queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>] <== calculateFRIQueries()(challengesFRISteps[<%- starkStruct.steps.length -%>]);
 <% } -%>
 
     ///////////
@@ -766,8 +762,9 @@ template StarkVerifier() {
 <% } -%> 
     var s0_valsQ_p[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cmQ %>][1];
     var s0_valsC_p[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants %>][1];
-<% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
-    var s<%- s %>_vals_p[<%- starkStruct.nQueries %>][<%- (1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits)) %>][3]; 
+<% for (let s=0; s<starkStruct.steps.length; s++) {   -%>
+<%  let exponent = s === 0 ? 1 : (1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits)); -%>
+    var s<%- s %>_vals_p[<%- starkStruct.nQueries %>][<%- exponent %>][3]; 
 <% } -%>
 
     for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
@@ -859,8 +856,10 @@ template StarkVerifier() {
         for(var i = 0; i < <%- starkStruct.steps[s].nBits %>; i++) { s<%- s %>_queriesFRI[i] = queriesFRI[q][i]; }  
 <%  const nextPolFRI = s < starkStruct.steps.length-1 ? `s${s+1}_vals_p[q]` : "finalPol"; -%>
 <%  const nextStepFRI = s < starkStruct.steps.length-1 ? starkStruct.steps[s+1].nBits : 0; -%>
-<%  const e0 = F.inv(F.exp(F.shift, 1 << (starkStruct.nBitsExt -starkStruct.steps[s-1].nBits) ) ) -%>
-        VerifyFRI(<%- starkStruct.nBitsExt %>, <%- starkStruct.steps[s-1].nBits %>, <%- starkStruct.steps[s].nBits %>, <%- nextStepFRI %>, <%- e0 %>)(s<%- s %>_queriesFRI, challengesFRISteps[<%- s %>], s<%- s %>_vals_p[q], <%- nextPolFRI %>, enable);
+<%  const exponent = s === 0 ? 0 : 1 << (starkStruct.nBitsExt -starkStruct.steps[s-1].nBits); -%>
+<%  const prevStepBits = s === 0 ? starkStruct.steps[s].nBits : starkStruct.steps[s-1].nBits; -%>
+<%  const e0 = F.inv(F.exp(F.shift, exponent)) -%>
+        VerifyFRI(<%- starkStruct.nBitsExt %>, <%- prevStepBits %>, <%- starkStruct.steps[s].nBits %>, <%- nextStepFRI %>, <%- e0 %>)(s<%- s %>_queriesFRI, challengesFRISteps[<%- s %>], s<%- s %>_vals_p[q], <%- nextPolFRI %>, enable);
 <% } -%>
     }
 

@@ -17,7 +17,7 @@ const { createHash } = require("crypto");
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_prover.js -m commit.bin -c <const.bin> -t <consttree.bin> -p <pil.json> [-P <pilconfig.json>] -s <starkinfo.json> -o <proof.json> -b <public.json>")
+    .usage("node main_prover.js -m commit.bin -c <const.bin> -t <consttree.bin> -p <pil.json> [-P <pilconfig.json>] -s <starkinfo.json> -o <proof.json> -b <public.json> -v <challenges.json> [--vadcop]")
     .alias("m", "commit")
     .alias("c", "const")
     .alias("t", "consttree")
@@ -27,6 +27,7 @@ const argv = require("yargs")
     .alias("o", "proof")
     .alias("z", "zkin")
     .alias("b", "public")
+    .alias("v", "vadcop")
     .string("proverAddr")
     .string("arity")
     .argv;
@@ -43,6 +44,7 @@ async function run() {
     const proofFile = typeof(argv.proof) === "string" ?  argv.proof.trim() : "mycircuit.proof.json";
     const zkinFile = typeof(argv.zkin) === "string" ?  argv.zkin.trim() : "mycircuit.proof.zkin.json";
     const publicFile = typeof(argv.public) === "string" ?  argv.public.trim() : "mycircuit.public.json";
+    const challengesFile = typeof(argv.vadcop) === "string" ?  argv.vadcop.trim() : "mycircuit.challenges.json";
 
     const pil = await compile(F, pilFile, null, pilConfig);
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
@@ -57,7 +59,10 @@ async function run() {
     const logger = Logger.create("pil-stark", {showTimestamp: false});
     Logger.setLogLevel("DEBUG");
 
-    let options = {logger};
+    let vadcop = argv.vadcop || false;
+
+    let options = {logger, vadcop};
+    
     let MH;
     if (starkInfo.starkStruct.verificationHashType == "GL") {
         MH = await buildMerkleHashGL();
@@ -82,6 +87,13 @@ async function run() {
 
     const zkIn = proof2zkin(resP.proof, starkInfo);
     zkIn.publics = resP.publics;
+
+    if(vadcop) {
+        zkIn.challenges = resP.challenges;
+        zkIn.challengesFRISteps = resP.challengesFRISteps;
+
+        await fs.promises.writeFile(challengesFile, JSONbig.stringify({challenges: resP.challenges, challengesFRISteps: resP.challengesFRISteps}, null, 1), "utf8");
+    }
 
     await fs.promises.writeFile(publicFile, JSONbig.stringify(resP.publics, null, 1), "utf8");
     if (starkInfo.starkStruct.verificationHashType == "BN128") {

@@ -10,7 +10,7 @@ const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_pil2circom.js -o <verifier.circom> -p <pil.json> [-P <pilconfig.json>] -v <verification_key.json> -s <starkinfo.json> [--skipMain] [--enableInput] [--verkeyInput] [--custom] [--arity]")
+    .usage("node main_pil2circom.js -o <verifier.circom> -p <pil.json> [-P <pilconfig.json>] -v <verification_key.json> -s <starkinfo.json> [--skipMain] [--vadcop] [--hashCommits] [--enableInput] [--verkeyInput] [--custom] [--arity]")
     .alias("p", "pil")
     .alias("P", "pilconfig")
     .alias("s", "starkinfo")
@@ -32,6 +32,7 @@ async function run() {
     const options = {
         skipMain: argv.skipMain || false,
         vadcop: argv.vadcop || false,
+        hashCommits: argv.hashCommits || false,
         enableInput: argv.enableInput || false,
         verkeyInput: argv.verkeyInput || false,
         custom: argv.custom || false,

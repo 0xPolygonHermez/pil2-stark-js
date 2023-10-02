@@ -83,7 +83,6 @@ module.exports.challenges2zkin = function challenges2zkin(challenges, starkInfo,
     zkin.challengesFRI = challenges.challenges[friStage];
 
     zkin.challengesFRISteps = challenges.challengesFRISteps;
-    zkin.challengeFRIQueries = challenges.challengeFRIQueries;
 
     return zkin;
 }
