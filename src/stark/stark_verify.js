@@ -15,6 +15,16 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     const poseidon = await buildPoseidonGL();
 
+    const F = poseidon.F;
+
+    ctx = {
+        evals: proof.evals,
+        publics,
+        starkInfo,
+        proof,
+        F,
+    };
+    
     let MH;
     let transcript;
     if (starkStruct.verificationHashType == "GL") {
@@ -55,20 +65,10 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         logger.debug("-----------------------------");
     }
 
-    const F = poseidon.F;
-
-    ctx = {
-        evals: proof.evals,
-        publics,
-        starkInfo,
-        proof,
-        F,
-    };
-
     if(!options.vadcop) {
         ctx.challenges = [];
         if (logger) logger.debug("Calculating transcript");
-        const challenges = await calculateTranscript(F, starkInfo, proof, publics, options);
+        const challenges = await calculateTranscript(F, starkInfo, proof, publics, constRoot, options);
         ctx.challenges = challenges.challenges;
         ctx.challengesFRISteps = challenges.challengesFRISteps;
         ctx.friQueries = challenges.friQueries;

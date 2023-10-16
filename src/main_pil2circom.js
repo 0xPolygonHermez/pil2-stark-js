@@ -17,6 +17,8 @@ const argv = require("yargs")
     .alias("v", "verkey")
     .alias("o", "output")
     .string("arity")
+    .string("vadcop")
+    .string("hashcommits")
     .argv;
 
 async function run() {
@@ -32,11 +34,13 @@ async function run() {
     const options = {
         skipMain: argv.skipMain || false,
         vadcop: argv.vadcop || false,
-        hashCommits: argv.hashCommits || false,
+        hashCommits: argv.hashcommits || false,
         enableInput: argv.enableInput || false,
         verkeyInput: argv.verkeyInput || false,
         custom: argv.custom || false,
     }
+
+    console.log("Options: ", options);
 
     if(starkInfo.starkStruct.verificationHashType === "BN128") {
         options.arity =  Number(argv.arity) || 16;

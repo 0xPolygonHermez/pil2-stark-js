@@ -96,7 +96,7 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
 }
 
 module.exports.generateConstraintPolynomialVerifierCode = function generateConstraintPolynomialVerifierCode(res, symbols, expressions, stark) {       
-    let addMul = stark && res.starkStruct.verificationHashType == "GL" ? false : true;
+    let addMul = stark ? false : true;
 
     let ctx = {
         calculated: {},
@@ -164,7 +164,7 @@ module.exports.generateFRICode = function generateFRICode(res, friExp, symbols, 
     res.code.fri = buildCode(ctxExt, expressions);
     res.code.fri.code[res.code.fri.code.length-1].dest = { type: "f", id: 0, dim: 3 };
 
-    let addMul = res.starkStruct.verificationHashType == "GL" ? false : true;
+    let addMul = false;
 
     ctxExt.verifierQuery = true;
     ctxExt.addMul = addMul;

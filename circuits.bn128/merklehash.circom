@@ -5,7 +5,7 @@ include "merkle.circom";
 include "utils.circom";
 
 /*
-    Given a leaf value and its sibling path, calculate the merkle tree root 
+    Given a set of leaf values, their sibling path and their key, calculate the merkle tree root 
     - eSize: Size of the extended field (usually it will be either 3 if we are in Fp³ or 1)
     - elementsInLinear: Each leave of the merkle tree is made by this number of values. 
 */
@@ -14,7 +14,7 @@ template MerkleHash(eSize, elementsInLinear, nBits, arity) {
     var nLevels = (nBits - 1)\logArity +1;
     signal input values[elementsInLinear][eSize];
     signal input siblings[nLevels][arity]; // Sibling path to calculate the merkle root given a set of values. 
-    signal input key[nBits]; // Defines either each element of the sibling path is the left or right one
+    signal input {binary} key[nBits]; // Defines either each element of the sibling path is the left or right one
     signal output root; // Root of the merkle tree
 
     // Each leaf in the merkle tree might be composed by multiple values. Therefore, the first step is to 
@@ -26,14 +26,20 @@ template MerkleHash(eSize, elementsInLinear, nBits, arity) {
 }
 
 
+/*
+    Given a set of leaf values, their sibling path, their key, their merkle root and a boolean, check that the merkle tree root matches with the one sent as input
+    - eSize: Size of the extended field (usually it will be either 3 if we are in Fp³ or 1)
+    - elementsInLinear: Each leave of the merkle tree is made by this number of values. 
+    - nLinears: Number of leaves of the merkle tree
+*/
 template parallel VerifyMerkleHash(eSize, elementsInLinear, nBits, arity) {
     var nLeaves = log2(arity);
     var nLevels = (nBits - 1)\nLeaves +1;
     signal input values[elementsInLinear][eSize];
     signal input siblings[nLevels][arity]; // Sibling path to calculate the merkle root given a set of values.
-    signal input key[nBits]; // Defines either each element of the sibling path is the left or right one
+    signal input {binary} key[nBits]; // Defines either each element of the sibling path is the left or right one
     signal input root; // Root of the merkle tree
-    signal input enable; // Boolean that determines either we want to check that roots matches or not
+    signal input {binary} enable; // Boolean that determines either we want to check that roots matches or not
 
     // Calculate the merkle root 
     signal merkleRoot <== MerkleHash(eSize, elementsInLinear, nBits, arity)(values, siblings, key);

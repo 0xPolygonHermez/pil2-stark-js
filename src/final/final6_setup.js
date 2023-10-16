@@ -8,6 +8,7 @@ const ejs = require("ejs");
 const r1cs2plonk = require("../r1cs2plonk");
 const { C, M } = require("./poseidon_constants.js");
 const { getCustomGatesInfo, calculatePlonkConstraints } = require("./final_helpers.js");
+const { connect } = require("../helpers/polutils");
 
 module.exports = async function plonkSetup(F, r1cs, options) {
     // Calculate the number plonk Additions and plonk constraints from the R1CS
@@ -257,7 +258,7 @@ module.exports = async function plonkSetup(F, r1cs, options) {
             if (sMap[j][i]) {
                 if (typeof lastSignal[sMap[j][i]] !== "undefined") {
                     const ls = lastSignal[sMap[j][i]];
-                    connect(constPols.Final.S[ls.col][ls.row], constPols.Final.S[j][i]);
+                    connect(constPols.Final.S[ls.col],ls.row, constPols.Final.S[j],i);
                 } else {
                     lastSignal[sMap[j][i]] = {
                         col: j,
@@ -299,8 +300,4 @@ module.exports = async function plonkSetup(F, r1cs, options) {
         sMap: sMap,
         plonkAdditions: plonkAdditions,
     };
-
-    function connect(p1, p2) {
-        [p1, p2] = [p2, p1];
-    }
 }

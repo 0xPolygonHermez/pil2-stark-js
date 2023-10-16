@@ -12,6 +12,8 @@ const argv = require("yargs")
     .alias("v", "verkey")
     .alias("o", "proof")
     .alias("b", "public")
+    .string("vadcop")
+    .string("hashcommits")
     .string("arity")
     .argv;
 
@@ -33,7 +35,10 @@ async function run() {
     const logger = Logger.create("pil-stark", {showTimestamp: false});
     Logger.setLogLevel("DEBUG");
 
-    let options = {logger};
+    let vadcop = argv.vadcop || false;
+    let hashCommits = argv.hashcommits || false;
+    
+    let options = {logger, vadcop, hashCommits};
     if (starkInfo.starkStruct.verificationHashType === "BN128") {
         options.arity = Number(argv.arity) || 16;
         options.custom = argv.custom || false;

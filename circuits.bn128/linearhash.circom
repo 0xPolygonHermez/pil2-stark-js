@@ -2,6 +2,9 @@ pragma circom 2.1.0;
 
 include "poseidon.circom";
 
+// Given a list on inputs over GL³, compute the linear hash of the list, mapping from GL³ to BN
+// via the map (x,y,z) |-> x + y·2⁶⁴ + z·2¹²⁸, which is injective but not surjective;
+// and hashing the resulting BN elements in chunks of ${arity} using Poseidon.
 template LinearHash(nInputs, eSize, arity) {
     signal input in[nInputs][eSize];
     signal output out;

@@ -3,7 +3,7 @@ const TranscriptBN128 = require("../helpers/transcript/transcript.bn128");
 const buildPoseidonGL = require("../helpers/hash/poseidon/poseidon");
 const buildPoseidonBN128 = require("circomlibjs").buildPoseidon;
 
-module.exports.calculateTranscript = async function calculateTranscript(F, starkInfo, proof, publics, options) {
+module.exports.calculateTranscript = async function calculateTranscript(F, starkInfo, proof, publics, constRoot, options) {
     let challenges = [];
     let transcript;
     if (starkInfo.starkStruct.verificationHashType == "GL") {
@@ -21,6 +21,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
     
     const logger = options.logger;
 
+    transcript.put(constRoot);
     if(!options.hashCommits) {
         for (let i=0; i<publics.length; i++) {
             transcript.put(publics[i]);

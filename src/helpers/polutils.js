@@ -148,3 +148,7 @@ module.exports.calculateZ = async function(F, num, den) {
 
     return [z];
 }
+
+module.exports.connect = function connect(p1, i1, p2, i2) {
+    [p1[i1], p2[i2]] = [p2[i2], p1[i1]];
+}

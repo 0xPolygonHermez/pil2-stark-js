@@ -1,4 +1,5 @@
 const { log2, getKs } = require("pilcom/src/utils.js");
+const { connect } = require("../../../src/helpers/polutils.js");
 
 module.exports.buildConstants = async function (N, pols, F) {
 
@@ -10,10 +11,6 @@ module.exports.buildConstants = async function (N, pols, F) {
         pols.S1[i] = w;
         pols.S2[i] = F.mul(w, ks[0]);
         w = F.mul(w, F.w[pow]);
-    }
-
-    function connect(p1, i1, p2, i2) {
-        [p1[i1], p2[i2]] = [p2[i2], p1[i1]];
     }
 
     for (let i=0; i<N; i++) {

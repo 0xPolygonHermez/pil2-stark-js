@@ -3,4 +3,14 @@ pragma custom_templates;
 
 include "<%- dirName %>/../../../../circuits.gl/treeselector.circom";
 
-component main = TreeSelector(<%- nBits %>, 3);
+template TreeSelect(nLevels, eSize) {
+    var n = 1 << nLevels;
+    signal input values[n][eSize];
+    signal input key[nLevels];
+    signal output out[eSize];
+
+    signal {binary} keyTags[nLevels] <== key;
+    
+    out <== TreeSelector(nLevels, eSize)(values, keyTags);
+}
+component main = TreeSelect(<%- nBits %>, 3);

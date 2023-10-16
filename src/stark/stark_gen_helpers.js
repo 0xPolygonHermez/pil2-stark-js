@@ -406,6 +406,7 @@ module.exports.calculateHashStark = async function calculateHashStark(ctx, input
         transcript = new Transcript(poseidon);
     } else if (verificationHashType == "BN128") {
         let transcriptArity = ctx.custom ? ctx.arity : 16;
+        const poseidonBN128 = await buildPoseidonBN128();
         transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
         throw new Error("Invalid Hash Type: "+ verificationHashType);
@@ -437,6 +438,7 @@ module.exports.getPermutationsStark = async function getPermutationsStark(ctx, c
         transcript = new Transcript(poseidon);
     } else if (verificationHashType == "BN128") {
         let transcriptArity = ctx.custom ? ctx.arity : 16;
+        const poseidonBN128 = await buildPoseidonBN128();
         transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
         throw new Error("Invalid Hash Type: "+ verificationHashType);

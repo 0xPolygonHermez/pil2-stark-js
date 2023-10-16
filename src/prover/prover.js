@@ -24,6 +24,10 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
         await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1);
     }
    
+    if(!options.debug) {
+        addTranscript(ctx.transcript,ctx.MH.root(ctx.constTree),stark);
+    }
+    
     computePublics(ctx, stark, options);
 
     let challenge;

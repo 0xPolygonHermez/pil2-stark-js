@@ -4,6 +4,10 @@ include "bitify.circom";
 include "comparators.circom";
 include "poseidon.circom";
 
+/*
+    Given a leaf value, its sibling path and a key indicating the hashing position for each element in the path, calculate the merkle tree root 
+    - keyBits: number of bits in the key
+*/
 template Merkle(keyBits, arity) {
     var nLevels = 0;
     var nBits = log2(arity);
@@ -16,7 +20,7 @@ template Merkle(keyBits, arity) {
 
     signal input value;
     signal input siblings[nLevels][arity];
-    signal input key[keyBits];
+    signal input {binary} key[keyBits];
     signal output root;
 
 
@@ -37,7 +41,7 @@ template Merkle(keyBits, arity) {
             }
         } 
        
-        signal s[arity];
+        signal {binary} s[arity];
         for(var i = 0; i < arity; i++) {
             s[i] <== IsEqual()([keyNum.out, i]);
         }
@@ -61,9 +65,11 @@ template Merkle(keyBits, arity) {
             }
         }
 
+        signal {binary} nextKeys[nextNBits];
         for (var i=0; i<nextNBits; i++) {
-            mNext.key[i] <== key[i+nBits];
+            nextKeys[i] <== key[i+nBits];
         }
+        mNext.key <== nextKeys;
 
         root <== mNext.root;
     }

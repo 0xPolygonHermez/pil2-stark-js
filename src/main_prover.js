@@ -27,8 +27,10 @@ const argv = require("yargs")
     .alias("o", "proof")
     .alias("z", "zkin")
     .alias("b", "public")
-    .alias("v", "vadcop")
+    .alias("v", "vadcopchallenges")
     .string("proverAddr")
+    .string("vadcop")
+    .string("hashcommits")
     .string("arity")
     .argv;
 
@@ -44,7 +46,7 @@ async function run() {
     const proofFile = typeof(argv.proof) === "string" ?  argv.proof.trim() : "mycircuit.proof.json";
     const zkinFile = typeof(argv.zkin) === "string" ?  argv.zkin.trim() : "mycircuit.proof.zkin.json";
     const publicFile = typeof(argv.public) === "string" ?  argv.public.trim() : "mycircuit.public.json";
-    const challengesFile = typeof(argv.vadcop) === "string" ?  argv.vadcop.trim() : "mycircuit.challenges.json";
+    const challengesFile = typeof(argv.vadcopchallenges) === "string" ?  argv.vadcopchallenges.trim() : "mycircuit.challenges.json";
 
     const pil = await compile(F, pilFile, null, pilConfig);
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
@@ -60,8 +62,9 @@ async function run() {
     Logger.setLogLevel("DEBUG");
 
     let vadcop = argv.vadcop || false;
-
-    let options = {logger, vadcop};
+    let hashCommits = argv.hashcommits || false;
+    
+    let options = {logger, vadcop, hashCommits};
     
     let MH;
     if (starkInfo.starkStruct.verificationHashType == "GL") {
