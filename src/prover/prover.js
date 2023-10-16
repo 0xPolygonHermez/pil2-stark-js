@@ -25,7 +25,7 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
     }
    
     if(!options.debug) {
-        addTranscript(ctx.transcript,ctx.MH.root(ctx.constTree),stark);
+        addTranscript(ctx.transcript, [ctx.MH.root(ctx.constTree)], stark);
     }
     
     computePublics(ctx, stark, options);

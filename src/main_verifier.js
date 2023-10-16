@@ -42,7 +42,7 @@ async function run() {
     if (starkInfo.starkStruct.verificationHashType === "BN128") {
         options.arity = Number(argv.arity) || 16;
         options.custom = argv.custom || false;
-        console.log(`Arity: ${options.arity}, Custom: ${options.custom}`);
+        console.log(`Arity: ${options.arity}, Custom: ${options.custom}, hashCommits: ${options.hashCommits}, vadcop: ${options.vadcop}`);
 
     } 
     

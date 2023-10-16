@@ -76,7 +76,7 @@ async function run() {
         options.arity = arity;
         options.custom = custom;
 
-        console.log(`Arity: ${arity}, Custom: ${custom}`);
+        console.log(`Arity: ${arity}, Custom: ${custom}, hashCommits: ${hashCommits}, vadcop: ${vadcop}`);
         MH = await buildMerkleHashBN128(arity, custom);
     } else {
         throw new Error("Invalid Hash Type: "+ starkInfo.starkStruct.verificationHashType);

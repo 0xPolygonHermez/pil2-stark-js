@@ -192,15 +192,17 @@ class Transcript {
 <%        } else if (r.type == "const") { -%>
 <%            return "consts[" + r.id + "]"; -%>
 <%        } else if (r.type == "number") { -%>
-<%            if(!((BigInt(r.value) + "_" + destDim) in values)) {     -%>                                                    -%>
+<%            let val = r.value; -%>
+<%            if(val < 0n) val = F.add(BigInt(val),18446744069414584321n); -%>
+<%            if(!((BigInt(val) + "_" + destDim) in values)) {     -%>
 <%                 if(destDim === 1) { -%>
-    signal {maxNum} constValue_<%- c %> <== GLConst(<%- r.value %>)();
+    signal {maxNum} constValue_<%- c %> <== GLConst(<%- val %>)();
 <%                 } else { -%>
-    signal {maxNum} constValue_<%- c %>[3] <== GLConst3(<%- r.value %>)();
+    signal {maxNum} constValue_<%- c %>[3] <== GLConst3(<%- val %>)();
 <%                 } -%>
-<%                    values[BigInt(r.value) + "_" + destDim] = "constValue_" + c++;                                    -%>
+<%                    values[BigInt(val) + "_" + destDim] = "constValue_" + c++;                                    -%>
 <%            }                                                                                         -%>
-<%            return values[BigInt(r.value) + "_" + destDim]; -%>
+<%            return values[BigInt(val) + "_" + destDim]; -%>
 <%        } else { -%>
 <%            throw new Error("Invalid Ref: " +r.type); -%>
 <%        } -%>
@@ -218,18 +220,21 @@ class Transcript {
 <%      if(["add", "sub", "mul"].includes(inst.op)) {                                   -%>
 <%          ina = ref(inst.src[0], inst.dest.dim);                                      -%>
 <%          inb = ref(inst.src[1], inst.dest.dim);                                                    -%>
+<%          let val0, val1; -%>
+<%          if(inst.src[0].type === "number") val0 = BigInt(inst.src[0].value) >= 0n ? BigInt(inst.src[0].value) : F.add(BigInt(inst.src[0].value), 18446744069414584321n); -%>
+<%          if(inst.src[1].type === "number") val1 = BigInt(inst.src[1].value) >= 0n ? BigInt(inst.src[1].value) : F.add(BigInt(inst.src[1].value), 18446744069414584321n); -%>
 <%          if(inst.src[0].dim === 1 && inst.src[1].dim === 3 && (inst.src[0].type !== "number" 
-                || (BigInt(inst.src[0].value) !== 0n && !((BigInt(inst.src[0].value) + "_" + inst.dest.dim) in values)))) {                        -%>
+                || (val0 !== 0n && !((val0 + "_" + inst.dest.dim) in values)))) {                        -%>
     signal {maxNum} <%- "value_" + v %>[3] <== GLC3()(<%- ina %>);
 <%          ina = "value_" + v++;                                                       -%>
 <%          } else if (inst.src[0].dim === 3 && inst.src[1].dim === 1 && (inst.src[1].type !== "number" 
-                || (BigInt(inst.src[1].value) !== 0n && !((BigInt(inst.src[1].value) + "_" + inst.dest.dim) in values)))) {                -%>
+                || (val1 !== 0n && !((val1 + "_" + inst.dest.dim) in values)))) {                -%>
     signal {maxNum} <%- "value_" + v %>[3] <== GLC3()(<%- inb %>);
 <%          inb = "value_" + v++;                                                       -%>
 <%          }                                                                           -%>
 <%      } else if (inst.op == "copy") {                                                 -%>
 <%          ina = ref(inst.src[0], inst.dest.dim);                                                     -%>
-<%      }   -%>  
+<%      }   -%>
 <%      if (inst.op == "add") {                                                         -%>
 <%          if ((inst.src[0].dim==1) && (inst.src[1].dim==1)) {                         -%>
     signal {maxNum} <%- ref(inst.dest) %> <== GLAdd()(<%- ina %>,<%- inb %>);
@@ -512,7 +517,6 @@ template parallel VerifyEvaluations() {
 
     // Store the vanishing polynomial Zh = x^nBits - 1 evaluated at z
     signal {maxNum} Z[3] <== GLCSub()(zMul[<%- starkStruct.nBits - 1 %>], oneGL);
-
     signal {maxNum} Zh[3] <== GLCInv()(Z);
 
 <%  if(starkInfo.boundaries.includes("firstRow")) { -%>
@@ -687,10 +691,10 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
     signal {maxNum} w<%- i %>[<%- opening %>][3];
     w<%- i %>[0] <== GLCMul()(rootWXi, challengeXi);
 <%      for(let j = 1; j < Math.abs(opening); ++j) { -%>
-<%  let rootsFunction = opening > 0 ? 'roots' : 'invroots'; -%>
+<%  let rootsFunction = opening > 0 ? 'rootWXi' : 'rootWXiInv'; -%>
     w<%- i %>[<%- j %>] <== GLCMul()(rootWXiInv, w<%- i %>[<%- j-1 %>]);
 <%      } -%>
-    signal {maxNum} den<%- i %>[3] <== GLCSub()(X, challengeXi);
+    signal {maxNum} den<%- i %>[3] <== GLCSub()(X, w<%- i %>[<%- opening - 1 %>]);
     signal {maxNum} den<%- i %>inv[3] <== GLCInv()(den<%- i %>);
 <%  } else { -%>
     signal {maxNum} den<%- i %>[3] <== GLCSub()(X, challengeXi);
