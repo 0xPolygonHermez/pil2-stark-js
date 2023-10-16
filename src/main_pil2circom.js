@@ -23,11 +23,7 @@ const argv = require("yargs")
 
 async function run() {
     const starkInfoFIle = typeof(argv.starkinfo) === "string" ?  argv.starkinfo.trim() : "starkinfo.json";
-    const verKeyFile = typeof(argv.verkey) === "string" ?  argv.verkey.trim() : "mycircuit.verkey.json";
     const outputFile = typeof(argv.output) === "string" ?  argv.output.trim() : "mycircuit.verifier.circom";
-
-    const verKey = JSONbig.parse(await fs.promises.readFile(verKeyFile, "utf8"));
-    const constRoot = verKey.constRoot;
 
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFIle, "utf8"));
 
@@ -41,6 +37,14 @@ async function run() {
     }
 
     console.log("Options: ", options);
+    let constRoot;
+
+    if(!options.verkeyInput) {
+        const verKeyFile = typeof(argv.verkey) === "string" ?  argv.verkey.trim() : "mycircuit.verkey.json";
+        const verKey = JSONbig.parse(await fs.promises.readFile(verKeyFile, "utf8"));
+        constRoot = verKey.constRoot;
+    } 
+    
 
     if(starkInfo.starkStruct.verificationHashType === "BN128") {
         options.arity =  Number(argv.arity) || 16;

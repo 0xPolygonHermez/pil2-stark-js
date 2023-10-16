@@ -1,8 +1,15 @@
 pragma circom 2.1.0;
 pragma custom_templates;
 
+<% let verifierName = hasCompressor ? "compressor" : basicCircuitName; -%>
+include "iszero.circom";
 include "poseidon.circom";
-include "<%- basicCircuitName %>.verifier.circom";
+include "<%- verifierName %>.verifier.circom";
+
+<% let nPublics = starkInfoBasic.nPublics; -%>
+<% let numChallengesStage = starkInfoBasic.numChallenges; -%>
+<% let nChallenges = starkInfoBasic.numChallenges.reduce((curr, acc) => curr + acc, 0) + 4; -%>
+<% let nStepsFRI = starkInfoBasic.starkStruct.steps.length; -%>
 
 <%
 class Transcript {
@@ -124,13 +131,14 @@ class Transcript {
 }
 -%>
 
+<% if(!hasCompressor) { -%>
 template CalculatePublicsHash() {
-    signal input publics[<%- starkInfo.nPublics %>];
+    signal input publics[<%- nPublics %>];
 
     signal output sv_publicsHash[3];
 
 <%      const transcriptPublics = new Transcript("publics");
-        transcriptPublics.put("publics", starkInfo.nPublics);
+        transcriptPublics.put("publics", nPublics);
         transcriptPublics.getField("sv_publicsHash", 3); -%>
 <%-     transcriptPublics.getCode(); %>
 }
@@ -166,48 +174,42 @@ template CalculateRootHash() {
 
     signal output rootHash[3];
 
-    component hash = Poseidon(12);
+    signal hash[12] <== Poseidon(12)([root[0], root[1], root[2], root[3], 0, 0, 0, 0], [0,0,0,0]);
 
-    for(var i = 0; i < 4; i++) {
-        hash.in[i] <== root[i];
-        hash.in[4+i] <== 0;
-        hash.capacity[i] <== 0;
-    }
-
-    rootHash <== [hash.out[0], hash.out[1], hash.out[2]];
+    rootHash <== [hash[0], hash[1], hash[2]];
 
     for(var i = 3; i < 12; i++) {
-        _ <== hash.out[i]; // Unused hash values
+        _ <== hash[i]; // Unused hash values
     }
 }
 
+<% } -%>
+
 template Main() {
 
-    signal input publics[<%- starkInfo.nPublics %>];
+    signal input publics[<%- nPublics %>];
 
     signal input rootCRecursive2[4];
 
-<%  let nChallenges = starkInfo.numChallenges.reduce((curr, acc) => curr + acc, 0) + 4; -%>
     signal input challenges[<%- nChallenges %>][3];
 
-<%  let nChallengesFRI = starkInfo.starkStruct.steps.length + 1; -%>
-    signal input challengesFRISteps[<%- nChallengesFRI %>][3];
+    signal input challengesFRISteps[<%- nStepsFRI + 1 %>][3];
 
-<% for (let i = 0; i < starkInfo.numChallenges.length+1; ++i) { -%>
-<%      let index = i === starkInfo.numChallenges.length ? 'Q' : i+1; -%>
-    signal input root<%- index %>[4];
+<% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+    signal input root<%- i+1 %>[4];
 <% } -%>
+    signal input rootQ[4];
 
-<% for (let i = 0; i < starkInfo.numChallenges.length+1; ++i) { -%>
-<%      let index = i === starkInfo.numChallenges.length ? 'Q' : i+1; -%>
-    signal input s0_vals<%- index %>[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${index}`] %>];
+<% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+    signal input s0_vals<%- i+1 %>[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${i+1}`] %>];
 <% } -%>
+    signal input s0_valsQ[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cmQ`] %>];
     signal input s0_valsC[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.nConstants %>];
 
-<% for (let i = 0; i < starkInfo.numChallenges.length+1; ++i) { -%>
-<%      let index = i === starkInfo.numChallenges.length ? 'Q' : i+1; -%>
-    signal input s0_siblings<%- index %>[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.starkStruct.steps[0].nBits %>][4];
+<% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
+    signal input s0_siblings<%- i+1 %>[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.starkStruct.steps[0].nBits %>][4];
 <% } -%>
+    signal input s0_siblingsQ[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.starkStruct.steps[0].nBits %>][4];
     signal input s0_siblingsC[<%- starkInfo.starkStruct.nQueries %>][<%- starkInfo.starkStruct.steps[0].nBits %>][4];
 
     signal input evals[<%- starkInfo.evMap.length %>][3];
@@ -229,42 +231,51 @@ template Main() {
     signal input subAirValue[3];
 
 <%  let transcriptValues = []; -%>
-<%  let scope = vadcop ? 'output' : 'input'; -%>
-    signal <%- scope %> sv_circuitType;
-<%  transcriptValues.push("circuitType"); -%>
-    signal <%- scope %> sv_aggregationType;
-<%  transcriptValues.push("aggregationType"); -%>
-    signal <%- scope %> sv_subAirValue[3];
+<%  let inOut = hasCompressor ? 'input' : 'output'; -%>
+    signal <%- inOut %> sv_circuitType;
+<%  transcriptValues.push("sv_circuitType"); -%>
+    signal <%- inOut %> sv_aggregationType;
+<%  transcriptValues.push("sv_aggregationType"); -%>
+    signal <%- inOut %> sv_subAirValue[3];
 <%  transcriptValues.push("sv_subAirValue"); -%>
-    signal <%- scope %> sv_publicsHash[3];
+    signal <%- inOut %> sv_publicsHash[3];
 <%  transcriptValues.push("sv_publicsHash"); -%>
-<%  for (let i = 0; i < starkInfo.numChallenges.length + 1; ++i) { -%>
-<%      let index = i === starkInfo.numChallenges.length ? 'Q' : i+1; -%>
-    signal <%- scope %> sv_root<%- index %>[3];
-<%      transcriptValues.push(`sv_root${index}`); -%>
+<%  for (let i = 0; i < nChallengesStages.length; ++i) { -%>
+    signal <%- inOut %> sv_root<%- i+1 %>[3];
+<%      transcriptValues.push(`sv_root${i+1}`); -%>
 <%  } -%>
-    signal <%- scope %> sv_evalsHash[3];
+    signal <%- inOut %> sv_rootQ[3];
+<%      transcriptValues.push(`sv_rootQ`); -%>
+    signal <%- inOut %> sv_evalsHash[3];
 <%  transcriptValues.push("sv_evalsHash"); -%>
-<%      for(let i = 1; i < starkInfo.starkStruct.steps.length; i++) { -%>
-    signal <%- scope %> sv_s<%- i %>_root[3];
-<%  transcriptValues.push(`sv${i}_root`); -%>
+<%      for(let i = 1; i < stepsFRI.length; i++) { -%>
+    signal <%- inOut %> sv_s<%- i %>_root[3];
+<%  transcriptValues.push(`sv_s${i}_root`); -%>
 <%      } -%>
-    signal <%- scope %> sv_finalPolHash[3];
+    signal <%- inOut %> sv_finalPolHash[3];
 <%  transcriptValues.push("sv_finalPolHash"); -%>
 
-<%  if(scope === "output") { -%>
+<%  if(inOut === "output") { -%>
     sv_circuitType <== <%- circuitType %>;
     sv_aggregationType <== <%- aggregationType %>;
     sv_subAirValue <== subAirValue;
     sv_publicsHash <== CalculatePublicsHash()(publics);
-<%  for (let i = 0; i < starkInfo.numChallenges.length + 1; ++i) { -%>
-<%      let index = i === starkInfo.numChallenges.length ? 'Q' : i+1; -%>
-    sv_root<%- index %> <== CalculateRootHash()(root<%- index %>);
+<%  for (let i = 0; i < starkInfoBasic.numChallenges.length; ++i) { -%>
+    sv_root<%- i+1 %> <== CalculateRootHash()(root<%- i+1 %>);
 <%  } -%>
+<%  for (let i = starkInfoBasic.numChallenges.length; i < nChallengesStages.length; ++i) { -%>
+    sv_root<%- i+1 %> <== [0,0,0];
+<%  } -%>
+    sv_rootQ <== CalculateRootHash()(rootQ);
     sv_evalsHash <== CalculateEvalsHash()(evals);
-<%      for(let i = 1; i < starkInfo.starkStruct.steps.length; i++) { -%>
-    sv_s<%- i %>_root <== CalculateRootHash()(s<%- i %>_root);
-<%      } -%>
+<%  let friCounter = 1; -%>
+<%  for(let i = 1; i < stepsFRI.length; i++) { -%>
+<%     if(starkInfoBasic.starkStruct.steps[friCounter] === stepsFRI[i]) { -%>
+    sv_s<%- i %>_root <== CalculateRootHash()(s<%- friCounter++ %>_root);
+<%     } else { -%>
+    sv_s<%- i %>_root <== [0,0,0];
+<%     } -%>
+<%  } -%>
     sv_finalPolHash <== CalculateFinalPolHash()(finalPol);
 <% } -%>
 
@@ -301,15 +312,21 @@ template Main() {
     sv.s<%- i %>_vals <== s<%- i %>_vals;
 <% } -%>
 
-    for(var i = 0; i < <%- starkInfo.nPublics %>; i++) {
+    sv.finalPol <== finalPol;
+
+    for(var i = 0; i < <%- nPublics %>; i++) {
         sv.publics[i] <== publics[i];
     }
 
+<%  if(!hasCompressor) { -%>
 <%  let c = 0; -%>
-<%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
-<%      if(starkInfo.numChallenges[i] === 0) continue; -%>
-<%      for(let j = 0; j < starkInfo.numChallenges[i]; ++j) { -%>
+<%  for(let i = 0; i < nChallengesStages.length; ++i) { -%>
+<%      for(let j = 0; j < nChallengesStages[i]; ++j) { -%>
+<%          if(i < starkInfoBasic.numChallenges.length && j < starkInfoBasic.numChallenges[i]) { -%>
     sv.challengesStage<%- i + 1 %>[<%-j %>] <== challenges[<%- c++ %>];
+<%          } else { -%>
+<%                c++; -%>
+<%          } -%> 
 <%      } -%>
 <%  } -%>
 
@@ -319,14 +336,67 @@ template Main() {
     sv.challengesFRI[1] <== challenges[<%- c++ %>];
 
 <%  c = 0; %>
-<%  for(let i = 0; i < starkInfo.starkStruct.steps.length + 1; ++i) { -%>
+<%  for(let i = 0; i < stepsFRI.length + 1; ++i) { -%>
     sv.challengesFRISteps[<%- i %>] <== challengesFRISteps[<%- c++ %>];
 <%  } -%>
 
-    sv.finalPol <== finalPol;
-   
+<%  } else { -%>
+<%  let nPublicsInps = nPublics; -%>
+    for(var i = 0; i < <%- nChallenges %>; i++) {
+        sv.publics[<%- nPublicsInps %> + 3*i] <== challenges[i][0];
+        sv.publics[<%- nPublicsInps %> + 3*i+1] <== challenges[i][1];
+        sv.publics[<%- nPublicsInps %> + 3*i+2] <== challenges[i][2];
+    }
+<%  nPublicsInps += nChallenges*3; -%>
+
+    for(var i = 0; i < <%- stepsFRI.length + 1 %>; i++) {
+        sv.publics[<%- nPublicsInps %> + 3*i] <== challengesFRISteps[i][0];
+        sv.publics[<%- nPublicsInps %> + 3*i+1] <== challengesFRISteps[i][1];
+        sv.publics[<%- nPublicsInps %> + 3*i+2] <== challengesFRISteps[i][2];
+    }
+<%  nPublicsInps += (stepsFRI.length + 1)*3; -%>
+
+    sv.publics[<%- nPublicsInps++ %>] <== sv_circuitType;
+    sv.publics[<%- nPublicsInps++ %>] <== sv_aggregationType;
+
+    for(var i = 0; i < 3; i++) {
+        sv.publics[<%- nPublicsInps %> + i] <== sv_subAirValue[i];
+    }
+<%  nPublicsInps += 3 -%>
+
+    sv.publics[<%- nPublicsInps++ %>] <== sv_publicsHash[0];
+    sv.publics[<%- nPublicsInps++ %>] <== sv_publicsHash[1];
+    sv.publics[<%- nPublicsInps++ %>] <== sv_publicsHash[2];
+
+<%  for (let i = 0; i < nChallengesStages.length; i++) { -%>
+    for(var i = 0; i < 3; i++) {
+        sv.publics[<%- nPublicsInps %> + i] <== sv_root<%- i+1 %>[i];
+    }
+
+<%  nPublicsInps += 3 -%>
+<%  } -%>
+    for(var i = 0; i < 3; i++) {
+        sv.publics[<%- nPublicsInps %> + i] <== sv_rootQ[i];
+    }
+
+<%  nPublicsInps += 3 -%>
+    sv.publics[<%- nPublicsInps++ %>] <== sv_evalsHash[0];
+    sv.publics[<%- nPublicsInps++ %>] <== sv_evalsHash[1];
+    sv.publics[<%- nPublicsInps++ %>] <== sv_evalsHash[2];
+
+<%  for(let i = 1; i < stepsFRI.length; i++) { -%>
+    for(var i = 0; i < 3; i++) {
+        sv.publics[<%- nPublicsInps %> + i] <== sv_s<%- i %>_root[i];
+    }
+
+<%  nPublicsInps += 3 -%>
+<%  } -%>
+    sv.publics[<%- nPublicsInps++ %>] <== sv_finalPolHash[0];
+    sv.publics[<%- nPublicsInps++ %>] <== sv_finalPolHash[1];
+    sv.publics[<%- nPublicsInps++ %>] <== sv_finalPolHash[2];
+<%  } -%>     
 }
 
-<% const publics = ["publics", "rootCRecursive2", "challenges", "challengesFRISteps"]; -%>
-<% if(scope === "input") publics.push(...transcriptValues); -%>
+<% const publics = ["publics", "challenges", "challengesFRISteps", "rootCRecursive2"]; -%>
+<% if(inOut === "input") publics.push(...transcriptValues); -%>
 component main {public [<%- publics.join(", ") %>]} = Main();
