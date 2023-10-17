@@ -61,6 +61,9 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
         exp.expDeg = 0;
         exp.stage = 0; 
         if(!exp.dim) exp.dim = 1;
+    } else if (exp.op === "subproofValue") {
+        exp.expDeg = 0;
+        exp.dim = stark ? 3 : 1;
     } else if(exp.op === "neg") {
         addInfoExpressions(symbols, expressions, exp.values[0], stark);
         exp.op = "mul";

@@ -65,6 +65,8 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
         return { type: exp.op, id: exp.id, dim: 1}
     } else if (exp.op == "number") {
         return { type: exp.op, value: exp.value.toString(), dim: 1 }
+    } else if (exp.op === "subproofValue") {
+        return { type: exp.op, id: exp.id, dim: exp.dim}    
     } else if (exp.op == "xDivXSubXi") {
         return { type: exp.op, id: exp.id, opening: exp.opening, dim: 3 }
     } else if (exp.op == "Zi") {

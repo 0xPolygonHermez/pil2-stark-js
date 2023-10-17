@@ -128,6 +128,7 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
             case "number": return `ctx.F.e(${r.value}n)`;
             case "public": return `ctx.publics[${r.id}]`;
             case "challenge": return `ctx.challenges[${r.stage - 1}][${r.id}]`;
+            case "subproofValue": return `ctx.subproofValues[${r.id}]`;
             case "eval": return `ctx.evals[${r.id}]`;
             case "xDivXSubXi": {
                 return `[

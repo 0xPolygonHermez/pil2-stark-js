@@ -1,6 +1,14 @@
 const ProtoOut = require("pilcom2/src/proto_out.js");
 const ExpressionOps = require("../../expressionops");
 
+const piloutTypes =  {
+    FIXED_COL: 1,
+    WITNESS_COL: 3,
+    SUBPROOF_VALUE: 5,
+    PUBLIC_VALUE: 6,
+    CHALLENGE: 8,
+}
+
 module.exports.calculatePublics = function calculatePublics(hints, pilout, symbols, stark, saveSymbols) {
     const publicsInfo = [];
 
@@ -85,6 +93,9 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
     } else if (op === "publicValue") {
         const id = exp[op].idx;
         exp = { op: "public", id };
+    } else if (op === "subproofValue") {
+        const id = exp[op].idx;
+        exp = { op: "subproofValue", id };
     } else if (op === "challenge") {
         const id = exp[op].idx + pilout.numChallenges.slice(0, exp[op].stage - 1).reduce((acc, c) => acc + c, 0);
         const stageId = exp[op].idx;
@@ -126,6 +137,12 @@ function addSymbol(exp, symbols, stark) {
             const dim = (exp.stage === 1 || !stark) ? 1 : 3;
             symbols.push({ type: "witness", polId: exp.id, stageId: exp.stageId, stage: exp.stage, dim, name});
         }
+    } else if(exp.op === "subproofValue") {
+        const subProofValueSymbol = symbols.find(s => s.type === "subproofvalue" && s.id === exp.id);
+        if(!subProofValueSymbol) {
+            const name = "subproofvalue_" + exp.id;
+            symbols.push({type: "subproofvalue", dim: 1, id: exp.id, name });
+        }
     }
     return;
 }
@@ -154,9 +171,9 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
     const E = new ExpressionOps();
 
     const symbols = pilout.symbols.flatMap(s => {
-        if([1, 3].includes(s.type)) {
+        if([piloutTypes.FIXED_COL, piloutTypes.WITNESS_COL].includes(s.type)) {
             const dim = ([0,1].includes(s.stage) || !stark) ? 1 : 3;
-            const type = s.type === 1 ? "fixed" : "witness";
+            const type = s.type === piloutTypes.FIXED_COL ? "fixed" : "witness";
             const previousPols = pilout.symbols.filter(si => si.type === s.type && ((si.stage < s.stage) || (si.stage === s.stage && si.id < s.id)));
             let polId = 0;
             for(let i = 0; i < previousPols.length; ++i) {
@@ -179,10 +196,10 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
                 }  
             } else {
                 const multiArraySymbols = [];
-                generateMultiArraySymbols(E, multiArraySymbols, [], s, dim, polId, 0);
+                generateMultiArraySymbols(E, multiArraySymbols, [], s, type, dim, polId, 0);
                 return multiArraySymbols;
             }
-        } else if(s.type === 8) {
+        } else if(s.type === piloutTypes.CHALLENGE) {
             return {
                 name: s.name,
                 type: "challenge",
@@ -190,12 +207,20 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
                 stage: s.stage,
                 dim: stark ? 3 : 1,
             }
-        } else if(s.type === 6) {
+        } else if(s.type === piloutTypes.PUBLIC_VALUE) {
             return {
                 name: s.name,
                 type: "public",
                 dim: 1,
                 id: s.id,
+            }
+        } else if(s.type === piloutTypes.SUBPROOF_VALUE) {
+            return {
+                name: s.name,
+                type: "subproofvalue",
+                id: s.id,
+                subproofId: s.subproofId,
+                dim: stark ? 3 : 1,
             }
         }
     }); 
@@ -203,9 +228,8 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
     return symbols;
 }
 
-function generateMultiArraySymbols(E, symbols, indexes, sym, dim, polId, shift) {
+function generateMultiArraySymbols(E, symbols, indexes, sym, type, dim, polId, shift) {
     if (indexes.length === sym.lengths.length) {
-        const type = sym.type === 1 ? "fixed" : "witness";
         E.cm(polId + shift, 0, sym.stage, dim);
         symbols.push({
             name: sym.name + shift,
@@ -219,7 +243,7 @@ function generateMultiArraySymbols(E, symbols, indexes, sym, dim, polId, shift) 
     }
 
     for (let i = 0; i < sym.lengths[indexes.length]; i++) {
-        shift = generateMultiArraySymbols(E, symbols, [...indexes, i], sym, dim, polId, shift);
+        shift = generateMultiArraySymbols(E, symbols, [...indexes, i], sym, type, dim, polId, shift);
     }
 
     return shift;

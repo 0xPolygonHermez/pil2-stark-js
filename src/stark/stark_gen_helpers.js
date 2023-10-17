@@ -37,6 +37,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.N = 1 << ctx.pilInfo.pilPower;
     ctx.tmp = [];
     ctx.challenges = [];
+    ctx.subproofValues = [];
 
     if(!options.debug) {
         ctx.nBitsExt = ctx.pilInfo.starkStruct.nBitsExt;

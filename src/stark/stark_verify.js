@@ -65,6 +65,9 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         logger.debug("-----------------------------");
     }
 
+    // TODO: Fix
+    ctx.subproofvalues = [];
+
     if(!options.vadcop) {
         ctx.challenges = [];
         if (logger) logger.debug("Calculating transcript");
@@ -76,7 +79,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         ctx.challenges = challenges.challenges;
         ctx.challengesFRISteps = challenges.challengesFRISteps;
         ctx.friQueries = challenges.friQueries; 
-    }   
+    }
 
     if (logger) logger.debug("Verifying evaluations");
 
@@ -234,6 +237,7 @@ function executeCode(F, ctx, code) {
             case "number": return BigInt(r.value);
             case "public": return BigInt(ctx.publics[r.id]);
             case "challenge": return ctx.challenges[r.stage - 1][r.id];
+            case "subproofvalue": return ctx.subproofvalues[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
             case "x": {
                 let evalsStage = ctx.starkInfo.numChallenges.length + 1;
