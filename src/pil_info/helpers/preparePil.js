@@ -21,7 +21,7 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil1, debug, star
     if(stark && !debug) {
         res.starkStruct = starkStruct;
         if (res.starkStruct.nBits != res.pilPower) {
-            throw new Error(`starkStruct and pilfile have degree mismatch (starkStruct:${res.starkStruct.nBits} pilfile:${res.pilPower})`);
+            throw new Error(`starkStruct and pilfile have degree mismatch (airId: ${pil.airId} subproofId: ${pil.subproofId} starkStruct:${res.starkStruct.nBits} pilfile:${res.pilPower})`);
         }
 
         if (res.starkStruct.nBitsExt != res.starkStruct.steps[0].nBits) {
