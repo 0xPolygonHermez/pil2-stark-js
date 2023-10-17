@@ -125,23 +125,25 @@ function addSymbol(exp, symbols, stark) {
             symbols.push({ type: "challenge", stageId: exp.stageId, stage: exp.stage, dim, name});
         }
     } else if(exp.op === "const") {
-        const fixedSymbol = symbols.find(s => s.type === "fixed" && s.stage === exp.stage && s.stageId === exp.stageId);
+        const fixedSymbol = symbols.find(s => s.type === "fixed" && s.airId === exp.airId && s.subproofId === exp.subproofId
+            && s.stage === exp.stage && s.stageId === exp.stageId);
         if(!fixedSymbol) {
             const name = "fixed_" + exp.stageId;
-            symbols.push({ type: "fixed", polId: exp.stageId, stageId: exp.stageId, stage: exp.stage, dim: 1, name});
+            symbols.push({ type: "fixed", polId: exp.stageId, stageId: exp.stageId, stage: exp.stage, dim: 1, name, airId: exp.airId, subproofId: exp.subproofId});
         }
     } else if(exp.op === "cm") {
-        const witnessSymbol = symbols.find(s => s.type === "witness" && s.stage === exp.stage && s.stageId === exp.stageId);
+        const witnessSymbol = symbols.find(s => s.type === "witness" && s.airId === exp.airId && s.subproofId === exp.subproofId
+            && s.stage === exp.stage && s.stageId === exp.stageId);
         if(!witnessSymbol) {
             const name = "witness_" + exp.stage + "_" + exp.stageId;
             const dim = (exp.stage === 1 || !stark) ? 1 : 3;
-            symbols.push({ type: "witness", polId: exp.id, stageId: exp.stageId, stage: exp.stage, dim, name});
+            symbols.push({ type: "witness", polId: exp.id, stageId: exp.stageId, stage: exp.stage, dim, name, airId: exp.airId, subproofId: exp.subproofId});
         }
     } else if(exp.op === "subproofValue") {
-        const subProofValueSymbol = symbols.find(s => s.type === "subproofvalue" && s.id === exp.id);
+        const subProofValueSymbol = symbols.find(s => s.type === "subproofvalue" && s.id === exp.id && s.airId === exp.airId && s.subproofId === exp.subproofId);
         if(!subProofValueSymbol) {
             const name = "subproofvalue_" + exp.id;
-            symbols.push({type: "subproofvalue", dim: 1, id: exp.id, name });
+            symbols.push({type: "subproofvalue", dim: 1, id: exp.id, name, airId: exp.airId, subproofId: exp.subproofId });
         }
     }
     return;
@@ -174,7 +176,9 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
         if([piloutTypes.FIXED_COL, piloutTypes.WITNESS_COL].includes(s.type)) {
             const dim = ([0,1].includes(s.stage) || !stark) ? 1 : 3;
             const type = s.type === piloutTypes.FIXED_COL ? "fixed" : "witness";
-            const previousPols = pilout.symbols.filter(si => si.type === s.type && ((si.stage < s.stage) || (si.stage === s.stage && si.id < s.id)));
+            const previousPols = pilout.symbols.filter(si => si.type === s.type 
+                && si.airId === s.airId && si.subproofId === s.subproofId
+                && ((si.stage < s.stage) || (si.stage === s.stage && si.id < s.id)));
             let polId = 0;
             for(let i = 0; i < previousPols.length; ++i) {
                 if (!previousPols[i].dim) {
@@ -192,7 +196,9 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
                     type,
                     polId,
                     stageId,
-                    dim
+                    dim,
+                    airId: s.airId,
+                    subproofId: s.subproofId,
                 }  
             } else {
                 const multiArraySymbols = [];
@@ -221,6 +227,8 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
                 id: s.id,
                 subproofId: s.subproofId,
                 dim: stark ? 3 : 1,
+                airId: s.airId,
+                subproofId: s.subproofId,
             }
         }
     }); 
@@ -238,6 +246,8 @@ function generateMultiArraySymbols(E, symbols, indexes, sym, type, dim, polId, s
             polId: polId + shift,
             stageId: sym.id + shift,
             dim,
+            airId: sym.airId,
+            subproofId: sym.subproofId,
         });
         return shift + 1;
     }

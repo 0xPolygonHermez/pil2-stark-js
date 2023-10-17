@@ -199,15 +199,15 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
         hints.push(hint1);
         hints.push(hint2);
 
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.f`, expId: puCtx.fExpId, stage: stage1, dim: fDim });
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.t`, expId: puCtx.tExpId, stage: stage1, dim: tDim });
+        symbols.push({ type: "tmpPol", name: `Plookup${i}.f`, expId: puCtx.fExpId, stage: stage1, dim: fDim, airId: 0, subproofId: 0 });
+        symbols.push({ type: "tmpPol", name: `Plookup${i}.t`, expId: puCtx.tExpId, stage: stage1, dim: tDim, airId: 0, subproofId: 0 });
 
-        symbols.push({ type: "witness", name: `Plookup${i}.h1`, polId: puCtx.h1Id, stage: stage1, dim: Math.max(fDim, tDim) });
-        symbols.push({ type: "witness", name: `Plookup${i}.h2`, polId: puCtx.h2Id, stage: stage1, dim: Math.max(fDim, tDim)  });
+        symbols.push({ type: "witness", name: `Plookup${i}.h1`, polId: puCtx.h1Id, stage: stage1, dim: Math.max(fDim, tDim), airId: 0, subproofId: 0 });
+        symbols.push({ type: "witness", name: `Plookup${i}.h2`, polId: puCtx.h2Id, stage: stage1, dim: Math.max(fDim, tDim), airId: 0, subproofId: 0  });
         
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.num`, expId: puCtx.numId, stage: stage2, dim: numDim });
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.den`, expId: puCtx.denId, stage: stage2, dim: denDim });
+        symbols.push({ type: "tmpPol", name: `Plookup${i}.num`, expId: puCtx.numId, stage: stage2, dim: numDim, airId: 0, subproofId: 0 });
+        symbols.push({ type: "tmpPol", name: `Plookup${i}.den`, expId: puCtx.denId, stage: stage2, dim: denDim, airId: 0, subproofId: 0 });
 
-        symbols.push({ type: "witness", name: `Plookup${i}.z`, polId: puCtx.zId, stage: stage2, dim: Math.max(numDim, denDim) });
+        symbols.push({ type: "witness", name: `Plookup${i}.z`, polId: puCtx.zId, stage: stage2, dim: Math.max(numDim, denDim), airId: 0, subproofId: 0 });
     }
 }

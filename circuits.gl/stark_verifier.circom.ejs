@@ -735,7 +735,7 @@ template StarkVerifier() {
     // verifier provides a random X so that the prover can commit it. This value is stored here.
     signal input challengesFRISteps[<%- starkStruct.steps.length + 1 -%>][3];
 
-    queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>] <== calculateFRIQueries()(challengesFRISteps[<%- starkStruct.steps.length -%>]);
+    signal {binary} queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>] <== calculateFRIQueries()(challengesFRISteps[<%- starkStruct.steps.length -%>]);
 <% } -%>
 
     ///////////

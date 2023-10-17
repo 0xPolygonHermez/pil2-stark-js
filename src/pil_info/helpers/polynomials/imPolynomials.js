@@ -20,10 +20,10 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
         const stage = expressions[expId].stage;
-        const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId);
+        const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId && s.airId === res.airId && s.subproofId === res.subproofId);
         const dim = getExpDim(expressions, expId, stark);
         if(!symbol) {
-            symbols.push({ type: "tmpPol", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage, dim, imPol: true });
+            symbols.push({ type: "tmpPol", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage, dim, imPol: true, airId: res.airId, subproofId: res.subproofId });
         } else {
             symbol.imPol = true;
             symbol.expId = expId;
@@ -49,7 +49,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
         res.qs = [];
         for (let i=0; i<res.qDeg; i++) {
             res.qs[i] = res.nCommitments++;
-            symbols.push({ type: "witness", name: `Q${i}`, polId: res.qs[i], stage: "Q", dim: res.qDim });
+            symbols.push({ type: "witness", name: `Q${i}`, polId: res.qs[i], stage: "Q", dim: res.qDim, airId: res.airId, subproofId: res.subproofId });
             E.cm(res.qs[i], 0, stage, res.qDim);
         }
     }

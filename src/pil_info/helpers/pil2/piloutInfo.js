@@ -2,6 +2,9 @@ const ProtoOut = require("pilcom2/src/proto_out.js");
 const { formatExpressions, formatConstraints, formatSymbols, calculatePublics } = require("./utils");
 
 module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
+    res.airId = pilout.airId;
+    res.subproofId = pilout.subproofId;
+    
     const constraints = formatConstraints(pilout);
     
     let saveSymbols = pilout.symbols ? false : true;
@@ -17,8 +20,8 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     }
 
     res.pilPower = Math.log2(pilout.numRows);
-    res.nCommitments = symbols.filter(s => s.type === "witness").length;
-    res.nConstants = symbols.filter(s => s.type === "fixed").length;
+    res.nCommitments = symbols.filter(s => s.type === "witness" && s.airId === res.airId && s.subproofId === res.subproofId).length;
+    res.nConstants = symbols.filter(s => s.type === "fixed" && s.airId === res.airId && s.subproofId === res.subproofId).length;
     res.nPublics = symbols.filter(s => s.type === "public").length;
     res.numChallenges = pilout.numChallenges || [0];
 

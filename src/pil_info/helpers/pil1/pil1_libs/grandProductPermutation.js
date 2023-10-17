@@ -133,10 +133,10 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
 
         hints.push(hint);
 
-        symbols.push({ type: "tmpPol", name: `Permutation${i}.f`, expId: peCtx.fExpId, stage, dim: fDim });
-        symbols.push({ type: "tmpPol", name: `Permutation${i}.t`, expId: peCtx.tExpId, stage, dim: tDim });
-        symbols.push({ type: "tmpPol", name: `Permutation${i}.num`, expId: peCtx.numId, stage, dim: numDim });
-        symbols.push({ type: "tmpPol", name: `Permutation${i}.den`, expId: peCtx.denId, stage, dim: denDim });
-        symbols.push({ type: "witness", name: `Permutation${i}.z`, polId: peCtx.zId, stage, dim: Math.max(numDim, denDim) });
+        symbols.push({ type: "tmpPol", name: `Permutation${i}.f`, expId: peCtx.fExpId, stage, dim: fDim, airId: 0, subproofId: 0 });
+        symbols.push({ type: "tmpPol", name: `Permutation${i}.t`, expId: peCtx.tExpId, stage, dim: tDim, airId: 0, subproofId: 0 });
+        symbols.push({ type: "tmpPol", name: `Permutation${i}.num`, expId: peCtx.numId, stage, dim: numDim, airId: 0, subproofId: 0 });
+        symbols.push({ type: "tmpPol", name: `Permutation${i}.den`, expId: peCtx.denId, stage, dim: denDim, airId: 0, subproofId: 0 });
+        symbols.push({ type: "witness", name: `Permutation${i}.z`, polId: peCtx.zId, stage, dim: Math.max(numDim, denDim), airId: 0, subproofId: 0 });
     }
 }

@@ -42,6 +42,8 @@ async function runTest(pilFile) {
         pil.symbols = pilout.symbols;
         pil.numChallenges = pilout.numChallenges;
         pil.hints = pilout.hints;
+        pil.airId = 0;
+        pil.subproofId = 0;
 
         const cnstPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
         getFixedPolsPil2(pil, cnstPols, F);

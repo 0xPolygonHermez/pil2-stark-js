@@ -8,6 +8,8 @@ module.exports.generatePublicsCode = function generatePublicsCode(res, symbols, 
         code: [],
         expMap: [],
         dom: "n",
+        airId: res.airId,
+        subproofId: res.subproofId,
         stark,
         publics: true,
     };
@@ -27,11 +29,13 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, co
         code: [],
         expMap: [],
         dom: "n",
+        airId: res.airId,
+        subproofId: res.subproofId,
         stark,
     };
 
     for(let j = 0; j < expressions.length; ++j) {
-        if(expressions[j].stage === 1 && symbols.find(s => s.stage === 1 && s.expId === j)) {
+        if(expressions[j].stage === 1 && symbols.find(s => s.stage === 1 && s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId)) {
             pilCodeGen(ctx, symbols, expressions, j, 0);
         }
     }   
@@ -75,6 +79,8 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
         code: [],
         expMap: [],
         dom: "ext",
+        airId: res.airId,
+        subproofId: res.subproofId,
         stark,
     };
 
@@ -105,6 +111,8 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
         evMap: [],
         expMap: [],
         dom: "n",
+        airId: res.airId,
+        subproofId: res.subproofId,
         stark,
         addMul,
         verifierEvaluations: true,
@@ -127,7 +135,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 
     if (stark) {
         for (let i = 0; i < res.qDeg; i++) {
-            const rf = { type: "cm", id: res.qs[i], name: "Q" + i, prime: 0, dim: res.qDim, stage: res.numChallenges.length + 1 };
+            const rf = { type: "cm", id: res.qs[i], name: "Q" + i, prime: 0, dim: res.qDim, stage: res.numChallenges.length + 1, airId: res.airId, subproofId: res.subproofId };
             res.evMap.push(rf);
         }
     } else {
@@ -153,6 +161,8 @@ module.exports.generateFRICode = function generateFRICode(res, friExp, symbols, 
         code: [],
         expMap: [],
         dom: "ext",
+        airId: res.airId,
+        subproofId: res.subproofId,
         stark: true,
     };
 

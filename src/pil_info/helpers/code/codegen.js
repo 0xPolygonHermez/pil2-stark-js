@@ -47,9 +47,9 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
         let p = expr.rowOffset || prime; 
         const r = { type: expr.op, id: expr.id, prime: p, dim: expr.dim }
         if(ctx.verifierEvaluations) {
-            fixEval(symbols, r, ctx);
+            fixEval(ctx, symbols, r);
         } else if(ctx.verifierQuery && expr.op === "cm") {
-            fixCommitsQuery(symbols, r);
+            fixCommitsQuery(ctx, symbols, r);
         }
         return r;
     } else if (exp.op === "exp") {
@@ -121,12 +121,12 @@ function findAddMul(exp) {
 
 function fixExpression(r, ctx, symbols, expressions) {
     const prime = r.prime || 0;
-    const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === r.id);
+    const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
     if(symbol && (symbol.imPol || (!ctx.verifierEvaluations && ctx.dom === "n"))) {
         r.type = "cm";
         r.id = symbol.polId;
         r.dim = symbol.dim;
-        if(ctx.verifierEvaluations) fixEval(symbols, r, ctx);
+        if(ctx.verifierEvaluations) fixEval(ctx, symbols, r);
     } else {
         if (!ctx.expMap[prime]) ctx.expMap[prime] = {};
         if (typeof ctx.expMap[prime][r.id] === "undefined") {
@@ -145,13 +145,16 @@ function fixExpression(r, ctx, symbols, expressions) {
     }
 }
 
-function fixEval(symbols, r, ctx) {
+function fixEval(ctx, symbols, r) {
     const prime = r.prime || 0;
-    let evalIndex = ctx.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === prime);
-    if (evalIndex == -1) {
+    let evalIndex = ctx.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === prime && e.airId === ctx.airId && e.subproofId === ctx.subproofId);
+    if (evalIndex == -1) {  
+        console.log(ctx.airId, ctx.subproofId);
+        console.log("HOLA", symbols.find(s => s.polId === r.id && s.type === "fixed"))
+        console.log("ADEU", symbols.find(s => s.polId === r.id && s.type === "fixed" && s.airId === ctx.airId && s.subproofId === ctx.subproofId))
         const symbol = r.type === "const" 
-            ? symbols.find(s => s.polId === r.id && s.type === "fixed")
-            : symbols.find(s => s.polId === r.id && s.type !== "fixed");
+            ? symbols.find(s => s.polId === r.id && s.type === "fixed" && s.airId === ctx.airId && s.subproofId === ctx.subproofId)
+            : symbols.find(s => s.polId === r.id && s.type !== "fixed" && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
         const name = symbol.name;
         const stage = symbol.stage;
         const dim = symbol.dim;
@@ -162,6 +165,8 @@ function fixEval(symbols, r, ctx) {
             prime,
             stage,
             dim,
+            airId: ctx.airId,
+            subproofId: ctx.subproofId,
         };
         ctx.evMap.push(rf);
         evalIndex = ctx.evMap.length - 1;
@@ -173,8 +178,8 @@ function fixEval(symbols, r, ctx) {
     return r;
 }
 
-function fixCommitsQuery(symbols, r) {
-    const symbol = symbols.find(s => s.polId === r.id && ["tmpPol", "witness"].includes(s.type));
+function fixCommitsQuery(ctx, symbols, r) {
+    const symbol = symbols.find(s => s.polId === r.id && ["tmpPol", "witness"].includes(s.type) && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
     r.type = "tree" + symbol.stage;
     r.stageId = symbol.stageId;
     r.treePos = symbol.stagePos;

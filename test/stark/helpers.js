@@ -51,7 +51,7 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
         let input = proof2zkin(resP.proof, setup.starkInfo);
 
         if(vadcop) {
-            const challenges = await calculateTranscript(F, setup.starkInfo, resP.proof, resP.publics, {hashCommits});
+            const challenges = await calculateTranscript(F, setup.starkInfo, resP.proof, resP.publics, setup.constRoot, {logger, hashCommits});
             input = challenges2zkin(challenges, setup.starkInfo, input);
         }
 

@@ -13,6 +13,9 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
 
     const hints = [];
 
+    res.subproofId = 0;
+    res.airId = 0;
+
     for (const polRef in pil.references) {
         const polInfo = pil.references[polRef];
         if(polInfo.type === "imP") continue;
@@ -23,11 +26,11 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
             for(let i = 0; i < polInfo.len; ++i) {
                 const namePol = name + i;
                 const polId = polInfo.id + i;
-                symbols.push({type, name: namePol, polId, stage, dim: 1 });
+                symbols.push({type, name: namePol, polId, stage, dim: 1, subproofId: 0, airId: 0 });
                 if(type === "witness") E.cm(polId, 0, stage, 1);
             }
         } else {
-            symbols.push({type, name, polId: polInfo.id, stage, dim: 1 });
+            symbols.push({type, name, polId: polInfo.id, stage, dim: 1, subproofId: 0, airId: 0 });
             if(type === "witness") E.cm(polInfo.id, 0, stage, 1);
         }
     }

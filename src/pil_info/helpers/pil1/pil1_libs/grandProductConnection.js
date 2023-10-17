@@ -127,12 +127,12 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
         pil.expressions[c2Id].dim = c2Dim;
 
         const numDim = getExpDim(pil.expressions, ciCtx.numId, stark);
-        symbols.push({ type: "tmpPol", name: `Connection${i}.num`, expId: ciCtx.numId, stage, dim: numDim });
+        symbols.push({ type: "tmpPol", name: `Connection${i}.num`, expId: ciCtx.numId, stage, dim: numDim, airId: 0, subproofId: 0 });
 
         const denDim = getExpDim(pil.expressions, ciCtx.denId, stark);
-        symbols.push({ type: "tmpPol", name: `Connection${i}.den`, expId: ciCtx.denId, stage, dim: denDim });
+        symbols.push({ type: "tmpPol", name: `Connection${i}.den`, expId: ciCtx.denId, stage, dim: denDim, airId: 0, subproofId: 0 });
 
-        symbols.push({ type: "witness", name: `Connection${i}.z`, polId: ciCtx.zId, stage, dim: Math.max(numDim, denDim) });
+        symbols.push({ type: "witness", name: `Connection${i}.z`, polId: ciCtx.zId, stage, dim: Math.max(numDim, denDim), airId: 0, subproofId: 0 });
 
         const hint = {
             stage,
