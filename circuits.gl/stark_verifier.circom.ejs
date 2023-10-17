@@ -95,7 +95,7 @@ class Transcript {
         for (let i=0; i<NFields; i++) {
             const f = this.getFields1();
             n2b[i] = `transcriptN2b_${this.n2bCnt++}`;
-            this.code.push(`signal ${n2b[i]}[64] <== Num2Bits_strict()(${f});`);
+            this.code.push(`signal {binary} ${n2b[i]}[64] <== Num2Bits_strict()(${f});`);
         }
         if(this.hiCnt < 12) {
             this.code.push(`for(var i = ${this.hiCnt}; i < 12; i++){

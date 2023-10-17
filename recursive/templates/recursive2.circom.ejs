@@ -99,18 +99,19 @@ template AggregateChallenges() {
     // If circuit type A is null || challengeA === 0 and circuit type B is not null && challengeB !== 0, then the challengeAB is challengeB
     // If circuit type A is not null && challengeA !== 0 and circuit type B is not null && challengeB !== 0, then the challengeAB is hashAB
 
-    challengeAB <== MultiMux2(3)([[0,0,0], challengeA, challengeB, hashAB], [(1 - isNullA)*(1 - isChallengeAZero), (1 - isNullB)*(1 - isChallengeAZero)]);
+    signal {binary} s[2] <== [(1 - isNullA)*(1 - isChallengeAZero), (1 - isNullB)*(1 - isChallengeAZero)];
+    challengeAB <== MultiMux2(3)([[0,0,0], challengeA, challengeB, hashAB], s);
 
 }
 
 template AggregateSubAirValues() {
     signal input subAirValueA[3];
-    signal input isNullA; // 1 if is circuit type A is 0 (null), 0 otherwise 
+    signal input {binary} isNullA; // 1 if is circuit type A is 0 (null), 0 otherwise 
 
     signal input subAirValueB[3];
-    signal input isNullB; // 1 if is circuit type B is 0 (null), 0 otherwise 
+    signal input {binary} isNullB; // 1 if is circuit type B is 0 (null), 0 otherwise 
 
-    signal input aggregationType; // 1 if aggregation is multiplication, 0 if aggregation is addition
+    signal input {binary} aggregationType; // 1 if aggregation is multiplication, 0 if aggregation is addition
 
     signal output subAirValueAB[3];
 
@@ -210,7 +211,7 @@ template Main() {
 
 <%  for(let i = 0; i < circuits.length; ++i) { -%>
 <%      let c = circuits[i] -%>
-    signal isNull<%- c %> <== IsZero()(s<%- c %>_circuitType);
+    signal {binary} isNull<%- c %> <== IsZero()(s<%- c %>_circuitType);
 
     component sv<%- c %> = StarkVerifier();
     

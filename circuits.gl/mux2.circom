@@ -5,7 +5,7 @@ pragma circom 2.1.0;
 */
 template MultiMux2(n) {
     signal input c[4][n];  // Constants
-    signal input s[2];   // Selector
+    signal input {binary} s[2];   // Selector
     signal output out[n];
 
     signal a10[n];
