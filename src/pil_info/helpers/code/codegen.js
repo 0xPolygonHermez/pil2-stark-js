@@ -149,9 +149,6 @@ function fixEval(ctx, symbols, r) {
     const prime = r.prime || 0;
     let evalIndex = ctx.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === prime && e.airId === ctx.airId && e.subproofId === ctx.subproofId);
     if (evalIndex == -1) {  
-        console.log(ctx.airId, ctx.subproofId);
-        console.log("HOLA", symbols.find(s => s.polId === r.id && s.type === "fixed"))
-        console.log("ADEU", symbols.find(s => s.polId === r.id && s.type === "fixed" && s.airId === ctx.airId && s.subproofId === ctx.subproofId))
         const symbol = r.type === "const" 
             ? symbols.find(s => s.polId === r.id && s.type === "fixed" && s.airId === ctx.airId && s.subproofId === ctx.subproofId)
             : symbols.find(s => s.polId === r.id && s.type !== "fixed" && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
