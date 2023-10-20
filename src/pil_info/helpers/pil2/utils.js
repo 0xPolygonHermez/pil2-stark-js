@@ -52,7 +52,7 @@ module.exports.formatExpressions = function formatExpressions(pilout, stark, sav
 module.exports.formatHints = function formatHints(pilout, symbols, stark, saveSymbols) {
     const hints = [];
 
-    for(let i = 0; i < pilout.hints.length; ++i) {
+    for(let i = 0; i < pilout.hints?.length; ++i) {
         const hint = { name: pilout.hints[i].name };
         const fields = pilout.hints[i].hintFields[0].hintFieldArray.hintFields;
         for(let j = 0; j < fields.length; j++) {
