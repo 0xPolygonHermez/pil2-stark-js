@@ -24,6 +24,7 @@ const argv = require("yargs")
     .alias("p", "pil")
     .alias("P", "pilconfig")
     .alias("s", "starkinfo")
+    .alias("i", "input")
     .alias("o", "proof")
     .alias("z", "zkin")
     .alias("b", "public")
@@ -43,6 +44,7 @@ async function run() {
     const pilFile = typeof(argv.pil) === "string" ?  argv.pil.trim() : "mycircuit.pil";
     const pilConfig = typeof(argv.pilconfig) === "string" ? JSON.parse(fs.readFileSync(argv.pilconfig.trim())) : {};
     const starkInfoFile = typeof(argv.starkinfo) === "string" ?  argv.starkinfo.trim() : "mycircuit.starkinfo.json";
+    const inputFile = typeof(argv.input) === "string" ? argv.input.trim() : "mycircuit.input.json";
     const proofFile = typeof(argv.proof) === "string" ?  argv.proof.trim() : "mycircuit.proof.json";
     const zkinFile = typeof(argv.zkin) === "string" ?  argv.zkin.trim() : "mycircuit.proof.zkin.json";
     const publicFile = typeof(argv.public) === "string" ?  argv.public.trim() : "mycircuit.public.json";
@@ -51,7 +53,8 @@ async function run() {
     const pil = await compile(F, pilFile, null, pilConfig);
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
 
-
+    const inputs = JSONbig.parse(await fs.promises.readFile(inputFile, "utf8"));
+    
     const constPols =  newConstantPolsArray(pil, F);
     await constPols.loadFromFile(constFile);
 
@@ -84,7 +87,7 @@ async function run() {
 
     const constTree = await MH.readFromFile(constTreeFile);
 
-    const resP = await proofGen(cmPols, starkInfo, constTree, constPols, null, options)
+    const resP = await proofGen(cmPols, starkInfo, inputs, constTree, constPols, null, options)
 
     await fs.promises.writeFile(proofFile, JSONbig.stringify(resP.proof, null, 1), "utf8");
 

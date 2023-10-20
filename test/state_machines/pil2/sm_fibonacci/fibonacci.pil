@@ -11,8 +11,6 @@ subproof Fibonacci(2**6) {
 
     (b' - a) * (1 - L1') === 0;
 
-    @public {reference: in1, expression: b, row_index: 0}
-    @public {reference: in2, expression: a, row_index: 0}
     @public {reference: out, expression: a, row_index: 2**6 - 1}
 
     L1 * (b - in1) === 0;

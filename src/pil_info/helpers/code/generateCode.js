@@ -15,10 +15,18 @@ module.exports.generatePublicsCode = function generatePublicsCode(res, symbols, 
     };
 
     res.publicsCode = [];
-    for(let i = 0; i < res.publics.length; ++i) {
-        pilCodeGen(ctx, symbols, expressions, res.publics[i].expId, 0);
-        res.publicsCode[i] = buildCode(ctx, expressions);
-        res.publicsCode[i].idx = res.publics[i].idx;
+    for(let i = 0; i < res.nPublics; ++i) {
+        const public = res.publics.find(p => p.id === i);
+        if(public) {
+            pilCodeGen(ctx, symbols, expressions, public.expId, 0);
+            res.publicsCode[i] = buildCode(ctx, expressions);
+            res.publicsCode[i].idx = public.idx;
+            res.publicsCode[i].name = public.name;
+        } else {
+            const publicSymbol = symbols.find(s => s.type === "public" && s.id === i);
+            let name = publicSymbol ? publicSymbol.name : `public_${id}`;
+            res.publicsCode[i] = {name};
+        }
     }
 }
 

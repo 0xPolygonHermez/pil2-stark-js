@@ -12,7 +12,7 @@ const fs = require("fs");
 const { pilInfo } = require("../../index.js");
 const { calculateTranscript } = require("../../src/stark/calculateTranscriptVerify.js");
 
-module.exports.generateStarkProof = async function generateStarkProof(constPols, cmPols, pil, starkStruct, options) {
+module.exports.generateStarkProof = async function generateStarkProof(constPols, cmPols, pil, starkStruct, inputs, options) {
     const logger = options.logger;
     const debug = options.debug;
     const hashCommits = options.hashCommits;
@@ -28,13 +28,13 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
         const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
 
         const starkInfo = pilInfo(F, pil, true, pil1, debug, {});
-        const pilVerification = await starkGen(cmPols, constPols, {}, starkInfo, optionsPilVerify);
+        const pilVerification = await starkGen(cmPols, constPols, {}, starkInfo, inputs, optionsPilVerify);
         assert(pilVerification==true);
     }
 
     const setup = await starkSetup(constPols, pil, starkStruct, {F, pil1});
 
-    const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, {logger, hashCommits});
+    const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, inputs, {logger, hashCommits});
 
     const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, [], setup.starkInfo, {logger, hashCommits});
 

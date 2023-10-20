@@ -20,7 +20,7 @@ module.exports.generatePublicsPolynomials = function generatePublicsPolynomials(
         }
         
         expressions[expId].dim = 1;
-        publics.push({expId, idx: publicsInfo[i].idx});
+        publics.push({name: publicsInfo[i].name, id: publicsInfo[i].id, expId, idx: publicsInfo[i].idx});
     }
     return publics;
 }

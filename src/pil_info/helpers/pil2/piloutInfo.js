@@ -1,5 +1,5 @@
 const ProtoOut = require("pilcom2/src/proto_out.js");
-const { formatExpressions, formatConstraints, formatSymbols, calculatePublics } = require("./utils");
+const { formatExpressions, formatConstraints, formatSymbols, calculatePublics, formatHints } = require("./utils");
 
 module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     res.airId = pilout.airId;
@@ -25,9 +25,9 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     res.nPublics = symbols.filter(s => s.type === "public").length;
     res.numChallenges = pilout.numChallenges || [0];
 
-    const hints = pilout.hints || [];
+    const hints = formatHints(pilout, symbols, stark, saveSymbols);
 
-    const publicsInfo = calculatePublics(hints, pilout, symbols, stark, saveSymbols);
+    const publicsInfo = calculatePublics(hints, symbols);
 
     return {expressions, hints, constraints, symbols, publicsInfo};
 }

@@ -9,39 +9,29 @@ const piloutTypes =  {
     CHALLENGE: 8,
 }
 
-module.exports.calculatePublics = function calculatePublics(hints, pilout, symbols, stark, saveSymbols) {
+module.exports.calculatePublics = function calculatePublics(hints, symbols) {
     const publicsInfo = [];
 
     for(let i = 0; i < hints.length; ++i) {
         const hint = hints[i];
         if(hint.name !== "public") continue;
-        if(!hint.hintFields || !hint.hintFields[0].hintFieldArray) throw new Error("Invalid hint");
-        const publicFields = hint.hintFields[0].hintFieldArray.hintFields;
-        
-        let rowIdx = publicFields.find(f => f.name === "row_index");
-        if(!rowIdx) throw new Error(`Public hint ${i} does not contain row_index field`);
-        let rowIdxInfo = formatExpression(rowIdx.operand, pilout, symbols, stark, saveSymbols)
 
-        let expression = publicFields.find(f => f.name === "expression");
-        if(!expression) throw new Error(`Public hint ${i} does not contain expression field`);
-        let exprInfo = formatExpression(expression.operand, pilout, symbols, stark, saveSymbols);
-        if(!["cm", "exp"].includes(exprInfo.op)) throw new Error(`Invalid expression type: ${exprInfo.op} for public hint ${i}`);
-        if(exprInfo.op === "cm" && exprInfo.stage !== 1) throw new Error(`Invalid expression stage: ${exprInfo.stage} for public hint ${i}`);
+        if(!hint.reference) throw new Error(`Public hint ${i} does not contain reference field`);
 
-        let reference = publicFields.find(f => f.name === "reference");
-        if(!reference) throw new Error(`Public hint ${i} does not contain reference field`);
-        let refInfo = formatExpression(reference.operand, pilout, symbols, stark, saveSymbols);
-        if(refInfo.op !== "public") throw new Error(`Invalid reference type: ${refInfo.op} for public hint ${i}`);
+        if(!hint.expression) throw new Error(`Public hint ${i} does not contain expression field`);
+        if(!["cm", "exp", "number"].includes(hint.expression.op)) throw new Error(`Invalid expression type: ${hint.expression.op} for public hint ${i}`);
+        if(hint.expression.op === "cm" && hint.expression.stage !== 1) throw new Error(`Invalid expression stage: ${hint.expression.stage} for public hint ${i}`);
 
-        let polType = exprInfo.op === "cm" ? "cmP" : "imP";
-        let polId = exprInfo.id;
-        let idx = Number(rowIdxInfo.value);
-        let id = refInfo.id;
+        if(!hint.row_index) throw new Error(`Public hint ${i} does not contain row_index field`);
 
-        let publicSymbol = symbols.find(s => s.type === "public" && s.id === refInfo.id);
-        let name = publicSymbol ? publicSymbol.name : `public_${refInfo.id}`;
+        let id = hint.reference.id;
+        let publicSymbol = symbols.find(s => s.type === "public" && s.id === id);
+        let name = publicSymbol ? publicSymbol.name : `public_${id}`;
+        let polType = hint.expression.op === "cm" ? "cmP" : "imP"; 
+        let polId = hint.expression.id;
+        let idx = Number(hint.row_index.value);
 
-        publicsInfo[id] = { polType, polId, idx, id, name };
+        publicsInfo.push({ name, id, polType, polId, idx });
     }
 
     return publicsInfo;
@@ -58,6 +48,23 @@ module.exports.formatExpressions = function formatExpressions(pilout, stark, sav
         return { expressions, symbols};
     }
 }
+
+module.exports.formatHints = function formatHints(pilout, symbols, stark, saveSymbols) {
+    const hints = [];
+
+    for(let i = 0; i < pilout.hints.length; ++i) {
+        const hint = { name: pilout.hints[i].name };
+        const fields = pilout.hints[i].hintFields[0].hintFieldArray.hintFields;
+        for(let j = 0; j < fields.length; j++) {
+            const name = fields[j].name;
+            const value = formatExpression(fields[j].operand, pilout, symbols, stark, saveSymbols);
+            hint[name] = value;
+        }
+        hints.push(hint);
+    }
+    return hints;
+}
+
 
 function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
     const P = new ProtoOut();

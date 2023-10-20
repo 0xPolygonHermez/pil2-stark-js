@@ -2,7 +2,7 @@ const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk
 const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, computeFRIFolding, computeFRIQueries, calculateHashStark, addTranscriptStark, getChallengeStark, getPermutationsStark } = require("../stark/stark_gen_helpers");
 const { calculatePublics, callCalculateExps, applyHints } = require("./prover_helpers");
 
-module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, zkey, options) {
+module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, constPols, zkey, options) {
     const logger = options.logger;
 
     let stark;
@@ -28,7 +28,7 @@ module.exports = async function proofGen(cmPols, pilInfo, constTree, constPols, 
         addTranscript(ctx.transcript, [ctx.MH.root(ctx.constTree)], stark);
     }
     
-    computePublics(ctx, stark, options);
+    computePublics(ctx, inputs, stark, options);
 
     let challenge;
     
@@ -136,8 +136,8 @@ async function initProver(pilInfo, constTree, constPols, zkey, stark, options) {
     }
 }
 
-async function computePublics(ctx, stark, options) {
-    calculatePublics(ctx);
+async function computePublics(ctx, inputs, stark, options) {
+    calculatePublics(ctx, inputs);
 
     // Transcript publics
 

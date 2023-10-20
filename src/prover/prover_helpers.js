@@ -6,15 +6,21 @@ const { calculateZ, calculateH1H2 } = require("../helpers/polutils");
 const maxNperThread = 1<<18;
 const minNperThread = 1<<12;
 
-module.exports.calculatePublics = async function calculatePublics(ctx) {
+module.exports.calculatePublics = function calculatePublics(ctx, inputs) {
     // Calculate publics
     ctx.publics = [];
     for (let i=0; i<ctx.pilInfo.nPublics; i++) {
-        ctx.publics[i] = module.exports.calculateExpAtPoint(
-            ctx, 
-            ctx.pilInfo.publicsCode[i], 
-            ctx.pilInfo.publicsCode[i].idx
-        );
+        const publicCode = ctx.pilInfo.publicsCode[i];
+        if(publicCode.code) {
+            ctx.publics[i] = module.exports.calculateExpAtPoint(
+                ctx, 
+                publicCode, 
+                publicCode.idx
+            );
+        } else {
+            const name = ctx.pilInfo.publicsCode[i].name;
+            ctx.publics[i] = inputs[name];            
+        }
     }
 }
 
