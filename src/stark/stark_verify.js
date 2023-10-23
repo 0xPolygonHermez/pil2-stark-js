@@ -237,7 +237,7 @@ function executeCode(F, ctx, code) {
             case "number": return BigInt(r.value);
             case "public": return BigInt(ctx.publics[r.id]);
             case "challenge": return ctx.challenges[r.stage - 1][r.id];
-            case "subproofvalue": return ctx.subproofvalues[r.id];
+            case "subproofValue": return ctx.subproofvalues[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
             case "x": {
                 let evalsStage = ctx.starkInfo.numChallenges.length + 1;
