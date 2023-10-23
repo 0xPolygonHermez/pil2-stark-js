@@ -417,7 +417,12 @@ module.exports.calculateHashStark = async function calculateHashStark(ctx, input
         transcript.put(inputs[i]);
     }
 
-    const hash = transcript.getField();
+    if(transcript.pending.length > 0) {
+        transcript.updateState();
+    }
+
+    const hash = transcript.state;
+    
     return hash;
 }
 

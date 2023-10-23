@@ -14,12 +14,7 @@ class Transcript {
 
     getFields1() {
         if (this.out.length == 0) {
-            while (this.pending.length<8) {
-                this.pending.push(0n);
-            }
-            this.out = this.poseidon(this.pending, this.state, 12);
-            this.pending = [];
-            this.state = this.out.slice(0, 4);
+            this.updateState();
         }
         const res = this.out.shift();
         return res;
@@ -33,6 +28,15 @@ class Transcript {
         } else {
             this._add1(a);
         }
+    }
+
+    updateState() {
+        while (this.pending.length<8) {
+            this.pending.push(0n);
+        }
+        this.out = this.poseidon(this.pending, this.state, 12);
+        this.pending = [];
+        this.state = this.out.slice(0, 4);
     }
 
     _add1(a) {

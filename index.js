@@ -1,6 +1,8 @@
 const FGL = require("./src/helpers/f3g.js");
 
 module.exports.FGL = new FGL();
+module.exports.buildPoseidonGL = require("./src/helpers/hash/poseidon/poseidon.js");
+module.exports.calculateHashStark = require("./src/stark/stark_gen_helpers").calculateHashStark;
 module.exports.starkSetup = require("./src/stark/stark_setup.js");
 module.exports.starkGen = require("./src/stark/stark_gen.js");
 module.exports.starkVerify = require("./src/stark/stark_verify.js");

@@ -1,6 +1,7 @@
 const { verifyOpenings, Keccak256Transcript } = require("shplonkjs");
 const {utils, getCurveFromName } = require("ffjavascript");
 const { fromObjectVk, fromObjectProof } = require("./helpers");
+const { calculateHashFflonk } = require("./fflonk_prover_helpers");
 const { unstringifyBigInts } = utils;
 
 
@@ -132,7 +133,7 @@ async function calculateTranscript(ctx, vk, options) {
             constInputs.push({commit: true, value: vk[cnstCommitPols[i]]});
         }
 
-        let constHash = await hashCommits(ctx, constInputs);
+        let constHash = await calculateHashFflonk(ctx, constInputs);
         transcript.addScalar(constHash);
     
         const publicInputs = [];
@@ -140,7 +141,7 @@ async function calculateTranscript(ctx, vk, options) {
             publicInputs.push({value: ctx.publics[i]});
         }
 
-        let publicHash = await hashCommits(ctx, publicInputs);
+        let publicHash = await calculateHashFflonk(ctx, publicInputs);
         transcript.addScalar(publicHash);
     }
    
@@ -166,7 +167,7 @@ async function calculateTranscript(ctx, vk, options) {
             for(let i = 0; i < stageCommitPols.length; i++) {
                 challengeInputs.push({commit: true, value: stageCommitPols[i]});
             }
-            let hash = await hashCommits(ctx, challengeInputs);
+            let hash = await calculateHashFflonk(ctx, challengeInputs);
 
             transcript.addScalar(hash);
         }
@@ -193,7 +194,7 @@ async function calculateTranscript(ctx, vk, options) {
         for(let i = 0; i < stageQCommitPols.length; i++) {
             challengeInputs.push({commit: true, value: stageQCommitPols[i]});
         }
-        let hash = await hashCommits(ctx, challengeInputs);
+        let hash = await calculateHashFflonk(ctx, challengeInputs);
         transcript.addScalar(hash);
     }
    
@@ -203,21 +204,6 @@ async function calculateTranscript(ctx, vk, options) {
 
     let challengeXi = ctx.curve.Fr.exp(ctx.challengeXiSeed, vk.powerW);
     ctx.x = challengeXi;
-}
-
-async function hashCommits(ctx, inputs) {
-    const transcript = new Keccak256Transcript(ctx.curve);
-    
-    for (let i=0; i<inputs.length; i++) {
-        if(inputs[i].commit) {
-            transcript.addPolCommitment(inputs[i].value);
-        } else {
-            transcript.addScalar(inputs[i].value);
-        }
-    }
-
-    const hash = transcript.getChallenge();
-    return hash;
 }
 
 function executeCode(F, ctx, code) {

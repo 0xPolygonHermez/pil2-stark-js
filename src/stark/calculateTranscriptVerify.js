@@ -1,6 +1,7 @@
 const Transcript = require("../helpers/transcript/transcript");
 const TranscriptBN128 = require("../helpers/transcript/transcript.bn128");
 const buildPoseidonGL = require("../helpers/hash/poseidon/poseidon");
+const { calculateHashStark } = require("./stark_gen_helpers");
 const buildPoseidonBN128 = require("circomlibjs").buildPoseidon;
 
 module.exports.calculateTranscript = async function calculateTranscript(F, starkInfo, proof, publics, constRoot, options) {
@@ -21,13 +22,18 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
     
     const logger = options.logger;
 
+    const ctx = {
+        pilInfo: starkInfo,
+        arity: options.transcriptArity,
+    };
+
     transcript.put(constRoot);
     if(!options.hashCommits) {
         for (let i=0; i<publics.length; i++) {
             transcript.put(publics[i]);
         }
     } else {
-        const commitsHash = await hashCommits(starkInfo, publics, {transcriptArity: options.transcriptArity});
+        const commitsHash = await calculateHashStark(ctx, publics);
         transcript.put(commitsHash);
     }
 
@@ -58,7 +64,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
             transcript.put(proof.evals[i]);
         }
     } else {
-        const commitsHash = await hashCommits(starkInfo, proof.evals, {transcriptArity: options.transcriptArity});
+        const commitsHash = await calculateHashStark(ctx, proof.evals);
         transcript.put(commitsHash);
     }
 
@@ -84,7 +90,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
                     transcript.put(proof.fri[proof.fri.length-1][i]);
                 }
             } else {
-                const commitsHash = await hashCommits(starkInfo, proof.fri[proof.fri.length-1], {transcriptArity: options.transcriptArity});
+                const commitsHash = await calculateHashStark(ctx,proof.fri[proof.fri.length-1]);
                 transcript.put(commitsHash);
             }
         }
@@ -109,24 +115,4 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
     if (logger) logger.debug("··· FRI queries: [" + friQueries.join(",") + "]");
 
     return {challenges, challengesFRISteps, friQueries};
-}
-
-async function hashCommits(starkInfo, inputs, options) {
-    let transcript;
-    if (starkInfo.starkStruct.verificationHashType == "GL") {
-        const poseidonGL = await buildPoseidonGL();
-        transcript = new Transcript(poseidonGL);
-    } else if (starkInfo.starkStruct.verificationHashType == "BN128") {
-        const poseidonBN128 = await buildPoseidonBN128();
-        transcript = new TranscriptBN128(poseidonBN128, options.transcriptArity);
-    } else {
-        throw new Error("Invalid Hash Type: "+ starkInfo.starkStruct.verificationHashType == "GL");
-    }
-
-    for (let i=0; i<inputs.length; i++) {
-        transcript.put(inputs[i]);
-    }
-
-    const hash = transcript.getField();
-    return hash;
 }
