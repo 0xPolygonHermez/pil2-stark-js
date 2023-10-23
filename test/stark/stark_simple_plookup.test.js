@@ -41,7 +41,7 @@ describe("test stark simple plookup sm", async function () {
 
         await smSimplePlookup.execute(N, cmPols.SimplePlookup);
 
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: true, debug: true});
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil1: true, debug: true});
     });
 
 });

@@ -45,14 +45,12 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
             ), alpha);
 
         ciCtx.numId = pil.expressions.length;
-        numExp.keep = true;
         numExp.stage = stage;
         pil.expressions.push(numExp);
         let nDim = getExpDim(pil.expressions, ciCtx.numId, stark);
         pil.expressions[ciCtx.numId].dim = nDim;
 
         ciCtx.denId = pil.expressions.length;
-        denExp.keep = true;
         denExp.stage = stage;
         pil.expressions.push(denExp);
         let dDim = getExpDim(pil.expressions, ciCtx.denId, stark);

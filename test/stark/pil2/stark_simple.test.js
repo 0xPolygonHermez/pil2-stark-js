@@ -58,7 +58,7 @@ async function runTest(pilFile) {
             await smSimple.execute(pil.numRows, cmPols.Simple, F);
         }
         
-        await generateStarkProof(cnstPols, cmPols, pil, starkStruct, {logger, F, pil1: false, debug: true});
+        await generateStarkProof(cnstPols, cmPols, pil, starkStruct, {}, {logger, F, pil1: false, debug: true});
 }
 
 describe("simple sm", async function () {

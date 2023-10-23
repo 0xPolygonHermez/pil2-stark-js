@@ -41,7 +41,7 @@ describe("test permutation sm", async function () {
 
         await smPermutation.execute(N, cmPols.Permutation);
 
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, {logger, F, pil1: true, debug: true});
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil1: true, debug: true});
     });
 
 });

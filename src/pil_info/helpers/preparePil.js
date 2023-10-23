@@ -12,6 +12,10 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil1, debug, star
 
     let expressions, symbols, constraints, publicsInfo;
 
+    for(let i = 0; i < pil.expressions.length; ++i) {
+        pil.expressions[i].stage = 1;
+    }
+    
     if(pil1) {
         ({expressions, symbols, hints, constraints, publicsInfo} = generatePil1Polynomials(F, res, pil, stark));
     } else {
