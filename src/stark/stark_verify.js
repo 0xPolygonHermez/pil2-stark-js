@@ -68,9 +68,9 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         ctx.challenges = challenges.challenges;
         ctx.challengesFRISteps = challenges.challengesFRISteps;
         if(logger) {
-            for(let i=0; i < starkInfo.numChallenges.length; i++) {           
+            for(let i=0; i < starkInfo.numChallenges.length; i++) {
                 for(let j = 0; j < starkInfo.numChallenges[i]; ++j) {
-                    logger.debug("··· challenges[" + (stage - 1) + "][" + j + "]: " + F.toString(ctx.challenges[stage - 1][j]));
+                    logger.debug("··· challenges[" + i + "][" + j + "]: " + F.toString(ctx.challenges[i][j]));
                 }
             }
             let qStage = starkInfo.numChallenges.length;

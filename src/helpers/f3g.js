@@ -337,6 +337,10 @@ module.exports = class F3g {
         return [this._random1(), this._random1(), this._random1()];
     }
 
+    randomValue() {
+        return [this._random1(), this._random1(), this._random1(), this._random1()];
+    }
+
     _random1() {
         const nBytes = (this.bitLength*2 / 8);
         let res =this.zero;
