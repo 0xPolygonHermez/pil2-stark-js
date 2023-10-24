@@ -5,7 +5,7 @@ const buildMerkleHashGL = require("../helpers/hash/merklehash/merklehash_p.js");
 const buildMerkleHashBN128 = require("../helpers/hash/merklehash/merklehash_bn128_p.js");
 const { assert } = require("chai");
 const buildPoseidonGL = require("../helpers/hash/poseidon/poseidon");
-const { calculateTranscript } = require("./calculateTranscriptVerify");
+const { calculateTranscript, calculateFRIQueries } = require("./calculateTranscriptVerify");
 const buildPoseidonBN128 = require("circomlibjs").buildPoseidon;
 
 module.exports = async function starkVerify(proof, publics, constRoot, challenges, starkInfo, options = {}) {
@@ -67,12 +67,12 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         const challenges = await calculateTranscript(F, starkInfo, proof, publics, constRoot, options);
         ctx.challenges = challenges.challenges;
         ctx.challengesFRISteps = challenges.challengesFRISteps;
-        ctx.friQueries = challenges.friQueries;
     } else {
         ctx.challenges = challenges.challenges;
         ctx.challengesFRISteps = challenges.challengesFRISteps;
-        ctx.friQueries = challenges.friQueries; 
     }
+
+    ctx.friQueries = await calculateFRIQueries(starkInfo, ctx.challengesFRISteps[starkInfo.starkStruct.steps.length], options);
 
     if (logger) logger.debug("Verifying evaluations");
 

@@ -98,6 +98,11 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
 
     challengesFRISteps[starkInfo.starkStruct.steps.length] = transcript.getField();
 
+    return {challenges, challengesFRISteps};
+}
+
+module.exports.calculateFRIQueries = async function calculateFRIQueries(starkInfo, challenge, options) {
+    const logger = options.logger;
     let transcriptFRIQuery;
     if (starkInfo.starkStruct.verificationHashType == "GL") {
         const poseidonGL = await buildPoseidonGL();
@@ -109,10 +114,10 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
         throw new Error("Invalid Hash Type: "+ starkInfo.starkStruct.verificationHashType == "GL");
     }
 
-    transcriptFRIQuery.put(challengesFRISteps[starkInfo.starkStruct.steps.length]);
+    transcriptFRIQuery.put(challenge);
 
     let friQueries = transcriptFRIQuery.getPermutations(starkInfo.starkStruct.nQueries, starkInfo.starkStruct.steps[0].nBits);
     if (logger) logger.debug("··· FRI queries: [" + friQueries.join(",") + "]");
 
-    return {challenges, challengesFRISteps, friQueries};
+    return friQueries;
 }

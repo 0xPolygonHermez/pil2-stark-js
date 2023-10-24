@@ -36,7 +36,7 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
 
     const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, inputs, {logger, hashCommits});
 
-    const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, [], setup.starkInfo, {logger, hashCommits});
+    const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, undefined, setup.starkInfo, {logger, hashCommits});
 
     assert(resV==true);
 
