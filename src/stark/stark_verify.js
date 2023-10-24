@@ -67,6 +67,26 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
     } else {
         ctx.challenges = challenges.challenges;
         ctx.challengesFRISteps = challenges.challengesFRISteps;
+        if(logger) {
+            for(let i=0; i < starkInfo.numChallenges.length; i++) {           
+                for(let j = 0; j < starkInfo.numChallenges[i]; ++j) {
+                    logger.debug("··· challenges[" + (stage - 1) + "][" + j + "]: " + F.toString(ctx.challenges[stage - 1][j]));
+                }
+            }
+            let qStage = starkInfo.numChallenges.length;
+            logger.debug("··· challenges[" + qStage + "][0]: " + F.toString(ctx.challenges[qStage][0]));
+    
+            let evalsStage = starkInfo.numChallenges.length + 1;
+            logger.debug("··· challenges[" + evalsStage + "][0]: " + F.toString(ctx.challenges[evalsStage][0]));
+    
+            let friStage = starkInfo.numChallenges.length + 2;
+            logger.debug("··· challenges[" + friStage + "][0]: " + F.toString(ctx.challenges[friStage][0]));
+            logger.debug("··· challenges[" + friStage + "][1]: " + F.toString(ctx.challenges[friStage][1]));
+            for (let step=0; step<starkInfo.starkStruct.steps.length; step++) {
+                logger.debug("··· challenges FRI folding step " + step + ": " + F.toString(ctx.challengesFRISteps[step]));
+            }
+            logger.debug("··· challenge FRI permutations: " + F.toString(ctx.challengesFRISteps[starkInfo.starkStruct.steps.length]));
+        }
     }
 
     ctx.friQueries = await calculateFRIQueries(starkInfo, ctx.challengesFRISteps[starkInfo.starkStruct.steps.length], options);
