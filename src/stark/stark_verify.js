@@ -1,12 +1,9 @@
-const Transcript = require("../helpers/transcript/transcript");
-const TranscriptBN128 = require("../helpers/transcript/transcript.bn128");
 const FRI = require("./fri.js");
 const buildMerkleHashGL = require("../helpers/hash/merklehash/merklehash_p.js");
 const buildMerkleHashBN128 = require("../helpers/hash/merklehash/merklehash_bn128_p.js");
 const { assert } = require("chai");
 const buildPoseidonGL = require("../helpers/hash/poseidon/poseidon");
 const { calculateTranscript, calculateFRIQueries } = require("./calculateTranscriptVerify");
-const buildPoseidonBN128 = require("circomlibjs").buildPoseidon;
 
 module.exports = async function starkVerify(proof, publics, constRoot, challenges, starkInfo, options = {}) {
     const logger = options.logger;

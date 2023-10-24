@@ -28,6 +28,7 @@ describe("test fibonacci pil2 sm", async function () {
             verificationHashType : "GL",
             steps: [
                 {nBits: 8},
+                {nBits: 5},
                 {nBits: 3}
             ]
         };

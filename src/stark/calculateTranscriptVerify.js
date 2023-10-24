@@ -98,6 +98,8 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
 
     challengesFRISteps[starkInfo.starkStruct.steps.length] = transcript.getField();
 
+    if (logger) logger.debug("··· challenge FRI permutations: " + F.toString(challengesFRISteps[starkInfo.starkStruct.steps.length]));
+
     return {challenges, challengesFRISteps};
 }
 

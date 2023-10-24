@@ -5,6 +5,8 @@
     "verificationHashType": "GL",
     "steps": [
         {"nBits": 7},
+        {"nBits": 5},
         {"nBits": 3}
+
     ]
 }
