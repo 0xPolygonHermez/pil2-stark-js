@@ -342,6 +342,7 @@ module.exports.genProofStark = async function genProof(ctx, logger) {
     const proof = {
         rootQ: ctx.MH.root(ctx.trees[ctx.pilInfo.numChallenges.length + 1]),
         evals: ctx.evals,
+        subproofValues: ctx.subproofValues,
         fri: ctx.friProof
     };
 

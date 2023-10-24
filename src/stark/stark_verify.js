@@ -19,6 +19,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     ctx = {
         evals: proof.evals,
+        subproofValues: proof.subproofValues,
         publics,
         starkInfo,
         proof,
@@ -26,18 +27,13 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
     };
     
     let MH;
-    let transcript;
     if (starkStruct.verificationHashType == "GL") {
-        const poseidonGL = await buildPoseidonGL();
         MH = await buildMerkleHashGL(starkStruct.splitLinearHash);
-        transcript = new Transcript(poseidonGL);
     } else if (starkStruct.verificationHashType == "BN128") {
-        const poseidonBN128 = await buildPoseidonBN128();
         ctx.arity = options.arity || 16;
         ctx.custom = options.custom || false; 
         ctx.transcriptArity = ctx.custom ? ctx.arity : 16;   
         MH = await buildMerkleHashBN128(ctx.arity, ctx.custom);
-        transcript = new TranscriptBN128(poseidonBN128, ctx.transcriptArity);
     } else {
         throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
     }
@@ -64,9 +60,6 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         logger.debug(`  Stage Q pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == "cmQ").length}`);
         logger.debug("-----------------------------");
     }
-
-    // TODO: Fix
-    ctx.subproofvalues = [];
 
     if(!options.vadcop) {
         ctx.challenges = [];
@@ -237,7 +230,7 @@ function executeCode(F, ctx, code) {
             case "number": return BigInt(r.value);
             case "public": return BigInt(ctx.publics[r.id]);
             case "challenge": return ctx.challenges[r.stage - 1][r.id];
-            case "subproofValue": return ctx.subproofvalues[r.id];
+            case "subproofValue": return ctx.subproofValues[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
             case "x": {
                 let evalsStage = ctx.starkInfo.numChallenges.length + 1;
