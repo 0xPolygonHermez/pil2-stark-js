@@ -91,7 +91,6 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
         // STAGE 6. Compute FRI
         await computeFRIStark(ctx, options);
 
-        ctx.challengesFRISteps = [];
         for (let step = 0; step < ctx.pilInfo.starkStruct.steps.length; step++) {
 
             challenge = getChallengeStark(ctx.transcript);
@@ -117,15 +116,9 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
         await computeOpeningsFflonk(ctx, challenge, logger);
     }
     
-    const {proof, publics} = ctx.prover === "stark" ? await genProofStark(ctx, logger) : await genProofFflonk(ctx, logger);
+    const proof = ctx.prover === "stark" ? await genProofStark(ctx, options) : await genProofFflonk(ctx, logger);
 
-    const proofObject = {proof, publics};
-
-    if(options.vadcop) {
-        proofObject.challenges = ctx.challenges.flat();
-        proofObject.challengesFRISteps = ctx.challengesFRISteps;
-    }
-    return proofObject;
+    return proof;
 }
 
 async function initProver(pilInfo, constTree, constPols, zkey, stark, options) {

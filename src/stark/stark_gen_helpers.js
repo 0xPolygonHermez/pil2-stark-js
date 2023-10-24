@@ -37,6 +37,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.N = 1 << ctx.pilInfo.pilPower;
     ctx.tmp = [];
     ctx.challenges = [];
+    ctx.challengesFRISteps = [];
     ctx.subproofValues = [];
 
     if(!options.debug) {
@@ -336,9 +337,12 @@ module.exports.computeFRIQueries = function computeFRIQueries(ctx, friQueries) {
     ctx.fri.proofQueries(ctx.friProof, ctx.friTrees, friQueries);
 }
 
-module.exports.genProofStark = async function genProof(ctx, logger) {
-    if(logger) logger.debug("Generating proof");
+module.exports.genProofStark = async function genProof(ctx, options) {
+    const logger = options.logger;
+    const vadcop = options.vadcop;
 
+    if(logger) logger.debug("Generating proof");
+    
     const proof = {
         rootQ: ctx.MH.root(ctx.trees[ctx.pilInfo.numChallenges.length + 1]),
         evals: ctx.evals,
@@ -353,7 +357,14 @@ module.exports.genProofStark = async function genProof(ctx, logger) {
 
     const publics = ctx.publics;
 
-    return {proof, publics};
+    const res = {proof, publics};
+
+    if(vadcop) {
+        res.challenges = ctx.challenges.flat();
+        res.challengesFRISteps = ctx.challengesFRISteps;
+    }
+
+    return res;
 }
 
 module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ctx, options) {
