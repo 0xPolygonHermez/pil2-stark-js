@@ -2,6 +2,7 @@ pragma circom 2.1.0;
 pragma custom_templates;
 
 include "recursivef.verifier.circom";
+include "mux1.circom";
 
 /* 
     Calculate the transcript
@@ -32,7 +33,6 @@ template VerifyGlobalChallenges() {
 <%      transcript.put("rootC[" + i + "]", 4); -%>
 <%   } -%>
 <%   transcript.put("publics", nPublics); -%>
-
 <%   let c = 0; -%>
 <%   for(let i=0; i < nChallengesStages.length; i++) {
         const stage = i + 1;
@@ -42,8 +42,7 @@ template VerifyGlobalChallenges() {
         for(let k = 0; k < starkInfoRecursivesF.length; ++k) {
             transcript.put("root" + stage + "[" + k + "]", 4);
         }
-     } -%>   
-    
+     } -%>
 <%    transcript.getField("calculatedChallenges[" + (c++) + "]"); -%>
 <%   for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
 <%      transcript.put("rootQ[" + i + "]", 4); -%>
@@ -267,7 +266,32 @@ template Main() {
 <%  } -%>
 
     // Check that subair value is correct
+    signal subAirValue[3];
+<%  let sum1 = []; -%>
+<%  let sum2 = []; -%>
+<%  let sum3 = []; -%>
+<%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
+<%      sum1.push(`s${i}_subAirValue[0]`) -%>
+<%      sum2.push(`s${i}_subAirValue[1]`) -%>
+<%      sum3.push(`s${i}_subAirValue[2]`) -%>
+
+<%  } -%>
+    subAirValue[0] <== <%- sum1.join(" + ") %>;
+    subAirValue[1] <== <%- sum2.join(" + ") %>;
+    subAirValue[2] <== <%- sum3.join(" + ") %>;
+
+    signal values[2][3];
+    values[0] <== [0,0,0]; // Addition neutral value
+    values[1] <== [1,0,0]; // Multiplication neutral value
+
+    aggregationType * (aggregationType - 1) === 0;
+    signal {binary} aggType <== aggregationType;
+
+    signal aggregatedNeutralValue[3] <== MultiMux1(3)(values, aggType);
     
+    for(var i = 0; i < 3; i++) {
+        aggregatedNeutralValue[i] === subAirValue[i];
+    }
 }
 
 component main {public [publics]} = Main();
