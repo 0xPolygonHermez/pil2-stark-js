@@ -40,6 +40,8 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.challengesFRISteps = [];
     ctx.subproofValues = [];
 
+    ctx.challenges[0] = [];
+
     if(!options.debug) {
         ctx.nBitsExt = ctx.pilInfo.starkStruct.nBitsExt;
         ctx.extN = 1 << ctx.pilInfo.starkStruct.nBitsExt;
@@ -360,7 +362,7 @@ module.exports.genProofStark = async function genProof(ctx, options) {
     const res = {proof, publics};
 
     if(vadcop) {
-        res.challenges = ctx.challenges.flat();
+        res.challenges = ctx.challenges;
         res.challengesFRISteps = ctx.challengesFRISteps;
     }
 

@@ -30,8 +30,6 @@ const argv = require("yargs")
     .alias("b", "public")
     .alias("v", "vadcopchallenges")
     .string("proverAddr")
-    .string("vadcop")
-    .string("hashcommits")
     .string("arity")
     .argv;
 

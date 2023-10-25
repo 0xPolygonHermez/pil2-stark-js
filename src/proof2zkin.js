@@ -86,3 +86,17 @@ module.exports.challenges2zkin = function challenges2zkin(challenges, starkInfo,
 
     return zkin;
 }
+
+module.exports.challenges2zkinVadcop = function challenges2zkinVadcop(challenges, zkin) {
+    zkin.challenges = [];
+    console.log(challenges);
+    for(let i=0; i < challenges.challenges.length; i++) {
+        for(let j = 0; j < challenges.challenges[i].length; ++j) {
+            zkin.challenges.push(challenges.challenges[i][j]);
+        }       
+    }
+
+    zkin.challengesFRISteps = challenges.challengesFRISteps;
+    
+    return zkin;
+}
