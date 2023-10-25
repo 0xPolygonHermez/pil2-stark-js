@@ -53,7 +53,7 @@ async function run() {
     const pil = await compile(F, pilFile, null, pilConfig);
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
 
-    const inputs = JSONbig.parse(await fs.promises.readFile(inputFile, "utf8"));
+    const inputs = typeof(argv.input) === "string" ? JSONbig.parse(await fs.promises.readFile(inputFile, "utf8")) : {};
     
     const constPols =  newConstantPolsArray(pil, F);
     await constPols.loadFromFile(constFile);

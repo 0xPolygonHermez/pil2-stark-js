@@ -64,7 +64,7 @@ async function run() {
 
     const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
     const starkInfo = pilInfo(F, pil, true, pil1, true, {});
-    await starkGen(cmPols, constPols, {}, starkInfo, optionsPilVerify);
+    await starkGen(cmPols, constPols, {}, starkInfo, {}, optionsPilVerify);
 }
 
 run().then(()=> {

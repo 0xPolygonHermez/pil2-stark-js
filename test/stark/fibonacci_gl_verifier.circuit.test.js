@@ -87,7 +87,7 @@ describe("Stark Verification Circuit Test", function () {
         const starkInfo = pilInfo(F, pil, true, true, false, starkStruct);
 
     
-        const challenges = await calculateTranscript(F, starkInfo, proof, publics, {});
+        const challenges = await calculateTranscript(F, starkInfo, proof, publics, constRoot, {});
 
         const circuitSrc = await pil2circom(constRoot, starkInfo, {arity: 4, vadcop:true });
 

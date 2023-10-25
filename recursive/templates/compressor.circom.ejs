@@ -80,7 +80,7 @@ template Main() {
     signal output sv_rootC[4];
     signal output sv_rootQ[4];
     signal output sv_evalsHash[4];
-<%      for(let i = 1; i < starkInfo.starkStruct.steps.length; i++) { -%>
+<%      for(let i = 1; i < stepsFRI.length; i++) { -%>
     signal output sv_s<%- i %>_root[4];
 <%      } -%>
     signal output sv_finalPolHash[4];
@@ -97,10 +97,10 @@ template Main() {
 <%  } -%>
     sv_rootQ <== rootQ;
     sv_evalsHash <== CalculateEvalsHash()(evals);
-<%  let friCounter = 1; -%>
+<%  let friCounter = 0; -%>
 <%  for(let i = 1; i < stepsFRI.length; i++) { -%>
-<%     if(starkInfo.starkStruct.steps[friCounter] === stepsFRI[i]) { -%>
-    sv_s<%- i %>_root <== s<%- friCounter++ %>_root;
+<%     if(starkInfo.starkStruct.steps[friCounter].nBits === stepsFRI[i - 1].nBits) { -%>
+    sv_s<%- i %>_root <== s<%- ++friCounter %>_root;
 <%     } else { -%>
     sv_s<%- i %>_root <== [0,0,0,0];
 <%     } -%>
@@ -143,7 +143,6 @@ template Main() {
     for(var i = 0; i < <%- starkInfo.nPublics %>; i++) {
         sv.publics[i] <== publics[i];
     }
-
 <%  let c = 0; -%>
 <%  for(let i = 0; i < nChallengesStages.length; ++i) { -%>
 <%      for(let j = 0; j < nChallengesStages[i]; ++j) { -%>
@@ -151,10 +150,9 @@ template Main() {
     sv.challengesStage<%- i + 1 %>[<%-j %>] <== challenges[<%- c++ %>];
 <%          } else { -%>
 <%                c++; -%>
-<%          } -%> 
+<%          } -%>
 <%      } -%>
 <%  } -%>
-
     sv.challengeQ <== challenges[<%- c++ %>];
     sv.challengeXi <== challenges[<%- c++ %>];
     sv.challengesFRI[0] <== challenges[<%- c++ %>];
@@ -164,7 +162,7 @@ template Main() {
 <%  for(let i = 0; i < stepsFRI.length; ++i) { -%>
 <%      if(starkInfo.starkStruct.steps[c].nBits === stepsFRI[i].nBits) { -%>
     sv.challengesFRISteps[<%- c++ %>] <== challengesFRISteps[<%- i %>];
-<%      } -%> 
+<%      } -%>
 <%  } -%>
     sv.challengesFRISteps[<%- starkInfo.starkStruct.steps.length %>] <== challengesFRISteps[<%- stepsFRI.length %>];
 

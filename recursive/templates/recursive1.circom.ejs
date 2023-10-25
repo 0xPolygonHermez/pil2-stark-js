@@ -116,10 +116,10 @@ template Main() {
 <%  } -%>
     sv_rootQ <== rootQ;
     sv_evalsHash <== CalculateEvalsHash()(evals);
-<%  let friCounter = 1; -%>
+<%  let friCounter = 0; -%>
 <%  for(let i = 1; i < stepsFRI.length; i++) { -%>
-<%     if(starkInfoBasic.starkStruct.steps[friCounter] === stepsFRI[i]) { -%>
-    sv_s<%- i %>_root <== s<%- friCounter++ %>_root;
+<%     if(starkInfo.starkStruct.steps[friCounter].nBits === stepsFRI[i - 1].nBits) { -%>
+    sv_s<%- i %>_root <== s<%- ++friCounter %>_root;
 <%     } else { -%>
     sv_s<%- i %>_root <== [0,0,0,0];
 <%     } -%>
@@ -177,12 +177,10 @@ template Main() {
 <%          } -%> 
 <%      } -%>
 <%  } -%>
-
     sv.challengeQ <== challenges[<%- c++ %>];
     sv.challengeXi <== challenges[<%- c++ %>];
     sv.challengesFRI[0] <== challenges[<%- c++ %>];
     sv.challengesFRI[1] <== challenges[<%- c++ %>];
-
 <%  c = 0; %>
 <%  for(let i = 0; i < stepsFRI.length; ++i) { -%>
 <%      if(starkInfoBasic.starkStruct.steps[c].nBits === stepsFRI[i].nBits) { -%>
@@ -214,12 +212,12 @@ template Main() {
     }
 <%  nPublicsInps += 3 -%>
 
-for(var i = 0; i < 4; i++) {
-    sv.publics[<%- nPublicsInps %> + i] <== sv_rootC[i];
-}
+    for(var i = 0; i < 4; i++) {
+        sv.publics[<%- nPublicsInps %> + i] <== sv_rootC[i];
+    }
 <%  nPublicsInps += 4 -%>
 
-<%  for (let i = 0; i < nChallengesStages.reduce((nc, acc) => nc + acc, 0); i++) { -%>
+<%  for (let i = 0; i < nChallengesStages.length; i++) { -%>
     for(var i = 0; i < 4; i++) {
         sv.publics[<%- nPublicsInps %> + i] <== sv_root<%- i+1 %>[i];
     }
