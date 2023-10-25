@@ -639,8 +639,14 @@ template StarkVerifier() {
 <% /* Depending on the STARK being verified, the rootC will be hardcoded or passed as an input */%>
     signal input rootC[4]; // Merkle tree root of the evaluations of constant polynomials
 <% } else { -%>
+<%      if (options.vadcop) { -%>
+    signal output rootC[4] <== [<%- constRoot.join(',') %> ]; // Merkle tree root of the evaluations of constant polynomials
+<%      } else { -%>
     signal rootC[4] <== [<%- constRoot.join(',') %> ]; // Merkle tree root of the evaluations of constant polynomials
+<%      } -%>
 <% } -%>
+
+
 
     signal input evals[<%- starkInfo.evMap.length %>][3]; // Evaluations of the set polynomials at a challenge value z and gz
 

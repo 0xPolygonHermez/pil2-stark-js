@@ -2,11 +2,12 @@ const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
+const { Transcript } = require('./templates/transcript');
 const version = require("../package").version;
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_genrecursive.js -v <basic_verification_keys.json> -s starkinfo.json -b <starkinfobasic.json> -o <recursive.circom> [--hasCompressor] ")
+    .usage("node main_genrecursive.js -v <basic_verification_keys.json> -g globalinfo.json -s starkinfo.json -b <starkinfobasic.json> -o <recursive.circom> [--hasCompressor] ")
     .alias("v", "vksbasics").array("v")
     .alias("s", "starkinfo")
     .alias("b", "starkinfobasic")
@@ -17,22 +18,20 @@ const argv = require("yargs")
 
 async function run() {
     const outputFile = typeof(argv.output) === "string" ?  argv.output.trim() : "mycircuit.circom";
-    const globalChallengesFile = typeof(argv.globalinfo) === "string" ? argv.globalinfo.trim() : "mycircuit.globalinfo.json";
+    const globalInfoFile = typeof(argv.globalinfo) === "string" ? argv.globalinfo.trim() : "mycircuit.globalinfo.json";
     const starkInfoFile = typeof (argv.starkinfo) === "string" ? argv.starkinfo.trim() : "mycircuit.starkinfo.json";
 
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
-    const globalInfo = JSON.parse(await fs.promises.readFile(globalChallengesFile, "utf8"));
+    const globalInfo = JSON.parse(await fs.promises.readFile(globalInfoFile, "utf8"));
 
     if(!globalInfo) throw new Error("Global info is undefined");
-    if(!globalInfo.nPublics) throw new error("Global info does not contain number of publics");
-    if(!globalInfo.nStages) throw new error("Global info does not contain number of stages");
-    if(!globalInfo.nChallenges) throw new error("Global info does not contain number of challenges");
-    if(!globalInfo.stepsFRI) throw new error("Global info does not contain number of fri steps");
+    if(!globalInfo.nPublics) throw new Error("Global info does not contain number of publics");
+    if(!globalInfo.numChallenges) throw new Error("Global info does not contain number of challenges");
+    if(!globalInfo.starkStruct.steps) throw new Error("Global info does not contain number of fri steps");
 
     const nPublics = globalInfo.nPublics;
-    const nStages = globalInfo.nStages;
-    const nChallenges = globalInfo.nChallenges;
-    const stepsFRI = globalInfo.stepsFRI;
+    const nChallengesStages = globalInfo.numChallenges;
+    const stepsFRI = globalInfo.starkStruct.steps;
 
     const vks = [];
 
@@ -54,8 +53,7 @@ async function run() {
         vks,
         hasCompressor,
         nPublics,
-        nStages,
-        nChallenges,
+        nChallengesStages,
         stepsFRI,
     };
 
@@ -68,6 +66,11 @@ async function run() {
         obj.aggregationType = Number(argv.aggregationType);
         obj.basicCircuitName = argv.basicCircuitName;
         obj.starkInfoBasic = starkInfo;
+
+        obj.transcriptPublics = new Transcript("publics");
+        obj.transcriptEvals = new Transcript("evals");
+        obj.transcriptFinalPol = new Transcript("finalPol");
+
     } else if(argv.template === "recursive1") {
         if(!("starkinfobasic" in argv)) throw new Error("If there is a compressor, starkInfoBasic must be provided");
         const starkInfoBasicFile = typeof (argv.starkinfobasic) === "string" ? argv.starkinfobasic.trim() : "mycircuitBasic.starkinfo.json";
@@ -75,7 +78,7 @@ async function run() {
         obj.starkInfoBasic = starkInfoBasic;
     }
     
-    const verifier = ejs.render(template ,  obj);
+    const verifier = ejs.render(template,  obj);
 
     await fs.promises.writeFile(outputFile, verifier, "utf8");
 

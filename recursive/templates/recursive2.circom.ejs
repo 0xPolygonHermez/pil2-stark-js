@@ -6,11 +6,6 @@ include "mux1.circom";
 include "iszero.circom";
 include "recursive1.verifier.circom";
 
-<% let nPublics = starkInfoBasic.nPublics; -%>
-<% let numChallengesStage = starkInfoBasic.numChallenges; -%>
-<%  let nChallenges = starkInfoBasic.numChallenges.reduce((curr, acc) => curr + acc, 0) + 4; -%>
-<%  let nStepsFRI = starkInfoBasic.starkStruct.steps.length; -%>
-
 // Given a circuit type, return the corresponding verification key
 template SelectVerificationKey() {
 
@@ -69,46 +64,46 @@ template SelectVerificationKey() {
     verificationKey <== accVK[<%- (vks.length + 2) - 1 %>];
 }
 
-template AggregateChallenges() {
-    signal input challengeA[3];
-    signal input isNullA; // 1 if is circuit type A is 0 (null), 0 otherwise
+template AggregateValues() {
+    signal input valueA[4];
+    signal input valueB[4];
+    signal input {binary} isNullA; // 1 if is circuit type A is 0 (null), 0 otherwise
+    signal input {binary} isNullB; // 1 if is circuit type B is 0 (null), 0 otherwise
 
-    signal input challengeB[3];
-    signal input isNullB; // 1 if is circuit type B is 0 (null), 0 otherwise
+    signal output valueAB[4];
 
-    signal output challengeAB[3];
+    // Calculate the hash of valueA and valueB
+    signal hash[12] <== Poseidon(12)([valueA[0], valueA[1], valueA[2], valueA[3], valueB[0], valueB[1], valueB[2], valueB[3]], [0,0,0,0]);
+    signal hashAB[4] <== [hash[0], hash[1], hash[2], hash[3]];
 
-    // Calculate the hash of challengeA and challengeB
-    signal hash[12] <== Poseidon(12)([challengeA[0], challengeA[1], challengeA[2], challengeB[0], challengeB[1], challengeB[2], 0, 0], [0,0,0,0]);
-    signal hashAB[3] <== [hash[0], hash[1], hash[2]];
+    // If valueA or valueB is [0,0,0], it means that the particular subproof does not have that stage. Therefore we should proceed the same way as if circuitType is null
+    signal isValueA1Zero <== IsZero()(valueA[0]);
+    signal isValueA2Zero <== IsZero()(valueA[1]);
+    signal isValueA3Zero <== IsZero()(valueA[2]);
+    signal isValueA4Zero <== IsZero()(valueA[3]);
+    signal isValueAZero <== IsZero()(4 - (isValueA1Zero + isValueA2Zero + isValueA3Zero + isValueA4Zero));
 
-    // If challengeA or challengeB is [0,0,0], it means that the particular subproof does not have that stage. Therefore we should proceed the same way as if circuitType is null
-    signal isValue1ChallengeAZero <== IsZero()(challengeA[0]);
-    signal isValue2ChallengeAZero <== IsZero()(challengeA[1]);
-    signal isValue3ChallengeAZero <== IsZero()(challengeA[2]);
-    signal isChallengeAZero <== IsZero()(3 - (isValue1ChallengeAZero + isValue2ChallengeAZero + isValue3ChallengeAZero));
-
-    signal isValue1ChallengeBZero <== IsZero()(challengeB[0]);
-    signal isValue2ChallengeBZero <== IsZero()(challengeB[1]);
-    signal isValue3ChallengeBZero <== IsZero()(challengeB[2]);
-    signal isChallengeBZero <== IsZero()(3 - (isValue1ChallengeBZero + isValue2ChallengeBZero + isValue3ChallengeBZero));
+    signal isValueB1Zero <== IsZero()(valueB[0]);
+    signal isValueB2Zero <== IsZero()(valueB[1]);
+    signal isValueB3Zero <== IsZero()(valueB[2]);
+    signal isValueB4Zero <== IsZero()(valueB[3]);
+    signal isValueBZero <== IsZero()(4 - (isValueB1Zero + isValueB2Zero + isValueB3Zero + isValueB4Zero));
 
 
-    // If circuit type A is null || challengeA === 0 and circuit type B is null || challengeB === 0, then the challengeAB is 0
-    // If circuit type A is not null && challengeA !== 0 and circuit type B is null || challengeB === 0, then the challengeAB is challengeA
-    // If circuit type A is null || challengeA === 0 and circuit type B is not null && challengeB !== 0, then the challengeAB is challengeB
-    // If circuit type A is not null && challengeA !== 0 and circuit type B is not null && challengeB !== 0, then the challengeAB is hashAB
+    // If circuit type A is null || valueA === 0 and circuit type B is null || valueB === 0, then the valueAB is 0
+    // If circuit type A is not null && valueA !== 0 and circuit type B is null || valueB === 0, then the valueAB is valueA
+    // If circuit type A is null || valueA === 0 and circuit type B is not null && valueB !== 0, then the valueAB is valueB
+    // If circuit type A is not null && valueA !== 0 and circuit type B is not null && valueB !== 0, then the valueAB is hashAB
 
-    signal {binary} s[2] <== [(1 - isNullA)*(1 - isChallengeAZero), (1 - isNullB)*(1 - isChallengeAZero)];
-    challengeAB <== MultiMux2(3)([[0,0,0], challengeA, challengeB, hashAB], s);
+    signal {binary} s[2] <== [(1 - isNullA)*(1 - isValueAZero), (1 - isNullB)*(1 - isValueBZero)];
+    valueAB <== MultiMux2(4)([[0,0,0,0], valueA, valueB, hashAB], s);
 
 }
 
 template AggregateSubAirValues() {
     signal input subAirValueA[3];
-    signal input {binary} isNullA; // 1 if is circuit type A is 0 (null), 0 otherwise 
-
     signal input subAirValueB[3];
+    signal input {binary} isNullA; // 1 if is circuit type A is 0 (null), 0 otherwise 
     signal input {binary} isNullB; // 1 if is circuit type B is 0 (null), 0 otherwise 
 
     signal input {binary} aggregationType; // 1 if aggregation is multiplication, 0 if aggregation is addition
@@ -120,9 +115,6 @@ template AggregateSubAirValues() {
 
     // If circuit type B is null, then its subAirValue is zero;
     signal valueB[3] <== [ (1 - isNullB)*subAirValueB[0], (1 - isNullB)*subAirValueB[1], (1 - isNullB)*subAirValueB[2] ];
-
-    // Check tha aggregation type is either 0 or 1
-    aggregationType * (aggregationType - 1) === 0;
 
     signal values[2][3];
     values[0] <== [valueA[0] + valueB[0], valueA[1] + valueB[1], valueA[2] + valueB[2]];
@@ -136,9 +128,9 @@ template Main() {
 
     signal input publics[<%- nPublics %>];
 
-    signal input challenges[<%- nChallenges %>][3];
+    signal input challenges[<%- nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4 %>][3];
 
-    signal input challengesFRISteps[<%- nStepsFRI + 1 %>][3];
+    signal input challengesFRISteps[<%- stepsFRI.length + 1 %>][3];
 
     signal input rootCRecursive2[4];
 
@@ -183,31 +175,31 @@ template Main() {
 
     signal input s<%- c %>_finalPol[<%- 1 << starkInfo.starkStruct.steps[starkInfo.starkStruct.steps.length-1].nBits %>][3];
 
-    signal input s<%- c %>_sv_publicsHash[3];
-<%  for (let i = 0; i < numChallengesStage.length; ++i) { -%>
-    signal input s<%- c %>_sv_root<%- i+1 %>Hash[3];
+    signal input s<%- c %>_sv_rootCHash[4];
+<%  for (let i = 0; i < nChallengesStages.length; ++i) { -%>
+    signal input s<%- c %>_sv_root<%- i+1 %>Hash[4];
 <%  } -%>
-    signal input s<%- c %>_sv_rootQHash[3];
-    signal input s<%- c %>_sv_evalsHash[3];
-<%  for (let i = 1; i < nStepsFRI; ++i) { -%>
-    signal input s<%- c %>_s<%- i %>_rootHash[3];
+    signal input s<%- c %>_sv_rootQHash[4];
+    signal input s<%- c %>_sv_evalsHash[4];
+<%  for (let i = 1; i < stepsFRI.length; ++i) { -%>
+    signal input s<%- c %>_s<%- i %>_rootHash[4];
 <%  } -%>
-    signal input s<%- c %>_sv_finalPolHash[3];
+    signal input s<%- c %>_sv_finalPolHash[4];
 <%  } -%>
     
     signal output sv_circuitType;
     signal output sv_aggregationType;
     signal output sv_subAirValue[3];
-    signal output sv_publicsHash[3];
-<%  for (let i = 0; i < numChallengesStage.length; ++i) { -%>
-    signal output sv_root<%- i+1 %>Hash[3];
+    signal output sv_rootCHash[4];
+<%  for (let i = 0; i < nChallengesStages.length; ++i) { -%>
+    signal output sv_root<%- i+1 %>Hash[4];
 <%  } -%>
-    signal output sv_rootQHash[3];
-    signal output sv_evalsHash[3];
-<%      for(let i = 1; i < nStepsFRI; i++) { -%>
-    signal output sv_s<%- i %>_rootHash[3];
+    signal output sv_rootQHash[4];
+    signal output sv_evalsHash[4];
+<%      for(let i = 1; i < stepsFRI.length; i++) { -%>
+    signal output sv_s<%- i %>_rootHash[4];
 <%  } -%>
-    signal output sv_finalPolHash[3];
+    signal output sv_finalPolHash[4];
 
 <%  for(let i = 0; i < circuits.length; ++i) { -%>
 <%      let c = circuits[i] -%>
@@ -257,19 +249,19 @@ template Main() {
     }
 
 <%  let nPublicsInps = nPublics; -%>
-    for(var i = 0; i < <%- nChallenges %>; i++) {
+    for(var i = 0; i < <%- nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4 %>; i++) {
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i] <== challenges[i][0];
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i+1] <== challenges[i][1];
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i+2] <== challenges[i][2];
     }
-<%  nPublicsInps += nChallenges*3; -%>
+<%  nPublicsInps += (nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4)*3; -%>
 
-    for(var i = 0; i < <%- nStepsFRI + 1 %>; i++) {
+    for(var i = 0; i < <%- stepsFRI.length + 1 %>; i++) {
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i] <== challengesFRISteps[i][0];
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i+1] <== challengesFRISteps[i][1];
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i+2] <== challengesFRISteps[i][2];
     }
-<%  nPublicsInps += (nStepsFRI + 1)*3; -%>
+<%  nPublicsInps += (stepsFRI.length + 1)*3; -%>
 
 for(var i = 0; i < 4; i++) {
     sv<%- c %>.publics[<%- nPublicsInps %> + i] <== rootCRecursive2[i];
@@ -284,54 +276,60 @@ for(var i = 0; i < 4; i++) {
     }
 <%  nPublicsInps += 3 -%>
 
-    sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_sv_publicsHash[0];
-    sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_sv_publicsHash[1];
-    sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_sv_publicsHash[2];
+    for(var i = 0; i < 4; i++) {
+        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_rootCHash[i];
+    }
+<%  nPublicsInps += 4 -%>
 
-<%  for (let i = 0; i < numChallengesStage.length; i++) { -%>
-    for(var i = 0; i < 3; i++) {
+<%  for (let i = 0; i < nChallengesStages.length; i++) { -%>
+    for(var i = 0; i < 4; i++) {
         sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_root<%- i+1 %>Hash[i];
     }
 
-<%  nPublicsInps += 3 -%>
+<%  nPublicsInps += 4 -%>
 <%  } -%>
 
-    for(var i = 0; i < 3; i++) {
+    for(var i = 0; i < 4; i++) {
         sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_rootQHash[i];
     }
-<%  nPublicsInps += 3 -%>
-    sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_sv_evalsHash[0];
-    sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_sv_evalsHash[1];
-    sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_sv_evalsHash[2];
+<%  nPublicsInps += 4 -%>
 
-<%  for(let i = 1; i < nStepsFRI; i++) { -%>
-    for(var i = 0; i < 3; i++) {
+    for(var i = 0; i < 4; i++) {
+        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_evalsHash[i];
+    }
+<%  nPublicsInps += 4 -%>
+
+<%  for(let i = 1; i < stepsFRI.length; i++) { -%>
+    for(var i = 0; i < 4; i++) {
         sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_s<%- i %>_rootHash[i];
     }
-
-<%  nPublicsInps += 3 -%>
+<%  nPublicsInps += 4 -%>
 <%  } -%>
-    sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_sv_finalPolHash[0];
-    sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_sv_finalPolHash[1];
-    sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_sv_finalPolHash[2];
+
+    for(var i = 0; i < 4; i++) {
+        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_finalPolHash[i];
+    }
+    <%  nPublicsInps += 4 -%>
     
 <%  } -%>
     
     sA_aggregationType === sB_aggregationType;
 
+    signal {binary} aggType <== sA_aggregationType;
+
     sv_circuitType <== 1;
-    sv_aggregationType <== sA_aggregationType;
-    sv_subAirValue <== AggregateSubAirValues()(sA_subAirValue, isNullA, sB_subAirValue, isNullB, sA_aggregationType);
-    sv_publicsHash <== AggregateChallenges()(sA_sv_publicsHash, isNullA, sB_sv_publicsHash, isNullB);
-<%  for (let i = 0; i < numChallengesStage.length; ++i) { -%>
-    sv_root<%- i+1 %>Hash <== AggregateChallenges()(sA_sv_root<%- i+1 %>Hash, isNullA, sB_sv_root<%- i+1 %>Hash, isNullB);
+    sv_aggregationType <== aggType;
+    sv_subAirValue <== AggregateSubAirValues()(sA_subAirValue, sB_subAirValue, isNullA, isNullB, aggType);
+    sv_rootCHash <== AggregateValues()(sA_sv_rootCHash, sB_sv_rootCHash, isNullA, isNullB);
+<%  for (let i = 0; i < nChallengesStages.length; ++i) { -%>
+    sv_root<%- i+1 %>Hash <== AggregateValues()(sA_sv_root<%- i+1 %>Hash, sB_sv_root<%- i+1 %>Hash, isNullA, isNullB);
 <%  } -%>
-    sv_rootQHash <== AggregateChallenges()(sA_sv_rootQHash, isNullA, sB_sv_rootQHash, isNullB);
-    sv_evalsHash <== AggregateChallenges()(sA_sv_evalsHash,isNullA, sB_sv_evalsHash,isNullB);
-<%      for(let i = 1; i < nStepsFRI; i++) { -%>
-    sv_s<%- i %>_rootHash <== AggregateChallenges()(sA_s<%- i %>_rootHash, isNullA, sB_s<%- i %>_rootHash, isNullB);
+    sv_rootQHash <== AggregateValues()(sA_sv_rootQHash, sB_sv_rootQHash, isNullA, isNullB);
+    sv_evalsHash <== AggregateValues()(sA_sv_evalsHash, sB_sv_evalsHash, isNullA, isNullB);
+<%      for(let i = 1; i < stepsFRI.length; i++) { -%>
+    sv_s<%- i %>_rootHash <== AggregateValues()(sA_s<%- i %>_rootHash, sB_s<%- i %>_rootHash, isNullA, isNullB);
 <%  } -%>
-    sv_finalPolHash <== AggregateChallenges()(sA_sv_finalPolHash,isNullA, sB_sv_finalPolHash,isNullB);
+    sv_finalPolHash <== AggregateValues()(sA_sv_finalPolHash, sB_sv_finalPolHash, isNullA, isNullB);
 }
 
 <% const publics = ["publics", "challenges", "challengesFRISteps", "rootCRecursive2"]; -%>

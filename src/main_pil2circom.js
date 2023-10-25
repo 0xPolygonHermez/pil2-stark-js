@@ -17,8 +17,6 @@ const argv = require("yargs")
     .alias("v", "verkey")
     .alias("o", "output")
     .string("arity")
-    .string("vadcop")
-    .string("hashcommits")
     .argv;
 
 async function run() {

@@ -6,18 +6,13 @@ include "mux1.circom";
 include "iszero.circom";
 include "recursive2.verifier.circom";
 
-<% let nPublics = starkInfoBasic.nPublics; -%>
-<% let numChallengesStage = starkInfoBasic.numChallenges; -%>
-<% let nChallenges = starkInfoBasic.numChallenges.reduce((curr, acc) => curr + acc, 0) + 4; -%>
-<% let nStepsFRI = starkInfoBasic.starkStruct.steps.length; -%>
-
 // Given a circuit type, return the corresponding verification key
 template SelectVerificationKey() {
 
     // 0 -> Null
-    // 2 -> Recursive2
-    // 3 -> Basic1 (Recursive1)
-    // 4 -> Basic2 (Recursive1)
+    // 1 -> Recursive2
+    // 2 -> Basic1 (Recursive1)
+    // 3 -> Basic2 (Recursive1)
     // ...
     signal input circuitType;
 
@@ -69,9 +64,9 @@ template Main() {
 
     signal input publics[<%- nPublics %>];
 
-    signal input challenges[<%- nChallenges %>][3];
+    signal input challenges[<%- nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4 %>][3];
 
-    signal input challengesFRISteps[<%- nStepsFRI + 1 %>][3];
+    signal input challengesFRISteps[<%- stepsFRI.length + 1 %>][3];
 
     signal input circuitType;
     signal input aggregationType;
@@ -112,21 +107,21 @@ template Main() {
     signal input finalPol[<%- 1 << starkInfo.starkStruct.steps[starkInfo.starkStruct.steps.length-1].nBits %>][3];
 
 <%  let transcriptValues = ["aggregationType", "subAirValue"]; -%>
-    signal input sv_publicsHash[3];
-<%  transcriptValues.push("sv_publicsHash"); -%>
-<%  for (let i = 0; i < numChallengesStage.length; ++i) { -%>
-    signal input sv_root<%- i+1 %>[3];
+    signal input sv_rootC[4];
+<%      transcriptValues.push(`sv_rootC`); -%>
+<%  for (let i = 0; i < nChallengesStages.length; ++i) { -%>
+    signal input sv_root<%- i+1 %>[4];
 <%      transcriptValues.push(`sv_root${i+1}`); -%>
 <%  } -%>
-    signal input sv_rootQ[3];
+    signal input sv_rootQ[4];
 <%      transcriptValues.push(`sv_rootQ`); -%>
-    signal input sv_evalsHash[3];
+    signal input sv_evalsHash[4];
 <%  transcriptValues.push("sv_evalsHash"); -%>
-<%      for(let i = 1; i < nStepsFRI; i++) { -%>
-    signal input sv_s<%- i %>_root[3];
+<%      for(let i = 1; i < stepsFRI.length; i++) { -%>
+    signal input sv_s<%- i %>_root[4];
 <%  transcriptValues.push(`sv_s${i}_root`); -%>
 <%      } -%>
-    signal input sv_finalPolHash[3];
+    signal input sv_finalPolHash[4];
 <%  transcriptValues.push("sv_finalPolHash"); -%>
 
     component sv = StarkVerifier();
@@ -171,19 +166,19 @@ template Main() {
     }
 
 <%  let nPublicsInps = nPublics; -%>
-    for(var i = 0; i < <%- nChallenges %>; i++) {
+    for(var i = 0; i < <%-  nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4 %>; i++) {
         sv.publics[<%- nPublicsInps %> + 3*i] <== challenges[i][0];
         sv.publics[<%- nPublicsInps %> + 3*i+1] <== challenges[i][1];
         sv.publics[<%- nPublicsInps %> + 3*i+2] <== challenges[i][2];
     }
-<%  nPublicsInps += nChallenges*3; -%>
+<%  nPublicsInps += ( nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4)*3; -%>
 
-    for(var i = 0; i < <%- nStepsFRI + 1 %>; i++) {
+    for(var i = 0; i < <%- stepsFRI.length + 1 %>; i++) {
         sv.publics[<%- nPublicsInps %> + 3*i] <== challengesFRISteps[i][0];
         sv.publics[<%- nPublicsInps %> + 3*i+1] <== challengesFRISteps[i][1];
         sv.publics[<%- nPublicsInps %> + 3*i+2] <== challengesFRISteps[i][2];
     }
-<%  nPublicsInps += (nStepsFRI + 1)*3; -%>
+<%  nPublicsInps += (stepsFRI.length + 1)*3; -%>
 
 <%  for(let i = 0; i < 4; i++) { -%>
     sv.publics[<%- nPublicsInps++ %>] <== <%- vks[1][i] %>;
@@ -197,36 +192,39 @@ template Main() {
     }
 <%  nPublicsInps += 3 -%>
 
-    sv.publics[<%- nPublicsInps++ %>] <== sv_publicsHash[0];
-    sv.publics[<%- nPublicsInps++ %>] <== sv_publicsHash[1];
-    sv.publics[<%- nPublicsInps++ %>] <== sv_publicsHash[2];
+    for(var i = 0; i < 4; i++) {
+        sv.publics[<%- nPublicsInps %> + i] <== sv_rootC[i];
+    }
+<%  nPublicsInps += 4 -%>
 
-<%  for (let i = 0; i < numChallengesStage.length; i++) { -%>
-    for(var i = 0; i < 3; i++) {
+<%  for (let i = 0; i < nChallengesStages.length; i++) { -%>
+    for(var i = 0; i < 4; i++) {
         sv.publics[<%- nPublicsInps %> + i] <== sv_root<%- i+1 %>[i];
     }
-
-<%  nPublicsInps += 3 -%>
+<%  nPublicsInps += 4 -%>
 <%  } -%>
-    for(var i = 0; i < 3; i++) {
+
+    for(var i = 0; i < 4; i++) {
         sv.publics[<%- nPublicsInps %> + i] <== sv_rootQ[i];
     }
+<%  nPublicsInps += 4 -%>
 
-<%  nPublicsInps += 3 -%>
-    sv.publics[<%- nPublicsInps++ %>] <== sv_evalsHash[0];
-    sv.publics[<%- nPublicsInps++ %>] <== sv_evalsHash[1];
-    sv.publics[<%- nPublicsInps++ %>] <== sv_evalsHash[2];
+    for(var i = 0; i < 4; i++) {
+        sv.publics[<%- nPublicsInps %> + i] <== sv_evalsHash[i];
+    }
+<%  nPublicsInps += 4 -%>
 
-<%  for(let i = 1; i < nStepsFRI; i++) { -%>
-    for(var i = 0; i < 3; i++) {
+<%  for(let i = 1; i < stepsFRI.length; i++) { -%>
+    for(var i = 0; i < 4; i++) {
         sv.publics[<%- nPublicsInps %> + i] <== sv_s<%- i %>_root[i];
     }
-
-<%  nPublicsInps += 3 -%>
+<%  nPublicsInps += 4 -%>
 <%  } -%>
-    sv.publics[<%- nPublicsInps++ %>] <== sv_finalPolHash[0];
-    sv.publics[<%- nPublicsInps++ %>] <== sv_finalPolHash[1];
-    sv.publics[<%- nPublicsInps++ %>] <== sv_finalPolHash[2];
+
+    for(var i = 0; i < 4; i++) {
+        sv.publics[<%- nPublicsInps %> + i] <== sv_finalPolHash[i];
+    }
+<%  nPublicsInps += 4 -%>
     
 }
 
