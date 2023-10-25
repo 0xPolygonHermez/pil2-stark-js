@@ -23,8 +23,13 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     res.nCommitments = symbols.filter(s => s.type === "witness" && s.airId === res.airId && s.subproofId === res.subproofId).length;
     res.nConstants = symbols.filter(s => s.type === "fixed" && s.airId === res.airId && s.subproofId === res.subproofId).length;
     res.nPublics = symbols.filter(s => s.type === "public").length;
-    res.numChallenges = pilout.numChallenges || [0];
-
+    
+    if(pilout.numChallenges) {
+        res.numChallenges = pilout.numChallenges;
+    } else {
+        res.numChallenges = new Array(Math.max(...symbols.map(s => s.stage || 0))).fill(0);
+    }
+    
     const hints = formatHints(pilout, symbols, stark, saveSymbols);
 
     const publicsInfo = calculatePublics(hints, symbols);

@@ -223,6 +223,7 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
         } else if(s.type === piloutTypes.PUBLIC_VALUE) {
             return {
                 name: s.name,
+                stage: 1,
                 type: "public",
                 dim: 1,
                 id: s.id,
