@@ -256,7 +256,7 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
     }
 }
 
-function setPol(ctx, idPol, pol, dom) {
+module.exports.setPol = function setPol(ctx, idPol, pol, dom) {
     const p = module.exports.getPolRef(ctx, idPol, dom);
 
     if (p.dim == 1) {
@@ -559,7 +559,7 @@ module.exports.applyHints = async function applyHints(stage, ctx) {
             const outputs = await hintFunctions(hint.lib,ctx.F, inputs);
             for(let j = 0; j < hint.outputs.length; ++j) {
                 const outputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.outputs[j]);
-                setPol(ctx, outputIdx, outputs[j], "n");
+                module.exports.setPol(ctx, outputIdx, outputs[j], "n");
             }    
         }
     }

@@ -61,7 +61,7 @@ module.exports.formatHints = function formatHints(pilout, symbols, stark, saveSy
             hint[name] = value;
         }
         if(hint.name === "gsum") {
-            hint.stage = hint.expression.stage;
+            hint.stage = hint.reference.stage;
         }
         hints.push(hint);
     }
