@@ -133,6 +133,7 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
         symbols.push({ type: "witness", name: `Connection${i}.z`, polId: ciCtx.zId, stage, dim: Math.max(numDim, denDim), airId: 0, subproofId: 0 });
 
         const hint = {
+            name: "gprod",
             stage,
             inputs: [`Connection${i}.num`, `Connection${i}.den`], 
             outputs: [`Connection${i}.z`], 

@@ -123,6 +123,7 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
         pil.expressions[c2Id].dim = c2Dim;
 
         const hint = {
+            name: "gprod",
             stage,
             inputs: [`Permutation${i}.num`, `Permutation${i}.den`], 
             outputs: [`Permutation${i}.z`], 

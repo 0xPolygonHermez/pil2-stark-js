@@ -60,6 +60,9 @@ module.exports.formatHints = function formatHints(pilout, symbols, stark, saveSy
             const value = formatExpression(fields[j].operand, pilout, symbols, stark, saveSymbols);
             hint[name] = value;
         }
+        if(hint.name === "gsum") {
+            hint.stage = hint.expression.stage;
+        }
         hints.push(hint);
     }
     return hints;

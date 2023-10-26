@@ -179,6 +179,7 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
         pil.expressions[c2Id].dim = c2Dim;
 
         const hint1 = {
+            name: "gprod",
             stage: stage1,
             inputs: [`Plookup${i}.f`, `Plookup${i}.t`], 
             outputs: [`Plookup${i}.h1`, `Plookup${i}.h2`], 
@@ -186,6 +187,7 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
         };
 
         const hint2 = {
+            name: "gprod",
             stage: stage2,
             inputs: [`Plookup${i}.num`, `Plookup${i}.den`], 
             outputs: [`Plookup${i}.z`], 

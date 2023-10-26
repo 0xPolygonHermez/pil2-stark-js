@@ -549,17 +549,19 @@ module.exports.applyHints = async function applyHints(stage, ctx) {
         const hint = ctx.pilInfo.hints[i];
         if(hint.stage !== stage) continue;
 
-        const inputs = [];
-        for(let j = 0; j < hint.inputs.length; ++j) {
-            const inputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.inputs[j]);
-            const pol = getPol(ctx, inputIdx, "n")
-            inputs.push(pol);
-        } 
-        const outputs = await hintFunctions(hint.lib,ctx.F, inputs);
-        for(let j = 0; j < hint.outputs.length; ++j) {
-            const outputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.outputs[j]);
-            setPol(ctx, outputIdx, outputs[j], "n");
-        }    
+        if(hint.name === "gprod") {
+            const inputs = [];
+            for(let j = 0; j < hint.inputs.length; ++j) {
+                const inputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.inputs[j]);
+                const pol = getPol(ctx, inputIdx, "n")
+                inputs.push(pol);
+            } 
+            const outputs = await hintFunctions(hint.lib,ctx.F, inputs);
+            for(let j = 0; j < hint.outputs.length; ++j) {
+                const outputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.outputs[j]);
+                setPol(ctx, outputIdx, outputs[j], "n");
+            }    
+        }
     }
 }
 
