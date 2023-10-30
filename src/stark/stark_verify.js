@@ -132,7 +132,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         }   
     }
 
-    const res=executeCode(F, ctx, starkInfo.code.qVerifier.code);
+    const res=module.exports.executeCode(F, ctx, starkInfo.code.qVerifier.code);
 
     let xAcc = 1n;
     let q = 0n;
@@ -213,7 +213,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
 }
 
-function executeCode(F, ctx, code) {
+module.exports.executeCode = function executeCode(F, ctx, code, global) {
     const tmp = [];
     for (let i=0; i<code.length; i++) {
         const src = [];
@@ -247,7 +247,7 @@ function executeCode(F, ctx, code) {
             case "number": return BigInt(r.value);
             case "public": return BigInt(ctx.publics[r.id]);
             case "challenge": return ctx.challenges[r.stage - 1][r.id];
-            case "subproofValue": return ctx.subproofValues[r.id];
+            case "subproofValue": return global ? ctx.subproofValues[r.subproofId][r.id] : ctx.subproofValues[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
             case "x": {
                 let evalsStage = ctx.starkInfo.numChallenges.length + 1;

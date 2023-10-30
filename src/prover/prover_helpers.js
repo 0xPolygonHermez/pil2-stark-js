@@ -17,19 +17,19 @@ module.exports.calculatePublics = async function calculatePublics(ctx, inputs) {
     await module.exports.applyHints(1, ctx);
 }
 
-module.exports.callCalculateExps = async function callCalculateExps(step, code, dom, ctx, parallelExec, useThreads, debug) {
+module.exports.callCalculateExps = async function callCalculateExps(step, code, dom, ctx, parallelExec, useThreads, debug, global = false) {
     if (parallelExec) {
         await module.exports.calculateExpsParallel(ctx, step, code, useThreads, debug);
     } else {
-        module.exports.calculateExps(ctx, code, dom, debug, false);
+        module.exports.calculateExps(ctx, code, dom, debug, false, global);
     }
 }
 
-module.exports.calculateExps = function calculateExps(ctx, code, dom, debug, ret) {
+module.exports.calculateExps = function calculateExps(ctx, code, dom, debug, ret, global) {
     ctx.tmp = new Array(code.tmpUsed);
 
     const retValue = debug || ret || false;
-    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.code, dom, retValue));
+    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.code, dom, retValue, global));
 
     const N = dom=="n" ? ctx.N : ctx.extN;
     
@@ -43,7 +43,7 @@ module.exports.calculateExps = function calculateExps(ctx, code, dom, debug, ret
         if(code.boundary === "everyRow") {
             first = 0;
             last = N;
-        } else if(code.boundary === "firstRow") {
+        } else if(code.boundary === "firstRow" || code.boundary === "finalProof") {
             first = 0;
             last = 1;
         } else if(code.boundary === "lastRow") {
@@ -73,13 +73,13 @@ module.exports.calculateExpAtPoint = function calculateExpAtPoint(ctx, code, i) 
 }
 
 
-module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
+module.exports.compileCode = function compileCode(ctx, code, dom, ret, global) {
     const body = [];
 
     for (let j=0;j<code.length; j++) {
         const src = [];
         for (k=0; k<code[j].src.length; k++) {
-            src.push(getRef(code[j].src[k]));
+            src.push(module.exports.getRef(code[j].src[k], ctx, dom, global));
         }
         let exp;
         switch (code[j].op) {
@@ -89,165 +89,165 @@ module.exports.compileCode = function compileCode(ctx, code, dom, ret) {
             case 'copy': exp = `${src[0]}`; break;
             default: throw new Error("Invalid op:"+ code[j].op);
         }
-        setRef(code[j].dest, exp);
+        module.exports.setRef(ctx, body, code[j].dest, exp, dom);
     }
 
     if (ret) {
-        body.push(`  return ${getRef(code[code.length-1].dest)};`);
+        body.push(`  return ${module.exports.getRef(code[code.length-1].dest, ctx, dom, global)};`);
     }
 
     return body.join("\n");
+}
 
-    function getRef(r) {
-        switch (r.type) {
-            case "tmp": return `ctx.tmp[${r.id}]`;
-            case "const": {
-                const N = dom === "n" ? ctx.N : ctx.extN;
-                let next;
-                if(dom === "n") {
-                    next = r.prime < 0 ? r.prime + N : r.prime;
-                } else {
-                    next = r.prime < 0 ? (r.prime + N) << ctx.extendBits : r.prime << ctx.extendBits;
-                }
-                const index = r.prime ? `((i + ${next})%${N})` : "i"
-                if (dom === "n") {
-                    return `ctx.const_n[${r.id} + ${index} * ${ctx.pilInfo.nConstants}]`;
-                } else if (dom === "ext") {
-                    return `ctx.const_ext[${r.id} + ${index} * ${ctx.pilInfo.nConstants}]`;
-                } else {
-                    throw new Error("Invalid dom");
-                }
-            }
-            case "cm": {
-                if (dom=="n") {
-                    return evalMap(r.id, r.prime, dom)
-                } else if (dom=="ext") {
-                    return evalMap(r.id, r.prime, dom)
-                } else {
-                    throw new Error("Invalid dom");
-                }
-            }
-            case "number": return `ctx.F.e(${r.value}n)`;
-            case "public": return `ctx.publics[${r.id}]`;
-            case "challenge": return `ctx.challenges[${r.stage - 1}][${r.id}]`;
-            case "subproofValue": return `ctx.subproofValues[${r.id}]`;
-            case "eval": return `ctx.evals[${r.id}]`;
-            case "xDivXSubXi": {
-                return `[
-                    ctx.xDivXSubXi_ext[3*(${r.id} + ${ctx.pilInfo.openingPoints.length}*i)], 
-                    ctx.xDivXSubXi_ext[3*(${r.id} + ${ctx.pilInfo.openingPoints.length}*i) + 1], 
-                    ctx.xDivXSubXi_ext[3*(${r.id} + ${ctx.pilInfo.openingPoints.length}*i) + 2]
-                ]`;
-            }
-            case "x": {
-                if (dom=="n") {
-                    return `ctx.x_n[i]`;
-                } else if (dom === "ext") {
-                    return `ctx.x_ext[i]`;
-                } else {
-                    throw new Error("Invalid dom");
-                }
-            }
-            case "Zi": {
-                if(r.boundary === "everyRow") {
-                    return `ctx.Zi_ext[i]`;
-                } else if(r.boundary === "firstRow") {
-                    return `ctx.Zi_fr_ext[i]`;
-                } else if(r.boundary === "lastRow") {
-                    return `ctx.Zi_lr_ext[i]`;
-                } else if(r.boundary === "everyFrame") {
-                    return `ctx.Zi_frame${r.frameId}_ext[i]`;
-                } else {
-                    throw new Error("Invalid boundary: " + r.boundary);
-                }
-            }
-            default: throw new Error("Invalid reference type get: " + r.type);
+module.exports.setRef = function setRef(ctx, body, r, val, dom) {
+    switch (r.type) {
+        case "tmp": {
+            body.push(`  ctx.tmp[${r.id}] = ${val};`);
+            break;
         }
-    }
-
-    function setRef(r, val) {
-        switch (r.type) {
-            case "tmp": {
-                body.push(`  ctx.tmp[${r.id}] = ${val};`);
-                break;
-            }
-            case "q":
-                if (dom=="n") {
-                    throw new Error("Accessing q in domain n");
-                } else if (dom=="ext") {
-                    if (r.dim == 3) {
-                        body.push(` [ ctx.q_ext[i*3], ctx.q_ext[i*3+1], ctx.q_ext[i*3+2]] = ${val}; `);
-                    } else if (r.dim == 1) {
-                        body.push(`ctx.q_ext[i] = ${val}`);
-                    } else {
-                        throw new Error("Invalid dom");
-                    }
+        case "q":
+            if (dom=="n") {
+                throw new Error("Accessing q in domain n");
+            } else if (dom=="ext") {
+                if (r.dim == 3) {
+                    body.push(` [ ctx.q_ext[i*3], ctx.q_ext[i*3+1], ctx.q_ext[i*3+2]] = ${val}; `);
+                } else if (r.dim == 1) {
+                    body.push(`ctx.q_ext[i] = ${val}`);
                 } else {
                     throw new Error("Invalid dom");
                 }
-                break;
-            case "f":
-                if (dom=="n") {
-                    throw new Error("Accessing q in domain n");
-                } else if (dom=="ext") {
-                    body.push(`[ ctx.f_ext[i*3], ctx.f_ext[i*3+1], ctx.f_ext[i*3+2]] = ${val};`);
-                } else {
-                    throw new Error("Invalid dom");
-                }
-                break;
-            case "cm":
-                if (dom=="n") {
-                    body.push(` ${evalMap( r.id, r.prime, dom, val)};`);
-                } else if (dom=="ext") {
-                    body.push(` ${evalMap( r.id, r.prime, dom, val)};`);
-                } else {
-                    throw new Error("Invalid dom");
-                }
-                break;
-            default: throw new Error("Invalid reference type set: " + r.type);
-        }
-    }
-
-    function evalMap(polId, prime, dom, val) {
-        let p = ctx.pilInfo.cmPolsMap[polId];
-        offset = ctx.pilInfo.cmPolsMap
-            .filter((pol, index) => pol.stage === p.stage && index < polId)
-            .reduce((acc, pol) => acc + pol.dim, 0);
-        const N = dom === "n" ? ctx.N : ctx.extN;
-        let next;
-        if(dom === "n") {
-            next = prime < 0 ? prime + N : prime;
-        } else {
-            next = prime < 0 ? (prime + N) << ctx.extendBits : prime << ctx.extendBits;
-        }
-        let index = prime ? `((i + ${next})%${N})` : "i";
-        let size = ctx.pilInfo.mapSectionsN[p.stage];
-        let stage = dom === "n" ? p.stage + "_n" : p.stage + "_ext";
-        let pos = `${offset} + ${index} * ${size}`;
-        if(val) {
-            if (p.dim == 1) {
-                return `ctx.${stage}[${pos}] = ${val};`;
-            } else if (p.dim == 3) {
-                return `[` +
-                    ` ctx.${stage}[${pos}],`+
-                    ` ctx.${stage}[${pos} + 1],`+
-                    ` ctx.${stage}[${pos} + 2] `+
-                    `] = ${val};`;
             } else {
-                throw new Error("invalid dim");
+                throw new Error("Invalid dom");
             }
-        } else {
-            if (p.dim == 1) {
-                return `ctx.${stage}[${pos}]`;
-            } else if (p.dim == 3) {
-                return `[` +
-                    ` ctx.${stage}[${pos}] ,`+
-                    ` ctx.${stage}[${pos} + 1],`+
-                    ` ctx.${stage}[${pos} + 2] `+
-                    `]`;
+            break;
+        case "f":
+            if (dom=="n") {
+                throw new Error("Accessing q in domain n");
+            } else if (dom=="ext") {
+                body.push(`[ ctx.f_ext[i*3], ctx.f_ext[i*3+1], ctx.f_ext[i*3+2]] = ${val};`);
             } else {
-                throw new Error("invalid dim");
+                throw new Error("Invalid dom");
             }
+            break;
+        case "cm":
+            if (dom=="n") {
+                body.push(` ${evalMap(ctx, r.id, r.prime, dom, val)};`);
+            } else if (dom=="ext") {
+                body.push(` ${evalMap(ctx, r.id, r.prime, dom, val)};`);
+            } else {
+                throw new Error("Invalid dom");
+            }
+            break;
+        default: throw new Error("Invalid reference type set: " + r.type);
+    }
+}
+
+module.exports.getRef = function getRef(r, ctx, dom, global) {
+    switch (r.type) {
+        case "tmp": return `ctx.tmp[${r.id}]`;
+        case "const": {
+            const N = dom === "n" ? ctx.N : ctx.extN;
+            let next;
+            if(dom === "n") {
+                next = r.prime < 0 ? r.prime + N : r.prime;
+            } else {
+                next = r.prime < 0 ? (r.prime + N) << ctx.extendBits : r.prime << ctx.extendBits;
+            }
+            const index = r.prime ? `((i + ${next})%${N})` : "i"
+            if (dom === "n") {
+                return `ctx.const_n[${r.id} + ${index} * ${ctx.pilInfo.nConstants}]`;
+            } else if (dom === "ext") {
+                return `ctx.const_ext[${r.id} + ${index} * ${ctx.pilInfo.nConstants}]`;
+            } else {
+                throw new Error("Invalid dom");
+            }
+        }
+        case "cm": {
+            if (dom=="n") {
+                return evalMap(ctx, r.id, r.prime, dom)
+            } else if (dom=="ext") {
+                return evalMap(ctx, r.id, r.prime, dom)
+            } else {
+                throw new Error("Invalid dom");
+            }
+        }
+        case "number": return `ctx.F.e(${r.value}n)`;
+        case "public": return `ctx.publics[${r.id}]`;
+        case "challenge": return `ctx.challenges[${r.stage - 1}][${r.id}]`;
+        case "subproofValue": return global ? `ctx.subproofValues[${r.subproofId}][${r.id}]` : `ctx.subproofValues[${r.id}]`;
+        case "eval": return `ctx.evals[${r.id}]`;
+        case "xDivXSubXi": {
+            return `[
+                ctx.xDivXSubXi_ext[3*(${r.id} + ${ctx.pilInfo.openingPoints.length}*i)], 
+                ctx.xDivXSubXi_ext[3*(${r.id} + ${ctx.pilInfo.openingPoints.length}*i) + 1], 
+                ctx.xDivXSubXi_ext[3*(${r.id} + ${ctx.pilInfo.openingPoints.length}*i) + 2]
+            ]`;
+        }
+        case "x": {
+            if (dom=="n") {
+                return `ctx.x_n[i]`;
+            } else if (dom === "ext") {
+                return `ctx.x_ext[i]`;
+            } else {
+                throw new Error("Invalid dom");
+            }
+        }
+        case "Zi": {
+            if(r.boundary === "everyRow") {
+                return `ctx.Zi_ext[i]`;
+            } else if(r.boundary === "firstRow") {
+                return `ctx.Zi_fr_ext[i]`;
+            } else if(r.boundary === "lastRow") {
+                return `ctx.Zi_lr_ext[i]`;
+            } else if(r.boundary === "everyFrame") {
+                return `ctx.Zi_frame${r.frameId}_ext[i]`;
+            } else {
+                throw new Error("Invalid boundary: " + r.boundary);
+            }
+        }
+        default: throw new Error("Invalid reference type get: " + r.type);
+    }
+}
+
+function evalMap(ctx, polId, prime, dom, val) {
+    let p = ctx.pilInfo.cmPolsMap[polId];
+    offset = ctx.pilInfo.cmPolsMap
+        .filter((pol, index) => pol.stage === p.stage && index < polId)
+        .reduce((acc, pol) => acc + pol.dim, 0);
+    const N = dom === "n" ? ctx.N : ctx.extN;
+    let next;
+    if(dom === "n") {
+        next = prime < 0 ? prime + N : prime;
+    } else {
+        next = prime < 0 ? (prime + N) << ctx.extendBits : prime << ctx.extendBits;
+    }
+    let index = prime ? `((i + ${next})%${N})` : "i";
+    let size = ctx.pilInfo.mapSectionsN[p.stage];
+    let stage = dom === "n" ? p.stage + "_n" : p.stage + "_ext";
+    let pos = `${offset} + ${index} * ${size}`;
+    if(val) {
+        if (p.dim == 1) {
+            return `ctx.${stage}[${pos}] = ${val};`;
+        } else if (p.dim == 3) {
+            return `[` +
+                ` ctx.${stage}[${pos}],`+
+                ` ctx.${stage}[${pos} + 1],`+
+                ` ctx.${stage}[${pos} + 2] `+
+                `] = ${val};`;
+        } else {
+            throw new Error("invalid dim");
+        }
+    } else {
+        if (p.dim == 1) {
+            return `ctx.${stage}[${pos}]`;
+        } else if (p.dim == 3) {
+            return `[` +
+                ` ctx.${stage}[${pos}] ,`+
+                ` ctx.${stage}[${pos} + 1],`+
+                ` ctx.${stage}[${pos} + 2] `+
+                `]`;
+        } else {
+            throw new Error("invalid dim");
         }
     }
 }
@@ -299,7 +299,7 @@ module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
     return polRef;
 }
 
-function getPol(ctx, idPol, dom) {
+module.exports.getPol = function getPol(ctx, idPol, dom) {
     const p = module.exports.getPolRef(ctx, idPol, dom);
     const res = new Array(p.deg);
     if (p.dim == 1) {
@@ -549,7 +549,7 @@ module.exports.applyHints = async function applyHints(stage, ctx) {
             const inputs = [];
             for(let j = 0; j < hint.inputs.length; ++j) {
                 const inputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.inputs[j]);
-                const pol = getPol(ctx, inputIdx, "n")
+                const pol = module.exports.getPol(ctx, inputIdx, "n")
                 inputs.push(pol);
             } 
             const outputs = await hintFunctions(hint.lib,ctx.F, inputs);
@@ -559,48 +559,56 @@ module.exports.applyHints = async function applyHints(stage, ctx) {
             }    
         }
 
-        if(hint.name === "gsum_assume" || hint.name === "gsum_prove") {
+        if(hint.name === "gsum") {
             const gsum = [];
-            let expressionCode;
-            if(hint.expression.op === "exp") {
-                expressionCode = ctx.pilInfo.hintsCode[i].expression;
-            } else {
 
-            }
-            const den = module.exports.calculateExps(ctx, expressionCode, "n", false, true);
-            const denInv = ctx.F.batchInverse(den);
-            const assumeOrProve = hint.name === "gsum_assume" ? ctx.F.negone : ctx.F.one;
+            const gsumReferenceIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === hint.reference.stage && c.stageId === hint.reference.stageId);
+
+            let numerator = getHintField(hint, "numerator", ctx.pilInfo.hintsCode[i], ctx);
+            let denominator = getHintField(hint, "denominator", ctx.pilInfo.hintsCode[i], ctx);
+
+            // TODO: THIS IS A HACK, REMOVE WHEN PIL2 IS FIXED
+            if(numerator === 5n) numerator = ctx.F.negone;
+
+            const denInv = ctx.F.batchInverse(denominator);
+
             for(let i = 0; i < ctx.N; ++i) {
-                const res = ctx.F.mul(assumeOrProve, denInv[i]);
+                const res = ctx.F.mul(numerator, denInv[i]);
                 if(i === 0) {
                     gsum[i] = res;
                 } else {
                     gsum[i] = ctx.F.add(gsum[i - 1], res);
                 }
             }
-            const gsumIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === hint.reference.stage && c.stageId === hint.reference.stageId);
-            module.exports.setPol(ctx, gsumIdx, gsum, "n");
+            module.exports.setPol(ctx, gsumReferenceIdx, gsum, "n");
         }
 
         if(hint.name === "subproofvalue" || hint.name === "public") {
-            let rowIdx = parseInt(hint.row_index.value);
-            let value;
-            if(hint.expression.op === "exp") {
-                value = module.exports.calculateExpAtPoint(
-                    ctx, 
-                    ctx.pilInfo.hintsCode[i].expression, 
-                    rowIdx,
-                );
-            } else if(hint.expression.op === "cm") {
-                const pol = getPol(ctx, ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === hint.expression.stage && c.stageId === hint.expression.stageId), "n");
-                value = pol[rowIdx];
-            } else throw new Error("Subproofvalue must be either an expression or a witness");
-
+            let value = getHintField(hint, "expression", ctx.pilInfo.hintsCode[i], ctx, true);
+            
             if(hint.name === "subproofvalue") {
                 ctx.subproofValues[hint.reference.id] = value;
             } else {
                 ctx.publics[hint.reference.id] = value;
             }
+        }
+    }
+}
+
+function getHintField(hint, field, hintCode, ctx, isOneValue) {
+    if(hint[field].op === "exp") {
+        const expressionCode = hintCode[field];
+        if(isOneValue) {
+            return module.exports.calculateExpAtPoint(ctx, expressionCode, parseInt(hint.row_index.value));
+        } else {
+            return module.exports.calculateExps(ctx, expressionCode, "n", false, true);
+        }
+    } else {
+        if(isOneValue) {
+            const i = parseInt(hint.row_index.value);
+            return eval(module.exports.getRef({...hint[field], type: hint[field].op}, ctx, "n"));
+        } else {
+            return eval(module.exports.getRef({...hint[field], type: hint[field].op}, ctx, "n"));
         }
     }
 }

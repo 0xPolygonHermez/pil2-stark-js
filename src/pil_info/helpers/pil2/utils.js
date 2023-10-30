@@ -65,18 +65,23 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
         const stageId = exp[op].colIdx;
         const rowOffset = exp[op].rowOffset;
         const stage = exp[op].stage;
-        exp = { op: "cm", id, stageId, rowOffset, stage, dim };
+        const subproofId = exp[op].subproofId;
+        const airId = exp[op].subproofId;
+        exp = { op: "cm", id, stageId, rowOffset, stage, dim, subproofId, airId };
     } else if (op === "fixedCol") {
         const id = exp[op].idx;
         const rowOffset = exp[op].rowOffset;
-        exp = { op: "const", id, rowOffset, stage: 0, dim: 1 };
+        const subproofId = exp[op].subproofId;
+        const airId = exp[op].subproofId;
+        exp = { op: "const", id, rowOffset, stage: 0, dim: 1, subproofId, airId };
     } else if (op === "publicValue") {
         const id = exp[op].idx;
         exp = { op: "public", id, stage: 1 };
     } else if (op === "subproofValue") {
         const id = exp[op].idx;
         const stage = pilout.numChallenges.length;
-        exp = { op: "subproofValue", id, stage };
+        const subproofId = exp[op].subproofId;
+        exp = { op: "subproofValue", id, stage, subproofId };
     } else if (op === "challenge") {
         const id = exp[op].idx + pilout.numChallenges.slice(0, exp[op].stage - 1).reduce((acc, c) => acc + c, 0);
         const stageId = exp[op].idx;
@@ -150,7 +155,7 @@ module.exports.formatConstraints = function formatConstraints(pilout) {
     return constraints;
 }
 
-module.exports.formatSymbols = function formatSymbols(res, pilout, stark) {
+module.exports.formatSymbols = function formatSymbols(pilout, stark) {
     const E = new ExpressionOps();
 
     const symbols = pilout.symbols.flatMap(s => {
@@ -209,7 +214,7 @@ module.exports.formatSymbols = function formatSymbols(res, pilout, stark) {
                 id: s.id,
                 subproofId: s.subproofId,
                 dim: stark ? 3 : 1,
-                airId: s.airId || res.airId,
+                airId: s.airId,
                 subproofId: s.subproofId,
             }
         }

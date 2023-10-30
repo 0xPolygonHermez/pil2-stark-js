@@ -12,7 +12,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     if(!saveSymbols) {
         const e = formatExpressions(pilout, stark);
         expressions = e.expressions;
-        symbols = formatSymbols(res, pilout, stark);
+        symbols = formatSymbols(pilout, stark);
     } else {
         const e = formatExpressions(pilout, stark, true);
         expressions = e.expressions;

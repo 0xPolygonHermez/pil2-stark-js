@@ -58,7 +58,7 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
         fixExpression(r, ctx, symbols, expressions);
         return r;
     } else if (exp.op === "eval") {
-        return { type: exp.op, id: exp.id, dim: exp.dim}
+        return { type: exp.op, id: exp.id, dim: exp.dim, subproofId: exp.subproofId, airId: exp.airId}
     } else if (exp.op === "challenge") {
         return { type: exp.op, id: exp.id, dim: exp.dim, stage: exp.stage }
     } else if (exp.op === "public") {
@@ -66,7 +66,7 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
     } else if (exp.op == "number") {
         return { type: exp.op, value: exp.value.toString(), dim: 1 }
     } else if (exp.op === "subproofValue") {
-        return { type: exp.op, id: exp.id, dim: exp.dim}    
+        return { type: exp.op, id: exp.id, dim: exp.dim, subproofId: exp.subproofId, airId: exp.airId }    
     } else if (exp.op == "xDivXSubXi") {
         return { type: exp.op, id: exp.id, opening: exp.opening, dim: 3 }
     } else if (exp.op == "Zi") {
