@@ -130,7 +130,7 @@ async function initProver(pilInfo, constTree, constPols, zkey, stark, options) {
 }
 
 async function computePublics(ctx, inputs, stark, options) {
-    calculatePublics(ctx, inputs);
+    await calculatePublics(ctx, inputs);
 
     // Transcript publics
 
@@ -184,7 +184,7 @@ async function computeStage(stage, ctx, options) {
     
     await applyHints(stage, ctx);
 
-    if(stage !== qStage && options.debug) {
+    if(options.debug) {
         const nConstraintsStage = ctx.pilInfo.constraints[`stage${stage}`].length;
         for(let i = 0; i < nConstraintsStage; i++) {
             const constraint = ctx.pilInfo.constraints[`stage${stage}`][i];

@@ -38,7 +38,10 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.tmp = [];
     ctx.challenges = [];
     ctx.challengesFRISteps = [];
-    ctx.subproofValues = [];
+
+    ctx.publics = [];
+
+    ctx.subproofValues = new Array(pilInfo.nSubproofValues).fill(0n) || [];
 
     ctx.challenges[0] = [];
 

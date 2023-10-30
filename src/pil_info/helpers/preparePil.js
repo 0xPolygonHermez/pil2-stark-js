@@ -4,22 +4,21 @@ const { addInfoExpressions } = require("./helpers.js");
 const { generatePil1Polynomials } = require("./pil1/generatePil1Polynomials.js");
 const { getPiloutInfo } = require("./pil2/piloutInfo.js");
 const { generateConstraintPolynomial } = require("./polynomials/constraintPolynomial.js");
-const { generatePublicsPolynomials } = require("./polynomials/publicsPolynomials.js");
 
 
 module.exports.preparePil = function preparePil(F, pil, stark, pil1, debug, starkStruct) {
     const res = {};
 
-    let expressions, symbols, constraints, publicsInfo;
+    let expressions, symbols, constraints, publicsNames;
 
     for(let i = 0; i < pil.expressions.length; ++i) {
         pil.expressions[i].stage = 1;
     }
     
     if(pil1) {
-        ({expressions, symbols, hints, constraints, publicsInfo} = generatePil1Polynomials(F, res, pil, stark));
+        ({expressions, symbols, hints, constraints, publicsNames} = generatePil1Polynomials(F, res, pil, stark));
     } else {
-        ({expressions, symbols, hints, constraints, publicsInfo} = getPiloutInfo(res, pil, stark));
+        ({expressions, symbols, hints, constraints, publicsNames} = getPiloutInfo(res, pil, stark));
     }
 
     if(stark && !debug) {
@@ -33,7 +32,7 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil1, debug, star
         }
     }
 
-    res.publics = generatePublicsPolynomials(expressions, publicsInfo);
+    res.publicsNames = publicsNames;
 
     let dimCh = stark ? 3 : 1;
     let qStage = res.numChallenges.length + 1;

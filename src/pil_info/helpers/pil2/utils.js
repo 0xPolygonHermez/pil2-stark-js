@@ -9,34 +9,6 @@ const piloutTypes =  {
     CHALLENGE: 8,
 }
 
-module.exports.calculatePublics = function calculatePublics(hints, symbols) {
-    const publicsInfo = [];
-
-    for(let i = 0; i < hints.length; ++i) {
-        const hint = hints[i];
-        if(hint.name !== "public") continue;
-
-        if(!hint.reference) throw new Error(`Public hint ${i} does not contain reference field`);
-
-        if(!hint.expression) throw new Error(`Public hint ${i} does not contain expression field`);
-        if(!["cm", "exp", "number"].includes(hint.expression.op)) throw new Error(`Invalid expression type: ${hint.expression.op} for public hint ${i}`);
-        if(hint.expression.op === "cm" && hint.expression.stage !== 1) throw new Error(`Invalid expression stage: ${hint.expression.stage} for public hint ${i}`);
-
-        if(!hint.row_index) throw new Error(`Public hint ${i} does not contain row_index field`);
-
-        let id = hint.reference.id;
-        let publicSymbol = symbols.find(s => s.type === "public" && s.id === id);
-        let name = publicSymbol ? publicSymbol.name : `public_${id}`;
-        let polType = hint.expression.op === "cm" ? "cmP" : "imP"; 
-        let polId = hint.expression.id;
-        let idx = Number(hint.row_index.value);
-
-        publicsInfo.push({ name, id, polType, polId, idx });
-    }
-
-    return publicsInfo;
-}
-
 module.exports.formatExpressions = function formatExpressions(pilout, stark, saveSymbols = false) {
     const symbols = [];
 
@@ -49,20 +21,18 @@ module.exports.formatExpressions = function formatExpressions(pilout, stark, sav
     }
 }
 
-module.exports.formatHints = function formatHints(pilout, symbols, stark, saveSymbols) {
+module.exports.formatHints = function formatHints(pilout, rawHints, symbols, stark, saveSymbols) {
     const hints = [];
 
-    for(let i = 0; i < pilout.hints?.length; ++i) {
-        const hint = { name: pilout.hints[i].name };
-        const fields = pilout.hints[i].hintFields[0].hintFieldArray.hintFields;
+    for(let i = 0; i < rawHints.length; ++i) {
+        const hint = { name: rawHints[i].name };
+        const fields = rawHints[i].hintFields[0].hintFieldArray.hintFields;
         for(let j = 0; j < fields.length; j++) {
             const name = fields[j].name;
             const value = formatExpression(fields[j].operand, pilout, symbols, stark, saveSymbols);
             hint[name] = value;
         }
-        if(hint.name === "gsum") {
-            hint.stage = hint.reference.stage;
-        }
+        hint.stage = hint.reference.stage;
         hints.push(hint);
     }
     return hints;
@@ -102,10 +72,11 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
         exp = { op: "const", id, rowOffset, stage: 0, dim: 1 };
     } else if (op === "publicValue") {
         const id = exp[op].idx;
-        exp = { op: "public", id };
+        exp = { op: "public", id, stage: 1 };
     } else if (op === "subproofValue") {
         const id = exp[op].idx;
-        exp = { op: "subproofValue", id };
+        const stage = pilout.numChallenges.length;
+        exp = { op: "subproofValue", id, stage };
     } else if (op === "challenge") {
         const id = exp[op].idx + pilout.numChallenges.slice(0, exp[op].stage - 1).reduce((acc, c) => acc + c, 0);
         const stageId = exp[op].idx;
@@ -179,7 +150,7 @@ module.exports.formatConstraints = function formatConstraints(pilout) {
     return constraints;
 }
 
-module.exports.formatSymbols = function formatSymbols(pilout, stark) {
+module.exports.formatSymbols = function formatSymbols(res, pilout, stark) {
     const E = new ExpressionOps();
 
     const symbols = pilout.symbols.flatMap(s => {
@@ -238,7 +209,7 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
                 id: s.id,
                 subproofId: s.subproofId,
                 dim: stark ? 3 : 1,
-                airId: s.airId,
+                airId: s.airId || res.airId,
                 subproofId: s.subproofId,
             }
         }

@@ -1,5 +1,5 @@
 const ProtoOut = require("pilcom2/src/proto_out.js");
-const { formatExpressions, formatConstraints, formatSymbols, calculatePublics, formatHints } = require("./utils");
+const { formatExpressions, formatConstraints, formatSymbols, formatHints } = require("./utils");
 
 module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     res.airId = pilout.airId;
@@ -12,17 +12,20 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     if(!saveSymbols) {
         const e = formatExpressions(pilout, stark);
         expressions = e.expressions;
-        symbols = formatSymbols(pilout, stark);
+        symbols = formatSymbols(res, pilout, stark);
     } else {
         const e = formatExpressions(pilout, stark, true);
         expressions = e.expressions;
         symbols = e.symbols;
     }
 
+    symbols = symbols.filter(s => !["witness", "fixed"].includes(s.type) || s.airId === res.airId && s.subproofId === res.subproofId);
+
     res.pilPower = Math.log2(pilout.numRows);
     res.nCommitments = symbols.filter(s => s.type === "witness" && s.airId === res.airId && s.subproofId === res.subproofId).length;
     res.nConstants = symbols.filter(s => s.type === "fixed" && s.airId === res.airId && s.subproofId === res.subproofId).length;
     res.nPublics = symbols.filter(s => s.type === "public").length;
+    res.nSubproofValues = symbols.filter(s => s.type === "subproofvalue").length;
     
     if(pilout.numChallenges) {
         res.numChallenges = pilout.numChallenges;
@@ -30,11 +33,12 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
         res.numChallenges = new Array(Math.max(...symbols.map(s => s.stage || 0))).fill(0);
     }
     
-    const hints = formatHints(pilout, symbols, stark, saveSymbols);
+    const airHints = pilout.hints?.filter(h => h.airId === res.airId && h.subproofId === res.subproofId) || [];
+    const hints = formatHints(pilout, airHints, symbols, stark, saveSymbols);
 
-    const publicsInfo = calculatePublics(hints, symbols);
+    const publicsNames = symbols.filter(s => s.type === "public").map(s => s.name);
 
-    return {expressions, hints, constraints, symbols, publicsInfo};
+    return {expressions, hints, constraints, symbols, publicsNames};
 }
 
 module.exports.getFixedPolsPil2 = function getFixedPolsPil2(pil, cnstPols, F) {        

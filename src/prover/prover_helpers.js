@@ -6,42 +6,37 @@ const { calculateZ, calculateH1H2 } = require("../helpers/polutils");
 const maxNperThread = 1<<18;
 const minNperThread = 1<<12;
 
-module.exports.calculatePublics = function calculatePublics(ctx, inputs) {
-    // Calculate publics
-    ctx.publics = [];
-    for (let i=0; i<ctx.pilInfo.nPublics; i++) {
-        const publicCode = ctx.pilInfo.publicsCode[i];
-        if(publicCode.code) {
-            ctx.publics[i] = module.exports.calculateExpAtPoint(
-                ctx, 
-                publicCode, 
-                publicCode.idx
-            );
-        } else {
-            const name = ctx.pilInfo.publicsCode[i].name;
+module.exports.calculatePublics = async function calculatePublics(ctx, inputs) {
+     for (let i=0; i<ctx.pilInfo.nPublics; i++) {
+        const name = ctx.pilInfo.publicsNames[i];
+        if(inputs[name]) {
             ctx.publics[i] = inputs[name];            
         }
     }
+
+    await module.exports.applyHints(1, ctx);
 }
 
 module.exports.callCalculateExps = async function callCalculateExps(step, code, dom, ctx, parallelExec, useThreads, debug) {
     if (parallelExec) {
         await module.exports.calculateExpsParallel(ctx, step, code, useThreads, debug);
     } else {
-        module.exports.calculateExps(ctx, code, dom, debug);
+        module.exports.calculateExps(ctx, code, dom, debug, false);
     }
 }
 
-module.exports.calculateExps = function calculateExps(ctx, code, dom, debug) {
+module.exports.calculateExps = function calculateExps(ctx, code, dom, debug, ret) {
     ctx.tmp = new Array(code.tmpUsed);
 
-    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.code, dom, debug));
+    const retValue = debug || ret || false;
+    cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.code, dom, retValue));
 
     const N = dom=="n" ? ctx.N : ctx.extN;
     
+    const res = [];
     if(!debug) {
         for (let i=0; i<N; i++) {
-            cEveryRow(ctx, i);
+            res[i] = cEveryRow(ctx, i);
         }
     } else {
         let first, last;
@@ -66,7 +61,8 @@ module.exports.calculateExps = function calculateExps(ctx, code, dom, debug) {
                 return;
             }
         }
-    }  
+    }
+    if(ret) return res;
 }
 
 module.exports.calculateExpAtPoint = function calculateExpAtPoint(ctx, code, i) {
@@ -561,6 +557,50 @@ module.exports.applyHints = async function applyHints(stage, ctx) {
                 const outputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.outputs[j]);
                 module.exports.setPol(ctx, outputIdx, outputs[j], "n");
             }    
+        }
+
+        if(hint.name === "gsum_assume" || hint.name === "gsum_prove") {
+            const gsum = [];
+            let expressionCode;
+            if(hint.expression.op === "exp") {
+                expressionCode = ctx.pilInfo.hintsCode[i].expression;
+            } else {
+
+            }
+            const den = module.exports.calculateExps(ctx, expressionCode, "n", false, true);
+            const denInv = ctx.F.batchInverse(den);
+            const assumeOrProve = hint.name === "gsum_assume" ? ctx.F.negone : ctx.F.one;
+            for(let i = 0; i < ctx.N; ++i) {
+                const res = ctx.F.mul(assumeOrProve, denInv[i]);
+                if(i === 0) {
+                    gsum[i] = res;
+                } else {
+                    gsum[i] = ctx.F.add(gsum[i - 1], res);
+                }
+            }
+            const gsumIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === hint.reference.stage && c.stageId === hint.reference.stageId);
+            module.exports.setPol(ctx, gsumIdx, gsum, "n");
+        }
+
+        if(hint.name === "subproofvalue" || hint.name === "public") {
+            let rowIdx = parseInt(hint.row_index.value);
+            let value;
+            if(hint.expression.op === "exp") {
+                value = module.exports.calculateExpAtPoint(
+                    ctx, 
+                    ctx.pilInfo.hintsCode[i].expression, 
+                    rowIdx,
+                );
+            } else if(hint.expression.op === "cm") {
+                const pol = getPol(ctx, ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === hint.expression.stage && c.stageId === hint.expression.stageId), "n");
+                value = pol[rowIdx];
+            } else throw new Error("Subproofvalue must be either an expression or a witness");
+
+            if(hint.name === "subproofvalue") {
+                ctx.subproofValues[hint.reference.id] = value;
+            } else {
+                ctx.publics[hint.reference.id] = value;
+            }
         }
     }
 }

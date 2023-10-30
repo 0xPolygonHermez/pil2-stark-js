@@ -1,31 +1,29 @@
 const { getExpDim } = require("../helpers");
 const { pilCodeGen, buildCode } = require("./codegen");
 
-module.exports.generatePublicsCode = function generatePublicsCode(res, symbols, expressions, stark) {
-    const ctx = {
-        calculated: {},
-        tmpUsed: 0,
-        code: [],
-        expMap: [],
-        dom: "n",
-        airId: res.airId,
-        subproofId: res.subproofId,
-        stark,
-        publics: true,
-    };
+module.exports.generateHintsCode = function generateHintsCode(res, symbols, expressions, stark) {
+    res.hintsCode = [];
 
-    res.publicsCode = [];
-    for(let i = 0; i < res.nPublics; ++i) {
-        const public = res.publics.find(p => p.id === i);
-        if(public) {
-            pilCodeGen(ctx, symbols, expressions, public.expId, 0);
-            res.publicsCode[i] = buildCode(ctx, expressions);
-            res.publicsCode[i].idx = public.idx;
-            res.publicsCode[i].name = public.name;
-        } else {
-            const publicSymbol = symbols.find(s => s.type === "public" && s.id === i);
-            let name = publicSymbol ? publicSymbol.name : `public_${id}`;
-            res.publicsCode[i] = {name};
+    for(let i = 0; i < res.hints.length; ++i) {
+        const hint = res.hints[i];
+        const ctx = {
+            calculated: {},
+            tmpUsed: 0,
+            code: [],
+            expMap: [],
+            dom: "n",
+            airId: res.airId,
+            subproofId: res.subproofId,
+            stark,
+        };
+        if(hint.name === "public") ctx.publics = true;
+        for(let j = 0; j < Object.keys(hint).length; ++j) {
+            const key = Object.keys(hint)[j];
+            if(hint[key].op === "exp") {
+                pilCodeGen(ctx, symbols, expressions, hint[key].id, 0);
+                if(!res.hintsCode[i]) res.hintsCode[i] = {};
+                res.hintsCode[i][key] = buildCode(ctx, expressions);
+            }
         }
     }
 }

@@ -13,8 +13,16 @@ module.exports = function map(res, symbols, stark, debug) {
 	
     if(stark) {
         res.mapSectionsN["cmQ"] = 0;
+        const qStage = res.numChallenges.length + 1;
         for (let i=0; i<res.qDeg; i++) {
-            addPol(res, "cmQ", `Q${i}`, res.qDim, res.qs[i]);
+            const symbol = {
+                stage: qStage,
+                dim: res.qDim,
+                name: `Q${i}`,
+                polId: res.qs[i],
+                stageId: i,
+            }
+            addPol(res, "cmQ", symbol);
         }
         res.mapSectionsN["f_ext"] = 3;
 
@@ -32,6 +40,7 @@ function mapSymbols(res, symbols) {
             let stage;
             if(symbol.type === "fixed") {
                 stage = "const";
+                symbol.stageId = symbol.polId;
             } else {
                 if(!symbol.stage || symbol.stage === 0) throw new Error("Invalid witness stage");
                 stage = "cm" + symbol.stage;
@@ -45,20 +54,20 @@ function mapSymbols(res, symbols) {
                     symbol.polId = nCommits++;  
                     stage = "tmpExp";      
                 }
-                addPol(res, stage, symbol.name, symbol.dim, symbol.polId);
-            } else {
-                addPol(res, stage, symbol.name, symbol.dim, symbol.polId);
-            }
+            } 
+            addPol(res, stage, symbol);
         }
     }
 }
 
-function addPol(res, stage, name, dim, pos) {
-    if(stage === "const") {
-        res.constPolsMap[pos] = { stage, name, dim };
-    } else {
-        res.cmPolsMap[pos] = { stage, name, dim };
-    }
+function addPol(res, stage, symbol) {
+    const ref = stage === "const" ? res.constPolsMap : res.cmPolsMap;
+    const pos = symbol.polId;
+    const stageNum = symbol.stage;
+    const name = symbol.name;
+    const dim = symbol.dim;
+    ref[pos] = {stage, stageNum, name, dim};
+    if(symbol.stageId >= 0) ref[pos].stageId = symbol.stageId;
     res.mapSectionsN[stage] += dim;
 }
 
@@ -96,7 +105,10 @@ function setStageInfoSymbols(res, symbols) {
             .filter((p, index) => p.stage === stage && index < symbol.polId);
 
             symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
-            symbol.stageId = prevPolsStage.length;
+            if(!symbol.stageId) {
+                symbol.stageId = prevPolsStage.length;
+                res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
+            }
         }
     }
 }
