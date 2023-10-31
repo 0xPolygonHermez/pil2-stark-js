@@ -252,6 +252,11 @@ function evalMap(ctx, polId, prime, dom, val) {
     }
 }
 
+module.exports.setPolByReference = function setPolByReference(ctx, reference, pol, dom) {
+    const polId = ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === reference.stage && c.stageId === reference.stageId);
+    module.exports.setPol(ctx, polId, pol, dom);
+}
+
 module.exports.setPol = function setPol(ctx, idPol, pol, dom) {
     const p = module.exports.getPolRef(ctx, idPol, dom);
 
@@ -544,13 +549,59 @@ module.exports.applyHints = async function applyHints(stage, ctx) {
     for(let i = 0; i < ctx.pilInfo.hints.length; i++) {
         const hint = ctx.pilInfo.hints[i];
         if(hint.stage !== stage) continue;
-        await module.exports.applyHint(hint, ctx);
+        
+        // TODO: THIS IS ONLY PIL ONE !
+        if(hint.name === "gprod") {
+            const inputs = [];
+            for(let j = 0; j < hint.inputs.length; ++j) {
+                const inputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.inputs[j]);
+                const pol = module.exports.getPol(ctx, inputIdx, "n")
+                inputs.push(pol);
+            } 
+            const outputs = await hintFunctions(hint.lib,ctx.F, inputs);
+            for(let j = 0; j < hint.outputs.length; ++j) {
+                const outputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.outputs[j]);
+                module.exports.setPol(ctx, outputIdx, outputs[j], "n");
+            }    
+        } else {
+            const res = await module.exports.applyHint(hint, ctx);
+            if(res) {
+                await resolveHint(res, ctx);
+            }
+        }
+    }
+}
+
+async function resolveHint(res, ctx) {
+    if(res.name === "gsum") {
+
+        const gsum = [];
+
+        // TODO: THIS IS A HACK, REMOVE WHEN PIL2 IS FIXED
+        if(res.numerator === 5n) res.numerator = ctx.F.negone;
+
+        const denInv = await ctx.F.batchInverse(res.denominator);
+
+        for(let i = 0; i < ctx.N; ++i) {
+            const val = ctx.F.mul(res.numerator, denInv[i]);
+            if(i === 0) {
+                gsum[i] = val;
+            } else {
+                gsum[i] = ctx.F.add(gsum[i - 1], val);
+            }
+        }
+
+        module.exports.setPolByReference(ctx, res.reference, gsum, "n");
     }
 }
 
 module.exports.applyHint = async function applyHints(hint, ctx) {
 
     if(hint.name === "subproofvalue" || hint.name === "public") {
+        if(!hint.reference) throw new Error("Reference field is missing");
+        if(!hint.expression) throw new Error("Expression field is missing");
+        if(!hint.row_index) throw new Error("Row_index field is missing");
+
         let value = getHintField(hint, "expression", ctx, true);
         
         if(hint.name === "subproofvalue") {
@@ -558,44 +609,21 @@ module.exports.applyHint = async function applyHints(hint, ctx) {
         } else {
             ctx.publics[hint.reference.id] = value;
         }
-    }
-    
-    if(hint.name === "gsum") {
-        const gsum = [];
+    } else {
+        const keys = Object.keys(hint);
+        if(!hint.reference) throw new Error("Reference field is missing");
 
-        const gsumReferenceIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === hint.reference.stage && c.stageId === hint.reference.stageId);
-
-        let numerator = getHintField(hint, "numerator", ctx);
-        let denominator = getHintField(hint, "denominator", ctx);
-
-        // TODO: THIS IS A HACK, REMOVE WHEN PIL2 IS FIXED
-        if(numerator === 5n) numerator = ctx.F.negone;
-
-        const denInv = ctx.F.batchInverse(denominator);
-
-        for(let i = 0; i < ctx.N; ++i) {
-            const res = ctx.F.mul(numerator, denInv[i]);
-            if(i === 0) {
-                gsum[i] = res;
+        const res = {};
+        for(let i = 0; i < keys.length; ++i) {
+            if(keys[i] === "code" || keys[i] === "stage") continue;
+            if(keys[i] === "name" || keys[i] === "reference") {
+                res[keys[i]] = hint[keys[i]];
             } else {
-                gsum[i] = ctx.F.add(gsum[i - 1], res);
+                res[keys[i]] = getHintField(hint, keys[i], ctx);
             }
         }
-        module.exports.setPol(ctx, gsumReferenceIdx, gsum, "n");
-    }
 
-    if(hint.name === "gprod") {
-        const inputs = [];
-        for(let j = 0; j < hint.inputs.length; ++j) {
-            const inputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.inputs[j]);
-            const pol = module.exports.getPol(ctx, inputIdx, "n")
-            inputs.push(pol);
-        } 
-        const outputs = await hintFunctions(hint.lib,ctx.F, inputs);
-        for(let j = 0; j < hint.outputs.length; ++j) {
-            const outputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.outputs[j]);
-            module.exports.setPol(ctx, outputIdx, outputs[j], "n");
-        }    
+        return res;
     }
 }
 
