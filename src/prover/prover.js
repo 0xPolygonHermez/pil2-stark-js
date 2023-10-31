@@ -14,6 +14,8 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
         throw new Error("Invalid parameters");
     }
 
+    if(options.pil1 === undefined) options.pil1 = true;
+
     let ctx = await initProver(pilInfo, constTree, constPols, zkey, stark, options);
     
     if(ctx.prover === "stark") {
@@ -182,7 +184,10 @@ async function computeStage(stage, ctx, options) {
 
     await callCalculateExps(`stage${stage}`, ctx.pilInfo.code[`stage${stage}`], dom, ctx, options.parallelExec, options.useThreads, false);
     
-    await applyHints(stage, ctx, true);
+    await applyHints(stage, ctx, options.pil1);
+
+    //TODO: REMOVE WITH SMARTER LOGIC!
+    await callCalculateExps(`stage${stage}`, ctx.pilInfo.code[`stage${stage}`], dom, ctx, options.parallelExec, options.useThreads, false);
 
     if(options.debug) {
         const nConstraintsStage = ctx.pilInfo.constraints[`stage${stage}`].length;

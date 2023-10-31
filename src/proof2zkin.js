@@ -59,6 +59,10 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo, c) {
 
     zkin.finalPol = friProof[friProof.length-1];
 
+    if(starkInfo.nSubproofValues > 0) {
+        zkin.subproofValues = p.subproofValues;
+    }
+    
     if(c) module.exports.challenges2zkin(c, starkInfo, zkin);
      
     return zkin;

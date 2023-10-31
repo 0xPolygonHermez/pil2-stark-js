@@ -25,7 +25,7 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
         const verificationHashType = "GL";
         const splitLinearHash = false;
 
-        const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
+        const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash, pil1};
 
         const starkInfo = pilInfo(F, pil, true, pil1, debug, {});
         const pilVerification = await starkGen(cmPols, constPols, {}, starkInfo, inputs, optionsPilVerify);
@@ -34,7 +34,7 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
 
     const setup = await starkSetup(constPols, pil, starkStruct, {F, pil1});
 
-    const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, inputs, {logger, hashCommits});
+    const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, inputs, {logger, hashCommits, pil1});
 
     const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, undefined, setup.starkInfo, {logger, hashCommits});
 

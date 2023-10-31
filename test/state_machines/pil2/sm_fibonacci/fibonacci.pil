@@ -1,19 +1,34 @@
 public in1;
 public in2;
 public out;
+public mod;
+
+challenge stage(2) std_alpha;
+challenge stage(2) std_beta;
 
 subproof Fibonacci(2**6) {
 
     col witness a,b;
+
+    subproofval aggregate(sum) gsum_fibonacci;
 
     col fixed L1 = [1,0...];
     col fixed LLAST = [0...,1];
 
     (b' - a) * (1 - L1') === 0;
 
-    @public {reference: out, expression: a, row_index: 2**6 - 1}
+    @public {reference: out, expression: a, row_index: N - 1}
 
     L1 * (b - in1) === 0;
     L1 * (a - in2) === 0;
     LLAST * (a - out) === 0;
+
+    col witness stage(2) gsum;
+
+    @gsum { reference: gsum, numerator: 5, denominator: ((((L1'2*out + (1 - L1'2)*a') * std_alpha + a * a + b * b) * std_alpha) + 1 + std_beta)}
+
+    @subproofvalue { reference: gsum_fibonacci, expression: gsum, row_index: N - 1 }
+
+    (gsum - 'gsum * (1 - L1)) * ((((L1'2*out + (1 - L1'2)*a') * std_alpha + a * a + b * b) * std_alpha) + 1 + std_beta) + 1 === 0;
+    L1' * (gsum - gsum_fibonacci) === 0;
 }

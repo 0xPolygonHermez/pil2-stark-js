@@ -183,6 +183,8 @@ class Transcript {
             return "consts[" + r.id + "]";
         } else if (r.type == "number") {
             return r.value;
+        } else if (r.type === "subproofValue") {
+            return "subproofValues[" + r.id + "]";
         } else {
             throw new Error("Invalid Ref: " +r.type);
         }
@@ -409,6 +411,9 @@ template parallel VerifyEvaluations() {
     signal input challengeXi[3];
     signal input evals[<%- starkInfo.evMap.length %>][3];
     signal input publics[<%- starkInfo.nPublics %>];
+<%  if(starkInfo.nSubproofValues > 0) { -%>
+    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3];
+<%  } -%>
     signal input {binary} enable;
 
     // zMul stores all the powers of z (which is stored in challengeXi) up to nBits, i.e, [z, z^2, ..., z^nBits]
@@ -628,7 +633,10 @@ template parallel VerifyFinalPol() {
     }
 }
 template StarkVerifier() {
-    signal input publics[<%- starkInfo.nPublics %>]; // constant polynomials
+    signal input publics[<%- starkInfo.nPublics %>]; // publics polynomials
+<% if(starkInfo.nSubproofValues > 0) { -%>
+    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3]; // subproof values
+<% } -%>
 <% for(let i=0; i < starkInfo.numChallenges.length; i++) {  -%>
 <%  const stage = i + 1; -%>
     signal input root<%- stage %>[4]; // Merkle tree root of stage <%- stage %>
@@ -748,15 +756,20 @@ template StarkVerifier() {
     // Check constraints polynomial in the evaluation point
     ///////////
 
-<%  const challengesEvaluations = []; -%>
+<%  const verifyEvalsInputs = []; -%>
 <%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
 <%  if(starkInfo.numChallenges[i] === 0) continue; -%>
 <%      const stage = i + 1; -%>
-<%      challengesEvaluations.push("challengesStage" + stage); -%>
+<%      verifyEvalsInputs.push("challengesStage" + stage); -%>
 <%  } -%> 
-<%      challengesEvaluations.push("challengeQ"); -%>
-<%      challengesEvaluations.push("challengeXi"); -%>
-    VerifyEvaluations()(<%- challengesEvaluations.join(", ") %>, evals, publics, enabled);
+<%      verifyEvalsInputs.push("challengeQ"); -%>
+<%      verifyEvalsInputs.push("challengeXi"); -%>
+<%      verifyEvalsInputs.push("evals"); -%>
+<%      verifyEvalsInputs.push("publics"); -%>
+<%      if(starkInfo.nSubproofValues > 0) verifyEvalsInputs.push("subproofValues"); -%>
+<%      verifyEvalsInputs.push("enabled"); -%>
+
+    VerifyEvaluations()(<%- verifyEvalsInputs.join(", ") %>);
 
     ///////////
     // Preprocess s_i vals
