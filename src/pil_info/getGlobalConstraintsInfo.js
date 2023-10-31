@@ -4,6 +4,8 @@ const { formatExpressions, formatSymbols } = require("./helpers/pil2/utils");
 
 module.exports.getGlobalConstraintsInfo = function getGlobalConstraintsInfo(pilout, stark) {
     
+    if(!pilout.constraints) return [];
+
     const constraints = pilout.constraints.map(c => {  return { e: c.expressionIdx.idx, boundary: "finalProof", line: c.debugLine } });
 
     let saveSymbols = pilout.symbols ? false : true;
