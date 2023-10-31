@@ -204,7 +204,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
             ctxQry.xDivXSubXi[i] = F.div(x, F.sub(x, F.mul(ctxQry.challenges[evalsStage][0], w)));
         }
 
-        const vals = [executeCode(F, ctxQry, starkInfo.code.queryVerifier.code)];
+        const vals = [module.exports.executeCode(F, ctxQry, starkInfo.code.queryVerifier.code)];
 
         return vals;
     }
