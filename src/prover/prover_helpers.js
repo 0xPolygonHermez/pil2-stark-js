@@ -1,7 +1,7 @@
 const { proofgen_execute } = require("./prover_worker");
 const workerpool = require("workerpool");
 const {BigBuffer} = require("ffjavascript");
-const { calculateZ, calculateH1H2 } = require("../helpers/polutils");
+const { calculateH1H2 } = require("../helpers/polutils");
 
 const maxNperThread = 1<<18;
 const minNperThread = 1<<12;
@@ -14,7 +14,7 @@ module.exports.calculatePublics = async function calculatePublics(ctx, inputs) {
         }
     }
 
-    await module.exports.applyHints(1, ctx);
+    await module.exports.applyHints(1, ctx, true);
 }
 
 module.exports.callCalculateExps = async function callCalculateExps(step, code, dom, ctx, parallelExec, useThreads, debug, global = false) {
@@ -252,8 +252,8 @@ function evalMap(ctx, polId, prime, dom, val) {
     }
 }
 
-module.exports.setPolByReference = function setPolByReference(ctx, reference, pol, dom) {
-    const polId = ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === reference.stage && c.stageId === reference.stageId);
+module.exports.setPolByReference = function setPolByReference(ctx, reference, pol, dom, pil1) {
+    const polId = pil1 ? reference.id : ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === reference.stage && c.stageId === reference.stageId);
     module.exports.setPol(ctx, polId, pol, dom);
 }
 
@@ -535,68 +535,34 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     await pool.terminate();
 }
 
-async function hintFunctions(functionName, F, inputs) {
-    if(functionName === "calculateZ") {
-        return calculateZ(F, ...inputs);
-    } else if(functionName === "calculateH1H2") {
-        return calculateH1H2(F,...inputs);
-    } else {
-        throw new Error("Invalid function name: " + functionName);
-    }
-}
-
-module.exports.applyHints = async function applyHints(stage, ctx) {
+module.exports.applyHints = async function applyHints(stage, ctx, pil1) {
     for(let i = 0; i < ctx.pilInfo.hints.length; i++) {
         const hint = ctx.pilInfo.hints[i];
         if(hint.stage !== stage) continue;
         
-        // TODO: THIS IS ONLY PIL ONE !
-        if(hint.name === "gprod") {
-            const inputs = [];
-            for(let j = 0; j < hint.inputs.length; ++j) {
-                const inputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.inputs[j]);
-                const pol = module.exports.getPol(ctx, inputIdx, "n")
-                inputs.push(pol);
-            } 
-            const outputs = await hintFunctions(hint.lib,ctx.F, inputs);
-            for(let j = 0; j < hint.outputs.length; ++j) {
-                const outputIdx = ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.outputs[j]);
-                module.exports.setPol(ctx, outputIdx, outputs[j], "n");
-            }    
+        if(pil1 && hint.name !== "public") {
+            if(hint.name === "gprod") {
+                const res = {name: "gprod", reference: hint.reference};
+                res.numerator = module.exports.getPol(ctx, ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.numerator), "n");
+                res.denominator = module.exports.getPol(ctx, ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.denominator), "n");
+                await resolveHint(res, ctx, true);
+            } else if (hint.name === "h1h2"){
+                let f = module.exports.getPol(ctx, ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.f), "n");
+                let t = module.exports.getPol(ctx, ctx.pilInfo.cmPolsMap.findIndex(c => c.name === hint.t), "n");
+                const H1H2 = calculateH1H2(ctx.F, f, t);
+                module.exports.setPolByReference(ctx, hint.referenceH1, H1H2[0], "n", true);
+                module.exports.setPolByReference(ctx, hint.referenceH2, H1H2[1], "n", true);
+            } else throw new Error("Invalid hint");
         } else {
             const res = await module.exports.applyHint(hint, ctx);
             if(res) {
-                await resolveHint(res, ctx);
+                await resolveHint(res, ctx, false);
             }
         }
     }
 }
 
-async function resolveHint(res, ctx) {
-    if(res.name === "gsum") {
-
-        const gsum = [];
-
-        // TODO: THIS IS A HACK, REMOVE WHEN PIL2 IS FIXED
-        if(res.numerator === 5n) res.numerator = ctx.F.negone;
-
-        const denInv = await ctx.F.batchInverse(res.denominator);
-
-        for(let i = 0; i < ctx.N; ++i) {
-            const val = ctx.F.mul(res.numerator, denInv[i]);
-            if(i === 0) {
-                gsum[i] = val;
-            } else {
-                gsum[i] = ctx.F.add(gsum[i - 1], val);
-            }
-        }
-
-        module.exports.setPolByReference(ctx, res.reference, gsum, "n");
-    }
-}
-
-module.exports.applyHint = async function applyHints(hint, ctx) {
-
+module.exports.applyHint = async function applyHint(hint, ctx) {
     if(hint.name === "subproofvalue" || hint.name === "public") {
         if(!hint.reference) throw new Error("Reference field is missing");
         if(!hint.expression) throw new Error("Expression field is missing");
@@ -643,6 +609,41 @@ function getHintField(hint, field, ctx, isOneValue) {
             return eval(module.exports.getRef({...hint[field], type: hint[field].op}, ctx, "n"));
         }
     }
+}
+
+async function resolveHint(res, ctx, pil1) {
+    if(res.name === "gsum") {
+        const gsum = [];
+
+        // TODO: THIS IS A HACK, REMOVE WHEN PIL2 IS FIXED
+        if(res.numerator === 5n) res.numerator = ctx.F.negone;
+
+        const denInv = await ctx.F.batchInverse(res.denominator);
+
+        for(let i = 0; i < ctx.N; ++i) {
+            const val = ctx.F.mul(res.numerator, denInv[i]);
+            if(i === 0) {
+                gsum[i] = val;
+            } else {
+                gsum[i] = ctx.F.add(gsum[i - 1], val);
+            }
+        }
+
+        module.exports.setPolByReference(ctx, res.reference, gsum, "n", pil1);
+
+    } else if(res.name === "gprod") {
+        const gprod = [];
+
+        const denInv = await ctx.F.batchInverse(res.denominator);
+
+        gprod[0] = ctx.F.one;
+        for (let i=1; i<ctx.N; i++) {
+            gprod[i] = ctx.F.mul(gprod[i-1], ctx.F.mul(res.numerator[i-1], denInv[i-1]));
+        }
+
+        module.exports.setPolByReference(ctx, res.reference, gprod, "n", pil1);
+
+    } else throw new Error(`Hint ${hint.name} cannot be resolved.`);
 }
 
 

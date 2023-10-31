@@ -135,9 +135,9 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
         const hint = {
             name: "gprod",
             stage,
-            inputs: [`Connection${i}.num`, `Connection${i}.den`], 
-            outputs: [`Connection${i}.z`], 
-            lib: "calculateZ"
+            reference: z,
+            numerator: `Connection${i}.num`,
+            denominator: `Connection${i}.den`,
         };
 
         hints.push(hint);

@@ -182,7 +182,7 @@ async function computeStage(stage, ctx, options) {
 
     await callCalculateExps(`stage${stage}`, ctx.pilInfo.code[`stage${stage}`], dom, ctx, options.parallelExec, options.useThreads, false);
     
-    await applyHints(stage, ctx);
+    await applyHints(stage, ctx, true);
 
     if(options.debug) {
         const nConstraintsStage = ctx.pilInfo.constraints[`stage${stage}`].length;

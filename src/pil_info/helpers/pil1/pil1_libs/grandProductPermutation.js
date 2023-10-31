@@ -125,9 +125,9 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
         const hint = {
             name: "gprod",
             stage,
-            inputs: [`Permutation${i}.num`, `Permutation${i}.den`], 
-            outputs: [`Permutation${i}.z`], 
-            lib: "calculateZ"
+            reference: z,
+            numerator: `Permutation${i}.num`,
+            denominator: `Permutation${i}.den`,
         };
 
         hints.push(hint);
