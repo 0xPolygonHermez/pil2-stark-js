@@ -338,58 +338,61 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         outputSections: []
     };
 
-    const execStages = [];
-    for(let i = 0; i < ctx.pilInfo.numChallenges.length; ++i) {
-        const stage = 1 + i;
-        execStages.push(`stage${stage}`);
-    }
-
-    const qStage = ctx.pilInfo.numChallenges.length + 1;
-
     const ziPols = ["Zi_ext"];
-    if(ctx.pilInfo.boundaries.includes("firstRow")) ziPols.push("Zi_fr_ext");
-    if(ctx.pilInfo.boundaries.includes("lastRow")) ziPols.push("Zi_lr_ext");
-    if(ctx.pilInfo.boundaries.includes("everyFrame")) {
-        for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) ziPols.push(`Zi_frame${i}_ext`);
-    }
-    
-    if (execStages.includes(execPart)) {
-        execInfo.inputSections.push({ name: "const_n" });
-        execInfo.inputSections.push({ name: "x_n" });
-        for(let j = 0; j < ctx.pilInfo.numChallenges.length; j++) {
-            const stage = j + 1;
-            execInfo.inputSections.push({ name: `cm${stage}_n` });
-            execInfo.outputSections.push({ name: `cm${stage}_n` });
+
+    if(execPart !== "global") {
+        const execStages = [];
+        for(let i = 0; i < ctx.pilInfo.numChallenges.length; ++i) {
+            const stage = 1 + i;
+            execStages.push(`stage${stage}`);
         }
-        execInfo.inputSections.push({ name: "tmpExp_n" });
-        execInfo.outputSections.push({ name: "tmpExp_n" });
-        dom = "n";
-    } else if (execPart === `stage${qStage}`) {
-        execInfo.inputSections.push({ name: "const_ext" });
-        for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
-            const stage = i + 1;
-            execInfo.inputSections.push({ name: `cm${stage}_ext` });
+
+        const qStage = ctx.pilInfo.numChallenges.length + 1;
+
+        if(ctx.pilInfo.boundaries.includes("firstRow")) ziPols.push("Zi_fr_ext");
+        if(ctx.pilInfo.boundaries.includes("lastRow")) ziPols.push("Zi_lr_ext");
+        if(ctx.pilInfo.boundaries.includes("everyFrame")) {
+            for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) ziPols.push(`Zi_frame${i}_ext`);
         }
-        execInfo.inputSections.push({ name: "x_ext" });
-        execInfo.outputSections.push({ name: "q_ext" });
-        if(ctx.prover === "stark") {
-            for(let i = 0; i < ziPols.length; ++i) {
-                execInfo.inputSections.push({ name: ziPols[i] });
+        
+        if (execStages.includes(execPart)) {
+            execInfo.inputSections.push({ name: "const_n" });
+            execInfo.inputSections.push({ name: "x_n" });
+            for(let j = 0; j < ctx.pilInfo.numChallenges.length; j++) {
+                const stage = j + 1;
+                execInfo.inputSections.push({ name: `cm${stage}_n` });
+                execInfo.outputSections.push({ name: `cm${stage}_n` });
             }
+            execInfo.inputSections.push({ name: "tmpExp_n" });
+            execInfo.outputSections.push({ name: "tmpExp_n" });
+            dom = "n";
+        } else if (execPart === `stage${qStage}`) {
+            execInfo.inputSections.push({ name: "const_ext" });
+            for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+                const stage = i + 1;
+                execInfo.inputSections.push({ name: `cm${stage}_ext` });
+            }
+            execInfo.inputSections.push({ name: "x_ext" });
+            execInfo.outputSections.push({ name: "q_ext" });
+            if(ctx.prover === "stark") {
+                for(let i = 0; i < ziPols.length; ++i) {
+                    execInfo.inputSections.push({ name: ziPols[i] });
+                }
+            }
+            dom = "ext";
+        } else if (execPart == "fri") {
+            execInfo.inputSections.push({ name: "const_ext" });
+            for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+                const stage = i + 1;
+                execInfo.inputSections.push({ name: `cm${stage}_ext` });
+            }
+            execInfo.inputSections.push({ name: "cmQ_ext" });
+            execInfo.inputSections.push({ name: "xDivXSubXi_ext" });
+            execInfo.outputSections.push({ name: "f_ext" });
+            dom = "ext";
+        } else {
+            throw new Error("Exec type not defined " + execPart);
         }
-        dom = "ext";
-    } else if (execPart == "fri") {
-        execInfo.inputSections.push({ name: "const_ext" });
-        for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
-            const stage = i + 1;
-            execInfo.inputSections.push({ name: `cm${stage}_ext` });
-        }
-        execInfo.inputSections.push({ name: "cmQ_ext" });
-        execInfo.inputSections.push({ name: "xDivXSubXi_ext" });
-        execInfo.outputSections.push({ name: "f_ext" });
-        dom = "ext";
-    } else {
-        throw new Error("Exec type not defined " + execPart);
     }
 
     function setWidth(stage) {
@@ -422,7 +425,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         if(code.boundary === "everyRow") {
             first = 0;
             last = N;
-        } else if(code.boundary === "firstRow") {
+        } else if(code.boundary === "firstRow" || code.boundary === "finalProof") {
             first = 0;
             last = 1;
         } else if(code.boundary === "lastRow") {
