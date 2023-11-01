@@ -51,6 +51,8 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil1, debug, star
     
     res.hints = hints;
 
+    res.boundaries = ["everyRow"];
+
     if(!debug) {
         generateConstraintPolynomial(res, expressions, constraints, stark);
 

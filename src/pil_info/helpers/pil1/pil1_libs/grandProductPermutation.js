@@ -81,6 +81,7 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
         const t = E.exp(peCtx.tExpId,0,stage, dim);
         const z = E.cm(peCtx.zId, 0,stage, dim);
         const zp = E.cm(peCtx.zId, 1,stage, dim);
+        z.stageId = pil.nCm2++;
 
         let c1;
         if(stark) {
@@ -126,8 +127,8 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
             name: "gprod",
             stage,
             reference: z,
-            numerator: `Permutation${i}.num`,
-            denominator: `Permutation${i}.den`,
+            numerator: E.exp(peCtx.numId, 0, stage),
+            denominator: E.exp(peCtx.denId, 0, stage),
         };
 
         hints.push(hint);

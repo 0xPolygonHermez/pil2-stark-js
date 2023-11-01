@@ -96,6 +96,11 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
         const tp = E.exp(puCtx.tExpId, 1, stage1, dim);
         const z = E.cm(puCtx.zId, 0, stage2, dim);
         const zp = E.cm(puCtx.zId, 1, stage2, dim);
+        
+        h1.stageId = pil.nCm2++;
+        h2.stageId = pil.nCm2++;
+        z.stageId = pil.nCm3++;
+
 
         let c1;
         if(stark) {
@@ -183,16 +188,16 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
             stage: stage1,
             referenceH1: h1,
             referenceH2: h2,
-            f: `Plookup${i}.f`,
-            t: `Plookup${i}.t`,
+            f: E.exp(puCtx.fExpId, 0, stage1),
+            t: E.exp(puCtx.tExpId, 0, stage1),
         };
 
         const hint2 = {
             name: "gprod",
             stage: stage2,
             reference: z,
-            numerator: `Plookup${i}.num`,
-            denominator: `Plookup${i}.den`,
+            numerator: E.exp(puCtx.numId, 0, stage2),
+            denominator: E.exp(puCtx.denId, 0, stage2),
         };
 
         hints.push(hint1);

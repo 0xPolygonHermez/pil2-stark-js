@@ -99,6 +99,7 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
 
         const z = E.cm(ciCtx.zId, 0, stage, dim);
         const zp = E.cm(ciCtx.zId, 1, stage, dim);
+        z.stageId = pil.nCm2++;
 
         let c1;
         if(stark) {
@@ -110,6 +111,7 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
         }
 
         c1.deg=2;
+        c1.stage = 2;
         pil.expressions.push(c1);
         let c1Id = pil.expressions.length - 1;
         pil.polIdentities.push({e: c1Id, boundary: "firstRow", fileName: ci.fileName, line: ci.line });
@@ -118,6 +120,7 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
 
         const c2 = E.sub(  E.mul(zp,  E.exp(ciCtx.denId,0,stage)), E.mul(z, E.exp(ciCtx.numId,0,stage)));
         c2.deg=2;
+        c2.stage = 2;
         pil.expressions.push(c2);
         let c2Id = pil.expressions.length - 1;
         pil.polIdentities.push({e: c2Id, boundary: "everyRow", fileName: ci.fileName, line: ci.line });
@@ -136,8 +139,8 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
             name: "gprod",
             stage,
             reference: z,
-            numerator: `Connection${i}.num`,
-            denominator: `Connection${i}.den`,
+            numerator: E.exp(ciCtx.numId, 0, stage),
+            denominator: E.exp(ciCtx.denId, 0, stage),
         };
 
         hints.push(hint);

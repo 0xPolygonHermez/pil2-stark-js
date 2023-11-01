@@ -8,6 +8,9 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
 
     res.numChallenges = [0];
 
+    pil.nCm2 = 0;
+    pil.nCm3 = 0;
+
     if(pil.permutationIdentities.length > 0) {
         pilLibs.push({
             lib: function() { grandProductPermutation(pil, symbols, hints, stark)},

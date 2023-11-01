@@ -10,8 +10,6 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
     const vc = E.challenge("vc", stage, dim, 0);
     vc.expDeg = 0;
 
-    res.boundaries = ["everyRow"];
-
     res.constraintFrames = [];
     
     let cExp = null;
