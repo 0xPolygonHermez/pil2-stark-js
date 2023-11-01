@@ -12,6 +12,8 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
 
     res.constraintFrames = [];
     
+    let multipleBoundaries = false;
+    if(constraints.filter(c => c.boundary !== "everyRow").length > 0) multipleBoundaries = true;
     let cExp = null;
     for (let i=0; i<constraints.length; i++) {
         const boundary = constraints[i].boundary;
@@ -29,7 +31,7 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
             zi = E.zi(boundary);
         }
         let e = E.exp(constraints[i].e);
-        if(stark) e = E.mul(zi, e);
+        if(stark && multipleBoundaries) e = E.mul(zi, e);
         cExp = cExp ? E.add(E.mul(vc, cExp), e) : e;
     }
 

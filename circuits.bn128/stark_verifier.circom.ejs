@@ -1,20 +1,33 @@
 pragma circom 2.1.0;
+<% if(options.custom) { -%> pragma custom_templates; <% } -%>
 
-include "gl.circom";
-include "poseidon.circom";
-include "lessthangl.circom";
-include "fft.circom";
-include "merklehash.circom";
-include "evalpol.circom";
-include "treeselector.circom";
-include "bn1togl3.circom";
+<% if(options.custom) { -%>
+include "custom/bitifyT.circom";
+include "custom/evalpol.circom";
+include "custom/fft.circom";
+include "custom/gl.circom";
+include "custom/lessthangl.circom";
+include "custom/merklehash.circom";
+include "custom/poseidon.circom";
+include "custom/rangecheck.circom";
+<% } else { -%>
 include "bitifyT.circom";
+include "evalpol.circom";
+include "fft.circom";
+include "gl.circom";
+include "lessthangl.circom";
+include "merklehash.circom";
+include "poseidon.circom";
+<% } -%>
+include "bn1togl3.circom";
+include "treeselector.circom";
 <% if (!options.skipMain) {  -%>
 include "compconstant64.circom";
 include "bitify.circom";
 include "sha256/sha256.circom";
 <% } -%>
 
+<%  const transcriptArity = options.custom ? arity : options.transcriptArity; -%>
 <%  const NFields = Math.floor(((starkStruct.nQueries *  starkStruct.steps[0].nBits) - 1)/253)+1; -%>
 <%
 class Transcript {
@@ -70,7 +83,8 @@ class Transcript {
         while (this.pending.length < transcriptArity) {
             this.pending.push("0");
         }
-        this.code.push(`\n    signal ${signalName}_${this.hCnt++}[${Number(transcriptArity) + 1}] <== PoseidonEx(${transcriptArity}, ${transcriptArity + 1})([${this.pending.join(',')}], ${this.state});`);
+        const poseidon = options.custom ? `CustomPoseidon(${transcriptArity})` : `PoseidonEx(${transcriptArity}, ${transcriptArity + 1})`;
+        this.code.push(`\n    signal ${signalName}_${this.hCnt++}[${Number(transcriptArity) + 1}] <== ${poseidon}([${this.pending.join(',')}], ${this.state});`);
         for (let i=0; i<transcriptArity+1; i++) {
             this.out[i] = `${signalName}_${this.hCnt-1}[${i}]`;
         }
@@ -192,6 +206,9 @@ class Transcript {
 <%            return "mapValues." + r.type + "_" + r.stageId; -%>
 <%        } else if (r.type == "const") { -%>
 <%            return "consts[" + r.id + "]"; -%>
+<%        } else if (r.type === "subproofValue") { -%>
+<%            return "subproofValues[" + r.id + "]"; -%>
+<%        } else { -%>
 <%        } else if (r.type == "number") { -%>
 <%            let val = r.value; -%>
 <%            if(val < 0n) val = F.add(BigInt(val),18446744069414584321n); -%>
@@ -294,7 +311,6 @@ template GLC3() {
     out.maxNum = in.maxNum;
     out <== [in, 0, 0];
 }
-
 /* 
     Calculate FRI Queries
 */
@@ -311,6 +327,7 @@ template calculateFRIQueries() {
 }
 
 <% if (!options.vadcop) { -%>
+
 /* 
     Calculate the transcript
 */ 
@@ -340,7 +357,7 @@ template Transcript() {
     signal output {maxNum} challengesFRISteps[<%- starkStruct.steps.length %>][3];
     signal output {binary} queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
 
-<%  if(options.hashCommits) { -%> 
+    <%  if(options.hashCommits) { -%> 
     signal publicsHash[3];
     signal evalsHash[3];
     signal lastPolFRIHash[3];
@@ -497,6 +514,9 @@ template parallel VerifyEvaluations() {
     signal input {maxNum} challengeXi[3];
     signal input {maxNum} evals[<%- starkInfo.evMap.length %>][3];
     signal input {maxNum} publics[<%- starkInfo.nPublics %>];
+<%  if(starkInfo.nSubproofValues > 0) { -%>
+    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3];
+<%  } -%>
     signal input {binary} enable;
 
     var q = 0xFFFFFFFFFFFFFFFF;
@@ -605,7 +625,12 @@ template parallel VerifyEvaluations() {
     }
 
     // Final normalization
+<% if(starkInfo.boundaries.length === 1 && starkInfo.boundaries[0] === "everyRow") { -%>
+    signal {maxNum} QZ[3] <== GLCMul()(qAcc[<%- starkInfo.qDeg-1 %>], Z); // Stores the result of multiplying Q(X) per Zg(X)
+    signal {maxNum} vals[3] <== GLCSub()(<%- evalP %>, QZ);
+<% } else { -%>
     signal {maxNum} vals[3] <== GLCSub()(<%- evalP %>, qAcc[<%- starkInfo.qDeg-1 %>]);
+<% } -%>
     signal {maxNum} normC[3] <== GLCNorm()(vals);
 
     // Final Verification
@@ -794,9 +819,11 @@ template parallel VerifyFinalPol() {
         _ <== lastIFFT[k];
     }
 }
-
 template StarkVerifier() {
     signal input publics[<%- starkInfo.nPublics %>]; // constant polynomials
+<% if(starkInfo.nSubproofValues > 0) { -%>
+    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3]; // subproof values
+<% } -%>
 <% for(let i=0; i < starkInfo.numChallenges.length; i++) {  -%>
 <%  const stage = i + 1; -%>
     signal input root<%- stage %>; // Merkle tree root of stage <%- stage %>
@@ -866,6 +893,15 @@ template StarkVerifier() {
             evalsGL[i][j] <== LessThan64Bits()(evals[i][j]);
         }
     }
+
+<%  if(starkInfo.nSubproofValues > 0) -%>
+    signal {maxNum} subproofValuesGL[<%- starkInfo.nSubproofValues %>][3];
+    for(var i = 0; i < <%- starkInfo.nSubproofValues %>; i++){
+        for(var j = 0; j < 3; j++) {
+            subproofValuesGL[i][j] <== LessThan64Bits()(subproofValues[i][j]);
+        }
+    }
+<%  } -%>
 
 <% for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
 <%  const stage = i + 1; -%>
@@ -975,15 +1011,20 @@ template StarkVerifier() {
     // Check constraints polynomial in the evaluation point
     ///////////
 
-<%  const challengesEvaluations = []; -%>
+<%  const verifyEvalsInputs = []; -%>
 <%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
 <%  if(starkInfo.numChallenges[i] === 0) continue; -%>
 <%      const stage = i + 1; -%>
-<%      challengesEvaluations.push("challengesStage" + stage + "GL"); -%>
+<%      verifyEvalsInputs.push("challengesStage" + stage + "GL"); -%>
 <%  } -%> 
-<%      challengesEvaluations.push("challengeQGL"); -%>
-<%      challengesEvaluations.push("challengeXiGL"); -%>
-    VerifyEvaluations()(<%- challengesEvaluations.join(", ") %>, evalsGL, publicsGL, enabled);    
+<%      verifyEvalsInputs.push("challengeQGL"); -%>
+<%      verifyEvalsInputs.push("challengeXiGL"); -%>
+<%      verifyEvalsInputs.push("evalsGL"); -%>
+<%      verifyEvalsInputs.push("publicsGL"); -%>
+<%      if(starkInfo.nSubproofValues > 0) verifyEvalsInputs.push("subproofValuesGL"); -%>
+<%      verifyEvalsInputs.push("enabled"); -%>
+
+    VerifyEvaluations()(<%- verifyEvalsInputs.join(", ") %>, evalsGL, publicsGL, enabled);    
 
     ///////////
     // Preprocess s_i vals
@@ -1110,11 +1151,14 @@ template StarkVerifier() {
 
 <% if (!options.skipMain) {  -%>
 
-template Main() {
+    template Main() {
     signal input proverAddr;
     signal output publicsHash;
 
     signal input publics[<%- starkInfo.nPublics %>];
+<%  if(starkInfo.nSubproofValues > 0) -%>
+    signal input subproofs[<%- starkInfo.nSubproofValues %>];
+<% } -%>
 <% for(let i=0; i < starkInfo.numChallenges.length; i++) {  -%>
 <%  const stage = i + 1; -%>
     signal input root<%- stage %>;

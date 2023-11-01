@@ -8,7 +8,7 @@ const ejs = require("ejs");
 const wasm_tester = require("circom_tester").wasm;
 
 
-describe("EvalPol BN128 Circuit Test", function () {
+describe("EvalPol BN128 Circuit Test Custom", function () {
     let circuit = [];
 
     this.timeout(10000000);

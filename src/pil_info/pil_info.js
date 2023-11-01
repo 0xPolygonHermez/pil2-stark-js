@@ -22,7 +22,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, debug, star
             maxDeg = Math.pow(2,3) + 1;
         }
         const imInfo = calculateIntermediatePolynomials(expressions, res.cExpId, maxDeg);
-        addIntermediatePolynomials(res, expressions, symbols, imInfo.imExps, imInfo.qDeg, stark);
+        addIntermediatePolynomials(res, expressions, constraints, symbols, imInfo.imExps, imInfo.qDeg, stark);
         newExpressions = imInfo.newExpressions;
     } else {
         newExpressions = expressions;

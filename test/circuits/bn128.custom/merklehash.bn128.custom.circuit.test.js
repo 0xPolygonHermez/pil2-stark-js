@@ -25,7 +25,7 @@ function getBits(idx, nLevels, arity) {
     return res;
 }
 
-describe("Merkle Hash BN128 Circuit Test", function () {
+describe("Merkle Hash BN128 Circuit Test Custom", function () {
     let poseidon;
 
     this.timeout(10000000);
@@ -69,7 +69,7 @@ describe("Merkle Hash BN128 Circuit Test", function () {
         const content = ejs.render(template, {nBits, nPols, arity, dirName:path.join(__dirname, "circom")});
         const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
         await fs.promises.writeFile(circuitFile, content);
-        const circuit = await wasm_tester(circuitFile, {O:1, include: ["circuits.bn128.custom", "node_modules/circomlib/circuits"]});
+        const circuit = await wasm_tester(circuitFile, {O:1, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
 
         const input={
             values: proof[0],
@@ -122,7 +122,7 @@ describe("Merkle Hash BN128 Circuit Test", function () {
         const content = ejs.render(template, {nBits, nPols, arity, dirName:path.join(__dirname, "circom")});
         const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
         await fs.promises.writeFile(circuitFile, content);
-        const circuit = await wasm_tester(circuitFile, {O:1, include: ["circuits.bn128.custom", "node_modules/circomlib/circuits"]});
+        const circuit = await wasm_tester(circuitFile, {O:1, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
 
         const input={
             values: proof[0],

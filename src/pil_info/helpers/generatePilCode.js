@@ -11,7 +11,7 @@ module.exports.generatePilCode = function generatePilCode(res, symbols, constrai
     generateStagesCode(res, symbols, constraints, expressions, stark);
 
     if(!debug) {
-        generateConstraintPolynomialCode(res, symbols, expressions, stark);
+        generateConstraintPolynomialCode(res, symbols, constraints, expressions, stark);
 
         generateConstraintPolynomialVerifierCode(res, symbols, expressions, stark);
 

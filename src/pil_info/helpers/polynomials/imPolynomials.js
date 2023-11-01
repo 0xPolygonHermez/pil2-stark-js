@@ -3,7 +3,7 @@ const ExpressionOps = require("../../expressionops");
 
 const { getExpDim } = require("../helpers");
 
-module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(res, expressions, symbols, imExps, qDeg, stark) {
+module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark) {
     const E = new ExpressionOps();
 
     console.log("Number of intermediate expressions: " + imExps.length);
@@ -17,6 +17,9 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     const vc = E.challenge("vc", stage, dim, 0);
     vc.expDeg = 0;
     
+    let multipleBoundaries = false;
+    if(constraints.filter(c => c.boundary !== "everyRow").length > 0) multipleBoundaries = true;
+
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
         const stage = expressions[expId].stage;
@@ -36,7 +39,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
                 E.cm(res.nCommitments-1, 0, stage, dim),
             ]
         };
-        if(stark) e = E.mul(E.zi("everyRow"), e);
+        if(stark && multipleBoundaries) e = E.mul(E.zi("everyRow"), e);
         expressions[res.cExpId] = E.add(E.mul(vc, expressions[res.cExpId]), e);
     }
 

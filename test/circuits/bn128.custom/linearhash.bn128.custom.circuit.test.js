@@ -8,7 +8,7 @@ const ejs = require("ejs");
 
 const wasm_tester = require("circom_tester").wasm;
 
-describe("Linear Hash Circuit Test", function () {
+describe("Linear Hash Circuit Test Custom", function () {
     let circuit;
 
     let template;
@@ -23,7 +23,7 @@ describe("Linear Hash Circuit Test", function () {
         const content = ejs.render(template, {n: 9, arity: 16, dirName:path.join(__dirname, "circom")});
         const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
         await fs.promises.writeFile(circuitFile, content);
-        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128.custom", "node_modules/circomlib/circuits"]});
+        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
 
         const poseidon = await buildPoseidon();
         const F = poseidon.F;
@@ -54,7 +54,7 @@ describe("Linear Hash Circuit Test", function () {
         const content = ejs.render(template, {n: 100, arity: 16, dirName:path.join(__dirname, "circom")});
         const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
         await fs.promises.writeFile(circuitFile, content);
-        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128.custom", "node_modules/circomlib/circuits"]});
+        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
 
         const poseidon = await buildPoseidon();
         const F = poseidon.F;
@@ -80,7 +80,7 @@ describe("Linear Hash Circuit Test", function () {
         const content = ejs.render(template, {n: 110, arity: 4, dirName:path.join(__dirname, "circom")});
         const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
         await fs.promises.writeFile(circuitFile, content);
-        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128.custom", "node_modules/circomlib/circuits"]});
+        circuit = await wasm_tester(circuitFile, {O:1, verbose:false, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
 
         const poseidon = await buildPoseidon();
         const F = poseidon.F;

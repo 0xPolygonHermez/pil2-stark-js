@@ -32,7 +32,7 @@ async function run() {
     const stark = true;
     const debug = false;
 
-    addIntermediatePolynomials(res, expressions, symbols, imExps, qDeg, stark);
+    addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark);
     
     map(res, symbols, stark, debug);       
 

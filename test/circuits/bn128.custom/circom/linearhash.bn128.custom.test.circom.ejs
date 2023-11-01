@@ -1,6 +1,6 @@
 pragma circom 2.1.0;
 pragma custom_templates;
 
-include "<%- dirName %>/../../../../circuits.bn128.custom/linearhash.circom";
+include "<%- dirName %>/../../../../circuits.bn128/custom/linearhash.circom";
 
 component main = LinearHash(<%- n %>, 3, <%- arity %>);
