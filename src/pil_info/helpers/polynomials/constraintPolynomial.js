@@ -8,6 +8,7 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
     const stage = res.numChallenges.length + 1;
 
     const vc = E.challenge("vc", stage, dim, 0);
+    vc.stageId = 0;
     vc.expDeg = 0;
 
     res.constraintFrames = [];
@@ -30,7 +31,7 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
         } else {
             zi = E.zi(boundary);
         }
-        let e = E.exp(constraints[i].e);
+        let e = E.exp(constraints[i].e, 0, stage);
         if(stark && multipleBoundaries) e = E.mul(zi, e);
         cExp = cExp ? E.add(E.mul(vc, cExp), e) : e;
     }

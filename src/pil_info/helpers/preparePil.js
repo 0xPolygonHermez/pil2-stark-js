@@ -48,6 +48,12 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil1, debug, star
         addInfoExpressions(symbols, expressions, expressions[constraints[i].e], stark);
         constraints[i].stage = expressions[constraints[i].e].stage;
     }
+
+    for(let i = 0; i < expressions.length; ++i) {
+        if(expressions[i].symbols === undefined) {
+            addInfoExpressions(symbols, expressions, expressions[i], stark)
+        }
+    }
     
     res.hints = hints;
 
@@ -55,6 +61,7 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil1, debug, star
 
     if(!debug) {
         generateConstraintPolynomial(res, expressions, constraints, stark);
+        addInfoExpressions(symbols, expressions, expressions[res.cExpId], stark);
 
         res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
     }

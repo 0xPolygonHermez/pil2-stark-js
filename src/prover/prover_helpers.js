@@ -544,14 +544,14 @@ module.exports.applyHints = async function applyHints(stage, ctx) {
         const hint = ctx.pilInfo.hints[i];
         if(hint.stage !== stage) continue;
 
-        const res = await module.exports.applyHint(hint, ctx);
+        const res = await module.exports.calculateHintExpressions(hint, ctx);
         if(res) {
             await resolveHint(res, ctx);
         }
     }
 }
 
-module.exports.applyHint = async function applyHint(hint, ctx) {
+module.exports.calculateHintExpressions = async function calculateHintExpressions(hint, ctx) {
     if(hint.name === "subproofvalue" || hint.name === "public") {
         if(!hint.reference) throw new Error("Reference field is missing");
         if(!hint.expression) throw new Error("Expression field is missing");

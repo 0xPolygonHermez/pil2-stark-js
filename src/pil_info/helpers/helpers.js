@@ -33,6 +33,7 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
             exp.expDeg = expressions[exp.id].expDeg;
             exp.rowsOffsets = expressions[exp.id].rowsOffsets;
             exp.dim = expressions[exp.id].dim;
+            exp.symbols = expressions[exp.id].symbols;
             if(!exp.stage) exp.stage = expressions[exp.id].stage;
         }
         if (!exp.expDeg) {
@@ -40,6 +41,7 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
             exp.expDeg = expressions[exp.id].expDeg;
             exp.rowsOffsets = expressions[exp.id].rowsOffsets || [0];
             exp.dim = expressions[exp.id].dim;
+            exp.symbols = expressions[exp.id].symbols;
             if(!exp.stage) exp.stage = expressions[exp.id].stage;
         }
 
@@ -53,6 +55,11 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
 
         if("rowOffset" in exp) {
             exp.rowsOffsets = [exp.rowOffset];
+        }
+
+        if(!exp.symbols) {
+            if(exp.op === "const") exp.symbols = [];
+            if(exp.op === "cm") exp.symbols = [{op: "cm", stage: exp.stage, stageId: exp.stageId}];
         }
     } else if (["challenge", "eval"].includes(exp.op)) {
         exp.expDeg = 0;
@@ -71,31 +78,60 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
         exp.expDeg = exp.values[0].expDeg;
         exp.stage = exp.values[0].stage;
         exp.rowsOffsets = exp.values[0].rowsOffsets || [0];
+        exp.symbols = exp.values[0].symbols || [];
         exp.dim = exp.values[0].dim;
     } else if(["add", "sub", "mul"].includes(exp.op)) {
-        if(["add"].includes(exp.op) && exp.values[0].op === "number" && BigInt(exp.values[0].value) === 0n) {
+        const lhsValue = exp.values[0];
+        const rhsValue = exp.values[1];
+        if(["add"].includes(exp.op) && lhsValue.op === "number" && BigInt(lhsValue.value) === 0n) {
             exp.op = "mul";
-            exp.values[0].value = "1";
+            lhsValue.value = "1";
         }
-        if(["add", "sub"].includes(exp.op) && exp.values[1].op === "number" && BigInt(exp.values[1].value) === 0n) {
+        if(["add", "sub"].includes(exp.op) && rhsValue.op === "number" && BigInt(rhsValue.value) === 0n) {
             exp.op = "mul";
-            exp.values[1].value = "1";
+            rhsValue.value = "1";
         }
-        addInfoExpressions(symbols, expressions, exp.values[0], stark);
-        addInfoExpressions(symbols, expressions, exp.values[1], stark);
-        const lhsDeg = exp.values[0].expDeg;
-        const rhsDeg = exp.values[1].expDeg;
+        addInfoExpressions(symbols, expressions, lhsValue, stark);
+        addInfoExpressions(symbols, expressions, rhsValue, stark);
+
+        const lhsDeg = lhsValue.expDeg;
+        const rhsDeg = rhsValue.expDeg;
         exp.expDeg = exp.op === "mul" ? lhsDeg + rhsDeg : Math.max(lhsDeg, rhsDeg);
-        exp.dim = Math.max(exp.values[0].dim, exp.values[1].dim);
-        exp.stage = Math.max(exp.values[0].stage, exp.values[1].stage);
-        const lhsRowOffsets = exp.values[0].rowsOffsets || [0];
-        const rhsRowOffsets = exp.values[1].rowsOffsets || [0];
+
+        exp.dim = Math.max(lhsValue.dim,rhsValue.dim);
+        exp.stage = Math.max(lhsValue.stage,rhsValue.stage);
+
+        const lhsRowOffsets = lhsValue.rowsOffsets || [0];
+        const rhsRowOffsets = rhsValue.rowsOffsets || [0];
         exp.rowsOffsets = [...new Set([...lhsRowOffsets, ...rhsRowOffsets])];
+
+        let lhsSymbols = [];
+        if(["cm", "challenge"].includes(lhsValue.op)) {
+            lhsSymbols.push({op: lhsValue.op, stage: lhsValue.stage, stageId: lhsValue.stageId});
+        } else if(["public", "subproofValue"].includes(lhsValue.op)) {
+            lhsSymbols.push({op: lhsValue.op, stage: lhsValue.stage, id: rhsValue.id});
+        } else if(lhsValue.symbols) {
+            lhsSymbols.push(...lhsValue.symbols);
+        }
+
+        let rhsSymbols = [];
+        if(["cm", "challenge"].includes(rhsValue.op)) {
+            rhsSymbols.push({op: rhsValue.op, stage: rhsValue.stage, stageId: rhsValue.stageId});
+        } else if(["public", "subproofValue"].includes(rhsValue.op)) {
+            rhsSymbols.push({op: rhsValue.op, stage: rhsValue.stage, id: rhsValue.id});
+        } else if(rhsValue.symbols) {
+            rhsSymbols.push(...rhsValue.symbols);
+        }
+
+        const uniqueSymbolsSet = new Set();
+
+        [...lhsSymbols, ...rhsSymbols].forEach((symbol) => { uniqueSymbolsSet.add(JSON.stringify(symbol)); });
+          
+        exp.symbols = Array.from(uniqueSymbolsSet).map((symbol) => JSON.parse(symbol))
+            .sort((a, b) => a.stage !== b.stage ? a.stage - b.stage : a.op !== b.op ? b.op.localeCompare(a.op) : a.stageId - b.stageId);
     } else {
         throw new Error("Exp op not defined: "+ exp.op);
     }
 
     return;
 }
-
-
