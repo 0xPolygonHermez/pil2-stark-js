@@ -29,21 +29,13 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
     }
 
     if (exp.op == "exp") {
-        if (expressions[exp.id].expDeg) {
-            exp.expDeg = expressions[exp.id].expDeg;
-            exp.rowsOffsets = expressions[exp.id].rowsOffsets;
-            exp.dim = expressions[exp.id].dim;
-            exp.symbols = expressions[exp.id].symbols;
-            if(!exp.stage) exp.stage = expressions[exp.id].stage;
-        }
-        if (!exp.expDeg) {
-            addInfoExpressions(symbols, expressions, expressions[exp.id], stark);
-            exp.expDeg = expressions[exp.id].expDeg;
-            exp.rowsOffsets = expressions[exp.id].rowsOffsets || [0];
-            exp.dim = expressions[exp.id].dim;
-            exp.symbols = expressions[exp.id].symbols;
-            if(!exp.stage) exp.stage = expressions[exp.id].stage;
-        }
+        addInfoExpressions(symbols, expressions, expressions[exp.id], stark);
+            
+        exp.expDeg = expressions[exp.id].expDeg;
+        exp.rowsOffsets = expressions[exp.id].rowsOffsets;
+        exp.symbols = expressions[exp.id].symbols;
+        if(!exp.dim) exp.dim = expressions[exp.id].dim;
+        if(!exp.stage) exp.stage = expressions[exp.id].stage;
 
         if(["cm", "const"].includes(expressions[exp.id].op)) {
             exp = expressions[exp.id];
@@ -61,26 +53,18 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
             if(exp.op === "const") exp.symbols = [];
             if(exp.op === "cm") exp.symbols = [{op: "cm", stage: exp.stage, stageId: exp.stageId}];
         }
-    } else if (["challenge", "eval"].includes(exp.op)) {
+    } else if (["challenge", "eval", "subproofValue"].includes(exp.op)) {
         exp.expDeg = 0;
         exp.dim = stark ? 3 : 1;
     } else if (["number", "public"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
         exp.expDeg = 0;
         exp.stage = 0; 
         if(!exp.dim) exp.dim = 1;
-    } else if (exp.op === "subproofValue") {
-        exp.expDeg = 0;
-        exp.dim = stark ? 3 : 1;
-    } else if(exp.op === "neg") {
-        addInfoExpressions(symbols, expressions, exp.values[0], stark);
-        exp.op = "mul";
-        exp.values = [{op: "number", value: "-1", expDeg: 0, stage: 0, dim: 1}, exp.values[0]];
-        exp.expDeg = exp.values[0].expDeg;
-        exp.stage = exp.values[0].stage;
-        exp.rowsOffsets = exp.values[0].rowsOffsets || [0];
-        exp.symbols = exp.values[0].symbols || [];
-        exp.dim = exp.values[0].dim;
     } else if(["add", "sub", "mul"].includes(exp.op)) {
+        if(exp.op === "neg") {
+            exp.op = "mul";
+            exp.values = [{op: "number", value: "-1", expDeg: 0, stage: 0, dim: 1}, exp.values[0]];
+        }
         const lhsValue = exp.values[0];
         const rhsValue = exp.values[1];
         if(["add"].includes(exp.op) && lhsValue.op === "number" && BigInt(lhsValue.value) === 0n) {

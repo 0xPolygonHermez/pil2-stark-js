@@ -95,10 +95,8 @@ class ExpressionOps {
     }
 
     zi(boundary, frameId) {
-        const expDeg = boundary === "everyRow" ? 0 : 1;
         return {
             op: "Zi",
-            expDeg,
             boundary,
             frameId,
         }

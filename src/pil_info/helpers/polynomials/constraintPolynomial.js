@@ -13,9 +13,10 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
 
     res.constraintFrames = [];
     
+    res.cExpId = expressions.length;
+
     let multipleBoundaries = false;
     if(constraints.filter(c => c.boundary !== "everyRow").length > 0) multipleBoundaries = true;
-    let cExp = null;
     for (let i=0; i<constraints.length; i++) {
         const boundary = constraints[i].boundary;
         if(!["everyRow", "firstRow", "lastRow", "everyFrame"].includes(boundary)) throw new Error("Boundary " + boundary + " not supported");
@@ -33,9 +34,10 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
         }
         let e = E.exp(constraints[i].e, 0, stage);
         if(stark && multipleBoundaries) e = E.mul(zi, e);
-        cExp = cExp ? E.add(E.mul(vc, cExp), e) : e;
-    }
-
-    res.cExpId = expressions.length;
-    expressions.push(cExp);
+        if(expressions.length === res.cExpId) {
+            expressions.push(e);
+        } else {
+            expressions[res.cExpId] = E.add(E.mul(vc, expressions[res.cExpId]), e)
+        }
+    }    
 }
