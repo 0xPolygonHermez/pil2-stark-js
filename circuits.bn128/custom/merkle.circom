@@ -18,7 +18,7 @@ template Merkle(keyBits, arity) {
 
     signal input value;
     signal input siblings[nLevels][arity];
-    signal input key[keyBits];
+    signal input {binary} key[keyBits];
     signal output root;
 
 
@@ -39,7 +39,7 @@ template Merkle(keyBits, arity) {
             }
         } 
        
-        signal s[arity];
+        signal {binary} s[arity];
         for(var i = 0; i < arity; i++) {
             s[i] <== IsEqual()([keyNum.out, i]);
         }
@@ -63,9 +63,11 @@ template Merkle(keyBits, arity) {
             mNext.siblings[i] <== siblings[i+1];
         }
 
+        signal {binary} nextKeys[nextNBits];
         for (var i=0; i<nextNBits; i++) {
-            mNext.key[i] <== key[i+nBits];
+            nextKeys[i] <== key[i+nBits];
         }
+        mNext.key <== nextKeys;
 
         root <== mNext.root;
     }

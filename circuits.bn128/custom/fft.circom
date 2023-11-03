@@ -2,9 +2,7 @@ pragma circom 2.1.0;
 pragma custom_templates;
 
 include "gl.circom";
-include "bitify.circom";
-include "rangecheck.circom";
-
+include "../bitifyT.circom";
 
 function roots(i) {
     var roots[33] = [
@@ -90,7 +88,7 @@ template FFT(nBits, inv) {
     var N = 1<<nBits;
 
     signal input in[N][3];
-    signal output out[N][3];
+    signal output {maxNum} out[N][3];
 
     signal k[N][3];
 
@@ -117,15 +115,18 @@ template FFT(nBits, inv) {
         }
     }
 
+    signal outs[N][3];
+
     for (var i=0; i<N; i++) {
         for (var e=0; e<3; e++) {
             k[i][e] <-- sum[i][e] \ p;
-            out[i][e] <-- sum[i][e] % p;
+            outs[i][e] <-- sum[i][e] % p;
+        
+            out[i][e] <== LessThan64Bits()(outs[i][e]);
 
             k[i][e]*p + out[i][e] === sum[i][e];
 
-            _ <== Num2Bytes(64)(out[i][e]);
-            _ <== Num2Bytes(64 + nBits + 1)(k[i][e]);
+            _ <== Num2BitsT(64+nBits+1)(k[i][e]);
         }
     }
 }

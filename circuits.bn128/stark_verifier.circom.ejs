@@ -2,16 +2,14 @@ pragma circom 2.1.0;
 <% if(options.custom) { -%> pragma custom_templates; <% } -%>
 
 <% if(options.custom) { -%>
-include "custom/bitifyT.circom";
 include "custom/evalpol.circom";
 include "custom/fft.circom";
 include "custom/gl.circom";
 include "custom/lessthangl.circom";
 include "custom/merklehash.circom";
 include "custom/poseidon.circom";
-include "custom/rangecheck.circom";
+//include "custom/rangecheck.circom";
 <% } else { -%>
-include "bitifyT.circom";
 include "evalpol.circom";
 include "fft.circom";
 include "gl.circom";
@@ -19,6 +17,7 @@ include "lessthangl.circom";
 include "merklehash.circom";
 include "poseidon.circom";
 <% } -%>
+include "bitifyT.circom";
 include "bn1togl3.circom";
 include "treeselector.circom";
 <% if (!options.skipMain) {  -%>
@@ -208,7 +207,6 @@ class Transcript {
 <%            return "consts[" + r.id + "]"; -%>
 <%        } else if (r.type === "subproofValue") { -%>
 <%            return "subproofValues[" + r.id + "]"; -%>
-<%        } else { -%>
 <%        } else if (r.type == "number") { -%>
 <%            let val = r.value; -%>
 <%            if(val < 0n) val = F.add(BigInt(val),18446744069414584321n); -%>
@@ -819,6 +817,7 @@ template parallel VerifyFinalPol() {
         _ <== lastIFFT[k];
     }
 }
+
 template StarkVerifier() {
     signal input publics[<%- starkInfo.nPublics %>]; // constant polynomials
 <% if(starkInfo.nSubproofValues > 0) { -%>
@@ -844,7 +843,7 @@ template StarkVerifier() {
 <%  const stage = i + 1; -%>
     signal input s0_vals<%- stage %>[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${stage}`] %>];
 <% } -%>
-    signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cmQ %>];
+signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cmQ %>];
     signal input s0_valsC[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants%>];
     
     // Merkle proofs for each of the evaluations
@@ -894,7 +893,7 @@ template StarkVerifier() {
         }
     }
 
-<%  if(starkInfo.nSubproofValues > 0) -%>
+<%  if(starkInfo.nSubproofValues > 0) { -%>
     signal {maxNum} subproofValuesGL[<%- starkInfo.nSubproofValues %>][3];
     for(var i = 0; i < <%- starkInfo.nSubproofValues %>; i++){
         for(var j = 0; j < 3; j++) {
@@ -1024,7 +1023,7 @@ template StarkVerifier() {
 <%      if(starkInfo.nSubproofValues > 0) verifyEvalsInputs.push("subproofValuesGL"); -%>
 <%      verifyEvalsInputs.push("enabled"); -%>
 
-    VerifyEvaluations()(<%- verifyEvalsInputs.join(", ") %>, evalsGL, publicsGL, enabled);    
+    VerifyEvaluations()(<%- verifyEvalsInputs.join(", ") %>);    
 
     ///////////
     // Preprocess s_i vals
@@ -1156,7 +1155,7 @@ template StarkVerifier() {
     signal output publicsHash;
 
     signal input publics[<%- starkInfo.nPublics %>];
-<%  if(starkInfo.nSubproofValues > 0) -%>
+<%  if(starkInfo.nSubproofValues > 0) { -%>
     signal input subproofs[<%- starkInfo.nSubproofValues %>];
 <% } -%>
 <% for(let i=0; i < starkInfo.numChallenges.length; i++) {  -%>
@@ -1261,8 +1260,8 @@ template StarkVerifier() {
 
     component publicsHasher = Sha256(<%- 160 + 64*starkInfo.nPublics %>);
     component n2bProverAddr = Num2Bits(160);
-    component n2bPublics[<%- starkInfo.nPublics %> ];
-    component cmpPublics[<%- starkInfo.nPublics %> ];
+    component n2bPublics[<%- starkInfo.nPublics %>];
+    component cmpPublics[<%- starkInfo.nPublics %>];
 
     n2bProverAddr.in <== proverAddr;
     for (var i=0; i<160; i++) {

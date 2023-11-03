@@ -5,7 +5,7 @@ template custom Num2Bytes(nBits) {
     assert(nBits <= 80);
     var nBytes = (nBits + 15)\16;
     signal input in;
-    signal output out[nBytes];
+    signal output {binary} out[nBytes];
 
     var lc1=0;
     var e2=1;
