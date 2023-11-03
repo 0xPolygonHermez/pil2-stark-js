@@ -24,22 +24,14 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
         const stageIm = imPolsLastStage ? res.numChallenges.length : expressions[expId].stage;
-        expressions[expId].stage = stageIm;
-        const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId && s.airId === res.airId && s.subproofId === res.subproofId);
+        expressions[expId].imPol = true;
+        expressions[expId].polId = res.nCommitments++;
         const dim = getExpDim(expressions, expId, stark);
-        if(!symbol) {
-            symbols.push({ type: "tmpPol", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage: stageIm, dim, imPol: true, airId: res.airId, subproofId: res.subproofId });
-        } else {
-            symbol.imPol = true;
-            symbol.expId = expId;
-            symbol.polId = res.nCommitments++;
-            symbol.stage = stageIm;
-        };
         let e = {
             op: "sub",
             values: [
                 Object.assign({}, expressions[imExps[i]]),
-                E.cm(res.nCommitments-1, 0, stage, dim),
+                E.cm(res.nCommitments-1, 0, stageIm, dim),
             ]
         };
         if(stark && multipleBoundaries) e = E.mul(E.zi("everyRow"), e);

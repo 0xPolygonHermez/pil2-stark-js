@@ -12,7 +12,7 @@ const FRI = require("./fri.js");
 const _ = require("json-bigint");
 const { interpolate, ifft, fft } = require("../helpers/fft/fft_p.js");
 const {BigBuffer} = require("pilcom");
-const { callCalculateExps, getPolRef } = require("../prover/prover_helpers.js");
+const { callCalculateExps, getPolRef, setSymbolCalculated } = require("../prover/prover_helpers.js");
 
 module.exports.initProverStark = async function initProverStark(pilInfo, constPols, constTree, options = {}) {
     const ctx = {};
@@ -38,6 +38,8 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.tmp = [];
     ctx.challenges = [];
     ctx.challengesFRISteps = [];
+
+    ctx.calculatedSymbols = [];
 
     ctx.publics = [];
 
@@ -114,6 +116,11 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
 
     // Read const coefs
     constPols.writeToBigBuffer(ctx.const_n);
+
+    // Mark const symbols as calculated
+    for(let i = 0; i < ctx.pilInfo.constPolsMap.length; i++) {
+        setSymbolCalculated(ctx, { op: "const", stage: 0, id: i }, options);
+    }
 
     if(!options.debug) {
         ctx.const_ext = constTree.elements;
@@ -414,6 +421,11 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, tran
         }
         if (options.logger && !options.debug) options.logger.debug("··· challenges[" + (stage - 1) + "][" + i + "]: " + ctx.F.toString(ctx.challenges[stage - 1][i]));
     }
+
+    for(let i = 0; i < ctx.challenges[stage - 1].length; ++i) {
+        setSymbolCalculated(ctx, { op: "challenge", stage, stageId: i}, options);
+    }
+    
     return;
 }
 
