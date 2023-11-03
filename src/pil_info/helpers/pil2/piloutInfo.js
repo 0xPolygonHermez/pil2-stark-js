@@ -37,7 +37,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     }
     
     const airHints = pilout.hints?.filter(h => h.airId === res.airId && h.subproofId === res.subproofId) || [];
-    const hints = formatHints(pilout, airHints, symbols, stark, saveSymbols);
+    const hints = formatHints(pilout, airHints, symbols, expressions, stark, saveSymbols);
 
     const publicsNames = symbols.filter(s => s.type === "public").map(s => s.name);
 

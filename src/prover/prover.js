@@ -1,6 +1,6 @@
 const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk, genProofFflonk, setChallengesFflonk, addTranscriptFflonk, getChallengeFflonk, calculateHashFflonk } = require("../fflonk/helpers/fflonk_prover_helpers");
 const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, computeFRIFolding, computeFRIQueries, calculateHashStark, addTranscriptStark, getChallengeStark, getPermutationsStark } = require("../stark/stark_gen_helpers");
-const { calculatePublics, callCalculateExps, applyHints } = require("./prover_helpers");
+const { callCalculateExps, applyHints, tryCalculateExps, checkWitnessStageCalculated, checkStageCalculated, addPublics, setStage1PolynomialsCalculated } = require("./prover_helpers");
 
 module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, constPols, zkey, options) {
     const logger = options.logger;
@@ -23,12 +23,14 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
         // Read committed polynomials
         await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1);
     }
-   
+
+    setStage1PolynomialsCalculated(ctx, options);
+
     if(!options.debug) {
         addTranscript(ctx.transcript, [ctx.MH.root(ctx.constTree)], stark);
     }
     
-    await computePublics(ctx, inputs, stark, options);
+    addPublics(ctx, inputs, options);
 
     let challenge;
     
@@ -43,6 +45,10 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
             setChallenges(stage, ctx, ctx.transcript, challenge, options);
         }
         await computeStage(stage, ctx, options);
+
+        if(stage === 1) {
+            await addPublicsTranscript(ctx, stark, options);
+        }
 
         if(!options.debug) {
             let commits;
@@ -129,9 +135,7 @@ async function initProver(pilInfo, constTree, constPols, zkey, stark, options) {
     }
 }
 
-async function computePublics(ctx, inputs, stark, options) {
-    await calculatePublics(ctx, inputs);
-
+async function addPublicsTranscript(ctx, stark, options) {
     // Transcript publics
 
     let publicsCommits = [];
@@ -180,13 +184,22 @@ async function computeStage(stage, ctx, options) {
     const qStage = ctx.pilInfo.numChallenges.length + 1;
     const dom = stage === qStage ? "ext" : "n";
 
-    await callCalculateExps(`stage${stage}`, ctx.pilInfo.code[`stage${stage}`], dom, ctx, options.parallelExec, options.useThreads, false);
+    if(stage !== qStage) {
+        while(checkWitnessStageCalculated(ctx, stage, options) > 0) {
+            await tryCalculateExps(ctx, stage, dom, options);
     
-    await applyHints(stage, ctx);
+            await applyHints(stage, ctx, options);
+        };
 
-    //TODO: REMOVE WITH SMARTER LOGIC!
-    await callCalculateExps(`stage${stage}`, ctx.pilInfo.code[`stage${stage}`], dom, ctx, options.parallelExec, options.useThreads, false);
+        await applyHints(stage, ctx, options);
 
+        checkStageCalculated(ctx, stage, options);
+
+        if (logger) logger.debug(`> STAGE ${stage} DONE`);
+    } else {
+        await callCalculateExps("qCode", ctx.pilInfo.code.qCode, dom, ctx, options.parallelExec, options.useThreads, false);
+    }
+    
     if(options.debug) {
         const nConstraintsStage = ctx.pilInfo.constraints[`stage${stage}`].length;
         for(let i = 0; i < nConstraintsStage; i++) {
