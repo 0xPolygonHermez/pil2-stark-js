@@ -37,7 +37,7 @@ async function run() {
 
     addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark, imPolsLastStage);
     
-    map(res, symbols, stark, debug);       
+    map(res, symbols, expressions, stark, debug);     
 
     const starkInfo = generatePilCode(res, symbols, constraints, expressions, debug, stark);
 

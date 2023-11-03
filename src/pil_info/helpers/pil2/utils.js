@@ -1,5 +1,6 @@
 const ProtoOut = require("pilcom2/src/proto_out.js");
 const ExpressionOps = require("../../expressionops");
+const { getExpDim } = require("../helpers");
 
 const piloutTypes =  {
     FIXED_COL: 1,
@@ -21,7 +22,7 @@ module.exports.formatExpressions = function formatExpressions(pilout, stark, sav
     }
 }
 
-module.exports.formatHints = function formatHints(pilout, rawHints, symbols, stark, saveSymbols) {
+module.exports.formatHints = function formatHints(pilout, rawHints, symbols, expressions, stark, saveSymbols) {
     const hints = [];
 
     for(let i = 0; i < rawHints.length; ++i) {
@@ -30,6 +31,7 @@ module.exports.formatHints = function formatHints(pilout, rawHints, symbols, sta
         for(let j = 0; j < fields.length; j++) {
             const name = fields[j].name;
             const value = formatExpression(fields[j].operand, pilout, symbols, stark, saveSymbols);
+            if(value.op === "exp") expressions[value.id].keep = true;
             hint[name] = value;
         }
         hint.stage = hint.reference.stage;

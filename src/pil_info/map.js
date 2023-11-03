@@ -1,5 +1,17 @@
+const { addInfoExpressionsSymbols } = require("./helpers/helpers");
 
-module.exports = function map(res, symbols, stark, debug) {  
+module.exports = function map(res, symbols, expressions, stark, debug) {  
+    for(let i = 0; i < expressions.length; i++) {
+        if(expressions[i].keep || expressions[i].imPol) {
+            const symbol = { type: "tmpPol", name: `tmpPol${i}`, expId: i, stage: expressions[i].stage, dim: expressions[i].dim, subproofId: res.subproofId, airId: res.airId };
+            if(expressions[i].imPol) {
+                symbol.imPol = true;
+                symbol.polId = expressions[i].polId;
+            }
+            symbols.push(symbol);
+        }    
+    }
+
     mapSymbols(res, symbols);
 
     res.mapSectionsN["q_ext"] = res.qDim;
@@ -23,6 +35,14 @@ module.exports = function map(res, symbols, stark, debug) {
     }
 
     setStageInfoSymbols(res, symbols);
+
+    for(let i = 0; i < expressions.length; i++) {
+        addInfoExpressionsSymbols(symbols, expressions, expressions[i], stark);
+    }
+
+    addHintsInfo(res, symbols, expressions);
+
+    setSymbolsStage(res, symbols);
 }
 
 function mapSymbols(res, symbols) {
@@ -62,6 +82,7 @@ function addPol(res, stage, symbol) {
     const imPol = symbol.imPol || false;
     ref[pos] = {stage, stageNum, name, dim, imPol};
     if(symbol.stageId >= 0) ref[pos].stageId = symbol.stageId;
+    if(symbol.imPol) ref[pos].imPol = symbol.imPol;
     res.mapSectionsN[stage] += dim;
 }
 
@@ -88,6 +109,33 @@ function setMapOffsets(res) {
     res.mapTotalN = res.mapOffsets.f_ext +  extN * res.mapSectionsN.f_ext;
 }
 
+function setSymbolsStage(res, symbols) {
+    res.symbolsStage = [];
+    for(let i = 0; i < res.numChallenges.length + 1; ++i) {
+        res.symbolsStage[i] = symbols.filter(s => s.stage === i).map(s => {
+            if(["witness", "tmpPol", "challenge"].includes(s.type)) {
+                return {
+                    op: ["witness", "tmpPol"].includes(s.type) ? "cm" : "challenge",
+                    stage: s.stage,
+                    stageId: s.stageId,
+                }
+            } else if(s.type === "fixed") {
+                return {
+                    op: "const",
+                    stage: s.stage,
+                    id: s.stageId,
+                }
+            } else if(["public", "subproofValue"].includes(s.type)) {
+                return {
+                    op: s.type,
+                    stage: s.stage,
+                    id: s.id,
+                }
+            }
+        })
+    }
+}
+
 function setStageInfoSymbols(res, symbols) {
     for(let i = 0; i < symbols.length; ++i) {
         const symbol = symbols[i];
@@ -101,9 +149,48 @@ function setStageInfoSymbols(res, symbols) {
             symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
             res.cmPolsMap[symbol.polId].stagePos = symbol.stagePos;
             if(!symbol.stageId) {
-                symbol.stageId = prevPolsStage.length;
+                symbol.stageId = symbol.stage === "Q" 
+                    ? prevPolsStage.length 
+                    : res[polsMapName].filter(p => p.stageNum === symbol.stage).findIndex(p => p.name === symbol.name);
                 res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
             }
         }
+    }
+}
+
+
+function addHintsInfo(res, symbols, expressions) {
+    for(let i = 0; i < res.hints.length; ++i) {
+        const hint = res.hints[i];
+        const hintSymbols = [];
+        for(let j = 0; j < Object.keys(hint).length; ++j) {
+            const key = Object.keys(hint)[j];
+            if(hint[key].op === "exp") {
+                const symbol = symbols.find(s => s.expId === hint[key].id);
+                if(symbol) {
+                    const dest = { op: "cm", stage: symbol.stage, stageId: symbol.stageId};
+                    hint[key] = dest;
+                    hintSymbols.push(dest);
+                } else {
+                    hintSymbols.push(...expressions[hint[key].id].symbols);
+                }
+            } else if(!key.includes("reference")) {
+                if(["cm", "challenge"].includes(hint[key].op)) {
+                    hintSymbols.push({op: hint[key].op, stage: hint[key].stage, stageId: hint[key].stageId});
+                } else if(["public", "subproofValue", "const"].includes(hint[key].op)) {
+                    hintSymbols.push({op: hint[key].op, stage: hint[key].stage, id: hint[key].id});
+                }
+            } else {
+                if(!hint.dest) hint.dest = [];
+                hint.dest.push(hint[key])
+            }
+        }
+
+        const uniqueSymbolsSet = new Set();
+
+        hintSymbols.forEach((symbol) => { uniqueSymbolsSet.add(JSON.stringify(symbol)); });
+          
+        hint.symbols = Array.from(uniqueSymbolsSet).map((symbol) => JSON.parse(symbol))
+            .sort((a, b) => a.stage !== b.stage ? a.stage - b.stage : a.op !== b.op ? b.op.localeCompare(a.op) : a.stageId - b.stageId);
     }
 }

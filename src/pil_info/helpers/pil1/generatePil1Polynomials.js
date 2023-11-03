@@ -46,6 +46,7 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
     for(let i = 0; i < pil.publics.length; ++i) {
         const public = pil.publics[i];
         const op = public.polType === "cmP" ? "cm" : "exp";
+        if(op === "exp") expressions[public.polId].keep = true;
         const expr = { op, stageId: public.polId, id: public.polId, stage: 1, dim: 1, rowOffset: 0};
         const hint = {
             name: "public",
