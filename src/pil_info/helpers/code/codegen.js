@@ -17,10 +17,10 @@ function pilCodeGen(ctx, symbols, expressions, expId, prime, debug) {
         fixExpression(r, ctx, symbols, expressions);
         ctx.code[ctx.code.length - 1].dest = r;
     } else {
-        if(ctx.publics || debug || expressions[expId].op === "exp") {
+        if(expressions[expId].keep || debug || expressions[expId].op === "exp") {
             fixExpression(r, ctx, symbols, expressions);
             ctx.code.push({ op: "copy", dest: r, src: [ retRef ] })
-        }        
+        }       
     }
 
     if(!ctx.calculated[expId]) ctx.calculated[expId] = {};

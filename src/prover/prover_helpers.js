@@ -707,13 +707,6 @@ function getHintField(hint, field, ctx, isOneValue) {
         } else {
             return pol;
         }
-    } else if(hint[field].op === "exp") {
-        const expressionCode = hint.code[field];
-        if(isOneValue) {
-            return module.exports.calculateExpAtPoint(ctx, expressionCode, parseInt(hint.row_index.value));
-        } else {
-            return module.exports.calculateExps(ctx, expressionCode, "n", false, true);
-        }
     } else {
         if(isOneValue) {
             const i = parseInt(hint.row_index.value);

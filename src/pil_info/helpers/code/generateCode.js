@@ -1,31 +1,6 @@
 const { getExpDim } = require("../helpers");
 const { pilCodeGen, buildCode } = require("./codegen");
 
-module.exports.generateHintsCode = function generateHintsCode(res, symbols, expressions, stark) {
-    for(let i = 0; i < res.hints.length; ++i) {
-        const hint = res.hints[i];
-        for(let j = 0; j < Object.keys(hint).length; ++j) {
-            const ctx = {
-                calculated: {},
-                tmpUsed: 0,
-                code: [],
-                expMap: [],
-                dom: "n",
-                airId: res.airId,
-                subproofId: res.subproofId,
-                stark,
-            };
-            if(hint.name === "public") ctx.publics = true;
-            const key = Object.keys(hint)[j];
-            if(hint[key].op === "exp") {
-                pilCodeGen(ctx, symbols, expressions, hint[key].id, 0);
-                if(!hint.code) hint.code = {};
-                hint.code[key] = buildCode(ctx, expressions);
-            }
-        }
-    }
-}
-
 module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
     const expressionsCode = [];
     for(let j = 0; j < expressions.length; ++j) {

@@ -1,12 +1,10 @@
 const generateFRIPolynomial = require("./polynomials/friPolinomial");
 
-const { generateConstraintPolynomialCode, generateConstraintPolynomialVerifierCode, generateFRICode, generateConstraintsDebugCode, generateExpressionsCode, generateHintsCode } = require("./code/generateCode");
+const { generateConstraintPolynomialCode, generateConstraintPolynomialVerifierCode, generateFRICode, generateConstraintsDebugCode, generateExpressionsCode } = require("./code/generateCode");
 
 module.exports.generatePilCode = function generatePilCode(res, symbols, constraints, expressions, debug, stark) {
     res.code = {};
     res.constraints = {};
-
-    generateHintsCode(res, symbols, expressions, stark);
 
     generateExpressionsCode(res, symbols, expressions, stark);
 
