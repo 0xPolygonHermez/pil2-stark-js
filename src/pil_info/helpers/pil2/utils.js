@@ -31,10 +31,7 @@ module.exports.formatHints = function formatHints(pilout, rawHints, symbols, exp
         for(let j = 0; j < fields.length; j++) {
             const name = fields[j].name;
             const value = formatExpression(fields[j].operand, pilout, symbols, stark, saveSymbols);
-            if(value.op === "exp") {
-                expressions[value.id].keep = true;
-                symbols.push({ type: "tmpPol", name: `hint${i}.${name}`, expId: value.id, stage: hint.reference.stage, dim: getExpDim(expressions, value.id, stark), airId: pilout.airId, subproofId: pilout.subproofId });
-            }
+            if(value.op === "exp") expressions[value.id].keep = true;
             hint[name] = value;
         }
         hint.stage = hint.reference.stage;
