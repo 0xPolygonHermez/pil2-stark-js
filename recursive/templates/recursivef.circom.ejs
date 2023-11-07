@@ -4,7 +4,7 @@ pragma custom_templates;
 include "mux2.circom";
 include "mux1.circom";
 include "iszero.circom";
-include "<%- basicCircuitName %>.verifier.circom";
+include "<%- verifierCircuitName %>.verifier.circom";
 
 // Given a circuit type, return the corresponding verification key
 template SelectVerificationKey() {
@@ -186,6 +186,7 @@ template Main() {
 
     sv.publics[<%- nPublicsInps++ %>] <== circuitType;
     
+<%  if(nSubproofValues > 0) { -%>
     for(var i = 0; i < <%- nSubproofValues %>; i++) {
         sv.publics[<%- nPublicsInps++ %>] <== aggregationTypes[i];
     }
@@ -196,6 +197,7 @@ template Main() {
         sv.publics[<%- nPublicsInps %> + 3*i + 2] <== subAirValues[i][2];
     }
 <%  nPublicsInps += 3*nSubproofValues; -%>
+<%  } -%>
 
     for(var i = 0; i < 4; i++) {
         sv.publics[<%- nPublicsInps %> + i] <== sv_rootC[i];

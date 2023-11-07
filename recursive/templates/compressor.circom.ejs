@@ -2,7 +2,7 @@ pragma circom 2.1.0;
 pragma custom_templates;
 
 include "poseidon.circom";
-include "<%- basicCircuitName %>.verifier.circom";
+include "<%- verifierCircuitName %>.verifier.circom";
 
 template CalculateEvalsHash() {
     signal input evals[<%- starkInfo.evMap.length %>][3];
@@ -32,7 +32,7 @@ template Main() {
 
     signal input publics[<%- nPublics %>];
 
-    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3];
+    signal input subproofValues[<%- nSubproofValues %>][3];
 
     signal input challenges[<%- nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4 %>][3];
 
@@ -88,13 +88,11 @@ template Main() {
     signal output sv_finalPolHash[4];
 
     sv_circuitType <== <%- circuitType %>;
-    sv_aggregationTypes <== [<%- aggregationTypes.map(a => a.aggType).join(",") %>];
+<%  if(nSubproofValues > 0) { -%>
+    sv_aggregationTypes <== [<%- starkInfo.aggregationTypes.map(a => a.aggType).join(",") %>];
+<%  } -%>
 <%  for (let i = 0; i < nSubproofValues; ++i) { -%>
-<%      if(starkInfo.subproofValuesIds.includes(i)) { -%>
-    sv_subAirValues[<%- i %>] <== subproofValues[<%- starkInfo.subproofValuesIds.findIndex(in => in === i) %>];
-<%      } else { -%>
-    sv_subAirValues[<%- i %>] <== [0,0,0];
-<%      } -%>
+    sv_subAirValues[<%- i %>] <== subproofValues[<%- i %>];
 <%  } -%>
 <%  for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
     sv_root<%- i+1 %> <== root<%- i+1 %>;

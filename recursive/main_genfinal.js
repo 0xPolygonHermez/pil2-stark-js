@@ -8,6 +8,7 @@ const argv = require("yargs")
     .version(version)
     .usage("node main_genfinal.js -g globalinfo.json -s recursivef_stark_infos.json -o <final.circom> ")
     .alias("s", "starkinfos").array("s")
+    .alias("v", "verifierCircuitsName").array("s")
     .alias("g", "globalinfo")
     .alias("o", "output")
     .argv;
@@ -22,17 +23,33 @@ async function run() {
         starkInfoRecursivesF.push(starkInfo);
     }
 
+    if(!argv.verifierCircuitsName) throw new Error("Verifier circuits names missing");
+
+    const verifierCircuitsName = [];
+    for(let i = 0; i < argv.starkinfos.length; i++) {
+        verifierCircuitsName.push(argv.verifierCircuitsName);
+    }
+
+    if(starkInfoRecursivesF.length !== verifierCircuitsName.length) throw new Error("starkInfoRecursivesF and verifierCircuitsName lengths must match");
+
     const globalInfoFile = typeof(argv.globalinfo) === "string" ? argv.globalinfo.trim() : "mycircuit.globalinfo.json";
     const globalInfo = JSON.parse(await fs.promises.readFile(globalInfoFile, "utf8"));
 
     if(!globalInfo) throw new Error("Global info is undefined");
     if(!globalInfo.nPublics) throw new Error("Global info does not contain number of publics");
     if(!globalInfo.numChallenges) throw new Error("Global info does not contain number of challenges");
-    if(!globalInfo.starkStruct.steps) throw new Error("Global info does not contain number of fri steps");
+    if(!globalInfo.stepsFRI) {
+        if(globalInfo.starkStruct.steps) {
+            globalInfo.stepsFRI = globalInfo.starkStruct.steps;
+        } else {
+            throw new Error("Global info does not contain number of fri steps");
+        }
+    } 
 
     const nPublics = globalInfo.nPublics;
     const nChallengesStages = globalInfo.numChallenges;
     const stepsFRI = globalInfo.starkStruct.steps;
+    const nSubproofValues = globalInfo.nSubproofValues || 0;
     
     const template = await fs.promises.readFile(path.join(__dirname, "templates", `final.circom.ejs`), "utf8");
 
@@ -41,6 +58,8 @@ async function run() {
         nPublics,
         nChallengesStages,
         stepsFRI,
+        nSubproofValues,
+        verifierCircuitsName,
         transcript: new Transcript,
     };
 

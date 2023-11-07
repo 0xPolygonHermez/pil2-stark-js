@@ -38,8 +38,8 @@ async function run() {
     const nPublics = globalInfo.nPublics;
     const nChallengesStages = globalInfo.numChallenges;
     const stepsFRI = globalInfo.stepsFRI;
-    const nSubproofValues = globalInfo.nSubproofValues;
-    const aggregationTypes = globalInfo.aggregationTypes;
+    const nSubproofValues = globalInfo.nSubproofValues || 0;
+    const aggregationTypes = globalInfo.aggregationTypes || [];
 
 
     const vks = [];
@@ -70,7 +70,6 @@ async function run() {
 
     if((argv.template === "recursive1" && !hasCompressor) || argv.template === "compressor") {
         if(!("circuitType" in argv)) throw new Error("If there is no compressor, circuitType must be provided");
-        if(!("basicCircuitName" in argv)) throw new Error("If there is a compressor, basic circuit name must be provided");
 
         obj.circuitType = Number(argv.circuitType);
         obj.starkInfoBasic = starkInfo;
@@ -86,7 +85,8 @@ async function run() {
         obj.starkInfoBasic = starkInfoBasic;
     }
 
-    obj.basicCircuitName = argv.basicCircuitName || argv.template;
+    if(!("verifierCircuitName" in argv)) throw new Error("If there is a compressor, basic circuit name must be provided");
+    obj.verifierCircuitName = argv.verifierCircuitName;
     
     const verifier = ejs.render(template,  obj);
 

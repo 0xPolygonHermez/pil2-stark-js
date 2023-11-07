@@ -1,7 +1,9 @@
 pragma circom 2.1.0;
 pragma custom_templates;
 
-include "<%- basicCircuitName %>.verifier.circom";
+<% for(let i = 0; i < verifierCircuitsName.length; ++i) { -%>
+include "<%- verifierCircuitsName[i] %>.verifier.circom";
+<% } -%>
 include "mux1.circom";
 
 /* 
@@ -93,7 +95,7 @@ template Main() {
 
     signal input challengesFRISteps[<%- stepsFRI.length + 1 %>][3];
 
-    signal input aggregationTypes[<%- nSubProofValues %>];
+    signal input aggregationTypes[<%- nSubproofValues %>];
 
 <%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
 <%      let starkInfo = starkInfoRecursivesF[i]; -%>
@@ -204,6 +206,7 @@ template Main() {
     }
 <%  nPublicsInps += (stepsFRI.length + 1)*3; -%>
 
+<%  if(nSubproofValues > 0) { -%>
     for(var i = 0; i < <%- nSubproofValues %>; i++) {
         sv<%- c %>.publics[<%- nPublicsInps++ %>] <== aggregationTypes[i];
     }
@@ -214,6 +217,7 @@ template Main() {
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i + 2] <== s<%- c %>_subAirValues[i][2];
     }
 <%  nPublicsInps += 3*nSubproofValues; -%>
+<%  } -%>
 
     for(var i = 0; i < 4; i++) {
         sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_rootCHash[i];
@@ -269,6 +273,7 @@ template Main() {
     verifyChallenges.finalPolHash[<%- i %>] <== s<%- i %>_sv_finalPolHash;
 <%  } -%>
 
+<%  if(nSubproofValues > 0) { -%>
     // Check that subair values are correct
     signal values[2][3];
     values[0] <== [0,0,0]; // Addition neutral value
@@ -299,6 +304,7 @@ template Main() {
             aggregatedNeutralValues[k][i] === subAirValues[i];
         }
     }
+<%  } -%>
 }
 
 component main {public [publics]} = Main();

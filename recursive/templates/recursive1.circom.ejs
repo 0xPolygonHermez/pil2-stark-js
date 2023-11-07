@@ -3,7 +3,7 @@ pragma custom_templates;
 
 include "iszero.circom";
 include "poseidon.circom";
-include "<%- basicCircuitName %>.verifier.circom";
+include "<%- verifierCircuitName %>.verifier.circom";
 
 <% if(!hasCompressor) { -%>
 
@@ -37,7 +37,7 @@ template Main() {
 
     signal input publics[<%- nPublics %>];
 
-    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3];
+    signal input subproofValues[<%- nSubproofValues %>][3];
 
     signal input rootCRecursive2[4];
 
@@ -83,7 +83,7 @@ template Main() {
     signal <%- inOut %> sv_circuitType;
 <%  transcriptValues.push("sv_circuitType"); -%>
     signal <%- inOut %> sv_aggregationTypes[<%- nSubproofValues %>];
-<%  transcriptValues.push("sv_aggregationType"); -%>
+<%  transcriptValues.push("sv_aggregationTypes"); -%>
     signal <%- inOut %> sv_subAirValues[<%- nSubproofValues %>][3];
 <%  transcriptValues.push("sv_subAirValues"); -%>
     signal <%- inOut %> sv_rootC[4];
@@ -105,13 +105,11 @@ template Main() {
 
 <%  if(inOut === "output") { -%>
     sv_circuitType <== <%- circuitType %>;
-    sv_aggregationTypes <== [<%- aggregationTypes.map(a => a.aggType).join(",") %>];
+<%  if(nSubproofValues > 0) { -%>
+    sv_aggregationTypes <== [<%- starkInfo.aggregationTypes.map(a => a.aggType).join(",") %>];
+<%  } -%>
 <%  for (let i = 0; i < nSubproofValues; ++i) { -%>
-<%      if(starkInfo.subproofValuesIds.includes(i)) { -%>
-    sv_subAirValues[<%- i %>] <== subproofValues[<%- starkInfo.subproofValuesIds.findIndex(in => in === i) %>];
-<%      } else { -%>
-    sv_subAirValues[<%- i %>] <== [0,0,0];
-<%      } -%>
+    sv_subAirValues[<%- i %>] <== subproofValues[<%- i %>];
 <%  } -%>
 <%  for (let i = 0; i < starkInfoBasic.numChallenges.length; ++i) { -%>
     sv_root<%- i+1 %> <== root<%- i+1 %>;
@@ -171,7 +169,9 @@ template Main() {
         sv.publics[i] <== publics[i];
     }
 
+<%  if(nSubproofValues > 0) { -%>
     sv.subproofValues <== subproofValues;
+<%  } -%>
 
 <%  if(!hasCompressor) { -%>
 <%  let c = 0; -%>
@@ -213,16 +213,18 @@ template Main() {
 
     sv.publics[<%- nPublicsInps++ %>] <== sv_circuitType;
 
-    for(var i = 0; i < <%- nSubProofValues %>; i++) {
+<%  if(nSubproofValues > 0) { -%>
+    for(var i = 0; i < <%- nSubproofValues %>; i++) {
         sv.publics[<%- nPublicsInps++ %>] <== sv_aggregationTypes[i];
     }
 
     for(var i = 0; i < <%- nSubproofValues %>; i++) {
-        sv<%- c %>.publics[<%- nPublicsInps %> + 3*i] <== sv_subAirValues[i][0];
-        sv<%- c %>.publics[<%- nPublicsInps %> + 3*i + 1] <== sv_subAirValues[i][1];
-        sv<%- c %>.publics[<%- nPublicsInps %> + 3*i + 2] <== sv_subAirValues[i][2];
+        sv.publics[<%- nPublicsInps %> + 3*i] <== sv_subAirValues[i][0];
+        sv.publics[<%- nPublicsInps %> + 3*i + 1] <== sv_subAirValues[i][1];
+        sv.publics[<%- nPublicsInps %> + 3*i + 2] <== sv_subAirValues[i][2];
     }
 <%  nPublicsInps += 3*nSubproofValues; -%>
+<%  } -%>
 
     for(var i = 0; i < 4; i++) {
         sv.publics[<%- nPublicsInps %> + i] <== sv_rootC[i];

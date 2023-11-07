@@ -4,7 +4,7 @@ pragma custom_templates;
 include "mux2.circom";
 include "mux1.circom";
 include "iszero.circom";
-include "<%- basicCircuitName %>.verifier.circom";
+include "<%- verifierCircuitName %>.verifier.circom";
 
 // Given a circuit type, return the corresponding verification key
 template SelectVerificationKey() {
@@ -208,7 +208,7 @@ template Main() {
 
     component sv<%- c %> = StarkVerifier();
     
-    sv<%- c %>.enable <== 1 - isNullA;
+    sv<%- c %>.enable <== 1 - isNull<%- c %>;
 
     sv<%- c %>.rootC <== SelectVerificationKey()(s<%- c %>_circuitType, rootCRecursive2);
 
@@ -271,6 +271,7 @@ for(var i = 0; i < 4; i++) {
 
     sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_circuitType;
 
+<%  if(nSubproofValues > 0) { -%>
     for(var i = 0; i < <%- nSubproofValues %>; i++) {
         sv<%- c %>.publics[<%- nPublicsInps++ %>] <== aggregationTypes[i];
     }
@@ -281,6 +282,7 @@ for(var i = 0; i < 4; i++) {
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i + 2] <== s<%- c %>_subAirValues[i][2];
     }
 <%  nPublicsInps += 3*nSubproofValues; -%>
+<%  } -%>
 
     for(var i = 0; i < 4; i++) {
         sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_rootCHash[i];
@@ -319,7 +321,7 @@ for(var i = 0; i < 4; i++) {
     
 <%  } -%>
     
-    signal {binary} aggTypes[<%- nSubproofValues %>]
+    signal {binary} aggTypes[<%- nSubproofValues %>];
     for(var i = 0; i < <%- nSubproofValues %>; i++) {
         aggregationTypes[i] * (aggregationTypes[i] - 1) === 0;
         aggTypes[i] <== aggregationTypes[i];
@@ -328,7 +330,7 @@ for(var i = 0; i < 4; i++) {
     sv_circuitType <== 1;
     sv_aggregationTypes <== aggTypes;
     for(var i = 0; i < <%- nSubproofValues %>; i++) {
-        sv_subAirValues[i] <== AggregateSubAirValues()(sA_subAirValues[i], sB_subAirValues[i], isNullA, isNullB, aggType);
+        sv_subAirValues[i] <== AggregateSubAirValues()(sA_subAirValues[i], sB_subAirValues[i], isNullA, isNullB, aggTypes[i]);
     }
     sv_rootCHash <== AggregateValues()(sA_sv_rootCHash, sB_sv_rootCHash, isNullA, isNullB);
 <%  for (let i = 0; i < nChallengesStages.length; ++i) { -%>
