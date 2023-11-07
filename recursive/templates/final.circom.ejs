@@ -95,12 +95,13 @@ template Main() {
 
     signal input challengesFRISteps[<%- stepsFRI.length + 1 %>][3];
 
-    signal input aggregationTypes[<%- nSubproofValues %>];
-
 <%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
 <%      let starkInfo = starkInfoRecursivesF[i]; -%>
+<%      let nSubproofValues = aggregationTypes[starkInfo.finalSubproofId]; -%>
 <%      let c = i; -%>
     signal input s<%- c %>_subAirValues[<%- nSubproofValues %>][3];
+
+    signal input aggregationTypes[<%- nSubproofValues %>];
 
 <% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
     signal input s<%- c %>_root<%- i + 1 %>[4];
@@ -150,6 +151,7 @@ template Main() {
 
 <%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
 <%      let starkInfo = starkInfoRecursivesF[i]; -%>
+<%      let nSubproofValues = aggregationTypes[starkInfo.finalSubproofId]; -%>
 <%      let c = i; -%>
 
     component sv<%- c %> = StarkVerifier();
@@ -273,38 +275,7 @@ template Main() {
     verifyChallenges.finalPolHash[<%- i %>] <== s<%- i %>_sv_finalPolHash;
 <%  } -%>
 
-<%  if(nSubproofValues > 0) { -%>
-    // Check that subair values are correct
-    signal values[2][3];
-    values[0] <== [0,0,0]; // Addition neutral value
-    values[1] <== [1,0,0]; // Multiplication neutral value
-
-    signal subAirValues[<%- nSubproofValues %>][3];
-    signal {binary} aggTypes[<%- nSubproofValues %>];
-    signal aggregatedNeutralValues[<%- nSubproofValues %>][3];
-    for(var k = 0; k < <%- nSubproofValues %>; k++) {
-<%  let sum1 = []; -%>
-<%  let sum2 = []; -%>
-<%  let sum3 = []; -%>
-<%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
-<%      sum1.push(`s${i}_subAirValues[k][0]`) -%>
-<%      sum2.push(`s${i}_subAirValues[k][1]`) -%>
-<%      sum3.push(`s${i}_subAirValues[k][2]`) -%>
-
-<%  } -%>
-        subAirValues[0] <== <%- sum1.join(" + ") %>;
-        subAirValues[1] <== <%- sum2.join(" + ") %>;
-        subAirValues[2] <== <%- sum3.join(" + ") %>;
-
-        aggregationTypes[k] * (aggregationTypes[k] - 1) === 0;
-        aggTypes[k] <== aggregationTypes[k];
-        aggregatedNeutralValues[k] <== MultiMux1(3)(values, aggTypes);
-
-        for(var i = 0; i < 3; i++) {
-            aggregatedNeutralValues[k][i] === subAirValues[i];
-        }
-    }
-<%  } -%>
+// TODO: Add global constraints
 }
 
 component main {public [publics]} = Main();

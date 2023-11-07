@@ -24,9 +24,12 @@ async function run() {
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
     const globalInfo = JSON.parse(await fs.promises.readFile(globalInfoFile, "utf8"));
 
+    if(!starkInfo.finalSubproofId) throw new Error("Stark info does not contain final subproof id");
+
     if(!globalInfo) throw new Error("Global info is undefined");
     if(!globalInfo.nPublics) throw new Error("Global info does not contain number of publics");
     if(!globalInfo.numChallenges) throw new Error("Global info does not contain number of challenges");
+    if(!globalInfo.aggTypes) throw new Error("Global info does not contain number of aggregation types");
     if(!globalInfo.stepsFRI) {
         if(globalInfo.starkStruct.steps) {
             globalInfo.stepsFRI = globalInfo.starkStruct.steps;
@@ -38,8 +41,7 @@ async function run() {
     const nPublics = globalInfo.nPublics;
     const nChallengesStages = globalInfo.numChallenges;
     const stepsFRI = globalInfo.stepsFRI;
-    const nSubproofValues = globalInfo.nSubproofValues || 0;
-    const aggregationTypes = globalInfo.aggregationTypes || [];
+    const aggTypes = globalInfo.aggTypes;
 
 
     const vks = [];
@@ -57,14 +59,17 @@ async function run() {
 
     const hasCompressor = argv.template === "recursive1" ? argv.hasCompressor || false : false;
 
+    const aggregationTypes = aggTypes[starkInfo.finalSubproofId];
+    const nSubproofValues = aggregationTypes.length;
+
     const obj = {
         starkInfo,
         vks,
         hasCompressor,
         nPublics,
         nSubproofValues,
-        nChallengesStages,
         aggregationTypes,
+        nChallengesStages,
         stepsFRI,
     };
 

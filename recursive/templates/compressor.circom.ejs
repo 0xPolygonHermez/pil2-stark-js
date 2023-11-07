@@ -89,7 +89,7 @@ template Main() {
 
     sv_circuitType <== <%- circuitType %>;
 <%  if(nSubproofValues > 0) { -%>
-    sv_aggregationTypes <== [<%- starkInfo.aggregationTypes.map(a => a.aggType).join(",") %>];
+    sv_aggregationTypes <== [<%- aggregationTypes.map(a => a.aggType).join(",") %>];
 <%  } -%>
 <%  for (let i = 0; i < nSubproofValues; ++i) { -%>
     sv_subAirValues[<%- i %>] <== subproofValues[<%- i %>];

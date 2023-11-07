@@ -20,6 +20,7 @@ async function run() {
 
     for(let i = 0; i < argv.starkinfos.length; i++) {
         const starkInfo = JSON.parse(await fs.promises.readFile(argv.starkinfos[i], "utf8"));
+        if(!starkInfo.finalSubproofId) throw new Error("Stark info " + i + " does not contain final subproof id");
         starkInfoRecursivesF.push(starkInfo);
     }
 
@@ -49,7 +50,7 @@ async function run() {
     const nPublics = globalInfo.nPublics;
     const nChallengesStages = globalInfo.numChallenges;
     const stepsFRI = globalInfo.starkStruct.steps;
-    const nSubproofValues = globalInfo.nSubproofValues || 0;
+    const aggregationTypes = globalInfo.aggTypes;
     
     const template = await fs.promises.readFile(path.join(__dirname, "templates", `final.circom.ejs`), "utf8");
 
@@ -58,7 +59,7 @@ async function run() {
         nPublics,
         nChallengesStages,
         stepsFRI,
-        nSubproofValues,
+        aggregationTypes,
         verifierCircuitsName,
         transcript: new Transcript,
     };
