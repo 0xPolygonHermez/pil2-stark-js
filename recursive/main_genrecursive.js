@@ -27,11 +27,17 @@ async function run() {
     if(!globalInfo) throw new Error("Global info is undefined");
     if(!globalInfo.nPublics) throw new Error("Global info does not contain number of publics");
     if(!globalInfo.numChallenges) throw new Error("Global info does not contain number of challenges");
-    if(!globalInfo.starkStruct.steps) throw new Error("Global info does not contain number of fri steps");
+    if(!globalInfo.stepsFRI) {
+        if(globalInfo.starkStruct.steps) {
+            globalInfo.stepsFRI = globalInfo.starkStruct.steps;
+        } else {
+            throw new Error("Global info does not contain number of fri steps");
+        }
+    } 
 
     const nPublics = globalInfo.nPublics;
     const nChallengesStages = globalInfo.numChallenges;
-    const stepsFRI = globalInfo.starkStruct.steps;
+    const stepsFRI = globalInfo.stepsFRI;
 
     const vks = [];
 
@@ -64,7 +70,6 @@ async function run() {
 
         obj.circuitType = Number(argv.circuitType);
         obj.aggregationType = Number(argv.aggregationType);
-        obj.basicCircuitName = argv.basicCircuitName;
         obj.starkInfoBasic = starkInfo;
 
         obj.transcriptPublics = new Transcript("publics");
@@ -77,6 +82,8 @@ async function run() {
         const starkInfoBasic = JSON.parse(await fs.promises.readFile(starkInfoBasicFile, "utf8"));
         obj.starkInfoBasic = starkInfoBasic;
     }
+
+    obj.basicCircuitName = argv.basicCircuitName || argv.template;
     
     const verifier = ejs.render(template,  obj);
 

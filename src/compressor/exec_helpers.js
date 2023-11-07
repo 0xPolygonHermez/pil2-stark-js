@@ -23,7 +23,7 @@ module.exports.readExecFile = async function readExecFile(execFile, nCommittedPo
 
 }
 
-module.exports.writeExecFile = async function writeExecFile(execFile, adds, sMap) {
+module.exports.writeExecFile = async function writeExecFile(adds, sMap) {
 
     const size = 2 + adds.length*4 + sMap.length*sMap[0].length;
     const buff = new BigUint64Array(size);
@@ -44,8 +44,5 @@ module.exports.writeExecFile = async function writeExecFile(execFile, adds, sMap
         }
     }
     
-    const fd =await fs.promises.open(execFile, "w+");
-    await fd.write(buff);
-    await fd.close();
-
+    return buff;
 }

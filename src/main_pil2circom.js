@@ -2,17 +2,11 @@ const fs = require("fs");
 const version = require("../package").version;
 
 const pil2circom = require("./pil2circom.js");
-const F3g = require("./helpers/f3g.js");
-const { compile } = require("pilcom");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
-
-
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_pil2circom.js -o <verifier.circom> -p <pil.json> [-P <pilconfig.json>] -v <verification_key.json> -s <starkinfo.json> [--skipMain] [--vadcop] [--hashCommits] [--enableInput] [--verkeyInput] [--custom] [--arity]")
-    .alias("p", "pil")
-    .alias("P", "pilconfig")
+    .usage("node main_pil2circom.js -o <verifier.circom> -v <verification_key.json> -s <starkinfo.json> [--skipMain] [--vadcop] [--hashCommits] [--enableInput] [--verkeyInput] [--custom] [--arity]")
     .alias("s", "starkinfo")
     .alias("v", "verkey")
     .alias("o", "output")

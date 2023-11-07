@@ -33,6 +33,23 @@ async function run() {
 
     const pil = await compile(F, pilFile, null, pilConfig);
 
+    const cmPols = await compressorExec(F, pil, input, wasmFile, execFile);
+
+    await cmPols.saveToFile(commitFile);
+
+    console.log("files Generated Correctly");
+
+}
+
+run().then(()=> {
+    process.exit(0);
+}, (err) => {
+    console.log(err.message);
+    console.log(err.stack);
+    process.exit(1);
+});
+
+async function compressorExec(F, pil, input, wasmFile, execFile) {
     const cmPols = newCommitPolsArray(pil, F);
 
     const nCommittedPols =cmPols.Compressor.a.length;
@@ -64,18 +81,8 @@ async function run() {
         }
     }
 
-
-    await cmPols.saveToFile(commitFile);
-
-    console.log("files Generated Correctly");
-
+    return cmPols;
 }
 
-run().then(()=> {
-    process.exit(0);
-}, (err) => {
-    console.log(err.message);
-    console.log(err.stack);
-    process.exit(1);
-});
+module.exports.compressorExec = compressorExec;
 

@@ -26,28 +26,17 @@ async function run() {
     const pilFile = typeof(argv.pil) === "string" ?  argv.pil.trim() : "mycircuit.c12.pil";
     const execFile = typeof(argv.exec) === "string" ?  argv.exec.trim() : "mycircuit.c12.exec";
 
-    const r1cs = await readR1cs(r1csFile, {F: F, logger:console });
-
-    const options = {
-        forceNBits: argv.forceNBits
-    };
-
     let cols = argv.cols ? Number(argv.cols) : 12;
+
+    const {exec, pilStr, constPols} = await compressorSetup(F, r1csFile, cols);
+
+    const fd =await fs.promises.open(execFile, "w+");
+    await fd.write(exec);
+    await fd.close();
+
+    await fs.promises.writeFile(pilFile, pilStr, "utf8");
     
-    if(![12,18].includes(cols)) throw new Error("Invalid number of cols");
-
-    let res;
-    if(cols === 12) {
-        res = await plonkSetupC12(F, r1cs, options);
-    } else {
-        res = await plonkSetupC18(F, r1cs, options);
-    }
-
-    await fs.promises.writeFile(pilFile, res.pilStr, "utf8");
-
-    await res.constPols.saveToFile(constFile);
-
-    await writeExecFile(execFile ,res.plonkAdditions, res.sMap);
+    await constPols.saveToFile(constFile);
 
     console.log("files Generated Correctly");
 
@@ -60,3 +49,26 @@ run().then(()=> {
     console.log(err.stack);
     process.exit(1);
 });
+
+async function compressorSetup(F, r1csFile, cols) {
+    const r1cs = await readR1cs(r1csFile, {F: F, logger:console });
+
+    const options = {
+        forceNBits: argv.forceNBits
+    };
+    
+    if(![12,18].includes(cols)) throw new Error("Invalid number of cols");
+
+    let res;
+    if(cols === 12) {
+        res = await plonkSetupC12(F, r1cs, options);
+    } else {
+        res = await plonkSetupC18(F, r1cs, options);
+    }
+
+    const exec = await writeExecFile(res.plonkAdditions, res.sMap);
+
+    return {exec, pilStr: res.pilStr, constPols: res.constPols};
+}
+
+module.exports.compressorSetup = compressorSetup;

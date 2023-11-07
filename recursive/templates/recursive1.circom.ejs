@@ -1,10 +1,9 @@
 pragma circom 2.1.0;
 pragma custom_templates;
 
-<% let verifierName = hasCompressor ? "compressor" : basicCircuitName; -%>
 include "iszero.circom";
 include "poseidon.circom";
-include "<%- verifierName %>.verifier.circom";
+include "<%- basicCircuitName %>.verifier.circom";
 
 <% if(!hasCompressor) { -%>
 
@@ -37,6 +36,8 @@ template CalculateFinalPolHash() {
 template Main() {
 
     signal input publics[<%- nPublics %>];
+
+    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3];
 
     signal input rootCRecursive2[4];
 
@@ -77,16 +78,14 @@ template Main() {
 
     signal input finalPol[<%- 1 << starkInfo.starkStruct.steps[starkInfo.starkStruct.steps.length-1].nBits %>][3];
 
-    signal input subAirValue[3];
-
 <%  let transcriptValues = []; -%>
 <%  let inOut = hasCompressor ? 'input' : 'output'; -%>
     signal <%- inOut %> sv_circuitType;
 <%  transcriptValues.push("sv_circuitType"); -%>
     signal <%- inOut %> sv_aggregationType;
 <%  transcriptValues.push("sv_aggregationType"); -%>
-    signal <%- inOut %> sv_subAirValue[3];
-<%  transcriptValues.push("sv_subAirValue"); -%>
+    signal <%- inOut %> sv_subAirValues[<%- starkInfo.nSubproofValues %>][3];
+<%  transcriptValues.push("sv_subAirValues"); -%>
     signal <%- inOut %> sv_rootC[4];
 <%      transcriptValues.push(`sv_rootC`); -%>
 <%  for (let i = 0; i < nChallengesStages.length; ++i) { -%>
@@ -107,7 +106,7 @@ template Main() {
 <%  if(inOut === "output") { -%>
     sv_circuitType <== <%- circuitType %>;
     sv_aggregationType <== <%- aggregationType %>;
-    sv_subAirValue <== subAirValue;
+    sv_subAirValues <== subproofValues;
 <%  for (let i = 0; i < starkInfoBasic.numChallenges.length; ++i) { -%>
     sv_root<%- i+1 %> <== root<%- i+1 %>;
 <%  } -%>
@@ -165,6 +164,8 @@ template Main() {
     for(var i = 0; i < <%- nPublics %>; i++) {
         sv.publics[i] <== publics[i];
     }
+
+    sv.subproofValues <== subproofValues;
 
 <%  if(!hasCompressor) { -%>
 <%  let c = 0; -%>

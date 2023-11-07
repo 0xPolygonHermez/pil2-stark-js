@@ -60,7 +60,7 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
         exp.expDeg = 0;
         exp.stage = 0; 
         if(!exp.dim) exp.dim = 1;
-    } else if(["add", "sub", "mul"].includes(exp.op)) {
+    } else if(["add", "sub", "mul", "neg"].includes(exp.op)) {
         if(exp.op === "neg") {
             exp.op = "mul";
             exp.values = [{op: "number", value: "-1", expDeg: 0, stage: 0, dim: 1}, exp.values[0]];
