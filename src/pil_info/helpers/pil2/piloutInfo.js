@@ -25,7 +25,17 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     res.nCommitments = symbols.filter(s => s.type === "witness" && s.airId === res.airId && s.subproofId === res.subproofId).length;
     res.nConstants = symbols.filter(s => s.type === "fixed" && s.airId === res.airId && s.subproofId === res.subproofId).length;
     res.nPublics = symbols.filter(s => s.type === "public").length;
-    res.nSubproofValues = symbols.filter(s => s.type === "subproofvalue").length;
+    const subproofValues = [];
+    for(let i = 0; i < symbols.length; ++i) {
+        const symbol = symbols[i];
+        if(symbol.type !== "subproofvalue") continue;
+        if(!subproofValues.find(s => s.subproofId === symbol.subproofId && s.id === symbol.id)) {
+            subproofValues.push(symbol);
+        }
+    }
+
+    res.subproofValuesIds = subproofValues.map(s => s.id).sort();
+    res.nSubproofValues = subproofValues.length;
     
     if(pilout.numChallenges) {
         res.numChallenges = pilout.numChallenges;

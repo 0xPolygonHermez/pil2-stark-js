@@ -32,6 +32,8 @@ template Main() {
 
     signal input publics[<%- nPublics %>];
 
+    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3];
+
     signal input challenges[<%- nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4 %>][3];
 
     signal input challengesFRISteps[<%- stepsFRI.length + 1 %>][3];
@@ -72,8 +74,8 @@ template Main() {
     signal input subAirValue[3];
 
     signal output sv_circuitType;
-    signal output sv_aggregationType;
-    signal output sv_subAirValue[3];
+    signal output sv_aggregationTypes[<%- nSubproofValues %>];
+    signal output sv_subAirValues[<%- nSubproofValues %>][3];
 <%  for (let i = 0; i < nChallengesStages.length; ++i) { -%>
     signal output sv_root<%- i+1 %>[4];
 <%  } -%>
@@ -86,8 +88,14 @@ template Main() {
     signal output sv_finalPolHash[4];
 
     sv_circuitType <== <%- circuitType %>;
-    sv_aggregationType <== <%- aggregationType %>;
-    sv_subAirValue <== subAirValue;
+    sv_aggregationTypes <== [<%- aggregationTypes.map(a => a.aggType).join(",") %>];
+<%  for (let i = 0; i < nSubproofValues; ++i) { -%>
+<%      if(starkInfo.subproofValuesIds.includes(i)) { -%>
+    sv_subAirValues[<%- i %>] <== subproofValues[<%- starkInfo.subproofValuesIds.findIndex(in => in === i) %>];
+<%      } else { -%>
+    sv_subAirValues[<%- i %>] <== [0,0,0];
+<%      } -%>
+<%  } -%>
 <%  for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
     sv_root<%- i+1 %> <== root<%- i+1 %>;
 <%  } -%>

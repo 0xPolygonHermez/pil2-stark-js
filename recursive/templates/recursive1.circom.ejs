@@ -82,9 +82,9 @@ template Main() {
 <%  let inOut = hasCompressor ? 'input' : 'output'; -%>
     signal <%- inOut %> sv_circuitType;
 <%  transcriptValues.push("sv_circuitType"); -%>
-    signal <%- inOut %> sv_aggregationType;
+    signal <%- inOut %> sv_aggregationTypes[<%- nSubproofValues %>];
 <%  transcriptValues.push("sv_aggregationType"); -%>
-    signal <%- inOut %> sv_subAirValues[<%- starkInfo.nSubproofValues %>][3];
+    signal <%- inOut %> sv_subAirValues[<%- nSubproofValues %>][3];
 <%  transcriptValues.push("sv_subAirValues"); -%>
     signal <%- inOut %> sv_rootC[4];
 <%      transcriptValues.push(`sv_rootC`); -%>
@@ -105,8 +105,14 @@ template Main() {
 
 <%  if(inOut === "output") { -%>
     sv_circuitType <== <%- circuitType %>;
-    sv_aggregationType <== <%- aggregationType %>;
-    sv_subAirValues <== subproofValues;
+    sv_aggregationTypes <== [<%- aggregationTypes.map(a => a.aggType).join(",") %>];
+<%  for (let i = 0; i < nSubproofValues; ++i) { -%>
+<%      if(starkInfo.subproofValuesIds.includes(i)) { -%>
+    sv_subAirValues[<%- i %>] <== subproofValues[<%- starkInfo.subproofValuesIds.findIndex(in => in === i) %>];
+<%      } else { -%>
+    sv_subAirValues[<%- i %>] <== [0,0,0];
+<%      } -%>
+<%  } -%>
 <%  for (let i = 0; i < starkInfoBasic.numChallenges.length; ++i) { -%>
     sv_root<%- i+1 %> <== root<%- i+1 %>;
 <%  } -%>
@@ -206,12 +212,17 @@ template Main() {
 <%  nPublicsInps += (stepsFRI.length + 1)*3; -%>
 
     sv.publics[<%- nPublicsInps++ %>] <== sv_circuitType;
-    sv.publics[<%- nPublicsInps++ %>] <== sv_aggregationType;
 
-    for(var i = 0; i < 3; i++) {
-        sv.publics[<%- nPublicsInps %> + i] <== sv_subAirValue[i];
+    for(var i = 0; i < <%- nSubProofValues %>; i++) {
+        sv.publics[<%- nPublicsInps++ %>] <== sv_aggregationTypes[i];
     }
-<%  nPublicsInps += 3 -%>
+
+    for(var i = 0; i < <%- nSubproofValues %>; i++) {
+        sv<%- c %>.publics[<%- nPublicsInps %> + 3*i] <== sv_subAirValues[i][0];
+        sv<%- c %>.publics[<%- nPublicsInps %> + 3*i + 1] <== sv_subAirValues[i][1];
+        sv<%- c %>.publics[<%- nPublicsInps %> + 3*i + 2] <== sv_subAirValues[i][2];
+    }
+<%  nPublicsInps += 3*nSubproofValues; -%>
 
     for(var i = 0; i < 4; i++) {
         sv.publics[<%- nPublicsInps %> + i] <== sv_rootC[i];

@@ -93,12 +93,12 @@ template Main() {
 
     signal input challengesFRISteps[<%- stepsFRI.length + 1 %>][3];
 
-    signal input aggregationType;
+    signal input aggregationTypes[<%- nSubProofValues %>];
 
 <%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
 <%      let starkInfo = starkInfoRecursivesF[i]; -%>
 <%      let c = i; -%>
-    signal input s<%- c %>_subAirValue[3];
+    signal input s<%- c %>_subAirValues[<%- nSubproofValues %>][3];
 
 <% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
     signal input s<%- c %>_root<%- i + 1 %>[4];
@@ -204,12 +204,16 @@ template Main() {
     }
 <%  nPublicsInps += (stepsFRI.length + 1)*3; -%>
 
-    sv<%- c %>.publics[<%- nPublicsInps++ %>] <== aggregationType;
-
-    for(var i = 0; i < 3; i++) {
-        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_subAirValue[i];
+    for(var i = 0; i < <%- nSubproofValues %>; i++) {
+        sv<%- c %>.publics[<%- nPublicsInps++ %>] <== aggregationTypes[i];
     }
-<%  nPublicsInps += 3 -%>
+
+    for(var i = 0; i < <%- nSubproofValues %>; i++) {
+        sv<%- c %>.publics[<%- nPublicsInps %> + 3*i] <== s<%- c %>_subAirValues[i][0];
+        sv<%- c %>.publics[<%- nPublicsInps %> + 3*i + 1] <== s<%- c %>_subAirValues[i][1];
+        sv<%- c %>.publics[<%- nPublicsInps %> + 3*i + 2] <== s<%- c %>_subAirValues[i][2];
+    }
+<%  nPublicsInps += 3*nSubproofValues; -%>
 
     for(var i = 0; i < 4; i++) {
         sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_rootCHash[i];
@@ -265,32 +269,35 @@ template Main() {
     verifyChallenges.finalPolHash[<%- i %>] <== s<%- i %>_sv_finalPolHash;
 <%  } -%>
 
-    // Check that subair value is correct
-    signal subAirValue[3];
-<%  let sum1 = []; -%>
-<%  let sum2 = []; -%>
-<%  let sum3 = []; -%>
-<%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
-<%      sum1.push(`s${i}_subAirValue[0]`) -%>
-<%      sum2.push(`s${i}_subAirValue[1]`) -%>
-<%      sum3.push(`s${i}_subAirValue[2]`) -%>
-
-<%  } -%>
-    subAirValue[0] <== <%- sum1.join(" + ") %>;
-    subAirValue[1] <== <%- sum2.join(" + ") %>;
-    subAirValue[2] <== <%- sum3.join(" + ") %>;
-
+    // Check that subair values are correct
     signal values[2][3];
     values[0] <== [0,0,0]; // Addition neutral value
     values[1] <== [1,0,0]; // Multiplication neutral value
 
-    aggregationType * (aggregationType - 1) === 0;
-    signal {binary} aggType <== aggregationType;
+    signal subAirValues[<%- nSubproofValues %>][3];
+    signal {binary} aggTypes[<%- nSubproofValues %>];
+    signal aggregatedNeutralValues[<%- nSubproofValues %>][3];
+    for(var k = 0; k < <%- nSubproofValues %>; k++) {
+<%  let sum1 = []; -%>
+<%  let sum2 = []; -%>
+<%  let sum3 = []; -%>
+<%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
+<%      sum1.push(`s${i}_subAirValues[k][0]`) -%>
+<%      sum2.push(`s${i}_subAirValues[k][1]`) -%>
+<%      sum3.push(`s${i}_subAirValues[k][2]`) -%>
 
-    signal aggregatedNeutralValue[3] <== MultiMux1(3)(values, aggType);
-    
-    for(var i = 0; i < 3; i++) {
-        aggregatedNeutralValue[i] === subAirValue[i];
+<%  } -%>
+        subAirValues[0] <== <%- sum1.join(" + ") %>;
+        subAirValues[1] <== <%- sum2.join(" + ") %>;
+        subAirValues[2] <== <%- sum3.join(" + ") %>;
+
+        aggregationTypes[k] * (aggregationTypes[k] - 1) === 0;
+        aggTypes[k] <== aggregationTypes[k];
+        aggregatedNeutralValues[k] <== MultiMux1(3)(values, aggTypes);
+
+        for(var i = 0; i < 3; i++) {
+            aggregatedNeutralValues[k][i] === subAirValues[i];
+        }
     }
 }
 

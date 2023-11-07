@@ -38,6 +38,9 @@ async function run() {
     const nPublics = globalInfo.nPublics;
     const nChallengesStages = globalInfo.numChallenges;
     const stepsFRI = globalInfo.stepsFRI;
+    const nSubproofValues = globalInfo.nSubproofValues;
+    const aggregationTypes = globalInfo.aggregationTypes;
+
 
     const vks = [];
 
@@ -59,17 +62,17 @@ async function run() {
         vks,
         hasCompressor,
         nPublics,
+        nSubproofValues,
         nChallengesStages,
+        aggregationTypes,
         stepsFRI,
     };
 
     if((argv.template === "recursive1" && !hasCompressor) || argv.template === "compressor") {
         if(!("circuitType" in argv)) throw new Error("If there is no compressor, circuitType must be provided");
-        if(!("aggregationType" in argv)) throw new Error("If there is no compressor, aggregationType must be provided");
         if(!("basicCircuitName" in argv)) throw new Error("If there is a compressor, basic circuit name must be provided");
 
         obj.circuitType = Number(argv.circuitType);
-        obj.aggregationType = Number(argv.aggregationType);
         obj.starkInfoBasic = starkInfo;
 
         obj.transcriptPublics = new Transcript("publics");
