@@ -37,8 +37,6 @@ async function run() {
 
     const starkInfo = pilInfo(F, pil, true, !pil2, false, starkStruct);
 
-    if(("finalSubproofId" in argv)) starkInfo.finalSubproofId = argv.finalSubproofId;
-
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
 
     console.log("files Generated Correctly");

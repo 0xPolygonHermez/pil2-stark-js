@@ -1,16 +1,12 @@
-const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
-const fs = require("fs");
-const path = require("path");
-const ejs = require("ejs");
-const { Transcript } = require('./templates/transcript');
+const { genRecursive } = require('./genrecursive');
 const version = require("../package").version;
+const fs = require("fs");
 
 const argv = require("yargs")
     .version(version)
     .usage("node main_genrecursive.js -v <basic_verification_keys.json> -g globalinfo.json -s starkinfo.json -b <starkinfobasic.json> -o <recursive.circom> [--hasCompressor] ")
     .alias("v", "vksbasics").array("v")
     .alias("s", "starkinfo")
-    .alias("b", "starkinfobasic")
     .alias("g", "globalinfo")
     .alias("o", "output")
     .string("template")
@@ -24,26 +20,6 @@ async function run() {
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
     const globalInfo = JSON.parse(await fs.promises.readFile(globalInfoFile, "utf8"));
 
-    if(!starkInfo.finalSubproofId) throw new Error("Stark info does not contain final subproof id");
-
-    if(!globalInfo) throw new Error("Global info is undefined");
-    if(!globalInfo.nPublics) throw new Error("Global info does not contain number of publics");
-    if(!globalInfo.numChallenges) throw new Error("Global info does not contain number of challenges");
-    if(!globalInfo.aggTypes) throw new Error("Global info does not contain number of aggregation types");
-    if(!globalInfo.stepsFRI) {
-        if(globalInfo.starkStruct.steps) {
-            globalInfo.stepsFRI = globalInfo.starkStruct.steps;
-        } else {
-            throw new Error("Global info does not contain number of fri steps");
-        }
-    } 
-
-    const nPublics = globalInfo.nPublics;
-    const nChallengesStages = globalInfo.numChallenges;
-    const stepsFRI = globalInfo.stepsFRI;
-    const aggTypes = globalInfo.aggTypes;
-
-
     const vks = [];
 
     for(let i = 0; i < argv.vksbasics.length; i++) {
@@ -54,46 +30,10 @@ async function run() {
         vks.push(constRoot);
     }
 
-    if(!["compressor", "recursive1", "recursive2", "recursivef"].includes(argv.template)) throw new Error(`Invalid template: ${argv.template}`);
-    const template = await fs.promises.readFile(path.join(__dirname, "templates", `${argv.template}.circom.ejs`), "utf8");
-
-    const hasCompressor = argv.template === "recursive1" ? argv.hasCompressor || false : false;
-
-    const aggregationTypes = aggTypes[starkInfo.finalSubproofId];
-    const nSubproofValues = aggregationTypes.length;
-
-    const obj = {
-        starkInfo,
-        vks,
-        hasCompressor,
-        nPublics,
-        nSubproofValues,
-        aggregationTypes,
-        nChallengesStages,
-        stepsFRI,
-    };
-
-    if((argv.template === "recursive1" && !hasCompressor) || argv.template === "compressor") {
-        if(!("circuitType" in argv)) throw new Error("If there is no compressor, circuitType must be provided");
-
-        obj.circuitType = Number(argv.circuitType);
-        obj.starkInfoBasic = starkInfo;
-
-        obj.transcriptPublics = new Transcript("publics");
-        obj.transcriptEvals = new Transcript("evals");
-        obj.transcriptFinalPol = new Transcript("finalPol");
-
-    } else if(argv.template === "recursive1") {
-        if(!("starkinfobasic" in argv)) throw new Error("If there is a compressor, starkInfoBasic must be provided");
-        const starkInfoBasicFile = typeof (argv.starkinfobasic) === "string" ? argv.starkinfobasic.trim() : "mycircuitBasic.starkinfo.json";
-        const starkInfoBasic = JSON.parse(await fs.promises.readFile(starkInfoBasicFile, "utf8"));
-        obj.starkInfoBasic = starkInfoBasic;
-    }
-
-    if(!("verifierCircuitName" in argv)) throw new Error("If there is a compressor, basic circuit name must be provided");
-    obj.verifierCircuitName = argv.verifierCircuitName;
-    
-    const verifier = ejs.render(template,  obj);
+    const verifierCircuitName = argv.verifierCircuitName;
+    const subproofId = argv.subproofId;
+    const hasCompressor = argv.hasCompressor;
+    const verifier = await genRecursive(argv.template, subproofId, verifierCircuitName, vks, starkInfo, globalInfo, hasCompressor)
 
     await fs.promises.writeFile(outputFile, verifier, "utf8");
 
