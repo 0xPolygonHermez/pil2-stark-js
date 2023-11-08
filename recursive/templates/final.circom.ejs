@@ -1,8 +1,8 @@
 pragma circom 2.1.0;
 pragma custom_templates;
 
-<% for(let i = 0; i < verifierCircuitsName.length; ++i) { -%>
-include "<%- verifierCircuitsName[i] %>.verifier.circom";
+<% for(let i = 0; i < verifiersNames.length; ++i) { -%>
+include "<%- verifiersNames[i] %>.verifier.circom";
 <% } -%>
 include "mux1.circom";
 

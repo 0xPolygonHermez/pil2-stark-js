@@ -1,7 +1,5 @@
 const fs = require("fs");
-const path = require("path");
-const ejs = require("ejs");
-const { Transcript } = require("./templates/transcript");
+const { genFinal } = require("./genfinal");
 const version = require("../package").version;
 
 const argv = require("yargs")
@@ -16,57 +14,25 @@ const argv = require("yargs")
 async function run() {
     const outputFile = typeof(argv.output) === "string" ?  argv.output.trim() : "mycircuit.circom";
     
+    const globalInfoFile = typeof(argv.globalinfo) === "string" ? argv.globalinfo.trim() : "mycircuit.globalinfo.json";
+    const globalInfo = JSON.parse(await fs.promises.readFile(globalInfoFile, "utf8"));
+
     const starkInfoRecursivesF = [];
 
     for(let i = 0; i < argv.starkinfos.length; i++) {
         const starkInfo = JSON.parse(await fs.promises.readFile(argv.starkinfos[i], "utf8"));
-        if(!starkInfo.finalSubproofId) throw new Error("Stark info " + i + " does not contain final subproof id");
+        starkInfo.finalSubproofId = i;
         starkInfoRecursivesF.push(starkInfo);
     }
 
-    if(!argv.verifierCircuitsName) throw new Error("Verifier circuits names missing");
+    if(!argv.subproofNames) throw new Error("Subproof names missing");
 
-    const verifierCircuitsName = [];
-    for(let i = 0; i < argv.starkinfos.length; i++) {
-        verifierCircuitsName.push(argv.verifierCircuitsName);
+    const verifiersNames = [];
+    for(let i = 0; i < argv.subproofNames.length; i++) {
+        verifiersNames.push(`recursivef_${argv.subproofNames}`);
     }
 
-    if(starkInfoRecursivesF.length !== verifierCircuitsName.length) throw new Error("starkInfoRecursivesF and verifierCircuitsName lengths must match");
-
-    const globalInfoFile = typeof(argv.globalinfo) === "string" ? argv.globalinfo.trim() : "mycircuit.globalinfo.json";
-    const globalInfo = JSON.parse(await fs.promises.readFile(globalInfoFile, "utf8"));
-
-    if(!globalInfo) throw new Error("Global info is undefined");
-    if(!globalInfo.nPublics) throw new Error("Global info does not contain number of publics");
-    if(!globalInfo.numChallenges) throw new Error("Global info does not contain number of challenges");
-    if(!globalInfo.stepsFRI) {
-        if(globalInfo.starkStruct.steps) {
-            globalInfo.stepsFRI = globalInfo.starkStruct.steps;
-        } else {
-            throw new Error("Global info does not contain number of fri steps");
-        }
-    } 
-
-    const nPublics = globalInfo.nPublics;
-    const nChallengesStages = globalInfo.numChallenges;
-    const stepsFRI = globalInfo.starkStruct.steps;
-    const aggregationTypes = globalInfo.aggTypes;
-    
-    const template = await fs.promises.readFile(path.join(__dirname, "templates", `final.circom.ejs`), "utf8");
-
-    const obj = {
-        starkInfoRecursivesF,
-        nPublics,
-        nChallengesStages,
-        stepsFRI,
-        aggregationTypes,
-        verifierCircuitsName,
-        transcript: new Transcript,
-    };
-
-    
-    
-    const verifier = ejs.render(template ,  obj);
+    const verifier = await genFinal(globalInfo, starkInfoRecursivesF, verifiersNames);
 
     await fs.promises.writeFile(outputFile, verifier, "utf8");
 

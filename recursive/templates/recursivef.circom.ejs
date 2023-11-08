@@ -126,6 +126,9 @@ template Main() {
 
     component sv = StarkVerifier();
     
+    signal {binary} isNull <== IsZero()(circuitType);
+    sv.enable <== 1 - isNull;
+
     sv.rootC <== SelectVerificationKey()(circuitType);
 
 <% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
@@ -181,7 +184,7 @@ template Main() {
 <%  nPublicsInps += (stepsFRI.length + 1)*3; -%>
 
 <%  for(let i = 0; i < 4; i++) { -%>
-    sv.publics[<%- nPublicsInps++ %>] <== <%- vks[1][i] %>;
+    sv.publics[<%- nPublicsInps++ %>] <== <%- vks[0][i] %>;
 <%  } -%>
 
     sv.publics[<%- nPublicsInps++ %>] <== circuitType;
