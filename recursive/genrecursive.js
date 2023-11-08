@@ -1,25 +1,23 @@
-const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
 const { Transcript } = require('./templates/transcript');
 
-module.exports.genRecursive = async function genRecursive(template, subproofId, subproofName, vks, starkInfo, globalInfo, hasCompressor) {
-    if(!subproofName) throw new Error("Verifier circuit name must be provided");
+module.exports.genRecursive = async function genRecursive(template, subproofId, airId, vks, starkInfo, globalInfo, hasCompressor) {
+    if(subproofId === undefined) throw new Error("subproofId is undefined");
+    if(airId === undefined && !["recursive2", "recursivef"].includes(template)) throw new Error("airId is undefined");
     if(!["compressor", "recursive1", "recursive2", "recursivef"].includes(template)) throw new Error(`Invalid template: ${template}`);
 
     let verifierCircuitName;
     if((template === "recursive1" && !hasCompressor) || template === "compressor") { 
-        verifierCircuitName = subproofName;
+        verifierCircuitName = `basic_stark_subproof${subproofId}_air${airId}`;
     } else {
         if(template === "recursive1") {
-            verifierCircuitName = `compressor_${subproofName}`;
+            verifierCircuitName = `compressor_subproof${subproofId}_air${airId}`;
         } else if (template === "recursive2") {
-            verifierCircuitName = `recursive1_${subproofName}`;
+            verifierCircuitName = `recursive1_subproof${subproofId}`;
         } else if (template === "recursivef") {
-            verifierCircuitName = `recursive2_${subproofName}`;
-        } else if (template === "final") {
-            verifierCircuitName = `recursivef_${subproofName}`;
+            verifierCircuitName = `recursive2_subproof${subproofId}`;
         }
     }
 

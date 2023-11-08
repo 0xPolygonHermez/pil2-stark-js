@@ -25,14 +25,7 @@ async function run() {
         starkInfoRecursivesF.push(starkInfo);
     }
 
-    if(!argv.subproofNames) throw new Error("Subproof names missing");
-
-    const verifiersNames = [];
-    for(let i = 0; i < argv.subproofNames.length; i++) {
-        verifiersNames.push(`recursivef_${argv.subproofNames}`);
-    }
-
-    const verifier = await genFinal(globalInfo, starkInfoRecursivesF, verifiersNames);
+    const verifier = await genFinal(globalInfo, starkInfoRecursivesF);
 
     await fs.promises.writeFile(outputFile, verifier, "utf8");
 

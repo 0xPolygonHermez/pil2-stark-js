@@ -1,8 +1,8 @@
 pragma circom 2.1.0;
 pragma custom_templates;
 
-<% for(let i = 0; i < verifiersNames.length; ++i) { -%>
-include "<%- verifiersNames[i] %>.verifier.circom";
+<% for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
+include "recursivef_subproofId<%- i %>.verifier.circom";
 <% } -%>
 include "mux1.circom";
 
@@ -97,11 +97,11 @@ template Main() {
 
 <%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
 <%      let starkInfo = starkInfoRecursivesF[i]; -%>
-<%      let nSubproofValues = aggregationTypes[starkInfo.finalSubproofId]; -%>
+<%      let nSubproofValues = aggregationTypes[starkInfo.finalSubproofId].length; -%>
 <%      let c = i; -%>
     signal input s<%- c %>_subAirValues[<%- nSubproofValues %>][3];
 
-    signal input aggregationTypes[<%- nSubproofValues %>];
+    signal input s<%- c %>_aggregationTypes[<%- nSubproofValues %>];
 
 <% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
     signal input s<%- c %>_root<%- i + 1 %>[4];
@@ -151,10 +151,10 @@ template Main() {
 
 <%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
 <%      let starkInfo = starkInfoRecursivesF[i]; -%>
-<%      let nSubproofValues = aggregationTypes[starkInfo.finalSubproofId]; -%>
+<%      let nSubproofValues = aggregationTypes[starkInfo.finalSubproofId].length; -%>
 <%      let c = i; -%>
 
-    component sv<%- c %> = StarkVerifier();
+    component sv<%- c %> = StarkVerifier<%- i %>();
     
 <% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
     sv<%- c %>.root<%- i+1 %> <== s<%- c %>_root<%- i + 1 %>;
@@ -210,7 +210,7 @@ template Main() {
 
 <%  if(nSubproofValues > 0) { -%>
     for(var i = 0; i < <%- nSubproofValues %>; i++) {
-        sv<%- c %>.publics[<%- nPublicsInps++ %>] <== aggregationTypes[i];
+        sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_aggregationTypes[i];
     }
 
     for(var i = 0; i < <%- nSubproofValues %>; i++) {
