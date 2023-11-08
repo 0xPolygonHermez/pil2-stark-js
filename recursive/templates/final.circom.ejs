@@ -2,7 +2,7 @@ pragma circom 2.1.0;
 pragma custom_templates;
 
 <% for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
-include "recursivef_subproofId<%- i %>.verifier.circom";
+include "recursivef_subproof<%- i %>.verifier.circom";
 <% } -%>
 include "mux1.circom";
 
