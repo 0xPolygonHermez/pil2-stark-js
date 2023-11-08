@@ -677,7 +677,7 @@ template parallel <%- verifyFinalPolName %>() {
 }
 
 <% let verifierName = "StarkVerifier"; -%>
-<% if(options.subproofId) { -%>
+<% if(subproofId !== undefined) { -%>
 <%  verifierName += subproofId; -%>
 <% } -%>
 template <%- verifierName %>() {
