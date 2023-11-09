@@ -7,6 +7,7 @@ const proof2zkin = require("../../src/proof2zkin").proof2zkin;
 const pilInfo = require("../../src/pil_info/pil_info.js");
 const F3g = require("../../src/helpers/f3g");
 const { calculateTranscript } = require("../../src/stark/calculateTranscriptVerify");
+const { challenges2zkin } = require("../../src/proof2zkin");
 
 const wasm_tester = require("circom_tester").wasm;
 
@@ -97,8 +98,9 @@ describe("Stark Verification Circuit Test", function () {
         circuit = await wasm_tester(circomFile, {O:1, prime: "goldilocks", verbose: true, include: "circuits.gl"});
         console.log("End compiling...");
 
-        const input = proof2zkin(proof, starkInfo, challenges);
-        console.log(input);
+        const input = proof2zkin(proof, starkInfo);
+        challenges2zkin(challenges, starkInfo, input);
+        
         input.publics = publics;
 
         console.log("Start wc...");
