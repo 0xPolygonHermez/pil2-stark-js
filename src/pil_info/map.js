@@ -66,7 +66,8 @@ function addPol(res, stage, symbol) {
     const stageNum = symbol.stage;
     const name = symbol.name;
     const dim = symbol.dim;
-    ref[pos] = {stage, stageNum, name, dim};
+    const imPol = symbol.imPol || false;
+    ref[pos] = {stage, stageNum, name, dim, imPol};
     if(symbol.stageId >= 0) ref[pos].stageId = symbol.stageId;
     res.mapSectionsN[stage] += dim;
 }
@@ -105,6 +106,7 @@ function setStageInfoSymbols(res, symbols) {
             .filter((p, index) => p.stage === stage && index < symbol.polId);
 
             symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
+            res.cmPolsMap[symbol.polId].stagePos = symbol.stagePos;
             if(!symbol.stageId) {
                 symbol.stageId = prevPolsStage.length;
                 res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
