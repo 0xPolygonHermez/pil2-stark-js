@@ -11,11 +11,14 @@ const argv = require("yargs")
     .alias("f", "infopil")
     .alias("m", "impols")
     .alias("i", "starkinfo")
+    .string("impolslaststage")
     .argv;
 
 async function run() {
     const infoPilFile = typeof(argv.infopil) === "string" ?  argv.infopil.trim() : "mycircuit.infopil.json";
     const imPolsFile = typeof(argv.impols) === "string" ?  argv.impols.trim() : "mycircuit.impols.json";
+
+    const imPolsLastStage = argv.impolslaststage === "false" ? false : true;
 
     const starkInfoFile = typeof(argv.starkinfo) === "string" ?  argv.starkinfo.trim() : "mycircuit.starkinfo.json";
 
@@ -32,7 +35,7 @@ async function run() {
     const stark = true;
     const debug = false;
 
-    addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark);
+    addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark, imPolsLastStage);
     
     map(res, symbols, stark, debug);       
 

@@ -4,7 +4,7 @@ const { preparePil } = require("./helpers/preparePil");
 const { generatePilCode } = require("./helpers/generatePilCode");
 const map = require("./map");
 
-module.exports = function pilInfo(F, pil, stark = true, pil1 = true, debug, starkStruct) {
+module.exports = function pilInfo(F, pil, stark = true, pil1 = true, debug, starkStruct, imPolsLastStage = true) {
 
     const infoPil = preparePil(F, pil, stark, pil1, debug, starkStruct);
 
@@ -22,7 +22,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil1 = true, debug, star
             maxDeg = Math.pow(2,3) + 1;
         }
         const imInfo = calculateIntermediatePolynomials(expressions, res.cExpId, maxDeg);
-        addIntermediatePolynomials(res, expressions, constraints, symbols, imInfo.imExps, imInfo.qDeg, stark);
+        addIntermediatePolynomials(res, expressions, constraints, symbols, imInfo.imExps, imInfo.qDeg, stark, imPolsLastStage);
         newExpressions = imInfo.newExpressions;
     } else {
         newExpressions = expressions;
