@@ -169,7 +169,7 @@ template Main() {
         sv.publics[i] <== publics[i];
     }
 
-<%  if(nSubproofValues > 0) { -%>
+<%  if(!hasCompressor && nSubproofValues > 0) { -%>
     sv.subproofValues <== subproofValues;
 <%  } -%>
 
