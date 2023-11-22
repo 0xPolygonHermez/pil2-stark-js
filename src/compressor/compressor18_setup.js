@@ -5,10 +5,9 @@ const { log2 } = require("pilcom/src/utils.js");
 const {tmpName} = require("tmp-promise");
 const { newConstantPolsArray, compile, getKs } = require("pilcom");
 const ejs = require("ejs");
-const r1cs2plonk = require("../r1cs2plonk");
 const {M, P, S, C} = require("../helpers/hash/poseidon/poseidon_constants_opt.js");
-const { getCustomGatesInfo, calculatePlonkConstraintsHalfs } = require("./compressor_helpers.js");
 const { connect } = require("../helpers/polutils");
+const { getCompressorConstraints } = require("./compressor_constraints");
 
 /*
     Compress plonk constraints and verifies custom gates using 18 committed polynomials
@@ -16,58 +15,14 @@ const { connect } = require("../helpers/polutils");
 module.exports = async function plonkSetup(F, r1cs, options) {
     const committedPols = 18;
     
-    // Calculate the number plonk Additions and plonk constraints from the R1CS
-    const [plonkConstraints, plonkAdditions] = r1cs2plonk(F, r1cs);
-
-       
-    // Given the PLONK Constraints, which have the following form: qL*a + qR*b + qM*a*b + qO*c + qC = 0,
-    // calculate the number of constraints required in the compressed Plonk. 
-    // Since each regular plonk constrain only uses 3 wires (a, b and c), and several sets of wires can share the same set of polynomial
-    // gates, we can further extend the compression by storing 2 different sets of (a_i, b_i, c_i) for every set of (qL, qR, qM, Q0, qC)
-    // the committed polynomial. 
-    // In this particular case, we will store three sets of gates in every row, meaning that each row will contain 6 plonk constraints.
-    // In addition to that, since Poseidon, EvPol and FFT custom gates only uses 12 committed polynomials per row, we'll use committed polynomials
-    // from a[12] to a[18] to verify two more plonk constraints
-
-    // Calculate how many groups of two plonk constraints can be made 
-    const CPlonkConstraints = calculatePlonkConstraintsHalfs(plonkConstraints);
-    const CPlonkConstraintsHalfs = Object.values(CPlonkConstraints).reduce((acc, curr) => acc + Math.floor((curr + 1) / 2), 0);
-
-    // Get information about the custom gates from the R1CS
-    const customGatesInfo = getCustomGatesInfo(r1cs);
-
-    // Calculate the total number of publics used in PIL and how many rows are needed to store all of them (remember that each row can store up to 12 values)
-    let nPublics = r1cs.nOutputs + r1cs.nPubInputs;
-    const nPublicRows = Math.floor((nPublics + 11)/12); 
-
-    // Calculate the total number of rows that the Plonkish will have. 
-    // - Each public uses one single row
-    // - NPlonk stores the number of rows needed to fulfill all the constraints 
-    // - Each Poseidon12 custom gate uses 6 rows (Input -> Round 2 -> Round 4 -> Round 26 -> Round 28 -> Output)
-    // - Each FFT4 custom gate uses 2 rows (1 for actually computing the FFT and the other one for checking the output)
-    // - Each EvalPol4 custom gate uses 2 rows (1 for actually computing the evaluation and the other one for checking the output)
-    // - Each TreeSelector custom gate uses 2 rows 
-    console.log(`Number of publics: ${nPublics} -> Constraints: ${nPublicRows}`);
-    console.log(`Number of CMul: ${customGatesInfo.nCMul} -> Constraints: ${customGatesInfo.nCMul/2}`);
-    console.log(`Number of Poseidon12: ${customGatesInfo.nPoseidon12} -> Constraints: ${customGatesInfo.nPoseidon12*6}`);
-    console.log(`Number of Poseidon12 custom: ${customGatesInfo.nCustPoseidon12} -> Constraints: ${customGatesInfo.nCustPoseidon12*6}`)
-    console.log(`Total Number of Poseidon:  ${customGatesInfo.nPoseidon12 + customGatesInfo.nCustPoseidon12} -> Constraints ${(customGatesInfo.nPoseidon12 + customGatesInfo.nCustPoseidon12)*6}`);
-    console.log(`Number of FFT4: ${customGatesInfo.nFFT4} -> Constraints: ${customGatesInfo.nFFT4*2}`);
-    console.log(`Number of EvPol4: ${customGatesInfo.nEvPol4} -> Constraints: ${customGatesInfo.nEvPol4*2}`);
-    console.log(`Number of TreeSelector8: ${customGatesInfo.nTreeSelector4} -> Constraints: ${customGatesInfo.nTreeSelector4}`);
-    
-    const nRowsCustomGates = nPublicRows + customGatesInfo.nCustPoseidon12*6 + customGatesInfo.nPoseidon12*6 + customGatesInfo.nFFT4*2 + customGatesInfo.nEvPol4*2;
-    
-    const nRowsPlonk = nRowsCustomGates >= CPlonkConstraintsHalfs ? 0 : Math.floor((CPlonkConstraintsHalfs - nRowsCustomGates + 2) / 3);
-    
-    console.log(`Number of plonk constraints: ${plonkConstraints.length} -> Number of contraints halfs: ${CPlonkConstraintsHalfs}`); 
-    console.log(`Number of Plonk halfs stored in Custom gates -> ${nRowsCustomGates}`);
-    console.log(`Number of plonk constraints rows: ${nRowsPlonk} -> Number of halfs: ${nRowsPlonk*3}`);
-
-    const NUsed = nRowsCustomGates + nRowsPlonk + Math.floor((customGatesInfo.nCMul + 1)/2) + customGatesInfo.nTreeSelector4;
+    const {plonkAdditions, plonkConstraints, customGatesInfo, NUsed} = getCompressorConstraints(F, r1cs, committedPols);
 
     //Calculate the first power of 2 that's bigger than the number of constraints
     let nBits = log2(NUsed - 1) + 1;
+
+    // Calculate the total number of publics used in PIL and how many rows are needed to store all of them (remember that each row can store up to 12 values)
+    let nPublics = r1cs.nOutputs + r1cs.nPubInputs;
+    const nPublicRows = Math.floor((nPublics + 11)/12);
 
     if (options.forceNBits) {
         if (options.forceNBits < nBits) {
