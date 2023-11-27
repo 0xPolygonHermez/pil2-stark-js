@@ -1,10 +1,9 @@
 const fs = require("fs");
 const version = require("../../package").version;
 
-const { compile, newCommitPolsArray } = require("pilcom");
+const { compile } = require("pilcom");
 const F3g = require("../helpers/f3g.js");
-const { WitnessCalculatorBuilder } = require("circom_runtime");
-const { readExecFile } = require("./exec_helpers");
+const { compressorExec, readExecFile } = require("./compressor_exec");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 
 
@@ -33,7 +32,16 @@ async function run() {
 
     const pil = await compile(F, pilFile, null, pilConfig);
 
-    const cmPols = await compressorExec(F, pil, input, wasmFile, execFile);
+    
+    const exec = await readExecFile(execFile, pil.references["Compressor.a"].len);
+
+    const fd =await fs.promises.open(wasmFile, "r");
+    const st =await fd.stat();
+    const wasm = new Uint8Array(st.size);
+    await fd.read(wasm, 0, st.size);
+    await fd.close();
+
+    const cmPols = await compressorExec(F, pil, wasm, input, exec);
 
     await cmPols.saveToFile(commitFile);
 
@@ -48,41 +56,3 @@ run().then(()=> {
     console.log(err.stack);
     process.exit(1);
 });
-
-async function compressorExec(F, pil, input, wasmFile, execFile) {
-    const cmPols = newCommitPolsArray(pil, F);
-
-    const nCommittedPols =cmPols.Compressor.a.length;
-    
-    const { nAdds, nSMap, adds, sMap } = await readExecFile(execFile, nCommittedPols);
-
-    const fd =await fs.promises.open(wasmFile, "r");
-    const st =await fd.stat();
-    const wasm = new Uint8Array(st.size);
-    await fd.read(wasm, 0, st.size);
-    await fd.close();
-
-    
-
-    const wc = await WitnessCalculatorBuilder(wasm);
-    const w = await wc.calculateWitness(input);
-
-    for (let i=0; i<nAdds; i++) {
-        w.push( F.add( F.mul( w[adds[i*4]], adds[i*4 + 2]), F.mul( w[adds[i*4+1]],  adds[i*4+3]  )));
-    }
-
-    for (let i=0; i<nSMap; i++) {
-        for (let j=0; j<nCommittedPols; j++) {
-            if (sMap[nCommittedPols*i+j] != 0) {
-                cmPols.Compressor.a[j][i] = w[sMap[nCommittedPols*i+j]];
-            } else {
-                cmPols.Compressor.a[j][i] = 0n;
-            }
-        }
-    }
-
-    return cmPols;
-}
-
-module.exports.compressorExec = compressorExec;
-

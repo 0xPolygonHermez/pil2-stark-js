@@ -32,7 +32,7 @@ template Main() {
 
     signal input publics[<%- nPublics %>];
 
-    signal input subproofValues[<%- nSubproofValues %>][3];
+    signal input subAirValues[<%- nSubAirValues %>][3];
 
     signal input challenges[<%- nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4 %>][3];
 
@@ -71,11 +71,9 @@ template Main() {
 
     signal input finalPol[<%- 1 << starkInfo.starkStruct.steps[starkInfo.starkStruct.steps.length-1].nBits %>][3];
 
-    signal input subAirValue[3];
-
     signal output sv_circuitType;
-    signal output sv_aggregationTypes[<%- nSubproofValues %>];
-    signal output sv_subAirValues[<%- nSubproofValues %>][3];
+    signal output sv_aggregationTypes[<%- nSubAirValues %>];
+    signal output sv_subAirValues[<%- nSubAirValues %>][3];
 <%  for (let i = 0; i < nChallengesStages.length; ++i) { -%>
     signal output sv_root<%- i+1 %>[4];
 <%  } -%>
@@ -88,11 +86,11 @@ template Main() {
     signal output sv_finalPolHash[4];
 
     sv_circuitType <== <%- circuitType %>;
-<%  if(nSubproofValues > 0) { -%>
+<%  if(nSubAirValues > 0) { -%>
     sv_aggregationTypes <== [<%- aggregationTypes.map(a => a.aggType).join(",") %>];
 <%  } -%>
-<%  for (let i = 0; i < nSubproofValues; ++i) { -%>
-    sv_subAirValues[<%- i %>] <== subproofValues[<%- i %>];
+<%  for (let i = 0; i < nSubAirValues; ++i) { -%>
+    sv_subAirValues[<%- i %>] <== subAirValues[<%- i %>];
 <%  } -%>
 <%  for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
     sv_root<%- i+1 %> <== root<%- i+1 %>;
@@ -174,8 +172,8 @@ template Main() {
 
     sv.finalPol <== finalPol;
    
-<%  if(nSubproofValues > 0) { -%>
-    sv.subproofValues <== subproofValues;
+<%  if(nSubAirValues > 0) { -%>
+    sv.subAirValues <== subAirValues;
 <%  } -%>
 
     sv_rootC <== sv.rootC;

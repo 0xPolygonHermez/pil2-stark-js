@@ -97,11 +97,11 @@ template Main() {
 
 <%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
 <%      let starkInfo = starkInfoRecursivesF[i]; -%>
-<%      let nSubproofValues = aggregationTypes[starkInfo.finalSubproofId].length; -%>
+<%      let nSubAirValues = aggregationTypes[starkInfo.finalSubproofId].length; -%>
 <%      let c = i; -%>
-    signal input s<%- c %>_subAirValues[<%- nSubproofValues %>][3];
+    signal input s<%- c %>_subAirValues[<%- nSubAirValues %>][3];
 
-    signal input s<%- c %>_aggregationTypes[<%- nSubproofValues %>];
+    signal input s<%- c %>_aggregationTypes[<%- nSubAirValues %>];
 
 <% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
     signal input s<%- c %>_root<%- i + 1 %>[4];
@@ -151,7 +151,7 @@ template Main() {
 
 <%  for(let i = 0; i < starkInfoRecursivesF.length; ++i) { -%>
 <%      let starkInfo = starkInfoRecursivesF[i]; -%>
-<%      let nSubproofValues = aggregationTypes[starkInfo.finalSubproofId].length; -%>
+<%      let nSubAirValues = aggregationTypes[starkInfo.finalSubproofId].length; -%>
 <%      let c = i; -%>
 
     component sv<%- c %> = StarkVerifier<%- i %>();
@@ -208,17 +208,17 @@ template Main() {
     }
 <%  nPublicsInps += (stepsFRI.length + 1)*3; -%>
 
-<%  if(nSubproofValues > 0) { -%>
-    for(var i = 0; i < <%- nSubproofValues %>; i++) {
+<%  if(nSubAirValues > 0) { -%>
+    for(var i = 0; i < <%- nSubAirValues %>; i++) {
         sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_aggregationTypes[i];
     }
 
-    for(var i = 0; i < <%- nSubproofValues %>; i++) {
+    for(var i = 0; i < <%- nSubAirValues %>; i++) {
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i] <== s<%- c %>_subAirValues[i][0];
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i + 1] <== s<%- c %>_subAirValues[i][1];
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i + 2] <== s<%- c %>_subAirValues[i][2];
     }
-<%  nPublicsInps += 3*nSubproofValues; -%>
+<%  nPublicsInps += 3*nSubAirValues; -%>
 <%  } -%>
 
     for(var i = 0; i < 4; i++) {

@@ -41,7 +41,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
 
     ctx.publics = [];
 
-    ctx.subproofValues = new Array(pilInfo.nSubproofValues).fill(0n) || [];
+    ctx.subAirValues = new Array(pilInfo.nSubAirValues).fill(0n) || [];
 
     ctx.challenges[0] = [];
 
@@ -351,7 +351,7 @@ module.exports.genProofStark = async function genProof(ctx, options) {
     const proof = {
         rootQ: ctx.MH.root(ctx.trees[ctx.pilInfo.numChallenges.length + 1]),
         evals: ctx.evals,
-        subproofValues: ctx.subproofValues,
+        subAirValues: ctx.subAirValues,
         fri: ctx.friProof
     };
 

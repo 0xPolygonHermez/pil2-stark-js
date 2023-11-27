@@ -174,7 +174,7 @@ module.exports.getRef = function getRef(r, ctx, dom, global) {
         case "number": return `ctx.F.e(${r.value}n)`;
         case "public": return `ctx.publics[${r.id}]`;
         case "challenge": return `ctx.challenges[${r.stage - 1}][${r.id}]`;
-        case "subproofValue": return global ? `ctx.subproofValues[${r.subproofId}][${r.id}]` : `ctx.subproofValues[${r.id}]`;
+        case "subproofValue": return global ? `ctx.subAirValues[${r.subproofId}][${r.id}]` : `ctx.subAirValues[${r.id}]`;
         case "eval": return `ctx.evals[${r.id}]`;
         case "xDivXSubXi": {
             return `[
@@ -453,7 +453,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
                 evals: ctx.evals,
                 publics: ctx.publics,
                 challenges: ctx.challenges,
-                subproofValues: ctx.subproofValues
+                subAirValues: ctx.subAirValues
             };
             if(debug) {
                 ctxIn.filename = code.filename;
@@ -560,7 +560,7 @@ module.exports.calculateHintExpressions = async function calculateHintExpression
         let value = getHintField(hint, "expression", ctx, true);
         
         if(hint.name === "subproofvalue") {
-            ctx.subproofValues[hint.reference.id] = value;
+            ctx.subAirValues[hint.reference.id] = value;
         } else {
             ctx.publics[hint.reference.id] = value;
         }
