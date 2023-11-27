@@ -4,9 +4,9 @@ const version = require("../package").version;
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_genfinal.js -g globalinfo.json -s recursivef_stark_infos.json -o <final.circom> ")
+    .usage("node main_genfinal.js -g globalinfo.json -s recursive2_stark_infos.json -o <final.circom> ")
     .alias("s", "starkinfos").array("s")
-    .alias("v", "verifierCircuitsName").array("s")
+    .alias("v", "verificationkeys").array("v")
     .alias("g", "globalinfo")
     .alias("o", "output")
     .argv;
@@ -17,15 +17,26 @@ async function run() {
     const globalInfoFile = typeof(argv.globalinfo) === "string" ? argv.globalinfo.trim() : "mycircuit.globalinfo.json";
     const globalInfo = JSON.parse(await fs.promises.readFile(globalInfoFile, "utf8"));
 
-    const starkInfoRecursivesF = [];
+    const starkInfoRecursives2 = [];
+
+    if(argv.starkinfos.length !== argv.verificationkeys.length) {
+        throw new Error("The number of stark infos and verification keys must be the same");
+    }
 
     for(let i = 0; i < argv.starkinfos.length; i++) {
         const starkInfo = JSON.parse(await fs.promises.readFile(argv.starkinfos[i], "utf8"));
+        const verificationKeys = JSON.parse(await fs.promises.readFile(argv.verificationkeys[i], "utf8"));
+
         starkInfo.finalSubproofId = i;
-        starkInfoRecursivesF.push(starkInfo);
+        const res = { 
+            starkInfo, 
+            rootCRecursive2: verificationKeys.rootCRecursive2, 
+            rootCRecursives1: verificationKeys.rootCRecursives1 
+        };
+        starkInfoRecursives2.push(res);
     }
 
-    const verifier = await genFinal(globalInfo, starkInfoRecursivesF);
+    const verifier = await genFinal(globalInfo, starkInfoRecursives2);
 
     await fs.promises.writeFile(outputFile, verifier, "utf8");
 

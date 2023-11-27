@@ -4,11 +4,12 @@ const fs = require("fs");
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_genrecursive.js -v <basic_verification_keys.json> -g globalinfo.json -s starkinfo.json -b <starkinfobasic.json> -o <recursive.circom> [--hasCompressor] ")
+    .usage("node main_genrecursive.js -v <basic_verification_keys.json> -g globalinfo.json -s starkinfo.json -o <recursive.circom> [--hasCompressor] ")
     .alias("v", "vksbasics").array("v")
     .alias("s", "starkinfo")
     .alias("g", "globalinfo")
     .alias("o", "output")
+    .alias("k", "outputkeys")
     .string("template")
     .argv;
 

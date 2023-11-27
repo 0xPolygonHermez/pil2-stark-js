@@ -5,8 +5,8 @@ const { Transcript } = require('./templates/transcript');
 
 module.exports.genRecursive = async function genRecursive(template, subproofId, airId, vks, starkInfo, globalInfo, hasCompressor) {
     if(subproofId === undefined) throw new Error("subproofId is undefined");
-    if(airId === undefined && !["recursive2", "recursivef"].includes(template)) throw new Error("airId is undefined");
-    if(!["compressor", "recursive1", "recursive2", "recursivef"].includes(template)) throw new Error(`Invalid template: ${template}`);
+    if(airId === undefined && !["recursive2"].includes(template)) throw new Error("airId is undefined");
+    if(!["compressor", "recursive1", "recursive2"].includes(template)) throw new Error(`Invalid template: ${template}`);
 
     let verifierCircuitName;
     if((template === "recursive1" && !hasCompressor) || template === "compressor") { 
@@ -16,8 +16,6 @@ module.exports.genRecursive = async function genRecursive(template, subproofId, 
             verifierCircuitName = `compressor_subproof${subproofId}_air${airId}`;
         } else if (template === "recursive2") {
             verifierCircuitName = `recursive1_subproof${subproofId}`;
-        } else if (template === "recursivef") {
-            verifierCircuitName = `recursive2_subproof${subproofId}`;
         }
     }
 
