@@ -57,12 +57,6 @@ template SelectVerificationKey() {
 
 template Main() {
 
-    signal input publics[<%- nPublics %>];
-
-    signal input challenges[<%- nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4 %>][3];
-
-    signal input challengesFRISteps[<%- stepsFRI.length + 1 %>][3];
-
     signal input circuitType;
     signal input aggregationTypes[<%- nSubAirValues %>];
 
@@ -119,6 +113,12 @@ template Main() {
     signal input sv_finalPolHash[4];
 <%  transcriptValues.push("sv_finalPolHash"); -%>
 
+    signal input publics[<%- nPublics %>];
+
+    signal input challenges[<%- nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4 %>][3];
+
+    signal input challengesFRISteps[<%- stepsFRI.length + 1 %>][3];
+
     component sv = StarkVerifier();
     
     signal {binary} isNull <== IsZero()(circuitType);
@@ -159,29 +159,7 @@ template Main() {
 
     sv.finalPol <== finalPol;
 
-    for(var i = 0; i < <%- nPublics %>; i++) {
-        sv.publics[i] <== publics[i];
-    }
-
-<%  let nPublicsInps = nPublics; -%>
-    for(var i = 0; i < <%-  nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4 %>; i++) {
-        sv.publics[<%- nPublicsInps %> + 3*i] <== challenges[i][0];
-        sv.publics[<%- nPublicsInps %> + 3*i+1] <== challenges[i][1];
-        sv.publics[<%- nPublicsInps %> + 3*i+2] <== challenges[i][2];
-    }
-<%  nPublicsInps += ( nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4)*3; -%>
-
-    for(var i = 0; i < <%- stepsFRI.length + 1 %>; i++) {
-        sv.publics[<%- nPublicsInps %> + 3*i] <== challengesFRISteps[i][0];
-        sv.publics[<%- nPublicsInps %> + 3*i+1] <== challengesFRISteps[i][1];
-        sv.publics[<%- nPublicsInps %> + 3*i+2] <== challengesFRISteps[i][2];
-    }
-<%  nPublicsInps += (stepsFRI.length + 1)*3; -%>
-
-<%  for(let i = 0; i < 4; i++) { -%>
-    sv.publics[<%- nPublicsInps++ %>] <== <%- vks[0][i] %>;
-<%  } -%>
-
+<%  let nPublicsInps = 0; -%>
     sv.publics[<%- nPublicsInps++ %>] <== circuitType;
     
 <%  if(nSubAirValues > 0) { -%>
@@ -230,7 +208,29 @@ template Main() {
         sv.publics[<%- nPublicsInps %> + i] <== sv_finalPolHash[i];
     }
 <%  nPublicsInps += 4 -%>
-    
+
+    for(var i = 0; i < <%- nPublics %>; i++) {
+        sv.publics[<%- nPublicsInps %> + i] <== publics[i];
+    }
+<%  nPublicsInps += nPublics -%>
+
+    for(var i = 0; i < <%-  nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4 %>; i++) {
+        sv.publics[<%- nPublicsInps %> + 3*i] <== challenges[i][0];
+        sv.publics[<%- nPublicsInps %> + 3*i+1] <== challenges[i][1];
+        sv.publics[<%- nPublicsInps %> + 3*i+2] <== challenges[i][2];
+    }
+<%  nPublicsInps += ( nChallengesStages.reduce((nc, acc) => nc + acc, 0) + 4)*3; -%>
+
+    for(var i = 0; i < <%- stepsFRI.length + 1 %>; i++) {
+        sv.publics[<%- nPublicsInps %> + 3*i] <== challengesFRISteps[i][0];
+        sv.publics[<%- nPublicsInps %> + 3*i+1] <== challengesFRISteps[i][1];
+        sv.publics[<%- nPublicsInps %> + 3*i+2] <== challengesFRISteps[i][2];
+    }
+<%  nPublicsInps += (stepsFRI.length + 1)*3; -%>
+
+<%  for(let i = 0; i < 4; i++) { -%>
+    sv.publics[<%- nPublicsInps++ %>] <== <%- vks[0][i] %>;
+<%  } -%>
 }
 
 <% const publics = ["publics", "challenges", "challengesFRISteps"]; -%>

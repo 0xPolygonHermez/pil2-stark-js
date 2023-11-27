@@ -74,10 +74,10 @@ template Main() {
     signal output sv_circuitType;
     signal output sv_aggregationTypes[<%- nSubAirValues %>];
     signal output sv_subAirValues[<%- nSubAirValues %>][3];
+    signal output sv_rootC[4];
 <%  for (let i = 0; i < nChallengesStages.length; ++i) { -%>
     signal output sv_root<%- i+1 %>[4];
 <%  } -%>
-    signal output sv_rootC[4];
     signal output sv_rootQ[4];
     signal output sv_evalsHash[4];
 <%      for(let i = 1; i < stepsFRI.length; i++) { -%>
