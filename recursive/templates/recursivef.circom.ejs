@@ -4,56 +4,8 @@ pragma custom_templates;
 include "mux2.circom";
 include "mux1.circom";
 include "iszero.circom";
+include "vadcop.circom";
 include "<%- verifierCircuitName %>.verifier.circom";
-
-// Given a circuit type, return the corresponding verification key
-template SelectVerificationKey() {
-
-    // 0 -> Null
-    // 1 -> Recursive2
-    // 2 -> Basic1 (Recursive1)
-    // 3 -> Basic2 (Recursive1)
-    // ...
-    signal input circuitType;
-
-    // Verification key corresponding to the circuit type
-    signal output verificationKey[4];
-
-    // The idea is to store an array of booleans which will indicate either 0 or 1 depending if the circuit type is equal to the index
-    // For instance, [0,1,0,0] would mean that the circuit type is a recursive2.
-    // Then, we will calculate the verification key as the sum of all the verification keys multiplied by the corresponding boolean
-    signal isType[<%- vks.length + 1 %>];
-<%  let sum = []; -%>
-<% for(let i = 0; i < vks.length + 1; i++) { -%>
-<%  sum.push(`isType[${i}]`); -%>
-    isType[<%- i %>] <== IsZero()(<%- i %> - circuitType);
-<% } -%>
-
-    // Check that the type is supported
-    <%- sum.join(" + ") %> === 1;
-
-    signal verificationKeys[<%- vks.length + 1 %>][4];
-    verificationKeys[0] <== [0,0,0,0];
-<% for(let i = 0; i < vks.length; i++) { -%>
-    verificationKeys[<%- i + 1 %>] <== [<%- vks[i].join(', ') %>];
-<% } -%>
-
-    signal accVK[<%- vks.length + 1 %>][4];
-
-    for(var i = 0; i < <%- vks.length + 1 %>; i++) {
-        if(i == 0) {
-            for(var j = 0; j < 4; j++) {
-                accVK[i][j] <== isType[i]*verificationKeys[i][j];
-            }
-        } else {
-            for(var j = 0; j < 4; j++) {
-                accVK[i][j] <== isType[i]*verificationKeys[i][j] + accVK[i - 1][j];
-            }
-        }
-    }
-
-    verificationKey <== accVK[<%- vks.length %>];
-}
 
 template Main() {
 
@@ -124,7 +76,14 @@ template Main() {
     signal {binary} isNull <== IsZero()(circuitType);
     sv.enable <== 1 - isNull;
 
-    sv.rootC <== SelectVerificationKey()(circuitType);
+    var rootCRecursive2[4] = [<%- vks[0].join(', ') %>];
+    var rootCRecursives1[<%- vks.length - 1 %>][4];
+   
+<% for(let i = 1; i < vks.length; i++) { -%>
+    rootCRecursives1[<%- i - 1 %>] = [<%- vks[i].join(', ') %>];
+<% } -%>
+    
+    sv.rootC <== SelectVerificationKey(<%- vks.length - 1 %>)(circuitType, rootCRecursive2, rootCRecursives1);
 
 <% for (let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
     sv.root<%- i+1 %> <== root<%- i + 1 %>;
