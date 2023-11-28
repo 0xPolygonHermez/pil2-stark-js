@@ -202,8 +202,9 @@ template Main() {
 
 <%  if(nSubAirValues > 0) { -%>
     for(var i = 0; i < <%- nSubAirValues %>; i++) {
-        sv.publics[<%- nPublicsInps++ %>] <== sv_aggregationTypes[i];
+        sv.publics[<%- nPublicsInps %> + i] <== sv_aggregationTypes[i];
     }
+<%  nPublicsInps += nSubAirValues; -%>
 
     for(var i = 0; i < <%- nSubAirValues %>; i++) {
         sv.publics[<%- nPublicsInps %> + 3*i] <== sv_subAirValues[i][0];

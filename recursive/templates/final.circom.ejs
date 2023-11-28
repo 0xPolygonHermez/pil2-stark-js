@@ -139,14 +139,14 @@ template Main() {
 
     signal input s<%- c %>_finalPol[<%- 1 << starkInfo.starkStruct.steps[starkInfo.starkStruct.steps.length-1].nBits %>][3];
 
-    signal input s<%- c %>_sv_rootCHash[4];
+    signal input s<%- c %>_sv_rootC[4];
 <%  for (let i = 0; i < nChallengesStages.length; ++i) { -%>
-    signal input s<%- c %>_sv_root<%- i+1 %>Hash[4];
+    signal input s<%- c %>_sv_root<%- i+1 %>[4];
 <%  } -%>
-    signal input s<%- c %>_sv_rootQHash[4];
+    signal input s<%- c %>_sv_rootQ[4];
     signal input s<%- c %>_sv_evalsHash[4];
 <%  for (let i = 1; i < stepsFRI.length; ++i) { -%>
-    signal input s<%- c %>_s<%- i %>_rootHash[4];
+    signal input s<%- c %>_sv_s<%- i %>_root[4];
 <%  } -%>
     signal input s<%- c %>_sv_finalPolHash[4];
 
@@ -162,9 +162,9 @@ template Main() {
     var s<%- c %>_rootCRecursive2[4] = [<%- starkInfoRecursives2[i].rootCRecursive2.join(', ') %>];
     var s<%- c %>_rootCRecursives1[<%- starkInfoRecursives2[i].rootCRecursives1.length %>][4];
 
-    <% for(let j = 1; j < starkInfoRecursives2[i].rootCRecursives1.length; j++) { -%>
-        s<%- c %>_rootCRecursives1[<%- j - 1 %>] = [<%- starkInfoRecursives2[i].rootCRecursives1[j].join(', ') %>];
-    <% } -%>
+<% for(let j = 0; j < starkInfoRecursives2[i].rootCRecursives1.length; j++) { -%>
+    s<%- c %>_rootCRecursives1[<%- j %>] = [<%- starkInfoRecursives2[i].rootCRecursives1[j].join(', ') %>];
+<% } -%>
 
     sv<%- c %>.rootC <== SelectVerificationKey(<%- starkInfoRecursives2[i].rootCRecursives1.length %>)(s<%- c %>_circuitType, s<%- c %>_rootCRecursive2, s<%- c %>_rootCRecursives1);
 
@@ -208,9 +208,9 @@ template Main() {
     sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_circuitType;
 <%  if(nSubAirValues > 0) { -%>
     for(var i = 0; i < <%- nSubAirValues %>; i++) {
-        sv<%- c %>.publics[<%- nPublicsInps++ %>] <== s<%- c %>_aggregationTypes[i];
+        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_aggregationTypes[i];
     }
-
+<%  nPublicsInps += nSubAirValues; -%>
     for(var i = 0; i < <%- nSubAirValues %>; i++) {
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i] <== s<%- c %>_subAirValues[i][0];
         sv<%- c %>.publics[<%- nPublicsInps %> + 3*i + 1] <== s<%- c %>_subAirValues[i][1];
@@ -220,19 +220,19 @@ template Main() {
 <%  } -%>
 
     for(var i = 0; i < 4; i++) {
-        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_rootCHash[i];
+        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_rootC[i];
     }
 <%  nPublicsInps += 4 -%>
 
 <%  for (let i = 0; i < nChallengesStages.length; i++) { -%>
     for(var i = 0; i < 4; i++) {
-        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_root<%- i+1 %>Hash[i];
+        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_root<%- i+1 %>[i];
     }
 <%  nPublicsInps += 4 -%>
 <%  } -%>
 
     for(var i = 0; i < 4; i++) {
-        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_rootQHash[i];
+        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_rootQ[i];
     }
 <%  nPublicsInps += 4 -%>
 
@@ -243,7 +243,7 @@ template Main() {
 
 <%  for(let i = 1; i < stepsFRI.length; i++) { -%>
     for(var i = 0; i < 4; i++) {
-        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_s<%- i %>_rootHash[i];
+        sv<%- c %>.publics[<%- nPublicsInps %> + i] <== s<%- c %>_sv_s<%- i %>_root[i];
     }
 <%  nPublicsInps += 4 -%>
 <%  } -%>
@@ -283,14 +283,14 @@ template Main() {
     verifyChallenges.challengesFRISteps <== challengesFRISteps;
     verifyChallenges.publics <== publics;
 <%  for(let i = 0; i < starkInfoRecursives2.length; ++i) { -%>
-    verifyChallenges.rootC[<%- i %>] <== s<%- i %>_sv_rootCHash;
+    verifyChallenges.rootC[<%- i %>] <== s<%- i %>_sv_rootC;
 <%      for (let j = 0; j < nChallengesStages.length; ++j) { -%>
-    verifyChallenges.root<%- j + 1 %>[<%- i %>] <== s<%- i %>_sv_root<%- j+1 %>Hash;
+    verifyChallenges.root<%- j + 1 %>[<%- i %>] <== s<%- i %>_sv_root<%- j+1 %>;
 <%      } -%>
-    verifyChallenges.rootQ[<%- i %>] <== s<%- i %>_sv_rootQHash;
+    verifyChallenges.rootQ[<%- i %>] <== s<%- i %>_sv_rootQ;
     verifyChallenges.evalsHash[<%- i %>] <== s<%- i %>_sv_evalsHash;
 <%      for (let j = 1; j < stepsFRI.length; ++j) { -%>
-    verifyChallenges.s<%- j %>_root[<%- i %>] <== s<%- i %>_s<%- j %>_rootHash;
+    verifyChallenges.s<%- j %>_root[<%- i %>] <== s<%- i %>_sv_s<%- j %>_root;
 <%      } -%>
     verifyChallenges.finalPolHash[<%- i %>] <== s<%- i %>_sv_finalPolHash;
 <%  } -%>
