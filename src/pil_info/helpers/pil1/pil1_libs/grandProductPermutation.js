@@ -83,19 +83,14 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
         const zp = E.cm(peCtx.zId, 1,stage, dim);
         z.stageId = pil.nCm2++;
 
-        let c1;
-        if(stark) {
-            c1 = E.sub(z, E.number(1));
-        } else {
-            if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
-            const l1 = E.const(pil.references["Global.L1"].id, 0, 0, 1);
-            c1 = E.mul(l1,  E.sub(z, E.number(1)));
-        }
-
+        if ( typeof pil.references["Global.L1"] === "undefined") throw new Error("Global.L1 must be defined");
+        const l1 = E.const(pil.references["Global.L1"].id, 0, 0, 1);
+        let c1 = E.mul(l1,  E.sub(z, E.number(1)));
+        
         c1.deg=2;
         pil.expressions.push(c1);
         let c1Id = pil.expressions.length - 1;
-        pil.polIdentities.push({e: c1Id, boundary: "firstRow", fileName: pi.fileName, line: pi.line });
+        pil.polIdentities.push({e: c1Id, boundary: "everyRow", fileName: pi.fileName, line: pi.line });
         let c1Dim = getExpDim(pil.expressions, c1Id, stark);
         pil.expressions[c1Id].dim = c1Dim;
 

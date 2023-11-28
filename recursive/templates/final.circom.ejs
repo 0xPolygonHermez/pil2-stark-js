@@ -217,13 +217,6 @@ template Main() {
 
 <% } -%>
 
-<% for(let i = 0; i < globalConstraints.length; i++) { -%>
-<% const c = unrollCode(globalConstraints[i].code) -%>
-    <%- c %>[0] === 0;
-    <%- c %>[1] === 0;
-    <%- c %>[2] === 0;
-<% } -%>
-
 <%  for(let i = 0; i < starkInfoRecursives2.length; ++i) { -%>
 <%      let starkInfo = starkInfoRecursives2[i].starkInfo; -%>
 <%      let nSubAirValues = aggregationTypes[starkInfo.finalSubproofId].length; -%>
@@ -367,7 +360,12 @@ template Main() {
     verifyChallenges.finalPolHash[<%- i %>] <== s<%- i %>_sv_finalPolHash;
 <%  } -%>
 
-// TODO: Add global constraints
+<% for(let i = 0; i < globalConstraints.length; i++) { -%>
+<% const c = unrollCode(globalConstraints[i].code) -%>
+    <%- c %>[0] === 0;
+    <%- c %>[1] === 0;
+    <%- c %>[2] === 0;
+<% } -%>
 }
 
 component main {public [publics]} = Main();
