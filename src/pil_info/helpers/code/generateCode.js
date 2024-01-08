@@ -3,7 +3,11 @@ const { pilCodeGen, buildCode } = require("./codegen");
 
 module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
     const expressionsCode = [];
+
+    const calculatedExps = [];
+
     for(let j = 0; j < expressions.length; ++j) {
+        const exp = expressions[j];
         if(j === res.cExpId || j === res.friExpId) continue;
         const ctx = {
             calculated: {},
@@ -16,7 +20,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             stark,
         };
 
-        const tmpExpressionsIds = expressionsCode.filter(e => e.stage < expressions[j].stage && e.dest).map(e => e.expId);
+        const tmpExpressionsIds = expressionsCode.filter(e => (e.stage < exp.stage || calculatedExps.includes[e.expId]) && e.dest).map(e => e.expId);
         for(let i = 0; i < tmpExpressionsIds.length; i++) {
             const expId = tmpExpressionsIds;
             ctx.calculated[expId] = {};
@@ -25,19 +29,20 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
                 ctx.calculated[expId][openingPoint] = true;
             }
         }
-
+        
         pilCodeGen(ctx, symbols, expressions, j, 0);
         const code = buildCode(ctx, expressions);
         const expInfo = {
             expId: j,
-            stage: expressions[j].stage,
-            symbols: expressions[j].symbols,
+            stage: exp.stage,
+            symbols: exp.symbols,
             code,
         }
 
         if(code.code.length > 0 && code.code[code.code.length - 1].dest.type !== "tmp") {
             const symbol = symbols.find( s => ["witness", "tmpPol"].includes(s.type) && s.polId === code.code[code.code.length - 1].dest.id);
             expInfo.dest = {op: "cm", stage: symbol.stage, stageId: symbol.stageId};
+            calculatedExps.push(expInfo.expId);
         }
         expressionsCode.push(expInfo);
     }
