@@ -52,7 +52,7 @@ describe("test fibonacci sm", async function () {
 
         await smFibonacci.execute(N, cmPols.Fibonacci, [1,2], F);
 
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil1: true, debug: true});
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil2: false, debug: true});
     });
 
 });

@@ -57,13 +57,13 @@ async function run() {
         await cmPols.loadFromFile(commitFile);
     }
 
-    const pil1 = true;
+    const pil2 = false;
 
     const verificationHashType = curveName.toUpperCase();
     const splitLinearHash = false;
 
     const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
-    const starkInfo = pilInfo(F, pil, true, pil1, true, {});
+    const starkInfo = pilInfo(F, pil, true, pil2, true, {});
     await starkGen(cmPols, constPols, {}, starkInfo, {}, optionsPilVerify);
 }
 

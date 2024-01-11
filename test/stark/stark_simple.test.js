@@ -45,7 +45,7 @@ async function runTest(pilFile) {
     }
     
     const skipVerifierCircom = pilFile === "simple1.pil" ? true : false;
-    await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil1: true, skip: skipVerifierCircom, debug: true});
+    await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil2: false, skip: skipVerifierCircom, debug: true});
 }
 
 describe("simple sm", async function () {

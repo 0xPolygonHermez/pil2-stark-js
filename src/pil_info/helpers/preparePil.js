@@ -6,7 +6,7 @@ const { getPiloutInfo } = require("./pil2/piloutInfo.js");
 const { generateConstraintPolynomial } = require("./polynomials/constraintPolynomial.js");
 
 
-module.exports.preparePil = function preparePil(F, pil, stark, pil1, debug, starkStruct) {
+module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, starkStruct) {
     const res = {};
 
     let expressions, symbols, constraints, publicsNames;
@@ -15,10 +15,10 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil1, debug, star
         pil.expressions[i].stage = 1;
     }
     
-    if(pil1) {
-        ({expressions, symbols, hints, constraints, publicsNames} = generatePil1Polynomials(F, res, pil, stark));
-    } else {
+    if(pil2) {
         ({expressions, symbols, hints, constraints, publicsNames} = getPiloutInfo(res, pil, stark));
+    } else {
+        ({expressions, symbols, hints, constraints, publicsNames} = generatePil1Polynomials(F, res, pil, stark));   
     }
 
     if(stark && !debug) {

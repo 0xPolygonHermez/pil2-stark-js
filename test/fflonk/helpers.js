@@ -15,13 +15,13 @@ module.exports.generateFflonkProof = async function generateFflonkProof(constPol
     const extraMuls = options.extraMuls || 0;
     const maxQDegree = options.maxQDegree;
     const hashCommits = options.hashCommits;
-    const pil1 = options.pil1;
+    const pil2 = options.pil2;
     const F = options.F;
 
     const ptauFile =  path.join(__dirname, "../../", "tmp", "powersOfTau28_hez_final_19.ptau");
     const zkeyFilename =  path.join(__dirname, "../../", "tmp", "fflonk_all.zkey");
 
-    const fflonkInfo = pilInfo(F, pil, false, pil1);
+    const fflonkInfo = pilInfo(F, pil, false, pil2);
 
     await fflonkSetup(constPols, zkeyFilename, ptauFile, fflonkInfo, {extraMuls, logger, maxQDegree});
 

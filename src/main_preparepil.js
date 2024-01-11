@@ -36,7 +36,7 @@ async function run() {
 
     const starkStruct = JSON.parse(await fs.promises.readFile(starkStructFile, "utf8"));
 
-    const infoPil = preparePil(F, pil, true, !pil2, false, starkStruct);
+    const infoPil = preparePil(F, pil, true, pil2, false, starkStruct);
 
     let maxDeg =  (1 << (starkStruct.nBitsExt - starkStruct.nBits)) + 1;
 

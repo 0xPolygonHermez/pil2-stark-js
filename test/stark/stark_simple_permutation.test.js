@@ -42,7 +42,7 @@ describe("test simple permutation sm", async function () {
 
         await smPermutation.execute(N, cmPols.SimplePermutation);
 
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil1: true, debug: true});
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil2: false, debug: true});
     });
 
 });

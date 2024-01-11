@@ -10,6 +10,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     console.log("Q degree: " + qDeg);
     
     res.qDeg = qDeg;
+    res.nConstraints = constraints.length + imExps.length;
 
     const dim = stark ? 3 : 1;
     const stage = res.numChallenges.length + 1;
@@ -19,7 +20,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     
     let multipleBoundaries = false;
     if(constraints.filter(c => c.boundary !== "everyRow").length > 0) multipleBoundaries = true;
-
+    
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
         const stageIm = imPolsLastStage ? res.numChallenges.length : expressions[expId].stage;

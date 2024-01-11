@@ -5,6 +5,8 @@ const F3g = require("./helpers/f3g.js");
 const pilInfo = require("./pil_info/pil_info.js");
 const { compile } = require("pilcom");
 const { compile: compilePil2 } = require("pilcom2");
+const protobuf = require('protobufjs');
+const path = require('path');
 
 const argv = require("yargs")
     .version(version)
@@ -12,7 +14,9 @@ const argv = require("yargs")
     .alias("p", "pil")
     .alias("P", "pilconfig")
     .alias("s", "starkstruct")
-    .alias("i", "starkinfo")
+    .alias("v", "pil2")
+    .string("subproofId")
+    .string("airId")
     .argv;
 
 async function run() {
@@ -28,14 +32,31 @@ async function run() {
 
     let pil;
     if(pil2) {
-        pil = await compilePil2(F, pilFile, null, pilConfig);
+        const tmpPath = path.resolve(__dirname, '../tmp');
+        if(!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath);
+        pilConfig.piloutDir = tmpPath;
+        await compilePil2(F, pilFile, null, pilConfig);
+        const piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
+        const pilOutProtoPath = path.resolve(__dirname, '../node_modules/pilcom2/src/pilout.proto');
+        const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
+        let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
+        
+        const subproofId = argv.subproofId || 0;
+        const airId = argv.airId || 0;
+
+        pil = pilout.subproofs[subproofId].airs[airId];
+        pil.symbols = pilout.symbols;
+        pil.numChallenges = pilout.numChallenges;
+        pil.hints = pilout.hints;
+        pil.airId = airId;
+        pil.subproofId = subproofId;
     } else {
         pil = await compile(F, pilFile, null, pilConfig);
     }
 
     const starkStruct = JSON.parse(await fs.promises.readFile(starkStructFile, "utf8"));
 
-    const starkInfo = pilInfo(F, pil, true, !pil2, false, starkStruct);
+    const starkInfo = pilInfo(F, pil, true, pil2, false, starkStruct);
 
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
 

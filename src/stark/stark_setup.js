@@ -9,8 +9,9 @@ const { interpolate } = require("../helpers/fft/fft_p");
 module.exports = async function starkSetup(constPols, pil, starkStruct, options) {
 
     const F = options.F;
-    const pil1 = options.pil1 || false;
-    const nConstants = pil1 ? pil.nConstants : pil.symbols.filter(s => s.type == 1).length;
+    const pil2 = options.pil2 || false;
+    const debug = options.debug || false;
+    const nConstants = pil2 ? pil.symbols.filter(s => s.type == 1).length : pil.nConstants;
     const nBits = starkStruct.nBits;
     const nBitsExt = starkStruct.nBitsExt;
     const extN= 1 << nBitsExt;
@@ -36,6 +37,6 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
         fixedPols: constPols,
         constTree,
         constRoot: MH.root(constTree),
-        starkInfo: pilInfo(F, pil, true, pil1, false, starkStruct),
+        starkInfo: pilInfo(F, pil, true, pil2, debug, starkStruct),
     }
 }

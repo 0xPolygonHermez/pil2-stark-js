@@ -34,10 +34,15 @@ describe("test fibonacci pil2 sm", async function () {
         };
 
         const F = new F3g("0xFFFFFFFF00000001");
-        await compile(F, path.join(__dirname, "../../state_machines/", "pil2", "sm_fibonacci", "fibonacci.pil"));
+
+        const tmpPath = path.resolve(__dirname, '../../../tmp');
+        if(!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath);
+        let pilConfig = { piloutDir: tmpPath};
+        await compile(F, path.join(__dirname, "../../state_machines/", "pil2", "sm_fibonacci", "fibonacci.pil"), null, pilConfig);
         
-        const piloutEncoded = fs.readFileSync("./tmp/pilout.ptb");
-        const PilOut = protobuf.loadSync("./node_modules/pilcom2/src/pilout.proto").lookupType("PilOut");
+        const piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
+        const pilOutProtoPath = path.resolve(__dirname, '../../../node_modules/pilcom2/src/pilout.proto');
+        const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
         let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
         
         const pil = pilout.subproofs[0].airs[0];
@@ -54,6 +59,6 @@ describe("test fibonacci pil2 sm", async function () {
         await smFibonacci.execute(pil.numRows, cmPols.Fibonacci, F);
 
         const inputs = { in1: 1n, in2: 2n, mod: 5n };
-        await generateStarkProof(cnstPols, cmPols, pil, starkStruct, inputs, {logger, F, pil1: false, debug: true});
+        await generateStarkProof(cnstPols, cmPols, pil, starkStruct, inputs, {logger, F, pil2: true, debug: true});
     });
 });

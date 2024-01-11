@@ -23,10 +23,14 @@ async function runTest(pilFile) {
 
     const F = new F1Field(21888242871839275222246405745257275088548364400416034343698204186575808495617n);
 
-    await compile(F, path.join(__dirname, "../../state_machines/", "pil2", "sm_simple", pilFile));
+    const tmpPath = path.resolve(__dirname, '../../../tmp');
+    if(!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath);
+    let pilConfig = { piloutDir: tmpPath};
+    await compile(F, path.join(__dirname, "../../state_machines/", "pil2", "sm_simple", pilFile), null, pilConfig);
     
-    const piloutEncoded = fs.readFileSync("./tmp/pilout.ptb");
-    const PilOut = protobuf.loadSync("./node_modules/pilcom2/src/pilout.proto").lookupType("PilOut");
+    const piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
+    const pilOutProtoPath = path.resolve(__dirname, '../../../node_modules/pilcom2/src/pilout.proto');
+    const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
     let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
     
     const pil = pilout.subproofs[0].airs[0];
@@ -46,7 +50,7 @@ async function runTest(pilFile) {
         await smSimple.execute(pil.numRows, cmPols.Simple, F);
     }
 
-    await generateFflonkProof(cnstPols, cmPols, pil, {F, logger, extraMuls: 0, maxQDegree: 1, pil1: false, debug: true});
+    await generateFflonkProof(cnstPols, cmPols, pil, {F, logger, extraMuls: 0, maxQDegree: 1, pil2: true, debug: true});
 }
 
 describe("simple sm", async function () {

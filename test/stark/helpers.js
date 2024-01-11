@@ -18,7 +18,7 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
     const hashCommits = options.hashCommits;
     const vadcop = options.vadcop;
     const F = options.F;
-    const pil1 = options.pil1;
+    const pil2 = options.pil2;
     const skip = options.skip || false;
 
     if(debug) {
@@ -27,12 +27,12 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
 
         const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
 
-        const starkInfo = pilInfo(F, pil, true, pil1, debug, {});
+        const starkInfo = pilInfo(F, pil, true, pil2, debug, {});
         const pilVerification = await starkGen(cmPols, constPols, {}, starkInfo, inputs, optionsPilVerify);
         assert(pilVerification==true);
     }
 
-    const setup = await starkSetup(constPols, pil, starkStruct, {F, pil1});
+    const setup = await starkSetup(constPols, pil, starkStruct, {F, pil2});
 
     const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, inputs, {logger, hashCommits});
 
