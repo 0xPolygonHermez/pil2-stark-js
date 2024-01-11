@@ -30,9 +30,11 @@ function pilCodeGen(ctx, symbols, expressions, expId, prime, debug) {
 function evalExp(ctx, symbols, expressions, exp, prime) {
     prime = prime || 0;
     if (["add", "sub", "mul", "muladd"].includes(exp.op)) {
-        const values = exp.values.map(v => evalExp(ctx, symbols, expressions, v, prime));
-        let dim = Math.max(...values.map(v => v.dim));        
-        const r = { type: "tmp", id: ctx.tmpUsed++, dim };
+        const values = [];
+        for(let i = 0; i < exp.values.length; ++i) {
+            values[i] = evalExp(ctx, symbols, expressions, exp.values[i], prime);
+        }
+        const r = { type: "tmp", id: ctx.tmpUsed++, dim: Math.max(...values.map(v => v.dim)) };
         if(ctx.verifierEvaluations && ctx.stark) r.dim = 3;
 
         ctx.code.push({
