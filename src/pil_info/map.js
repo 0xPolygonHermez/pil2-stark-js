@@ -1,12 +1,5 @@
 
 module.exports = function map(res, symbols, stark, debug) {  
-    res.cmPolsMap = [];
-    res.constPolsMap = [];
-
-    res.mapSectionsN = {};
-
-    res.mapSectionsN["tmpExp"] = 0;
-    
     mapSymbols(res, symbols);
 
     res.mapSectionsN["q_ext"] = res.qDim;

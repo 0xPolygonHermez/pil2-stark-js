@@ -61,15 +61,18 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     }
 }
 
-module.exports.calculateIntermediatePolynomials = function calculateIntermediatePolynomials(expressions, cExpId, maxQDeg) {
+module.exports.calculateIntermediatePolynomials = function calculateIntermediatePolynomials(expressions, cExpId, maxQDeg, qDim) {
     let d = 2;
 
     const cExp = expressions[cExpId];
-    let [imExps, qDeg] = calculateImPols(expressions, cExp, d++);
+    let [imExps, qDeg] = calculateImPols(expressions, cExp, d);
+    let addedBasefieldCols = calculateAddedCols(d++, expressions, imExps, qDeg, qDim);
     while(imExps.length > 0 && d <= maxQDeg) {
-        let [imExpsP, qDegP] = calculateImPols(expressions, cExp, d++);
-        if ((maxQDeg && imExpsP.length + qDegP < imExps.length + qDeg) 
+        let [imExpsP, qDegP] = calculateImPols(expressions, cExp, d);
+        let newAddedBasefieldCols = calculateAddedCols(d++, expressions, imExpsP, qDegP, qDim);
+        if ((maxQDeg && newAddedBasefieldCols < addedBasefieldCols) 
             || (!maxQDeg && imExpsP.length === 0)) {
+            addedBasefieldCols = newAddedBasefieldCols;
             [imExps, qDeg] = [imExpsP, qDegP];
         }
         if(imExpsP.length === 0) break;
@@ -78,6 +81,17 @@ module.exports.calculateIntermediatePolynomials = function calculateIntermediate
     return {newExpressions: expressions, imExps, qDeg};
 }
 
+function calculateAddedCols(maxDeg, expressions, imExps, qDeg, qDim) {
+    let qCols = qDeg * qDim;
+    let imCols = 0;
+    for(let i = 0; i < imExps.length; i++) {
+       imCols += expressions[imExps[i]].dim;
+    }
+    let addedCols = qCols + imCols;
+    console.log(`maxDeg: ${maxDeg}, nIm: ${imExps.length}, d: ${qDeg}, addedCols in the basefield: ${addedCols} (${qCols} + ${imCols})`);
+
+    return addedCols;
+}
 
 function calculateImPols(expressions, _exp, maxDeg) {
 
@@ -86,8 +100,6 @@ function calculateImPols(expressions, _exp, maxDeg) {
     let absMaxD = 0;
 
     [re, rd] = _calculateImPols(expressions, _exp, imPols, maxDeg);
-
-    console.log(`maxDeg: ${maxDeg}, nIm: ${re.length}, d: ${rd}`);
 
     return [re, Math.max(rd, absMaxD) - 1];  // We divide the exp polynomial by 1.
 

@@ -40,7 +40,7 @@ async function run() {
 
     let maxDeg =  (1 << (starkStruct.nBitsExt - starkStruct.nBits)) + 1;
 
-    const infoPilJSON = { maxDeg, cExpId: infoPil.res.cExpId, ...infoPil };
+    const infoPilJSON = { maxDeg, cExpId: infoPil.res.cExpId, qDim: infoPil.res.qDim, ...infoPil };
 
     await fs.promises.writeFile(infoPilFile, JSON.stringify(infoPilJSON, null, 1), "utf8");
 
