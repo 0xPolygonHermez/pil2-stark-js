@@ -1,7 +1,9 @@
-const { proofgen_execute } = require("./prover_worker");
 const workerpool = require("workerpool");
 const {BigBuffer} = require("ffjavascript");
 const { calculateH1H2 } = require("../helpers/polutils");
+const { starkgen_execute } = require("./stark_prover_worker");
+const { fflonkgen_execute } = require("./fflonk_prover_worker");
+const { create } = require("logplease");
 
 const maxNperThread = 1<<18;
 const minNperThread = 1<<12;
@@ -33,10 +35,12 @@ module.exports.calculateExps = function calculateExps(ctx, code, dom, debug, ret
 
     const N = dom=="n" ? ctx.N : ctx.extN;
     
+    const pCtx = ctxProxy(ctx);
+
     const res = [];
     if(!debug) {
         for (let i=0; i<N; i++) {
-            res[i] = cEveryRow(ctx, i);
+            res[i] = cEveryRow(pCtx, i);
         }
     } else {
         let first, last;
@@ -55,9 +59,9 @@ module.exports.calculateExps = function calculateExps(ctx, code, dom, debug, ret
         } else throw new Error("Invalid boundary: " + code.boundary);
 
         for(let i = first; i < last; i++) {
-            const v = cEveryRow(ctx, i);
-            if (!ctx.F.isZero(v)) {
-                ctx.errors.push(`${code.filename}:${code.line}: identity does not match w=${i} val=${ctx.F.toString(v)} `);
+            const v = cEveryRow(pCtx, i);
+            if (!pCtx.F.isZero(v)) {
+                pCtx.errors.push(`${code.filename}:${code.line}: identity does not match w=${i} val=${pCtx.F.toString(v)} `);
                 return;
             }
         }
@@ -69,7 +73,8 @@ module.exports.calculateExpAtPoint = function calculateExpAtPoint(ctx, code, i) 
     ctx.tmp = new Array(code.tmpUsed);
     cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.code, "n", true));
 
-    return cEveryRow(ctx, i);
+    const pCtx = ctxProxy(ctx);
+    return cEveryRow(pCtx, i);
 }
 
 
@@ -261,15 +266,23 @@ module.exports.setPol = function setPol(ctx, idPol, pol, dom) {
     const p = module.exports.getPolRef(ctx, idPol, dom);
 
     if (p.dim == 1) {
-        let buildPol = new Function("ctx", "i", "pol", [`ctx.${p.stage}[${p.offset} + i * ${p.size}] = pol;`]);
+        let buildPol = ctx.prover === "stark"
+            ? new Function("ctx", "i", "pol", [`ctx.${p.stage}.setElement(${p.offset} + i * ${p.size},pol);`])
+            : new Function("ctx", "i", "pol", [`ctx.${p.stage}.set(pol, (${p.offset} + i * ${p.size})*ctx.F.n8);`]);
         for (let i=0; i<p.deg; i++) {
             buildPol(ctx, i, pol[i]);
         }
     } else if (p.dim == 3) {
         const buildPolCode = [];
-        buildPolCode.push(`ctx.${p.stage}[${p.offset} + i * ${p.size}] = pol[0];`);
-        buildPolCode.push(`ctx.${p.stage}[${p.offset} + i * ${p.size} + 1] = pol[1];`);
-        buildPolCode.push(`ctx.${p.stage}[${p.offset} + i * ${p.size} + 2] = pol[2];`);
+        if(ctx.prover === "stark") {
+            buildPolCode.push(`ctx.${p.stage}.setElement(${p.offset} + i * ${p.size},pol[0]);`);
+            buildPolCode.push(`ctx.${p.stage}.setElement(${p.offset} + i * ${p.size} + 1,pol[1]);`);
+            buildPolCode.push(`ctx.${p.stage}.setElement(${p.offset} + i * ${p.size} + 2,pol[2]);`);
+        } else {
+            buildPolCode.push(`ctx.${p.stage}.set(pol[0], (${p.offset} + i * ${p.size})*ctx.F.n8);`);
+            buildPolCode.push(`ctx.${p.stage}.set(pol[1], (${p.offset} + i * ${p.size} + 1)*ctx.F.n8);`);
+            buildPolCode.push(`ctx.${p.stage}.set(pol[2], (${p.offset} + i * ${p.size} + 2)*ctx.F.n8);`);
+        }
     
         let buildPol = new Function("ctx", "i", "pol", buildPolCode.join("\n"));
     
@@ -308,13 +321,21 @@ module.exports.getPol = function getPol(ctx, idPol, dom) {
     const p = module.exports.getPolRef(ctx, idPol, dom);
     const res = new Array(p.deg);
     if (p.dim == 1) {
-        let buildPol = new Function("ctx", "i", "res", [`res[i] = ctx.${p.stage}[${p.offset} + i * ${p.size}];`]);
+        let buildPol = ctx.prover === "stark" 
+            ? new Function("ctx", "i", "res", [`res[i] = ctx.${p.stage}.getElement(${p.offset} + i * ${p.size});`])
+            : new Function("ctx", "i", "res", [`res[i] = ctx.${p.stage}.slice((${p.offset} + i * ${p.size}) * ctx.F.n8, (${p.offset} + i * ${p.size} + 1) * ctx.F.n8);`]);
         for (let i=0; i<p.deg; i++) {
             buildPol(ctx, i, res);
         }
     } else if (p.dim == 3) {
         const buildPolCode = [];
-        buildPolCode.push(`res[i] = [ctx.${p.stage}[${p.offset} + i * ${p.size}], ctx.${p.stage}[${p.offset} + i * ${p.size} + 1],ctx.${p.stage}[${p.offset} + i * ${p.size} + 2]];`);
+        if(ctx.prover === "stark") {
+            buildPolCode.push(`res[i] = [ctx.${p.stage}.slice((${p.offset} + i * ${p.size}) * ctx.F.n8, (${p.offset} + i * ${p.size} + 1) * ctx.F.n8), 
+                                        ctx.${p.stage}.slice((${p.offset} + i * ${p.size} + 1) * ctx.F.n8, (${p.offset} + i * ${p.size} + 2) * ctx.F.n8),
+                                        ctx.${p.stage}.slice((${p.offset} + i * ${p.size} + 2) * ctx.F.n8, (${p.offset} + i * ${p.size} + 3) * ctx.F.n8);`);
+        } else {
+
+        }
     
         let buildPol = new Function("ctx", "i", "res", buildPolCode.join("\n"));
 
@@ -468,15 +489,14 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     
             for (let s=0; s<execInfo.outputSections.length; s++) {
                 const si = execInfo.outputSections[s];
-                if (typeof ctxIn[si.name] == "undefined") {
-                    ctxIn[si.name] = new BigUint64Array(curN * si.width);
-                }
+                const b = new BigUint64Array(res[i][si.name].buffer, res[i][si.name].byteOffset, res[i][si.name].length-si.width*next );
+                ctx[si.name].set(b , i*nPerThread*si.width);
             }
     
             if (useThreads) {
-                promises.push(pool.exec("proofgen_execute", [ctxIn, true, cEveryRow, curN, execInfo, execPart, first, last, debug]));
+                promises.push(pool.exec("starkgen_execute", [ctxIn, true, cEveryRow, curN, execInfo, execPart, first, last, debug]));
             } else {
-                res.push(await proofgen_execute(ctxIn, true, cEveryRow, curN, execInfo, execPart, first, last, debug));
+                res.push(await starkgen_execute(ctxIn, true, cEveryRow, curN, execInfo, execPart, first, last, debug));
             }
         }
         if (useThreads) {
@@ -507,21 +527,18 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
                 ctxIn[si.name] = new BigBuffer(curN * si.width * ctx.F.n8);
                 const s1 = si.width > 0 ? ctx[si.name].slice(i * si.width * ctx.F.n8, (i + curN) * si.width * ctx.F.n8) : ctx[si.name];
                 ctxIn[si.name].set(s1, 0);
-                ctxIn[si.name] = new Proxy(ctxIn[si.name], BigBufferHandler);
             }
     
             for (let s=0; s<execInfo.outputSections.length; s++) {
                 const si = execInfo.outputSections[s];
-                if (typeof ctxIn[si.name] == "undefined") {
-                    ctxIn[si.name] = new BigBuffer(curN * si.width * ctx.F.n8);
-                }
-                ctxIn[si.name] = new Proxy(ctxIn[si.name], BigBufferHandler);
+                const b = si.width > 0 ? res[i][si.name].slice(0, res[i][si.name].byteLength - si.width * next * ctx.Fr.n8) : res[i][si.name];
+                ctx[si.name].set(b, i * nPerThread * si.width * ctx.Fr.n8);
             }
     
             if (useThreads) {
-                promises.push(pool.exec("proofgen_execute", [ctxIn, false, cEveryRow, curN, execInfo, execPart, first, last, debug]));
+                promises.push(pool.exec("fflonkgen_execute", [ctxIn, false, cEveryRow, curN, execInfo, execPart, first, last, debug]));
             } else {
-                res.push(await proofgen_execute(ctxIn, false, cEveryRow, curN, execInfo, execPart, first, last, debug));
+                res.push(await fflonkgen_execute(ctxIn, false, cEveryRow, curN, execInfo, execPart, first, last, debug));
             }
         }
         if (useThreads) {
@@ -590,11 +607,14 @@ function getHintField(hint, field, ctx, isOneValue) {
             return module.exports.calculateExps(ctx, expressionCode, "n", false, true);
         }
     } else {
+        const pCtx = ctxProxy(ctx);
         if(isOneValue) {
             const i = parseInt(hint.row_index.value);
-            return eval(module.exports.getRef({...hint[field], type: hint[field].op}, ctx, "n"));
+            const expression = module.exports.getRef({...hint[field], type: hint[field].op}, ctx, "n");
+            return eval(expression.replaceAll("ctx", "pCtx"));
         } else {
-            return eval(module.exports.getRef({...hint[field], type: hint[field].op}, ctx, "n"));
+            const expression = module.exports.getRef({...hint[field], type: hint[field].op}, ctx, "n");
+            return eval(expression.replaceAll("ctx", "pCtx"));
         }
     }
 }
@@ -649,6 +669,82 @@ module.exports.printPol = function printPol(buffer, Fr) {
     console.log("---------------------------");
 }
 
+function ctxProxy(ctx) {
+    const pCtx = {};
+    
+    const stark = ctx.prover === "stark" ? true : false;
+
+    createProxy("const_n", stark);
+    createProxy("const_ext", stark);
+    createProxy("const_coefs", stark);
+    for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+        createProxy(`cm${i + 1}_n`, stark);
+        createProxy(`cm${i + 1}_ext`, stark);
+        if(!stark) createProxy(`cm${i + 1}_coefs`, stark);
+    }
+
+    createProxy("tmpExp_n", stark);
+    createProxy("x_n", stark);
+    createProxy("x_ext", stark);
+    createProxy("q_ext", stark);
+
+    if(stark) {
+        createProxy("cmQ_ext", stark);
+
+        createProxy("Zi_ext", stark);
+
+        if(ctx.pilInfo.boundaries.includes("firstRow")) {
+            createProxy("Zi_fr_ext", stark);
+        }
+    
+        if(ctx.pilInfo.boundaries.includes("lastRow")) {
+            createProxy("Zi_lr_ext", stark);
+        }
+    
+        if(ctx.pilInfo.boundaries.includes("everyFrame")) {
+            for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) {
+              createProxy(`Zi_frame${i}_ext`, stark);
+            }   
+        }
+
+        createProxy("xDivXSubXi_ext", stark);
+
+        createProxy("f_ext", stark);
+    }
+
+    pCtx.N = ctx.N;
+    pCtx.nBits = ctx.nBits;
+
+    pCtx.extN = ctx.extN;
+    pCtx.nBitsExt = ctx.nBitsExt;
+
+    pCtx.tmp = ctx.tmp;
+
+    pCtx.pilInfo = ctx.pilInfo;
+
+    pCtx.F = ctx.F;
+
+    pCtx.publics = ctx.publics;
+    pCtx.challenges = ctx.challenges;
+    pCtx.challengesFRISteps = ctx.challengesFRISteps;
+    pCtx.subAirValues = ctx.subAirValues;
+    pCtx.evals = ctx.evals;
+
+    pCtx.errors = ctx.errors;
+
+    return pCtx;
+
+    function createProxy(section, stark) {
+        if (ctx[section]) {
+            if(stark) {
+                pCtx[section] = new Proxy(ctx[section], BigBufferHandlerBigInt);
+            } else {
+                pCtx[section] = new Proxy(ctx[section], BigBufferHandler);
+            }
+        }
+    }
+}
+
 const BigBufferHandler = {
     get: function (obj, prop) {
         if (!isNaN(prop)) {
@@ -681,6 +777,3 @@ const BigBufferHandlerBigInt = {
         }
     }
 };
-
-module.exports.BigBufferHandler = BigBufferHandler;
-module.exports.BigBufferHandlerBigInt = BigBufferHandlerBigInt;

@@ -23,10 +23,6 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
         // Read committed polynomials
         await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1);
     }
-   
-    if(!options.debug) {
-        addTranscript(ctx.transcript, [ctx.MH.root(ctx.constTree)], stark);
-    }
     
     await computePublics(ctx, inputs, stark, options);
 
@@ -133,43 +129,47 @@ async function computePublics(ctx, inputs, stark, options) {
     await calculatePublics(ctx, inputs);
 
     // Transcript publics
+    if(!options.debug) {
+        let publicsCommits = [];
+        if(options.hashCommits) {
+            if(!stark) {
+                const commitsStage0 = ctx.zkey.f.filter(f => f.stages[0].stage === 0).map(f => `f${f.index}_0`);
+                const constInputs = [];
+                for(let i = 0; i < commitsStage0.length; ++i) {
+                    constInputs.push({commit: true, value: ctx.committedPols[commitsStage0[i]].commit});
+                }
 
-    let publicsCommits = [];
-    if(options.hashCommits) {
-        if(!stark) {
-            const commitsStage0 = ctx.zkey.f.filter(f => f.stages[0].stage === 0).map(f => `f${f.index}_0`);
-            const constInputs = [];
-            for(let i = 0; i < commitsStage0.length; ++i) {
-                constInputs.push({commit: true, value: ctx.committedPols[commitsStage0[i]].commit});
+                const constRoot = await calculateHash(ctx, constInputs);
+                publicsCommits.push({ value: constRoot });
+
+                const publicInputs = [];
+                for(let i = 0; i < ctx.publics.length; ++i) {
+                    publicInputs.push({value: ctx.publics[i]});
+                }
+                const publicsRoot = await calculateHash(ctx, publicInputs);
+                publicsCommits.push({ value: publicsRoot }); 
+            } else {
+                publicsCommits.push(ctx.MH.root(ctx.constTree));
+                const publicsRoot = await calculateHash(ctx, ctx.publics);
+                publicsCommits.push(publicsRoot); 
             }
+            
 
-            const constRoot = await calculateHash(ctx, constInputs);
-            publicsCommits.push(constRoot);
+        } else {
+            if(stark) {
+                publicsCommits.push(ctx.MH.root(ctx.constTree));
+                publicsCommits.push(...ctx.publics);
+            } else {
+                const commitsStage0 = ctx.zkey.f.filter(f => f.stages[0].stage === 0).map(f => `f${f.index}_0`);
+                publicsCommits.push(...commitsStage0.map(p => {return { commit: true, value: ctx.committedPols[p].commit }}));
+                publicsCommits.push(...ctx.publics.map(p => {return { value: p }}));
 
-            const publicInputs = [];
-            for(let i = 0; i < ctx.publics.length; ++i) {
-                publicInputs.push({value: ctx.publics[i]});
             }
-            const publicsRoot = await calculateHash(ctx, publicInputs);
-            publicsCommits.push(publicsRoot); 
-        } else {
-            const publicsRoot = await calculateHash(ctx, ctx.publics);
-            publicsCommits.push(publicsRoot); 
         }
-        
 
-    } else {
-        if(stark) {
-            publicsCommits.push(...ctx.publics);
-        } else {
-            const commitsStage0 = ctx.zkey.f.filter(f => f.stages[0].stage === 0).map(f => `f${f.index}_0`);
-            publicsCommits.push(...commitsStage0.map(p => {return { commit: true, value: ctx.committedPols[p].commit }}));
-            publicsCommits.push(...ctx.publics.map(p => {return { value: p }}));
-
-        }
+        addTranscript(ctx.transcript, publicsCommits, stark);
     }
 
-    addTranscript(ctx.transcript, publicsCommits, stark);
 }
 
 async function computeStage(stage, ctx, options) {

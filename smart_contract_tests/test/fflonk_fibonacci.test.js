@@ -36,7 +36,7 @@ describe("Fflonk Fibonacci sm", async function () {
 
         await smFibonacci.execute(N, cmPols.Fibonacci, [1,2], F);
 
-        await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 1, debug: true});
+        await generateFflonkProof(constPols, cmPols, pil, {}, {F, logger, extraMuls: 1, debug: true});
 
     });
 

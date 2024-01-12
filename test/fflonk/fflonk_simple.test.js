@@ -49,6 +49,6 @@ describe("simple sm", async function () {
     
         await smSimple.execute(N, cmPols.Simple, F);
     
-        await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 0, maxQDegree: 1, debug: true});
+        await generateFflonkProof(constPols, cmPols, pil, {}, {F, logger, extraMuls: 0, maxQDegree: 1, debug: true});
     }
 });

@@ -40,7 +40,7 @@ describe("Fflonk simple permutation sm", async function () {
 
         await smPermutation.execute(N, cmPols.SimplePermutation);
 
-        await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 1, debug: true});
+        await generateFflonkProof(constPols, cmPols, pil, {}, {F, logger, extraMuls: 1, debug: true});
 
     });
 

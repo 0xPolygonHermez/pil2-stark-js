@@ -50,7 +50,7 @@ async function runTest(pilFile) {
         await smSimple.execute(pil.numRows, cmPols.Simple, F);
     }
 
-    await generateFflonkProof(cnstPols, cmPols, pil, {F, logger, extraMuls: 0, maxQDegree: 1, pil2: true, debug: true});
+    await generateFflonkProof(cnstPols, cmPols, pil, {}, {F, logger, extraMuls: 0, maxQDegree: 1, pil2: true, debug: true});
 }
 
 describe("simple sm", async function () {

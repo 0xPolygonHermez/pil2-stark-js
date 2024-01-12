@@ -27,7 +27,7 @@ async function runTest(pilFile) {
 
     await smSimple.execute(N, cmPols.Simple, F);
 
-    await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 0, debug: true});
+    await generateFflonkProof(constPols, cmPols, pil, {}, {F, logger, extraMuls: 0, debug: true});
 }
 
 

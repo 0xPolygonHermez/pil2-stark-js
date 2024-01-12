@@ -31,7 +31,7 @@ describe("Fflonk connection sm", async function () {
 
         await smConnection.execute(N, cmPols.Connection);
 
-        await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 1, debug: true});
+        await generateFflonkProof(constPols, cmPols, pil, {}, {F, logger, extraMuls: 1, debug: true});
 
     });
 });

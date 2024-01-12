@@ -46,11 +46,11 @@ module.exports.buildZhInv = function buildZhInv(buffTo, F, nBits, nBitsExt, star
     for (let i=0; i<extend; i++) {
         const xn = stark ? F.mul(sn, w) : w;
         const zh = F.sub(xn, F.one);
-        buffTo[i] = F.inv(zh);
+        buffTo.setElement(i,F.inv(zh));
         w = F.mul(w, F.w[extendBits]);
     }
     for (let i=extend; i<extN; i++) {
-        buffTo[i] = buffTo[i % extend];
+        buffTo.setElement(i, buffTo.getElement(i % extend));
     }
 }
 
@@ -65,7 +65,7 @@ module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, 
         const x = stark ? F.mul(s, w) : w;
         const zh = F.sub(x, root);
 
-        buffTo[i] = F.inv(zh);
+        buffTo.setElement(i,F.inv(zh));
         w = F.mul(w, F.w[nBitsExt]);
     }
 }
@@ -91,12 +91,12 @@ module.exports.buildFrameZerofierInv = function buildFrameZerofierInv(buffTo, F,
     let w = F.one;
     let s = F.shift;
     for (let i=0; i< (1 << nBitsExt); i++) {
-        let zi = buffZhInv[i];
+        let zi = buffZhInv.getElement(i);
         const x = stark ? F.mul(s, w) : w;
         for(let j = 0; j < roots.length; ++j) {
             zi = F.mul(zi, F.sub(x, roots[j]));
         }
-        buffTo[i] = zi;
+        buffTo.setElement(i, zi);
         w = F.mul(w, F.w[nBitsExt]);
     }
 }

@@ -8,7 +8,7 @@ const fs = require("fs");
 const {ethers, run} = require("hardhat");
 
 
-module.exports.generateFflonkProof = async function generateFflonkProof(constPols, cmPols, pil, options) {
+module.exports.generateFflonkProof = async function generateFflonkProof(constPols, cmPols, pil, inputs, options) {
     const logger = options.logger;
     const debug = options.debug;
     const extraMuls = options.extraMuls || 0;
@@ -28,11 +28,11 @@ module.exports.generateFflonkProof = async function generateFflonkProof(constPol
 
     if(debug) {
         const optionsPilVerify = {logger, debug, useThreads: false, parallelExec: false};
-        const pilVerification = await fflonkProve(zkey, cmPols, fflonkInfo, optionsPilVerify);
+        const pilVerification = await fflonkProve(zkey, cmPols, fflonkInfo, inputs, optionsPilVerify);
         assert(pilVerification==true);
     }
 
-    const {proof, publics} = await fflonkProve(zkey, cmPols, fflonkInfo, {logger});
+    const {proof, publics} = await fflonkProve(zkey, cmPols, fflonkInfo, inputs, {logger});
 
     const proofInputs = await exportFflonkCalldata(vk, proof, publics, {logger})
     const verifierCode = await exportPilFflonkVerifier(vk, fflonkInfo, {logger});

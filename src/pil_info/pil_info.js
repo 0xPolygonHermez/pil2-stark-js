@@ -32,7 +32,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, debug, star
 
     generatePilCode(res, symbols, constraints, newExpressions, debug, stark);
 
-    if(!debug) {
+    if(!debug && stark) {
         console.log("--------------------- POLINOMIALS INFO ---------------------")
         let nColumnsBaseField = 0;
         let nColumns = 0;

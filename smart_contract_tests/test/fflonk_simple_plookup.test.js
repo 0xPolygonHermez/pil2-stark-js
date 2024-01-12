@@ -38,7 +38,7 @@ describe("Fflonk simple plookup sm", async function () {
 
         await smSimplePlookup.execute(N, cmPols.SimplePlookup);
 
-        await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 1, debug: true});
+        await generateFflonkProof(constPols, cmPols, pil, {}, {F, logger, extraMuls: 1, debug: true});
 
     });
 

@@ -40,6 +40,8 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
     ctx.NCoefs = 1 << ctx.nBitsCoefs;
     ctx.extN = (1 << ctx.nBitsExt);
 
+    ctx.publics = [];
+
     ctx.challenges = [];
 
     ctx.committedPols = {};
@@ -69,21 +71,21 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
     }
 
     // Reserve big buffers for the polynomial evaluations
-    ctx.const_n = new Proxy(new BigBuffer(ctx.pilInfo.nConstants * ctx.N * ctx.F.n8), BigBufferHandler); // Constant polynomials
-    ctx.cm1_n = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.N * ctx.F.n8), BigBufferHandler);
+    ctx.const_n = new BigBuffer(ctx.pilInfo.nConstants * ctx.N * ctx.F.n8); // Constant polynomials
+    ctx.cm1_n = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.N * ctx.F.n8);
     for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
         const stage = i + 2;
-        ctx[`cm${stage}_n`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.N * ctx.F.n8), BigBufferHandler);
+        ctx[`cm${stage}_n`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.N * ctx.F.n8);
     }    
-    ctx.tmpExp_n = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp * ctx.N * ctx.F.n8), BigBufferHandler); // Expression polynomials
-    ctx.x_n = new Proxy(new BigBuffer(ctx.N * ctx.F.n8), BigBufferHandler); // Omegas de field extension
+    ctx.tmpExp_n = new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp * ctx.N * ctx.F.n8); // Expression polynomials
+    ctx.x_n = new BigBuffer(ctx.N * ctx.F.n8); // Omegas de field extension
 
     // Reserve big buffers for the polynomial coefficients
-    ctx.const_coefs = new Proxy(new BigBuffer(ctx.pilInfo.nConstants * ctx.N * ctx.F.n8), BigBufferHandler); // Constant polynomials
-    ctx.cm1_coefs = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.NCoefs * ctx.F.n8), BigBufferHandler);
+    ctx.const_coefs = new BigBuffer(ctx.pilInfo.nConstants * ctx.N * ctx.F.n8); // Constant polynomials
+    ctx.cm1_coefs = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.NCoefs * ctx.F.n8);
     for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
         const stage = i + 2;
-        ctx[`cm${stage}_coefs`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.NCoefs * ctx.F.n8), BigBufferHandler);
+        ctx[`cm${stage}_coefs`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.NCoefs * ctx.F.n8);
     }  
 
     ctx.const_n.set(ctx.zkey.constPolsEvals);
@@ -93,14 +95,14 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
 
     if(!options.debug) {
         // Reserve big buffers for the polynomial evaluations in the extended
-        ctx.const_ext = new Proxy(new BigBuffer(ctx.pilInfo.nConstants * ctx.extN * ctx.F.n8), BigBufferHandler);
-        ctx.cm1_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.extN * ctx.F.n8), BigBufferHandler);
+        ctx.const_ext = new BigBuffer(ctx.pilInfo.nConstants * ctx.extN * ctx.F.n8);
+        ctx.cm1_ext = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.extN * ctx.F.n8);
         for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
             const stage = i + 2;
-            ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.extN * ctx.F.n8), BigBufferHandler);
+            ctx[`cm${stage}_ext`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.extN * ctx.F.n8);
         }
-        ctx.q_ext = new Proxy(new BigBuffer(ctx.extN * ctx.F.n8), BigBufferHandler);
-        ctx.x_ext = new Proxy(new BigBuffer(ctx.extN * ctx.F.n8), BigBufferHandler); // Omegas a l'extès
+        ctx.q_ext = new BigBuffer(ctx.extN * ctx.F.n8);
+        ctx.x_ext = new BigBuffer(ctx.extN * ctx.F.n8); // Omegas a l'extès
 
         
         // Read const_ext
@@ -117,7 +119,7 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
         for (let i = 0; i < ctx.pilInfo.nConstants; i++) {
             const coefs = new BigBuffer(ctx.N * ctx.F.n8);
             for (let j = 0; j < ctx.N; j++) {
-                coefs.set( ctx.const_coefs[i + j * ctx.pilInfo.nConstants], j * ctx.F.n8);
+                coefs.set(ctx.const_coefs.slice((i + j * ctx.pilInfo.nConstants) * ctx.F.n8, (i + j * ctx.pilInfo.nConstants + 1) * ctx.F.n8), j * ctx.F.n8);
             }
             ctx[ctx.zkey.polsNamesStage[0][i]] = new Polynomial(coefs, ctx.curve, logger);
         }
@@ -190,7 +192,7 @@ module.exports.computeQFflonk = async function computeQ(ctx, options) {
 
     if(options.hashCommits) {
         const hash = await module.exports.calculateHashFflonk(ctx, stageCommits);
-        commitsTranscript.push(hash);
+        commitsTranscript.push({ value: hash });
     } else {
         commitsTranscript.push(...stageCommits);
     }
@@ -264,7 +266,7 @@ module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, tr
     return;
 }
 
-module.exports.addTranscriptFflonk = function addTranscriptStark(transcript, inputs) {
+module.exports.addTranscriptFflonk = function addTranscriptFflonk(transcript, inputs) {
     for(let i = 0; i < inputs.length; i++) {
         if(inputs[i].commit) {
             transcript.addPolCommitment(inputs[i].value);
@@ -341,7 +343,7 @@ module.exports.extendAndCommit = async function extendAndCommit(stage, ctx, opti
 
     if(options.hashCommits) {
         const hash = await module.exports.calculateHashFflonk(ctx, stageCommits);
-        commitsTranscript.push(hash);
+        commitsTranscript.push({ value: hash });
     } else {
         commitsTranscript.push(...stageCommits);
     }

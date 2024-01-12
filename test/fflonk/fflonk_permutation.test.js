@@ -31,6 +31,6 @@ describe("Fflonk permutation sm", async function () {
 
         await smPermutation.execute(N, cmPols.Permutation);
 
-        await generateFflonkProof(constPols, cmPols, pil, {F, logger, extraMuls: 1, debug: true});
+        await generateFflonkProof(constPols, cmPols, pil, {}, {F, logger, extraMuls: 1, debug: true});
     });
 });

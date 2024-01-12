@@ -101,23 +101,36 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
     const qStage = res.numChallenges.length + 1;
 
     pilCodeGen(ctxExt, symbols, expressions, res.cExpId, 0);
-    let multipleBoundaries = false;
-    if(constraints.filter(c => c.boundary !== "everyRow").length > 0) multipleBoundaries = true;
-    if(!multipleBoundaries) {
+    if(stark) {
+        let multipleBoundaries = false;
+        if(constraints.filter(c => c.boundary !== "everyRow").length > 0) multipleBoundaries = true;
+        if(!multipleBoundaries) {
+            const code = ctxExt.code;
+            code.push({
+                op: "mul",
+                dest: {
+                    type: "q",
+                    id: 0,
+                    dim: res.qDim,
+                },
+                src: [
+                    code[code.length-1].dest,
+                    { type: "Zi", boundary: "everyRow", dim: res.qDim }
+                ]
+            });
+        }
+    } else {
         const code = ctxExt.code;
         code.push({
-            op: "mul",
+            op: "copy",
             dest: {
                 type: "q",
-                id: 0,
-                dim: res.qDim,
+                id: 0
             },
-            src: [
-                code[code.length-1].dest,
-                { type: "Zi", boundary: "everyRow", dim: res.qDim }
-            ]
+            src: [code[code.length-1].dest],
         });
     }
+    
     res.code[`stage${qStage}`] = buildCode(ctxExt, expressions);
     res.code[`stage${qStage}`].code[res.code[`stage${qStage}`].code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
 }

@@ -9,13 +9,13 @@ const fflonkVerify  = require("../../src/fflonk/helpers/fflonk_verify.js");
 const fflonkVerificationKey = require("../../src/fflonk/helpers/fflonk_verification_key.js");
 const { readPilFflonkZkeyFile } = require("../../src/fflonk/zkey/zkey_pilfflonk.js");
 
-module.exports.generateFflonkProof = async function generateFflonkProof(constPols, cmPols, pil, options) {
+module.exports.generateFflonkProof = async function generateFflonkProof(constPols, cmPols, pil, inputs, options) {
     const logger = options.logger;
     const debug = options.debug;
     const extraMuls = options.extraMuls || 0;
     const maxQDegree = options.maxQDegree;
     const hashCommits = options.hashCommits;
-    const pil2 = options.pil2;
+    const pil2 = options.pil2 || false;
     const F = options.F;
 
     const ptauFile =  path.join(__dirname, "../../", "tmp", "powersOfTau28_hez_final_19.ptau");
@@ -31,11 +31,11 @@ module.exports.generateFflonkProof = async function generateFflonkProof(constPol
 
     if(debug) {
         const optionsPilVerify = {logger, debug, useThreads: false, parallelExec: false};
-        const pilVerification = await fflonkProve(zkey, cmPols, fflonkInfo, optionsPilVerify);
+        const pilVerification = await fflonkProve(zkey, cmPols, fflonkInfo, inputs, optionsPilVerify);
         assert(pilVerification==true);
     }
 
-    const {proof, publics} = await fflonkProve(zkey, cmPols, fflonkInfo, {logger, hashCommits});
+    const {proof, publics} = await fflonkProve(zkey, cmPols, fflonkInfo, inputs, {logger, hashCommits});
 
     const isValid = await fflonkVerify(vk, publics, proof, [], fflonkInfo, {logger, hashCommits});
 

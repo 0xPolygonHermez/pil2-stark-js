@@ -12,7 +12,7 @@ const FRI = require("./fri.js");
 const _ = require("json-bigint");
 const { interpolate, ifft, fft } = require("../helpers/fft/fft_p.js");
 const {BigBuffer} = require("pilcom");
-const { callCalculateExps, getPolRef, BigBufferHandlerBigInt } = require("../prover/prover_helpers.js");
+const { callCalculateExps, getPolRef } = require("../prover/prover_helpers.js");
 
 module.exports.initProverStark = async function initProverStark(pilInfo, constPols, constTree, options = {}) {
     const ctx = {};
@@ -97,18 +97,18 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         throw new Error("Invalid Hash Type: "+ verificationHashType);
     }
 
-    ctx.const_n = new Proxy(new BigBuffer(ctx.pilInfo.nConstants*ctx.N), BigBufferHandlerBigInt);
+    ctx.const_n = new BigBuffer(ctx.pilInfo.nConstants*ctx.N);
     for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
         const stage = i + 1;
-        ctx[`cm${stage}_n`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.N), BigBufferHandlerBigInt);
+        ctx[`cm${stage}_n`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.N);
     }
-    ctx.tmpExp_n = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp*ctx.N), BigBufferHandlerBigInt);
-    ctx.x_n = new Proxy(new BigBuffer(ctx.N), BigBufferHandlerBigInt);
+    ctx.tmpExp_n = new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp*ctx.N);
+    ctx.x_n = new BigBuffer(ctx.N);
 
     // Build x_n
     let xx = ctx.F.one;
     for (let i=0; i<ctx.N; i++) {
-        ctx.x_n[i] = xx;
+        ctx.x_n.setElement(i,xx);
         xx = ctx.F.mul(xx, ctx.F.w[ctx.nBits])
     }
 
@@ -116,41 +116,41 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     constPols.writeToBigBuffer(ctx.const_n);
 
     if(!options.debug) {
-        ctx.const_ext = new Proxy(constTree.elements, BigBufferHandlerBigInt);
+        ctx.const_ext = constTree.elements;
         for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
             const stage = i + 1;
-            ctx[`cm${stage}_ext`] = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.extN), BigBufferHandlerBigInt);
+            ctx[`cm${stage}_ext`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.extN);
         }
-        ctx.cmQ_ext = new Proxy(new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ*ctx.extN), BigBufferHandlerBigInt);
-        ctx.q_ext = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.extN), BigBufferHandlerBigInt);
-        ctx.f_ext = new Proxy(new BigBuffer(3*ctx.extN), BigBufferHandlerBigInt);
-        ctx.x_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt);
-        ctx.Zi_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt);
+        ctx.cmQ_ext = new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ*ctx.extN);
+        ctx.q_ext = new BigBuffer(ctx.pilInfo.qDim*ctx.extN);
+        ctx.f_ext = new BigBuffer(3*ctx.extN);
+        ctx.x_ext = new BigBuffer(ctx.extN);
+        ctx.Zi_ext = new BigBuffer(ctx.extN);
 
-        ctx.xDivXSubXi_ext = new Proxy(new BigBuffer(3*ctx.extN*ctx.pilInfo.openingPoints.length), BigBufferHandlerBigInt);
+        ctx.xDivXSubXi_ext = new BigBuffer(3*ctx.extN*ctx.pilInfo.openingPoints.length);
         
         // Build x_ext
         let x_ext = ctx.F.shift;
         for (let i=0; i<ctx.extN; i++) {
-            ctx.x_ext[i] = x_ext;
+            ctx.x_ext.setElement(i, x_ext);
             x_ext = ctx.F.mul(x_ext, ctx.F.w[ctx.nBitsExt]);
         }
 
         // Build ZHInv
         buildZhInv(ctx.Zi_ext, ctx.F, ctx.nBits, ctx.nBitsExt, true);    
         if(ctx.pilInfo.boundaries.includes("firstRow")) {
-            ctx.Zi_fr_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
+            ctx.Zi_fr_ext = new BigBuffer(ctx.extN); 
             buildOneRowZerofierInv(ctx.Zi_fr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, 0, true);
         } 
 
         if(ctx.pilInfo.boundaries.includes("lastRow")) {
-            ctx.Zi_lr_ext = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
+            ctx.Zi_lr_ext = new BigBuffer(ctx.extN); 
             buildOneRowZerofierInv(ctx.Zi_lr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1, true);
         }
 
         if(ctx.pilInfo.boundaries.includes("everyFrame")) {
             for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) {
-                ctx[`Zi_frame${i}_ext`] = new Proxy(new BigBuffer(ctx.extN), BigBufferHandlerBigInt); 
+                ctx[`Zi_frame${i}_ext`] = new BigBuffer(ctx.extN); 
                 buildFrameZerofierInv(ctx[`Zi_frame${i}_ext`], ctx.F, ctx.Zi_ext, ctx.nBits, ctx.nBitsExt, ctx.pilInfo.constraintFrames[i], true);
             }   
         }
@@ -167,8 +167,9 @@ module.exports.computeQStark = async function computeQStark(ctx, options) {
     if (logger) logger.debug("Compute Trace Quotient Polynomials");
 
     const qStage = ctx.pilInfo.numChallenges.length + 1;
-    const qq1 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.extN), BigBufferHandlerBigInt);
-    const qq2 = new Proxy(new BigBuffer(ctx.pilInfo.qDim*ctx.pilInfo.qDeg*ctx.extN), BigBufferHandlerBigInt);
+    const qq1 = new BigBuffer(ctx.pilInfo.qDim*ctx.extN);
+    const qq2 = new BigBuffer(ctx.pilInfo.qDim*ctx.pilInfo.qDeg*ctx.extN);
+    
     await ifft(ctx.q_ext, ctx.pilInfo.qDim, ctx.nBitsExt, qq1);
 
     let curS = 1n;
@@ -178,7 +179,7 @@ module.exports.computeQStark = async function computeQStark(ctx, options) {
             for (let k=0; k<ctx.pilInfo.qDim; k++) {
                 const indexqq2 = i*ctx.pilInfo.qDim*ctx.pilInfo.qDeg + ctx.pilInfo.qDim*p + k;
                 const indexqq1 = p*ctx.N*ctx.pilInfo.qDim + i*ctx.pilInfo.qDim + k;
-                qq2[indexqq2] = ctx.F.mul(qq1[indexqq1], curS);
+                qq2.setElement(indexqq2, ctx.F.mul(qq1.getElement(indexqq1), curS));
             }
         }
         curS = ctx.F.mul(curS, shiftIn);
@@ -237,12 +238,12 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, options
         for (let k=0; k<ctx.N; k++) {
             let v;
             if (p.dim==1) {
-                v = p.buffer[(k<<ctx.extendBits)*p.size + p.offset];
+                v = p.buffer.getElement((k<<ctx.extendBits)*p.size + p.offset);
             } else {
                 v = [
-                    p.buffer[(k<<ctx.extendBits)*p.size + p.offset],
-                    p.buffer[(k<<ctx.extendBits)*p.size + p.offset+1],
-                    p.buffer[(k<<ctx.extendBits)*p.size + p.offset+2]
+                    p.buffer.getElement((k<<ctx.extendBits)*p.size + p.offset),
+                    p.buffer.getElement((k<<ctx.extendBits)*p.size + p.offset+1),
+                    p.buffer.getElement((k<<ctx.extendBits)*p.size + p.offset+2)
                 ];
             }
             acc = ctx.F.add(acc, ctx.F.mul(v, LEv[ctx.pilInfo.openingPoints.findIndex(p => p === ev.prime)][k]));
@@ -297,9 +298,9 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
         x = ctx.F.shift;
         for (let k=0; k < ctx.extN; k++) {
             const v = ctx.F.mul(den[k], x);
-            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + i)] = v[0];
-            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + i) + 1] = v[1];
-            ctx.xDivXSubXi_ext[3*(k*ctx.pilInfo.openingPoints.length + i) + 2] = v[2];
+            ctx.xDivXSubXi_ext.setElement(3*(k*ctx.pilInfo.openingPoints.length + i), v[0]);
+            ctx.xDivXSubXi_ext.setElement(3*(k*ctx.pilInfo.openingPoints.length + i) + 1, v[1]);
+            ctx.xDivXSubXi_ext.setElement(3*(k*ctx.pilInfo.openingPoints.length + i) + 2,v[2]);
     
             x = ctx.F.mul(x, ctx.F.w[ctx.nBitsExt])
         }
@@ -310,9 +311,9 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
     ctx.friPol[0] = new Array(ctx.extN);
     for (let i=0; i<ctx.extN; i++) {
         ctx.friPol[0][i] = [
-            ctx.f_ext[i*3],
-            ctx.f_ext[i*3 + 1],
-            ctx.f_ext[i*3 + 2],
+            ctx.f_ext.getElement(i*3),
+            ctx.f_ext.getElement(i*3 + 1),
+            ctx.f_ext.getElement(i*3 + 2),
         ];
     }
 }
