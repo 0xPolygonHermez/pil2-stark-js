@@ -44,6 +44,8 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
 
     ctx.challenges = [];
 
+    ctx.calculatedSymbols = [];
+
     ctx.committedPols = {};
     ctx.nonCommittedPols = [];
 

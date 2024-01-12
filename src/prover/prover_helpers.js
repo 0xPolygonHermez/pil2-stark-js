@@ -667,7 +667,7 @@ module.exports.applyHints = async function applyHints(stage, ctx, options) {
             }
         }
         if(symbolsMissing.length !== 0) {
-            if(options?.logger) options.logger.debug(`Skipping hint ${i} because ${symbolsMissing.length} symbols are missing`);
+            if(options?.logger) options.logger.debug(`Skipping hint ${i} because ${symbolsMissing.length} symbols: ${JSON.stringify(symbolsMissing)} are missing`);
             continue;
         } else {
             if(options?.logger) options.logger.debug(`Calculating hint ${i} expressions`);
