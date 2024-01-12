@@ -24,7 +24,6 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
         const stageIm = imPolsLastStage ? res.numChallenges.length : expressions[expId].stage;
-        expressions[expId].stage = stageIm;
         expressions[expId].imPol = true;
         expressions[expId].polId = res.nCommitments++;
         const dim = getExpDim(expressions, expId, stark);
