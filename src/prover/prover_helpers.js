@@ -330,11 +330,13 @@ module.exports.getPol = function getPol(ctx, idPol, dom) {
     } else if (p.dim == 3) {
         const buildPolCode = [];
         if(ctx.prover === "stark") {
-            buildPolCode.push(`res[i] = [ctx.${p.stage}.slice((${p.offset} + i * ${p.size}) * ctx.F.n8, (${p.offset} + i * ${p.size} + 1) * ctx.F.n8), 
-                                        ctx.${p.stage}.slice((${p.offset} + i * ${p.size} + 1) * ctx.F.n8, (${p.offset} + i * ${p.size} + 2) * ctx.F.n8),
-                                        ctx.${p.stage}.slice((${p.offset} + i * ${p.size} + 2) * ctx.F.n8, (${p.offset} + i * ${p.size} + 3) * ctx.F.n8);`);
+            buildPolCode.push(`res[i] = [ctx.${p.stage}.getElement(${p.offset} + i * ${p.size}), 
+                                         ctx.${p.stage}.getElement(${p.offset} + i * ${p.size} + 1),
+                                         ctx.${p.stage}.getElement(${p.offset} + i * ${p.size} + 2)];`);
         } else {
-
+            buildPolCode.push(`res[i] = [ctx.${p.stage}.slice((${p.offset} + i * ${p.size}) * ctx.F.n8, (${p.offset} + i * ${p.size} + 1) * ctx.F.n8), 
+                ctx.${p.stage}.slice((${p.offset} + i * ${p.size} + 1) * ctx.F.n8, (${p.offset} + i * ${p.size} + 2) * ctx.F.n8),
+                ctx.${p.stage}.slice((${p.offset} + i * ${p.size} + 2) * ctx.F.n8, (${p.offset} + i * ${p.size} + 3) * ctx.F.n8)];`);
         }
     
         let buildPol = new Function("ctx", "i", "res", buildPolCode.join("\n"));
