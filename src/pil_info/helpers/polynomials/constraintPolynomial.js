@@ -11,8 +11,6 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
     const vc = E.challenge("vc", stage, dim, 0);
     vc.stageId = 0;
     vc.expDeg = 0;
-
-    res.constraintFrames = [];
     
     res.cExpId = expressions.length;
 
@@ -21,17 +19,22 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
     for (let i=0; i<constraints.length; i++) {
         const boundary = constraints[i].boundary;
         if(!["everyRow", "firstRow", "lastRow", "everyFrame"].includes(boundary)) throw new Error("Boundary " + boundary + " not supported");
-        if(!res.boundaries.includes(boundary)) res.boundaries.push(boundary);
         let zi;
         if(boundary === "everyFrame") {
-            let frameId = res.constraintFrames.findIndex(f => f.offsetMin ===  constraints[i].offsetMin && f.offsetMax === constraints[i].offsetMax);
-            if(frameId == -1) {
-                res.constraintFrames.push({offsetMin: constraints[i].offsetMin, offsetMax: constraints[i].offsetMax})
-                frameId = res.constraintFrames.length - 1;
+            let boundaryId = res.boundaries.findIndex(b => b.name === "everyFrame" && b.offsetMin === constraints[i].offsetMin && b.offsetMax === constraints[i].offsetMax);
+            if(boundaryId == -1) {
+                res.boundaries.push({name: "everyFrame", offsetMin: constraints[i].offsetMin, offsetMax: constraints[i].offsetMax})
+                boundaryId = res.boundaries.length - 1;
             }
-            zi = E.zi(boundary, frameId);
+            zi = E.zi(boundaryId);
         } else {
-            zi = E.zi(boundary);
+            let boundaryId = res.boundaries.findIndex(b => b.name === boundary);
+            if(boundaryId == -1) {
+                res.boundaries.push({ name: boundary });
+                boundaryId = res.boundaries.length - 1;
+            }
+            
+            zi = E.zi(boundaryId);
         }
         let e = E.exp(constraints[i].e, 0, stage);
         if(stark && multipleBoundaries) e = E.mul(zi, e);

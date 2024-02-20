@@ -167,16 +167,17 @@ class Transcript {
         } else if (r.type == "x") {
             return "challengeXi";
         } else if (r.type == "Zi") {
-            if(r.boundary === "everyRow") {
+            const boundary = starkInfo.boundaries[r.boundaryId];
+            if(boundary.name === "everyRow") {
                 return "Zh";
-            } else if(r.boundary === "firstRow") {
+            } else if(boundary.name === "firstRow") {
                 return "Zfirst";
-            } else if(r.boundary === "lastRow") {
+            } else if(boundary.name === "lastRow") {
                 return "Zlast";
-            } else if(r.boundary === "everyFrame") {
-                const frame = starkInfo.constraintFrames[r.frameId];
-                return "Zframe" + r.frameId + "[" + (frame.offsetMin + frame.offsetMax - 1) + "]";
-            } else throw new Error("Invalid boundary: " + r.boundary);
+            } else if(boundary.name === "everyFrame") {
+                const boundaryId = starkInfo.boundaries.filter(b=>b.name === "everyFrame").findIndex(b => b.offsetMin === boundary.offsetMin && b.offsetMax === boundary.offsetMax);
+                return "Zframe" + boundaryId + "[" + (boundary.offsetMin + boundary.offsetMax - 1) + "]";
+            } else throw new Error("Invalid boundary: " + r.boundaryId);
         } else if (r.type == "xDivXSubXi") {
             return "xDivXSubXi[" + r.id + "]";
         } else if (r.type == "tmp") {
@@ -448,15 +449,15 @@ template parallel <%- verifyEvaluationsName %>() {
 
     // Store the vanishing polynomial Zh(x) = x^nBits - 1 evaluated at z
     signal Z[3] <== [zMul[<%- starkStruct.nBits - 1%>][0] - 1, zMul[<%- starkStruct.nBits - 1%>][1], zMul[<%- starkStruct.nBits - 1%>][2]];
-<% if(starkInfo.boundaries.length !== 1 || starkInfo.boundaries[0] !== "everyRow") { -%>
+<% if(starkInfo.boundaries.length !== 1 || starkInfo.boundaries[0].name !== "everyRow") { -%>
     signal Zh[3] <== CInv()(Z);
 <% } -%>
 
-<%  if(starkInfo.boundaries.includes("firstRow")) { -%>
+<%  if(starkInfo.boundaries.map(b => b.name).includes("firstRow")) { -%>
     signal Zfirst[3] <== CInv()([challengeXi[0] - 1, challengeXi[1], challengeXi[2]]);
 <%  } -%>
 
-<%  if(starkInfo.boundaries.includes("lastRow")) { -%>
+<%  if(starkInfo.boundaries.map(b => b.name).includes("lastRow")) { -%>
 <%  let root = F.one; -%>
 <%  for(let i = 0; i < (1 << starkStruct.nBits) - 1; ++i) { -%>
 <%    root = F.mul(root, F.w[starkStruct.nBits]); -%>
@@ -464,9 +465,10 @@ template parallel <%- verifyEvaluationsName %>() {
     signal Zlast[3] <== CInv()([challengeXi[0] - <%- root %>, challengeXi[1], challengeXi[2]]);
 <%  } -%>
 
-<%  if(starkInfo.boundaries.includes("everyFrame")) { -%>
-<%  for(let i = 0; i < starkInfo.constraintFrames.length; ++i) { -%>
-<%      let frame = starkInfo.constraintFrames[i]; -%>
+<%  if(starkInfo.boundaries.map(b => b.name).includes("everyFrame")) { -%>
+<%  const constraintFrames = starkInfo.boundaries.filter(b => b.name === "everyFrame"); -%>
+<%  for(let i = 0; i < constraintFrames.length; ++i) { -%>
+<%      let frame = constraintFrames[i]; -%>
 <%      let c = 0; -%>
     signal Zframe<%- i %>[<%- frame.offsetMin + frame.offsetMax %>][3];
 <%      for(let j = 0; j < frame.offsetMin; j++) { -%>
@@ -518,7 +520,7 @@ template parallel <%- verifyEvaluationsName %>() {
         }
     }
 
-<% if(starkInfo.boundaries.length === 1 && starkInfo.boundaries[0] === "everyRow") { -%>
+<% if(starkInfo.boundaries.length === 1 && starkInfo.boundaries[0].name === "everyRow") { -%>
     signal QZ[3] <== CMul()(qAcc[<%- starkInfo.qDeg-1 %>], Z); // Stores the result of multiplying Q(X) per Zg(X)
 
     // Final Verification. Check that Q(X)*Zh(X) = sum of linear combination of q_i, which is stored at <%- evalP %> 

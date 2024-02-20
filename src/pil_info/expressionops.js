@@ -94,11 +94,10 @@ class ExpressionOps {
         }
     }
 
-    zi(boundary, frameId) {
+    zi(boundaryId) {
         return {
             op: "Zi",
-            boundary,
-            frameId,
+            boundaryId,
         }
     }
 

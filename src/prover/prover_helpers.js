@@ -198,16 +198,19 @@ module.exports.getRef = function getRef(r, ctx, dom, global) {
             }
         }
         case "Zi": {
-            if(r.boundary === "everyRow") {
-                return `ctx.Zi_ext[i]`;
-            } else if(r.boundary === "firstRow") {
-                return `ctx.Zi_fr_ext[i]`;
-            } else if(r.boundary === "lastRow") {
-                return `ctx.Zi_lr_ext[i]`;
-            } else if(r.boundary === "everyFrame") {
-                return `ctx.Zi_frame${r.frameId}_ext[i]`;
+            const boundary = ctx.pilInfo.boundaries[r.boundaryId];
+            if(boundary.name === "everyFrame") {
+                const ziIndex = ctx.pilInfo.boundaries.findIndex(b => b.name === "everyFrame" && b.offsetMin === boundary.offsetMin && b.offsetMax === boundary.offsetMax);
+                if(ziIndex === -1) throw new Error("Something went wrong");
+                console.log(r.boundaryId, boundary, ziIndex, `ctx.Zi_ext[${ziIndex} * ${ctx.extN} + i]`);
+                return `ctx.Zi_ext[${ziIndex} * ${ctx.extN} + i]`;
+            } else if(["everyRow", "firstRow", "lastRow"].includes(boundary.name)) {
+                const ziIndex = ctx.pilInfo.boundaries.findIndex(b => b.name === boundary.name);
+                if(ziIndex === -1) throw new Error("Something went wrong");
+                console.log(r.boundaryId, boundary, ziIndex, `ctx.Zi_ext[${ziIndex} * ${ctx.extN} + i]`);
+                return `ctx.Zi_ext[${ziIndex} * ${ctx.extN} + i]`;
             } else {
-                throw new Error("Invalid boundary: " + r.boundary);
+                throw new Error("Invalid boundary: " + boundary.name);
             }
         }
         default: throw new Error("Invalid reference type get: " + r.type);
@@ -361,8 +364,6 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         outputSections: []
     };
 
-    const ziPols = ["Zi_ext"];
-
     if(execPart !== "global") {
         const execStages = [];
         for(let i = 0; i < ctx.pilInfo.numChallenges.length; ++i) {
@@ -372,12 +373,6 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
 
         const qStage = ctx.pilInfo.numChallenges.length + 1;
 
-        if(ctx.pilInfo.boundaries.includes("firstRow")) ziPols.push("Zi_fr_ext");
-        if(ctx.pilInfo.boundaries.includes("lastRow")) ziPols.push("Zi_lr_ext");
-        if(ctx.pilInfo.boundaries.includes("everyFrame")) {
-            for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) ziPols.push(`Zi_frame${i}_ext`);
-        }
-        
         if (execStages.includes(execPart)) {
             execInfo.inputSections.push({ name: "const_n" });
             execInfo.inputSections.push({ name: "x_n" });
@@ -398,9 +393,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             execInfo.inputSections.push({ name: "x_ext" });
             execInfo.outputSections.push({ name: "q_ext" });
             if(ctx.prover === "stark") {
-                for(let i = 0; i < ziPols.length; ++i) {
-                    execInfo.inputSections.push({ name: ziPols[i] });
-                }
+                execInfo.inputSections.push({ name: "Zi_ext" });
             }
             dom = "ext";
         } else if (execPart == "fri") {
@@ -423,8 +416,10 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             stage.width = ctx.pilInfo.nConstants;
         } else if (typeof ctx.pilInfo.mapSectionsN[stage.name.split("_")[0]] != "undefined") {
             stage.width = ctx.pilInfo.mapSectionsN[stage.name.split("_")[0]];
-        } else if (["x_n", "x_ext", ...ziPols].indexOf(stage.name) >= 0) {
+        } else if (["x_n", "x_ext"].indexOf(stage.name) >= 0) {
             stage.width = 1;
+        } else if (stage.name === "Zi_ext") {
+            stage.width = ctx.pilInfo.boundaries.length;
         } else if (["xDivXSubXi_ext"].indexOf(stage.name) >= 0) {
             stage.width = 3*ctx.pilInfo.openingPoints.length;
         } else if (["f_ext"].indexOf(stage.name) >= 0) {
@@ -694,20 +689,6 @@ function ctxProxy(ctx) {
         createProxy("cmQ_ext", stark);
 
         createProxy("Zi_ext", stark);
-
-        if(ctx.pilInfo.boundaries.includes("firstRow")) {
-            createProxy("Zi_fr_ext", stark);
-        }
-    
-        if(ctx.pilInfo.boundaries.includes("lastRow")) {
-            createProxy("Zi_lr_ext", stark);
-        }
-    
-        if(ctx.pilInfo.boundaries.includes("everyFrame")) {
-            for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) {
-              createProxy(`Zi_frame${i}_ext`, stark);
-            }   
-        }
 
         createProxy("xDivXSubXi_ext", stark);
 

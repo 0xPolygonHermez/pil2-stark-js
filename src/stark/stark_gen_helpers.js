@@ -125,7 +125,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         ctx.q_ext = new BigBuffer(ctx.pilInfo.qDim*ctx.extN);
         ctx.f_ext = new BigBuffer(3*ctx.extN);
         ctx.x_ext = new BigBuffer(ctx.extN);
-        ctx.Zi_ext = new BigBuffer(ctx.extN);
+        ctx.Zi_ext = new BigBuffer(ctx.pilInfo.boundaries.length*ctx.extN);
 
         ctx.xDivXSubXi_ext = new BigBuffer(3*ctx.extN*ctx.pilInfo.openingPoints.length);
         
@@ -136,23 +136,20 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
             x_ext = ctx.F.mul(x_ext, ctx.F.w[ctx.nBitsExt]);
         }
 
-        // Build ZHInv
-        buildZhInv(ctx.Zi_ext, ctx.F, ctx.nBits, ctx.nBitsExt, true);    
-        if(ctx.pilInfo.boundaries.includes("firstRow")) {
-            ctx.Zi_fr_ext = new BigBuffer(ctx.extN); 
-            buildOneRowZerofierInv(ctx.Zi_fr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, 0, true);
-        } 
-
-        if(ctx.pilInfo.boundaries.includes("lastRow")) {
-            ctx.Zi_lr_ext = new BigBuffer(ctx.extN); 
-            buildOneRowZerofierInv(ctx.Zi_lr_ext, ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1, true);
-        }
-
-        if(ctx.pilInfo.boundaries.includes("everyFrame")) {
-            for(let i = 0; i < ctx.pilInfo.constraintFrames.length; ++i) {
-                ctx[`Zi_frame${i}_ext`] = new BigBuffer(ctx.extN); 
-                buildFrameZerofierInv(ctx[`Zi_frame${i}_ext`], ctx.F, ctx.Zi_ext, ctx.nBits, ctx.nBitsExt, ctx.pilInfo.constraintFrames[i], true);
-            }   
+        const ZhInv = new BigBuffer(ctx.extN);
+        buildZhInv(ZhInv, 0, ctx.F, ctx.nBits, ctx.nBitsExt, true);    
+        
+        for(let i = 0; i < ctx.pilInfo.boundaries.length; i++) {
+            const boundary = ctx.pilInfo.boundaries[i];
+            if(boundary.name === "everyRow") {
+                buildZhInv(ctx.Zi_ext, i*ctx.extN, ctx.F, ctx.nBits, ctx.nBitsExt, true);    
+            } else if (boundary.name === "firstRow") {
+                buildOneRowZerofierInv(ctx.Zi_ext, i*ctx.extN, ctx.F, ctx.nBits, ctx.nBitsExt, 0, true);
+            } else if (boundary.name === "lastRow") {
+                buildOneRowZerofierInv(ctx.Zi_ext, i*ctx.extN, ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1, true);
+            } else if (boundary.name === "everyFrame") {
+                buildFrameZerofierInv(ctx.Zi_ext, i*ctx.extN, ctx.F, ZhInv, ctx.nBits, ctx.nBitsExt, boundary, true);
+            }
         }
 
         ctx.fri = new FRI( ctx.pilInfo.starkStruct, ctx.MH );

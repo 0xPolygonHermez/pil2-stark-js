@@ -42,7 +42,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
                 E.cm(res.nCommitments-1, 0, stage, dim),
             ]
         };
-        if(stark && multipleBoundaries) e = E.mul(E.zi("everyRow"), e);
+        if(stark && multipleBoundaries) e = E.mul(E.zi(res.boundaries.findIndex(b => b.name === "everyRow")), e);
         expressions[res.cExpId] = E.add(E.mul(vc, expressions[res.cExpId]), e);
     }
 

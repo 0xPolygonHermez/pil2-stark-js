@@ -72,7 +72,7 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
     } else if (exp.op == "xDivXSubXi") {
         return { type: exp.op, id: exp.id, opening: exp.opening, dim: 3 }
     } else if (exp.op == "Zi") {
-        return { type: exp.op, boundary: exp.boundary, frameId: exp.frameId, dim: 1 }
+        return { type: exp.op, boundaryId: exp.boundaryId, dim: 1 }
     } else if (exp.op === "x") {
         const dim = ctx.stark ? 3 : 1;
         return { type: exp.op, dim}

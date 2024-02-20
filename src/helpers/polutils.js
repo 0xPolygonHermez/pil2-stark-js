@@ -36,7 +36,7 @@ module.exports.extendPolBuffer = async function extendPolBuffer(Fr, buffSrc, buf
     return buffDst;
 }
 
-module.exports.buildZhInv = function buildZhInv(buffTo, F, nBits, nBitsExt, stark) {
+module.exports.buildZhInv = function buildZhInv(buffTo, offset, F, nBits, nBitsExt, stark) {
     const extendBits = nBitsExt - nBits;
     const extN = (1<<nBitsExt);
     const extend = (1<<extendBits);
@@ -46,7 +46,7 @@ module.exports.buildZhInv = function buildZhInv(buffTo, F, nBits, nBitsExt, star
     for (let i=0; i<extend; i++) {
         const xn = stark ? F.mul(sn, w) : w;
         const zh = F.sub(xn, F.one);
-        buffTo.setElement(i,F.inv(zh));
+        buffTo.setElement(i + offset,F.inv(zh));
         w = F.mul(w, F.w[extendBits]);
     }
     for (let i=extend; i<extN; i++) {
@@ -54,7 +54,8 @@ module.exports.buildZhInv = function buildZhInv(buffTo, F, nBits, nBitsExt, star
     }
 }
 
-module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, F, nBits, nBitsExt, rowIndex, stark) {
+module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, offset, F, nBits, nBitsExt, rowIndex, stark) {
+    console.log(rowIndex);
     let root = F.one;
     for(let i = 0; i < rowIndex; ++i) {
         root = F.mul(root, F.w[nBits]);
@@ -65,13 +66,13 @@ module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, 
         const x = stark ? F.mul(s, w) : w;
         const zh = F.sub(x, root);
 
-        buffTo.setElement(i,F.inv(zh));
+        buffTo.setElement(i + offset,F.inv(zh));
         w = F.mul(w, F.w[nBitsExt]);
     }
 }
 
 
-module.exports.buildFrameZerofierInv = function buildFrameZerofierInv(buffTo, F, buffZhInv, nBits, nBitsExt, frame, stark) {
+module.exports.buildFrameZerofierInv = function buildFrameZerofierInv(buffTo, offset, F, buffZhInv, nBits, nBitsExt, frame, stark) {
    let roots = [];
    for(let i = 0; i < frame.offsetMin; ++i) {
         let root = F.one;
@@ -96,7 +97,7 @@ module.exports.buildFrameZerofierInv = function buildFrameZerofierInv(buffTo, F,
         for(let j = 0; j < roots.length; ++j) {
             zi = F.mul(zi, F.sub(x, roots[j]));
         }
-        buffTo.setElement(i, zi);
+        buffTo.setElement(i + offset, zi);
         w = F.mul(w, F.w[nBitsExt]);
     }
 }

@@ -17,7 +17,7 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
     };
 
     res.nCm1 = pil.nCommitments;
-    
+
     let expressions, symbols, constraints, publicsNames;
 
     for(let i = 0; i < pil.expressions.length; ++i) {
@@ -66,7 +66,7 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
     
     res.hints = hints;
 
-    res.boundaries = ["everyRow"];
+    res.boundaries = [{ name: "everyRow" }];
 
     if(!debug) {
         generateConstraintPolynomial(res, expressions, constraints, stark);

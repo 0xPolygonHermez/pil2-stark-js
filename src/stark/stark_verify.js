@@ -97,13 +97,14 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
     const xi = ctx.challenges[evalsStage][0];
 
     const xN = F.exp(xi, N);
+    
     ctx.Z = F.inv(F.sub(xN, 1n));
     
-    if(starkInfo.boundaries.includes("firstRow")) {
+    if(starkInfo.boundaries.map(b => b.name).includes("firstRow")) {
         ctx.Z_fr = F.inv(F.sub(xi, 1n));
     }
 
-    if(starkInfo.boundaries.includes("lastRow")) {
+    if(starkInfo.boundaries.map(b => b.name).includes("lastRow")) {
         let root = F.one;
         for(let i = 0; i < N - 1; ++i) {
             root = F.mul(root, F.w[nBits]);
@@ -111,10 +112,11 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         ctx.Z_lr = F.inv(F.sub(xi, root));
     }
 
-    if(starkInfo.boundaries.includes("everyFrame")) {
-        for(let i = 0; i < starkInfo.constraintFrames.length; ++i) {
+    if(starkInfo.boundaries.map(b => b.name).includes("everyFrame")) {
+        const constraintFrames = starkInfo.boundaries.filter(b => b.name === "everyFrame");
+        for(let i = 0; i < constraintFrames.length; ++i) {
             ctx["Z_frame" + i] = ctx.Z;
-            const frame = starkInfo.constraintFrames[i];
+            const frame = constraintFrames[i];
             for(let j = 0; j < frame.offsetMin; ++j) {
                 let root = F.one;
                 for(let k = 0; k < j; ++k) {
@@ -142,7 +144,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         xAcc = F.mul(xAcc, xN);
     }
 
-    if(starkInfo.boundaries.length === 1 && starkInfo.boundaries[0] === "everyRow") {
+    if(starkInfo.boundaries.length === 1 && starkInfo.boundaries[0].name === "everyRow") {
         q = F.mul(q, F.sub(xN, 1n));
     } 
     if (!F.eq(res, q)) {
@@ -257,14 +259,16 @@ module.exports.executeCode = function executeCode(F, ctx, code, global) {
                 return ctx.challenges[evalsStage][0];
             }
             case "Zi": {
-                if(r.boundary === "everyRow") {
+                const boundary = ctx.starkInfo.boundaries[r.boundaryId];
+                if(boundary.name === "everyRow") {
                     return ctx.Z;
-                } else if (r.boundary === "firstRow") {
+                } else if (boundary.name === "firstRow") {
                     return ctx.Z_fr;
-                } else if (r.boundary === "lastRow") {
+                } else if (boundary.name === "lastRow") {
                     return ctx.Z_lr;
-                } else if (r.boundary === "everyFrame") {
-                    return ctx[`Z_frame${r.frameId}`];
+                } else if (boundary.name === "everyFrame") {
+                    const boundaryId = ctx.starkInfo.boundaries.filter(b => b.name === "everyFrame").findIndex(b => b.offsetMin === boundary.offsetMin && b.offsetMax === boundary.offsetMax);
+                    return ctx[`Z_frame${boundaryId}`];
                 } else {
                     throw new Error("Invalid boundary: " + r.boundary);
                 }
