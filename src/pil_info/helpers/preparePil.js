@@ -16,6 +16,8 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
         "tmpExp_n": 0,
     };
 
+    res.pil2 = true;
+    
     res.nCm1 = pil.nCommitments;
 
     let expressions, symbols, constraints, publicsNames;
