@@ -40,10 +40,10 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, challenge
         logger.debug(`  Curve:         ${curve.name}`);
         logger.debug(`  Domain size:   ${domainSize} (2^${power})`);
         logger.debug(`  Const  pols:   ${fflonkInfo.nConstants}`);
-        logger.debug(`  Stage 1 pols:   ${fflonkInfo.mapSectionsN.cm1}`);
+        logger.debug(`  Stage 1 pols:   ${fflonkInfo.mapSectionsN.cm1_n}`);
         for(let i = 0; i < fflonkInfo.numChallenges.length - 1; i++) {
             const stage = i + 2;
-            logger.debug(`  Stage ${stage} pols:   ${fflonkInfo.mapSectionsN[`cm${stage}`]}`);
+            logger.debug(`  Stage ${stage} pols:   ${fflonkInfo.mapSectionsN[`cm${stage}_n`]}`);
         }
         logger.debug(`  Stage Q pols:   ${nPolsQ.length}`);
         logger.debug("------------------------------");

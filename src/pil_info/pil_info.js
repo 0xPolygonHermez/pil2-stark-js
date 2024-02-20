@@ -39,7 +39,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, debug, star
         for(let i = 1; i <= res.numChallenges.length + 1; ++i) {
             let stage = i === res.numChallenges.length + 1 ? "Q": i;
             let nCols = res.cmPolsMap.filter(p => p.stage == "cm" + stage).length;
-            let nColsBaseField = res.mapSectionsN["cm" + stage];
+            let nColsBaseField = res.mapSectionsN["cm" + stage + "_n"];
             if(i === res.numChallenges.length + 1 || (i < res.numChallenges.length && imPolsLastStage)) {
                 console.log(`Columns stage ${stage}: ${nCols} -> Columns in the basefield: ${nColsBaseField}`);
             } else {

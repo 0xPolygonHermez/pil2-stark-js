@@ -13,9 +13,11 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
     res.constPolsMap = [];
 
     res.mapSectionsN = {
-        "tmpExp": 0,
+        "tmpExp_n": 0,
     };
 
+    res.nCm1 = pil.nCommitments;
+    
     let expressions, symbols, constraints, publicsNames;
 
     for(let i = 0; i < pil.expressions.length; ++i) {

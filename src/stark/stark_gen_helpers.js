@@ -100,9 +100,9 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.const_n = new BigBuffer(ctx.pilInfo.nConstants*ctx.N);
     for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
         const stage = i + 1;
-        ctx[`cm${stage}_n`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.N);
+        ctx[`cm${stage}_n`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}_n`]*ctx.N);
     }
-    ctx.tmpExp_n = new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp*ctx.N);
+    ctx.tmpExp_n = new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp_n*ctx.N);
     ctx.x_n = new BigBuffer(ctx.N);
 
     // Build x_n
@@ -119,9 +119,9 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         ctx.const_ext = constTree.elements;
         for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
             const stage = i + 1;
-            ctx[`cm${stage}_ext`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.extN);
+            ctx[`cm${stage}_ext`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}_n`]*ctx.extN);
         }
-        ctx.cmQ_ext = new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ*ctx.extN);
+        ctx.cmQ_ext = new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ_n*ctx.extN);
         ctx.q_ext = new BigBuffer(ctx.pilInfo.qDim*ctx.extN);
         ctx.f_ext = new BigBuffer(3*ctx.extN);
         ctx.x_ext = new BigBuffer(ctx.extN);
@@ -189,7 +189,7 @@ module.exports.computeQStark = async function computeQStark(ctx, options) {
 
     if (logger) logger.debug("··· Merkelizing Q polynomial tree");
 
-    const nPolsQ = ctx.pilInfo.mapSectionsN.cmQ || 0;
+    const nPolsQ = ctx.pilInfo.mapSectionsN.cmQ_n || 0;
     ctx.trees[qStage] = await ctx.MH.merkelize(ctx.cmQ_ext, nPolsQ, ctx.extN);
     return [ctx.MH.root(ctx.trees[qStage])];
 }
@@ -379,7 +379,7 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
     const buffFrom = ctx["cm" + stage + "_n"];
     const buffTo = ctx["cm" + stage + "_ext"];
 
-    const nPols = ctx.pilInfo.mapSectionsN["cm" + stage] || 0;
+    const nPols = ctx.pilInfo.mapSectionsN["cm" + stage + "_n"] || 0;
     
     if (logger) logger.debug("··· Interpolating " + stage);
     await interpolate(buffFrom, nPols, ctx.nBits, buffTo, ctx.nBitsExt);

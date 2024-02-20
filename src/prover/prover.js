@@ -18,10 +18,10 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
     
     if(ctx.prover === "stark") {
         // Read committed polynomials
-        cmPols.writeToBigBuffer(ctx.cm1_n, ctx.pilInfo.mapSectionsN.cm1);
+        cmPols.writeToBigBuffer(ctx.cm1_n, ctx.pilInfo.mapSectionsN.cm1_n);
     } else {
         // Read committed polynomials
-        await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1);
+        await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1_n);
     }
     
     await computePublics(ctx, inputs, stark, options);

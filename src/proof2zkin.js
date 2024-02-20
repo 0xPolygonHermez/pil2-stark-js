@@ -122,20 +122,20 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
         }
 
         zkin.s0_vals1[i] = [];
-        for(let j = 0; j < starkInfo.mapSectionsN.cm1; j++) {
+        for(let j = 0; j < starkInfo.mapSectionsN.cm1_n; j++) {
             zkin.s0_vals1[i][j] = "0";
         }
 
         for(let s = 0; s < nStages - 1; ++s) {
             const stage = s + 2;
             zkin[`s0_vals${stage}`][i] = [];
-            for(let j = 0; j < starkInfo.mapSectionsN[`cm${stage}`]; j++) {
+            for(let j = 0; j < starkInfo.mapSectionsN[`cm${stage}_n`]; j++) {
                 zkin[`s0_vals${stage}`][i][j] = "0";
             }
         }
 
         zkin.s0_valsQ[i] = [];
-        for(let j = 0; j < starkInfo.mapSectionsN.cmQ; j++) {
+        for(let j = 0; j < starkInfo.mapSectionsN.cmQ_n; j++) {
             zkin.s0_valsQ[i][j] = "0";
         }
 

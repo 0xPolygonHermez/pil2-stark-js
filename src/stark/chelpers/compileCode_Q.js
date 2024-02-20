@@ -1198,7 +1198,7 @@ module.exports = function compileCode_Q(starkInfo, functionName, code, dom) {
         offset += starkInfo.cmPolsMap
             .filter((pol, index) => pol.stage === p.stage && index < polId)
             .reduce((acc, pol) => acc + pol.dim, 0);
-        let size = starkInfo.mapSectionsN[p.stage];
+        let size = starkInfo.mapSectionsN[stage];
         if (p.dim == 1) {
             if (prime) {
                 range_pols_1.add(size);
@@ -1329,7 +1329,7 @@ module.exports = function compileCode_Q(starkInfo, functionName, code, dom) {
         offset += starkInfo.cmPolsMap
             .filter((pol, index) => pol.stage === p.stage && index < polId)
             .reduce((acc, pol) => acc + pol.dim, 0);
-        let size = starkInfo.mapSectionsN[p.stage];
+        let size = starkInfo.mapSectionsN[stage];
         if (p.dim == 1) {
             if (prime) {
                 args.push(Number(offset));

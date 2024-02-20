@@ -227,8 +227,8 @@ function evalMap(ctx, polId, prime, dom, val) {
         next = prime < 0 ? (prime + N) << ctx.extendBits : prime << ctx.extendBits;
     }
     let index = prime ? `((i + ${next})%${N})` : "i";
-    let size = ctx.pilInfo.mapSectionsN[p.stage];
     let stage = dom === "n" ? p.stage + "_n" : p.stage + "_ext";
+    let size = ctx.pilInfo.mapSectionsN[stage];
     let pos = `${offset} + ${index} * ${size}`;
     if(val) {
         if (p.dim == 1) {
@@ -311,7 +311,7 @@ module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
         buffer: ctx[stage],
         deg,
         offset,
-        size: ctx.pilInfo.mapSectionsN[p.stage],
+        size: ctx.pilInfo.mapSectionsN[stage],
         dim: p.dim
     };
     return polRef;

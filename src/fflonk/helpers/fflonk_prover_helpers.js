@@ -72,20 +72,20 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
 
     // Reserve big buffers for the polynomial evaluations
     ctx.const_n = new BigBuffer(ctx.pilInfo.nConstants * ctx.N * ctx.F.n8); // Constant polynomials
-    ctx.cm1_n = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.N * ctx.F.n8);
+    ctx.cm1_n = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1_n * ctx.N * ctx.F.n8);
     for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
         const stage = i + 2;
-        ctx[`cm${stage}_n`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.N * ctx.F.n8);
+        ctx[`cm${stage}_n`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}_n`] * ctx.N * ctx.F.n8);
     }    
-    ctx.tmpExp_n = new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp * ctx.N * ctx.F.n8); // Expression polynomials
+    ctx.tmpExp_n = new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp_n * ctx.N * ctx.F.n8); // Expression polynomials
     ctx.x_n = new BigBuffer(ctx.N * ctx.F.n8); // Omegas de field extension
 
     // Reserve big buffers for the polynomial coefficients
     ctx.const_coefs = new BigBuffer(ctx.pilInfo.nConstants * ctx.N * ctx.F.n8); // Constant polynomials
-    ctx.cm1_coefs = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.NCoefs * ctx.F.n8);
+    ctx.cm1_coefs = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1_n * ctx.NCoefs * ctx.F.n8);
     for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
         const stage = i + 2;
-        ctx[`cm${stage}_coefs`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.NCoefs * ctx.F.n8);
+        ctx[`cm${stage}_coefs`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}_n`] * ctx.NCoefs * ctx.F.n8);
     }  
 
     ctx.const_n.set(ctx.zkey.constPolsEvals);
@@ -96,10 +96,10 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
     if(!options.debug) {
         // Reserve big buffers for the polynomial evaluations in the extended
         ctx.const_ext = new BigBuffer(ctx.pilInfo.nConstants * ctx.extN * ctx.F.n8);
-        ctx.cm1_ext = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.extN * ctx.F.n8);
+        ctx.cm1_ext = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1_n * ctx.extN * ctx.F.n8);
         for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
             const stage = i + 2;
-            ctx[`cm${stage}_ext`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.extN * ctx.F.n8);
+            ctx[`cm${stage}_ext`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}_n`] * ctx.extN * ctx.F.n8);
         }
         ctx.q_ext = new BigBuffer(ctx.extN * ctx.F.n8);
         ctx.x_ext = new BigBuffer(ctx.extN * ctx.F.n8); // Omegas a l'extès
@@ -304,7 +304,7 @@ module.exports.extendAndCommit = async function extendAndCommit(stage, ctx, opti
     const buffCoefs = ctx["cm" + stage + "_coefs"];
     const buffTo = ctx["cm" + stage + "_ext"];
 
-    const nPols = ctx.pilInfo.mapSectionsN[`cm${stage}`];
+    const nPols = ctx.pilInfo.mapSectionsN[`cm${stage}_n`];
 
     await ifft(buffFrom, nPols, ctx.nBits, buffCoefs, ctx.F);
 

@@ -234,8 +234,8 @@ module.exports = function buildCHelpers(fflonkInfo, config = {}) {
                 .filter((pol, index) => pol.stage === p.stage && index < polId)
                 .reduce((acc, pol) => acc + pol.dim, 0);
             let index = prime ? `((i + ${next})%${N})` : "i";
-            let size = fflonkInfo.mapSectionsN[p.stage];
             let stage = extend ? p.stage + "_n" : p.stage + "_ext";
+            let size = fflonkInfo.mapSectionsN[stage];
             return `params.${stage}[${offset} + ${index}*${size}]`;
         }
     }

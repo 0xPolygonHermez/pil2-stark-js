@@ -300,7 +300,7 @@ module.exports = async function buildCHelpers(starkInfo, config = {}) {
             offset += starkInfo.cmPolsMap
                 .filter((pol, index) => pol.stage === p.stage && index < polId)
                 .reduce((acc, pol) => acc + pol.dim, 0);
-            let size = starkInfo.mapSectionsN[p.stage];
+            let size = starkInfo.mapSectionsN[stage];
             let index = prime ? `((i + ${next})%${N})` : "i";
             let pos = `${offset} + ${index} * ${size}`;
             if (p.dim == 1) {
