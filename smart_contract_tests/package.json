@@ -14,16 +14,16 @@
     "test:plookup": "mocha test/fflonk_plookup.test.js"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-waffle": "^2.0.5",
-    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
-    "chai": "^4.3.7",
+    "chai": "^4.2.0",
     "ethereum-waffle": "^4.0.10",
     "ethers": "^5.7.2",
-    "ffjavascript": "0.2.57",
-    "hardhat": "^2.14.0",
-    "mocha": "^10.2.0",
-    "shplonkjs": "https://github.com/0xPolygonHermez/shplonkjs.git#main",
-    "pil-stark": "file:.."
+    "ffjavascript": "0.2.63",
+    "hardhat": "^2.20.1",
+    "mocha": "^10.3.0",
+    "pil-stark": "file:..",
+    "shplonkjs": "https://github.com/0xPolygonHermez/shplonkjs.git#main"
   }
 }
