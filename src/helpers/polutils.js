@@ -55,7 +55,6 @@ module.exports.buildZhInv = function buildZhInv(buffTo, offset, F, nBits, nBitsE
 }
 
 module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, offset, F, nBits, nBitsExt, rowIndex, stark) {
-    console.log(rowIndex);
     let root = F.one;
     for(let i = 0; i < rowIndex; ++i) {
         root = F.mul(root, F.w[nBits]);

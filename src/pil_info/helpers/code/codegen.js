@@ -74,8 +74,11 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
     } else if (exp.op == "Zi") {
         return { type: exp.op, boundaryId: exp.boundaryId, dim: 1 }
     } else if (exp.op === "x") {
-        const dim = ctx.stark ? 3 : 1;
-        return { type: exp.op, dim}
+        if(ctx.verifierEvaluations) {
+            return { type: exp.op, dim: ctx.stark ? 3 : 1 }
+        } else {
+            return { type: exp.op, dim: 1 }
+        }
     } else {
         throw new Error(`Invalid op: ${exp.op}`);
     }

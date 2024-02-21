@@ -202,12 +202,10 @@ module.exports.getRef = function getRef(r, ctx, dom, global) {
             if(boundary.name === "everyFrame") {
                 const ziIndex = ctx.pilInfo.boundaries.findIndex(b => b.name === "everyFrame" && b.offsetMin === boundary.offsetMin && b.offsetMax === boundary.offsetMax);
                 if(ziIndex === -1) throw new Error("Something went wrong");
-                console.log(r.boundaryId, boundary, ziIndex, `ctx.Zi_ext[${ziIndex} * ${ctx.extN} + i]`);
                 return `ctx.Zi_ext[${ziIndex} * ${ctx.extN} + i]`;
             } else if(["everyRow", "firstRow", "lastRow"].includes(boundary.name)) {
                 const ziIndex = ctx.pilInfo.boundaries.findIndex(b => b.name === boundary.name);
                 if(ziIndex === -1) throw new Error("Something went wrong");
-                console.log(r.boundaryId, boundary, ziIndex, `ctx.Zi_ext[${ziIndex} * ${ctx.extN} + i]`);
                 return `ctx.Zi_ext[${ziIndex} * ${ctx.extN} + i]`;
             } else {
                 throw new Error("Invalid boundary: " + boundary.name);

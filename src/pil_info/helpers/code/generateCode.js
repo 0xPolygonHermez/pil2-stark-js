@@ -38,6 +38,8 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, co
         stark,
     };
 
+    const nStages = res.numChallenges.length;
+
     for(let j = 0; j < expressions.length; ++j) {
         if(expressions[j].stage === 1 && symbols.find(s => s.stage === 1 && s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId)) {
             pilCodeGen(ctx, symbols, expressions, j, 0);
@@ -46,17 +48,25 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, co
     res.code[`stage1`] =  buildCode(ctx, expressions);
     
 
-    for(let i = 0; i < res.numChallenges.length - 1; ++i) {
+    for(let i = 0; i < nStages - 1; ++i) {
         const stage = 2 + i;
         for(let j = 0; j < expressions.length; ++j) {
             if(expressions[j].stage === stage) {
+                if(stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === stage).length !== 0) continue;
                 pilCodeGen(ctx, symbols, expressions, j, 0);
             }
         }
         res.code[`stage${stage}`] =  buildCode(ctx, expressions);
     }
 
-    for(let i = 0; i < res.numChallenges.length; ++i) {
+    for(let j = 0; j < expressions.length; ++j) {
+        if(expressions[j].stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === nStages).length !== 0) {
+            pilCodeGen(ctx, symbols, expressions, j, 0);
+        }
+    }
+    res.code["imPols"] = buildCode(ctx, expressions);
+
+    for(let i = 0; i < nStages; ++i) {
         const stage = i + 1;
         const stageConstraints = constraints.filter(c => c.stage === stage);
         res.constraints[`stage${stage}`] = [];
@@ -115,7 +125,7 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
                 },
                 src: [
                     code[code.length-1].dest,
-                    { type: "Zi", boundary: "everyRow", dim: res.qDim }
+                    { type: "Zi", boundaryId: 0, dim: res.qDim }
                 ]
             });
         }

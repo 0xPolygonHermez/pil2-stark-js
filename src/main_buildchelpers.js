@@ -3,6 +3,8 @@ const path = require("path");
 const version = require("../package").version;
 
 const buildCHelpers = require("./stark/chelpers/stark_chelpers.js");
+const { writeCHelpersFile } = require("./stark/chelpers/binFile.js");
+const { mkdir } = require("fs/promises");
 
 const argv = require("yargs")
     .version(version)
@@ -11,45 +13,38 @@ const argv = require("yargs")
     .alias("c", "chelpers")
     .alias("C", "cls")
     .alias("m", "multiple")
-    .alias("o", "optcodes")
+    .alias("b", "binfile")
     .argv;
 
 async function run() {
-    const cls = typeof (argv.cls) === "string" ? argv.cls.trim() : "Stark";
+    let cls = typeof (argv.cls) === "string" ? argv.cls.trim() : "Stark";
+    let multiple = argv.multiple;
     const starkInfoFile = typeof (argv.starkinfo) === "string" ? argv.starkinfo.trim() : "mycircuit.starkinfo.json";
-    const chelpersFile = typeof (argv.chelpers) === "string" ? argv.chelpers.trim() : "mycircuit.chelpers.cpp";
-    const multipleCodeFiles = argv.multiple;
-    const optcodes = argv.optcodes;
+    const chelpersFile = typeof (argv.chelpers) === "string" ? argv.chelpers.trim() : "mycircuit.chelpers";
+    const binFile = typeof (argv.chelpers) === "string" ? argv.binfile.trim() : "mycircuit.chelpers.bin";
+
+    const baseDir = path.dirname(chelpersFile);
+    if (!fs.existsSync(baseDir)) {
+        fs.mkdirSync(baseDir, { recursive: true });
+    }
+    
+    cls = cls[0].toUpperCase() + cls.slice(1) + "Steps";
 
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
 
-    const cCode = await buildCHelpers(starkInfo, multipleCodeFiles ? { multipleCodeFiles: true, className: cls, optcodes: optcodes } : {});
+    const {code: cCode, cHelpersInfo } = await buildCHelpers(starkInfo, cls, multiple);
 
-    if (multipleCodeFiles) {
-        const baseDir = path.dirname(chelpersFile);
-        if (!fs.existsSync(baseDir)) {
-            fs.mkdirSync(baseDir, { recursive: true });
-        }
-        const dotPos = chelpersFile.lastIndexOf('.');
-        const leftFilename = dotPos < 0 ? chelpersFile : chelpersFile.substr(0, dotPos);
-        const ext = dotPos < 0 ? '.cpp' : chelpersFile.substr(dotPos);
-        const classInclude = cls.charAt(0).toLowerCase() + cls.slice(1) + ".hpp";
-        for (cpart in cCode) {
-            let code, ext2;
-            if (!cpart.includes("parser")) {
-                code = `#include "goldilocks_cubic_extension.hpp"\n#include "zhInv.hpp"\n#include "starks.hpp"\n#include "constant_pols_starks.hpp"\n#include "${classInclude}"\n\n` + cCode[cpart];
-                ext2 = ext;
-            } else {
-                code = cCode[cpart];
-                cpart = cpart.replace(/_/g, ".");
-                ext2 = ".hpp";
-            }
-            await fs.promises.writeFile(leftFilename + '.' + cpart + ext2, code, "utf8");
-        }
-    } else {
-        await fs.promises.writeFile(chelpersFile, cCode, "utf8");
+    await mkdir(chelpersFile, { recursive: true });
+
+    for (cpart in cCode) {
+        let fileName = chelpersFile + "/" + cpart;
+        fileName = fileName.substring(0, fileName.lastIndexOf('_')) + '.' + fileName.substring(fileName.lastIndexOf('_') + 1);
+        console.log(fileName);
+        await fs.promises.writeFile(fileName, cCode[cpart], "utf8");
     }
 
+    await writeCHelpersFile(binFile, cHelpersInfo);
+    
     console.log("files Generated Correctly");
 }
 

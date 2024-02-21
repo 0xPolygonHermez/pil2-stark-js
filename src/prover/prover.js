@@ -184,8 +184,9 @@ async function computeStage(stage, ctx, options) {
     
     await applyHints(stage, ctx);
 
-    //TODO: REMOVE WITH SMARTER LOGIC!
-    await callCalculateExps(`stage${stage}`, ctx.pilInfo.code[`stage${stage}`], dom, ctx, options.parallelExec, options.useThreads, false);
+    if(stage === ctx.pilInfo.numChallenges.length) {
+        await callCalculateExps(`stage${stage}`, ctx.pilInfo.code[`imPols`], dom, ctx, options.parallelExec, options.useThreads, false);
+    }
 
     if(options.debug) {
         const nConstraintsStage = ctx.pilInfo.constraints[`stage${stage}`].length;
