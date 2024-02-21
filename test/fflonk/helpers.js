@@ -29,12 +29,6 @@ module.exports.generateFflonkProof = async function generateFflonkProof(constPol
 
     const vk = await fflonkVerificationKey(zkey, {logger});
 
-    if(debug) {
-        const optionsPilVerify = {logger, debug, useThreads: false, parallelExec: false};
-        const pilVerification = await fflonkProve(zkey, cmPols, fflonkInfo, inputs, optionsPilVerify);
-        assert(pilVerification==true);
-    }
-
     const {proof, publics} = await fflonkProve(zkey, cmPols, fflonkInfo, inputs, {logger, hashCommits});
 
     const isValid = await fflonkVerify(vk, publics, proof, [], fflonkInfo, {logger, hashCommits});

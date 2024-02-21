@@ -8,15 +8,74 @@ const { create } = require("logplease");
 const maxNperThread = 1<<18;
 const minNperThread = 1<<12;
 
-module.exports.calculatePublics = async function calculatePublics(ctx, inputs) {
+module.exports.addPublics = function addPublics(ctx, inputs, options) {
      for (let i=0; i<ctx.pilInfo.nPublics; i++) {
         const name = ctx.pilInfo.publicsNames[i];
         if(inputs[name]) {
-            ctx.publics[i] = inputs[name];            
+            ctx.publics[i] = inputs[name];
+            module.exports.setSymbolCalculated(ctx, {op: "public", stage: 1, id: i}, options);            
         }
     }
+}
 
-    await module.exports.applyHints(1, ctx);
+module.exports.checkWitnessStageCalculated = function checkWitnessStageCalculated(ctx, stage, options) {
+    const stageWitness = ctx.pilInfo.cmPolsMap.filter(s => s.stageNum === stage);
+    let witnessesToBeCalculated = 0;
+    for(let i = 0; i < stageWitness.length; ++i) {
+        const symbol = { op: "cm", stage: stageWitness[i].stageNum, stageId: stageWitness[i].stageId };
+        const isCalculated = module.exports.isSymbolCalculated(ctx, symbol);
+        if(!isCalculated) {
+            ++witnessesToBeCalculated;
+        }
+    }
+    if(options.logger) options.logger.debug(`There are ${witnessesToBeCalculated} out of ${stageWitness.length} witness polynomials to be calculated in stage ${stage}`);
+    return witnessesToBeCalculated;
+}
+
+module.exports.checkStageCalculated = function checkStageCalculated(ctx, stage, options) {
+    const symbolsStage = ctx.pilInfo.symbolsStage[stage];
+    let symbolsNotCalculated = [];
+    for(let i = 0; i < symbolsStage.length; ++i) {
+        if(!module.exports.isSymbolCalculated(ctx, symbolsStage[i])) {
+            symbolsNotCalculated.push(symbolsStage[i]);
+        };
+    }
+    if(symbolsNotCalculated.length > 0) {
+        if(options.logger) options.logger.error(`Not all the symbols for the stage ${stage} has been calculated: ${symbolsNotCalculated.map(s => JSON.stringify(s))}`);
+        throw new Error(`Not all the symbols for the stage ${stage} has been calculated`);
+    }
+}
+
+module.exports.setStage1PolynomialsCalculated = function setStage1PolynomialsCalculated(ctx, options) {
+    for(let i = 0; i < ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1").length; ++i) {
+        const polInfo = ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1")[i];
+        if(!polInfo.imPol) {
+            module.exports.setSymbolCalculated(ctx, {op: "cm", stage: 1, stageId: i}, options);
+        }
+    }
+}
+
+module.exports.tryCalculateExps = async function tryCalculateExps(ctx, stage, dom, options) {
+    const expressionsStage = ctx.pilInfo.expressionsCode.filter(e => e.stage === stage && e.dest);
+    for(let i = 0; i < expressionsStage.length; ++i) {
+        if(module.exports.isSymbolCalculated(ctx, expressionsStage[i].dest)) continue;
+        const symbols = expressionsStage[i].symbols;
+        const symbolsMissing = [];
+        for(let j = 0; j < symbols.length; ++j) {
+            const symbol = symbols[j];
+            if(!module.exports.isSymbolCalculated(ctx, symbol)) {
+                symbolsMissing.push(symbol);
+            }
+        }
+        if(symbolsMissing.length === 0) {
+            if(options.logger) options.logger.debug(`Calculating expression ${expressionsStage[i].expId}`);
+            await module.exports.callCalculateExps(`stage${stage}`, expressionsStage[i].code, dom, ctx, options.parallelExec, options.useThreads);
+            module.exports.setSymbolCalculated(ctx, expressionsStage[i].dest, options);
+            if(options.logger) options.logger.debug(`Expression ${expressionsStage[i].expId} calculated`);
+        } else {
+            if(options.logger) options.logger.debug(`Skipping expression ${expressionsStage[i].expId} because ${symbolsMissing.length} symbols are missing`);
+        }
+    }
 }
 
 module.exports.callCalculateExps = async function callCalculateExps(step, code, dom, ctx, parallelExec, useThreads, debug, global = false) {
@@ -258,9 +317,10 @@ function evalMap(ctx, polId, prime, dom, val) {
     }
 }
 
-module.exports.setPolByReference = function setPolByReference(ctx, reference, pol, dom) {
+module.exports.setPolByReference = function setPolByReference(ctx, reference, pol, dom, options) {
     const polId = ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === reference.stage && c.stageId === reference.stageId);
     module.exports.setPol(ctx, polId, pol, dom);
+    module.exports.setSymbolCalculated(ctx, reference, options);
 }
 
 module.exports.setPol = function setPol(ctx, idPol, pol, dom) {
@@ -332,8 +392,8 @@ module.exports.getPol = function getPol(ctx, idPol, dom) {
         const buildPolCode = [];
         if(ctx.prover === "stark") {
             buildPolCode.push(`res[i] = [ctx.${p.stage}.getElement(${p.offset} + i * ${p.size}), 
-                                         ctx.${p.stage}.getElement(${p.offset} + i * ${p.size} + 1),
-                                         ctx.${p.stage}.getElement(${p.offset} + i * ${p.size} + 2)];`);
+                                        ctx.${p.stage}.getElement(${p.offset} + i * ${p.size} + 1),
+                                        ctx.${p.stage}.getElement(${p.offset} + i * ${p.size} + 2)];`);
         } else {
             buildPolCode.push(`res[i] = [ctx.${p.stage}.slice((${p.offset} + i * ${p.size}) * ctx.F.n8, (${p.offset} + i * ${p.size} + 1) * ctx.F.n8), 
                 ctx.${p.stage}.slice((${p.offset} + i * ${p.size} + 1) * ctx.F.n8, (${p.offset} + i * ${p.size} + 2) * ctx.F.n8),
@@ -382,7 +442,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             execInfo.inputSections.push({ name: "tmpExp_n" });
             execInfo.outputSections.push({ name: "tmpExp_n" });
             dom = "n";
-        } else if (execPart === `stage${qStage}`) {
+        } else if (execPart === "qCode") {
             execInfo.inputSections.push({ name: "const_ext" });
             for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
                 const stage = i + 1;
@@ -551,19 +611,69 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     await pool.terminate();
 }
 
-module.exports.applyHints = async function applyHints(stage, ctx) {
+module.exports.isSymbolCalculated = function isSymbolCalculated(ctx, symbol) {
+    const symbolFound = ctx.calculatedSymbols.find(s =>
+        (["cm", "challenge"].includes(symbol.op) && symbol.op === s.op && symbol.stage === s.stage && symbol.stageId === s.stageId)
+        || (["subproofValue", "public", "const"].includes(symbol.op) && symbol.op === s.op && symbol.stage === s.stage && symbol.id === s.id));
+
+    const isCalculated = symbolFound ? true : false;
+    return isCalculated;
+}
+
+module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, options) {
+    let symbol;
+    if(["cm", "challenge"].includes(ref.op)) {
+        symbol = {op: ref.op, stage: ref.stage, stageId: ref.stageId}
+    } else if(["public", "subproofValue", "const"].includes(ref.op)) {
+        symbol = {op: ref.op, stage: ref.stage, id: ref.id}
+    } else throw new Error("Invalid ref op " + ref.op);
+
+    if(!module.exports.isSymbolCalculated(ctx, symbol)) {
+        ctx.calculatedSymbols.push(symbol);
+        if(options?.logger) options.logger.debug(`Symbol ${symbol.op} for stage ${symbol.stage} and id ${["cm", "challenge"].includes(symbol.op) ? symbol.stageId : symbol.id} has been calculated`);
+    }
+}
+
+module.exports.applyHints = async function applyHints(stage, ctx, options) {
     for(let i = 0; i < ctx.pilInfo.hints.length; i++) {
         const hint = ctx.pilInfo.hints[i];
         if(hint.stage !== stage) continue;
 
-        const res = await module.exports.calculateHintExpressions(hint, ctx);
+        const referenceFields = Object.keys(hint).filter(k => k.includes("reference"));
+        let isCalculated = true;
+        for(let j = 0; j < referenceFields.length; ++j) {
+            if(module.exports.isSymbolCalculated(ctx, hint[referenceFields[j]])) {
+                if(options?.logger) options.logger.debug(`Hint ${i} ${referenceFields[j]} is already calculated`);
+            } else {
+                isCalculated = false;
+                break;
+            }
+        }
+
+        if(isCalculated) continue;
+
+        const symbolsMissing = [];
+        for(let j = 0; j < hint.symbols.length; ++j) {
+            const symbol = hint.symbols[j];
+            if(!module.exports.isSymbolCalculated(ctx, symbol)) {
+                symbolsMissing.push(symbol);
+            }
+        }
+        if(symbolsMissing.length !== 0) {
+            if(options?.logger) options.logger.debug(`Skipping hint ${i} because ${symbolsMissing.length} symbols: ${JSON.stringify(symbolsMissing)} are missing`);
+            continue;
+        } else {
+            if(options?.logger) options.logger.debug(`Calculating hint ${i} expressions`);
+        }
+
+        const res = await module.exports.calculateHintExpressions(hint, ctx, options);
         if(res) {
-            await resolveHint(res, ctx);
+            await resolveHint(res, ctx, options);
         }
     }
 }
 
-module.exports.calculateHintExpressions = async function calculateHintExpressions(hint, ctx) {
+module.exports.calculateHintExpressions = async function calculateHintExpressions(hint, ctx, options) {
     if(hint.name === "subproofvalue" || hint.name === "public") {
         if(!hint.reference) throw new Error("Reference field is missing");
         if(!hint.expression) throw new Error("Expression field is missing");
@@ -576,12 +686,18 @@ module.exports.calculateHintExpressions = async function calculateHintExpression
         } else {
             ctx.publics[hint.reference.id] = value;
         }
+
+        if(hint.dest) {
+            for(let i = 0; i < hint.dest.length; ++i) {
+                module.exports.setSymbolCalculated(ctx, hint.dest[i], options);
+            }
+        }
     } else {
         const keys = Object.keys(hint);
 
         const res = {};
         for(let i = 0; i < keys.length; ++i) {
-            if(keys[i] === "code" || keys[i] === "stage") continue;
+            if(keys[i] === "code" || keys[i] === "stage" || keys[i] === "symbols" || keys[i] === "dest") continue;
             if(keys[i] === "name" || keys[i].includes("reference")) {
                 res[keys[i]] = hint[keys[i]];
             } else {
@@ -594,12 +710,14 @@ module.exports.calculateHintExpressions = async function calculateHintExpression
 }
 
 function getHintField(hint, field, ctx, isOneValue) {
-    if(hint[field].op === "exp") {
-        const expressionCode = hint.code[field];
+    if(hint[field].op === "cm") {
+        const idPol = ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === hint[field].stage && c.stageId === hint[field].stageId);
+        const pol = module.exports.getPol(ctx, idPol ,"n");
         if(isOneValue) {
-            return module.exports.calculateExpAtPoint(ctx, expressionCode, parseInt(hint.row_index.value));
+            const pos = parseInt(hint.row_index.value);
+            return pol[pos];
         } else {
-            return module.exports.calculateExps(ctx, expressionCode, "n", false, true);
+            return pol;
         }
     } else {
         const pCtx = ctxProxy(ctx);
@@ -614,7 +732,7 @@ function getHintField(hint, field, ctx, isOneValue) {
     }
 }
 
-async function resolveHint(res, ctx) {
+async function resolveHint(res, ctx, options) {
     if(res.name === "gsum") {
         const gsum = [];
 
@@ -632,7 +750,7 @@ async function resolveHint(res, ctx) {
             }
         }
 
-        module.exports.setPolByReference(ctx, res.reference, gsum, "n");
+        module.exports.setPolByReference(ctx, res.reference, gsum, "n", options);
 
     } else if(res.name === "gprod") {
         const gprod = [];
@@ -644,12 +762,12 @@ async function resolveHint(res, ctx) {
             gprod[i] = ctx.F.mul(gprod[i-1], ctx.F.mul(res.numerator[i-1], denInv[i-1]));
         }
 
-        module.exports.setPolByReference(ctx, res.reference, gprod, "n");
+        module.exports.setPolByReference(ctx, res.reference, gprod, "n", options);
 
     } else if(res.name === "h1h2") {
         const H1H2 = calculateH1H2(ctx.F, res.f, res.t);
-        module.exports.setPolByReference(ctx, res.referenceH1, H1H2[0], "n", true);
-        module.exports.setPolByReference(ctx, res.referenceH2, H1H2[1], "n", true);
+        module.exports.setPolByReference(ctx, res.referenceH1, H1H2[0], "n", options);
+        module.exports.setPolByReference(ctx, res.referenceH2, H1H2[1], "n", options);
     } else throw new Error(`Hint ${hint.name} cannot be resolved.`);
 }
 

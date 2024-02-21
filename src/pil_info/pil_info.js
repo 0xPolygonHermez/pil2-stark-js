@@ -28,7 +28,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, debug, star
         newExpressions = expressions;
     }
     
-    map(res, symbols, stark, debug);       
+    map(res, symbols, newExpressions, stark, debug);       
 
     generatePilCode(res, symbols, constraints, newExpressions, debug, stark);
 

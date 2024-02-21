@@ -70,11 +70,10 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
 
     res.boundaries = [{ name: "everyRow" }];
 
+    res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
+
     if(!debug) {
         generateConstraintPolynomial(res, expressions, constraints, stark);
-        addInfoExpressions(symbols, expressions, expressions[res.cExpId], stark);
-
-        res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
     }
 
     return {res, expressions, constraints, symbols}

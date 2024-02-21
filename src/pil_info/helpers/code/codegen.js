@@ -16,11 +16,9 @@ function pilCodeGen(ctx, symbols, expressions, expId, prime, debug) {
         ctx.tmpUsed--;
         fixExpression(r, ctx, symbols, expressions);
         ctx.code[ctx.code.length - 1].dest = r;
-    } else {
-        if(ctx.publics || debug || expressions[expId].op === "exp") {
-            fixExpression(r, ctx, symbols, expressions);
-            ctx.code.push({ op: "copy", dest: r, src: [ retRef ] })
-        }        
+    } else if(expressions[expId].keep || debug || expressions[expId].op === "exp") {
+        fixExpression(r, ctx, symbols, expressions);
+        ctx.code.push({ op: "copy", dest: r, src: [ retRef ] })
     }
 
     if(!ctx.calculated[expId]) ctx.calculated[expId] = {};
@@ -195,9 +193,10 @@ function buildCode(ctx, expressions) {
         if (!e.keep) delete ctx.calculated[i];
     }
 
-    let code = { tmpUsed: ctx.tmpUsed, code: ctx.code };
+    let code = { tmpUsed: ctx.tmpUsed, code: ctx.code, symbolsCalculated: ctx.symbolsCalculated };
 
     ctx.code = [];
+    ctx.symbolsCalculated = [];
 
     return code;
 }

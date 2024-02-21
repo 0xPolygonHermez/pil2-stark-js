@@ -1,34 +1,59 @@
 const { getExpDim } = require("../helpers");
 const { pilCodeGen, buildCode } = require("./codegen");
 
-module.exports.generateHintsCode = function generateHintsCode(res, symbols, expressions, stark) {
-    for(let i = 0; i < res.hints.length; ++i) {
-        const hint = res.hints[i];
-        for(let j = 0; j < Object.keys(hint).length; ++j) {
-            const ctx = {
-                calculated: {},
-                tmpUsed: 0,
-                code: [],
-                expMap: [],
-                dom: "n",
-                airId: res.airId,
-                subproofId: res.subproofId,
-                stark,
-            };
-            if(hint.name === "public") ctx.publics = true;
-            const key = Object.keys(hint)[j];
-            if(hint[key].op === "exp") {
-                pilCodeGen(ctx, symbols, expressions, hint[key].id, 0);
-                if(!hint.code) hint.code = {};
-                hint.code[key] = buildCode(ctx, expressions);
+module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
+    const expressionsCode = [];
+
+    const calculatedExps = [];
+
+    for(let j = 0; j < expressions.length; ++j) {
+        const exp = expressions[j];
+        if(j === res.cExpId || j === res.friExpId) continue;
+        const ctx = {
+            calculated: {},
+            tmpUsed: 0,
+            code: [],
+            expMap: [],
+            dom: "n",
+            airId: res.airId,
+            subproofId: res.subproofId,
+            stark,
+        };
+
+        const tmpExpressionsIds = expressionsCode.filter(e => (e.stage < exp.stage || calculatedExps.includes[e.expId]) && e.dest).map(e => e.expId);
+        for(let i = 0; i < tmpExpressionsIds.length; i++) {
+            const expId = tmpExpressionsIds;
+            ctx.calculated[expId] = {};
+            for(let j = 0; j < res.openingPoints.length; ++j) {
+                const openingPoint = res.openingPoints[j];
+                ctx.calculated[expId][openingPoint] = true;
             }
         }
+        
+        pilCodeGen(ctx, symbols, expressions, j, 0);
+        const code = buildCode(ctx, expressions);
+        const expInfo = {
+            expId: j,
+            stage: exp.stage,
+            symbols: exp.symbols,
+            code,
+        }
+
+        if(code.code.length > 0 && code.code[code.code.length - 1].dest.type !== "tmp") {
+            const symbol = symbols.find( s => ["witness", "tmpPol"].includes(s.type) && s.polId === code.code[code.code.length - 1].dest.id);
+            expInfo.dest = {op: "cm", stage: symbol.stage, stageId: symbol.stageId};
+            calculatedExps.push(expInfo.expId);
+        }
+        expressionsCode.push(expInfo);
     }
+
+    res.expressionsCode = expressionsCode;
 }
 
-module.exports.generateStagesCode = function generateStagesCode(res, symbols, constraints, expressions, stark) {
+module.exports.generateStagesCode = function generateStagesCode(res, symbols, expressions, stark) {
     const ctx = {
         calculated: {},
+        symbolsCalculated: [],
         tmpUsed: 0,
         code: [],
         expMap: [],
@@ -42,10 +67,14 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, co
 
     for(let j = 0; j < expressions.length; ++j) {
         if(expressions[j].stage === 1 && symbols.find(s => s.stage === 1 && s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId)) {
+            const symbolDest = symbols.find(s => s.expId === j);
+            if(symbolDest) {
+                ctx.symbolsCalculated.push({ op: "cm",  stage: 1, stageId: symbolDest.stageId });
+            };
             pilCodeGen(ctx, symbols, expressions, j, 0);
         }
     }   
-    res.code[`stage1`] =  buildCode(ctx, expressions);
+    res.code[`stage1`] = buildCode(ctx, expressions);
     
 
     for(let i = 0; i < nStages - 1; ++i) {
@@ -53,6 +82,10 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, co
         for(let j = 0; j < expressions.length; ++j) {
             if(expressions[j].stage === stage) {
                 if(stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === stage).length !== 0) continue;
+                const symbolDest = symbols.find(s => s.expId === j);
+                if(symbolDest) {
+                    ctx.symbolsCalculated.push({ op: "cm",  stage: stage, stageId: symbolDest.stageId });
+                };
                 pilCodeGen(ctx, symbols, expressions, j, 0);
             }
         }
@@ -61,12 +94,30 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, co
 
     for(let j = 0; j < expressions.length; ++j) {
         if(expressions[j].stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === nStages).length !== 0) {
+            const symbolDest = symbols.find(s => s.expId === j);
+            if(symbolDest) {
+                ctx.symbolsCalculated.push({ op: "cm",  stage: nStage, stageId: symbolDest.stageId });
+            };        
             pilCodeGen(ctx, symbols, expressions, j, 0);
         }
     }
     res.code["imPols"] = buildCode(ctx, expressions);
 
-    for(let i = 0; i < nStages; ++i) {
+    console.log(res.code);
+}
+
+module.exports.generateConstraintsDebugCode = function generateConstraintsDebugCode(res, symbols, constraints, expressions, stark) {
+    for(let i = 0; i < res.numChallenges.length; ++i) {
+        const ctx = {
+            calculated: {},
+            tmpUsed: 0,
+            code: [],
+            expMap: [],
+            dom: "n",
+            airId: res.airId,
+            subproofId: res.subproofId,
+            stark,
+        };
         const stage = i + 1;
         const stageConstraints = constraints.filter(c => c.stage === stage);
         res.constraints[`stage${stage}`] = [];
@@ -89,6 +140,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, co
 module.exports.generateConstraintPolynomialCode = function generateConstraintPolynomialCode(res, symbols, constraints, expressions, stark) {
     const ctxExt = {
         calculated: {},
+        symbolsCalculated: [],
         tmpUsed: 0,
         code: [],
         expMap: [],
@@ -140,9 +192,8 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
             src: [code[code.length-1].dest],
         });
     }
-    
-    res.code[`stage${qStage}`] = buildCode(ctxExt, expressions);
-    res.code[`stage${qStage}`].code[res.code[`stage${qStage}`].code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
+    res.code.qCode = buildCode(ctxExt, expressions);
+    res.code.qCode.code[res.code.qCode.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
 }
 
 module.exports.generateConstraintPolynomialVerifierCode = function generateConstraintPolynomialVerifierCode(res, symbols, expressions, stark) {       
