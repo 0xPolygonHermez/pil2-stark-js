@@ -1,6 +1,7 @@
 const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk, genProofFflonk, setChallengesFflonk, addTranscriptFflonk, getChallengeFflonk, calculateHashFflonk } = require("../fflonk/helpers/fflonk_prover_helpers");
 const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, computeFRIFolding, computeFRIQueries, calculateHashStark, addTranscriptStark, getChallengeStark, getPermutationsStark } = require("../stark/stark_gen_helpers");
-const { callCalculateExps, applyHints, tryCalculateExps, checkWitnessStageCalculated, checkStageCalculated, addPublics, setStage1PolynomialsCalculated, setSymbolCalculated } = require("./prover_helpers");
+const { applyHints } = require("./hints_helpers");
+const { callCalculateExps, tryCalculateExps, checkWitnessStageCalculated, checkStageCalculated, addPublics, setStage1PolynomialsCalculated, setSymbolCalculated } = require("./prover_helpers");
 
 module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, constPols, zkey, options) {
     const logger = options.logger;

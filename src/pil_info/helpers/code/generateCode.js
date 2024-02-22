@@ -21,8 +21,10 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         };
 
         const tmpExpressionsIds = expressionsCode.filter(e => (e.stage < exp.stage || calculatedExps.includes[e.expId]) && e.dest).map(e => e.expId);
+        //const tmpExpressionsIds = exp.tmpExps; // TODO: THIS CAN BE IMPROVED!
+
         for(let i = 0; i < tmpExpressionsIds.length; i++) {
-            const expId = tmpExpressionsIds;
+            const expId = tmpExpressionsIds[i];
             ctx.calculated[expId] = {};
             for(let j = 0; j < res.openingPoints.length; ++j) {
                 const openingPoint = res.openingPoints[j];
@@ -41,7 +43,8 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
 
         if(code.code.length > 0 && code.code[code.code.length - 1].dest.type !== "tmp") {
             const symbol = symbols.find( s => ["witness", "tmpPol"].includes(s.type) && s.polId === code.code[code.code.length - 1].dest.id);
-            expInfo.dest = {op: "cm", stage: symbol.stage, stageId: symbol.stageId};
+            const op = symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol) ? "cm" : "tmp";
+            expInfo.dest = {op, stage: symbol.stage, stageId: symbol.stageId};
             calculatedExps.push(expInfo.expId);
         }
         expressionsCode.push(expInfo);
@@ -69,14 +72,17 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
         if(expressions[j].stage === 1 && symbols.find(s => s.stage === 1 && s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId)) {
             const symbolDest = symbols.find(s => s.expId === j);
             if(symbolDest) {
-                ctx.symbolsCalculated.push({ op: "cm",  stage: 1, stageId: symbolDest.stageId });
+                if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
+                    ctx.symbolsCalculated.push({ op: "cm", stage: 1, stageId: symbolDest.stageId });
+                } else {
+                    ctx.symbolsCalculated.push({ op: "tmp", stage: 1, stageId: symbolDest.stageId });
+                }
             };
             pilCodeGen(ctx, symbols, expressions, j, 0);
         }
     }   
     res.code[`stage1`] = buildCode(ctx, expressions);
     
-
     for(let i = 0; i < nStages - 1; ++i) {
         const stage = 2 + i;
         for(let j = 0; j < expressions.length; ++j) {
@@ -84,7 +90,11 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                 if(stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === stage).length !== 0) continue;
                 const symbolDest = symbols.find(s => s.expId === j);
                 if(symbolDest) {
-                    ctx.symbolsCalculated.push({ op: "cm",  stage: stage, stageId: symbolDest.stageId });
+                    if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
+                        ctx.symbolsCalculated.push({ op: "cm", stage, stageId: symbolDest.stageId });
+                    } else {
+                        ctx.symbolsCalculated.push({ op: "tmp", stage, stageId: symbolDest.stageId });
+                    }
                 };
                 pilCodeGen(ctx, symbols, expressions, j, 0);
             }
@@ -96,8 +106,12 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
         if(expressions[j].stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === nStages).length !== 0) {
             const symbolDest = symbols.find(s => s.expId === j);
             if(symbolDest) {
-                ctx.symbolsCalculated.push({ op: "cm",  stage: nStage, stageId: symbolDest.stageId });
-            };        
+                if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
+                    ctx.symbolsCalculated.push({ op: "cm", stage: nStages, stageId: symbolDest.stageId });
+                } else {
+                    ctx.symbolsCalculated.push({ op: "tmp", stage: nStages, stageId: symbolDest.stageId });
+                }
+            };       
             pilCodeGen(ctx, symbols, expressions, j, 0);
         }
     }

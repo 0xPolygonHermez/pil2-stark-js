@@ -38,6 +38,9 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
         if(["cm", "const"].includes(expressions[exp.id].op)) {
             exp = expressions[exp.id];
         }
+
+        exp.tmpExps = expressions[exp.id].tmpExps;
+        if(expressions[exp.id].keep) exp.tmpExps.push(exp.id);
     } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         exp.expDeg = 1;
         if(!exp.stage || exp.op === "const") exp.stage = exp.op === "cm" ? 1 : 0;
@@ -85,6 +88,10 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
         const lhsRowOffsets = lhsValue.rowsOffsets || [0];
         const rhsRowOffsets = rhsValue.rowsOffsets || [0];
         exp.rowsOffsets = [...new Set([...lhsRowOffsets, ...rhsRowOffsets])];
+
+        const lhsTmpExps = lhsValue.tmpExps || [];
+        const rhsTmpExps = rhsValue.tmpExps || [];
+        exp.tmpExps = [...new Set([...lhsTmpExps, ...rhsTmpExps])];
     } else {
         throw new Error("Exp op not defined: "+ exp.op);
     }

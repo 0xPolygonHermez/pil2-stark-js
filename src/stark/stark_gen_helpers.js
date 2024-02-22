@@ -12,7 +12,7 @@ const FRI = require("./fri.js");
 const _ = require("json-bigint");
 const { interpolate, ifft, fft } = require("../helpers/fft/fft_p.js");
 const {BigBuffer} = require("pilcom");
-const { callCalculateExps, getPolRef, setSymbolCalculated } = require("../prover/prover_helpers.js");
+const { callCalculateExps, getPolRef, setSymbolCalculated, setConstantsPolynomialsCalculated } = require("../prover/prover_helpers.js");
 
 module.exports.initProverStark = async function initProverStark(pilInfo, constPols, constTree, options = {}) {
     const ctx = {};
@@ -117,10 +117,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     // Read const coefs
     constPols.writeToBigBuffer(ctx.const_n);
 
-    // Mark const symbols as calculated
-    for(let i = 0; i < ctx.pilInfo.constPolsMap.length; i++) {
-        setSymbolCalculated(ctx, { op: "const", stage: 0, id: i }, options);
-    }
+    setConstantsPolynomialsCalculated(ctx, options);
 
     if(!options.debug) {
         ctx.const_ext = constTree.elements;

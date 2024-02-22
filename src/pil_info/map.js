@@ -119,10 +119,11 @@ function setMapOffsets(res) {
 function setSymbolsStage(res, symbols) {
     res.symbolsStage = [];
     for(let i = 0; i < res.numChallenges.length + 1; ++i) {
-        res.symbolsStage[i] = symbols.filter(s => s.stage === i && (s.type !== "tmpPol" || s.imPol)).map(s => {
+        res.symbolsStage[i] = symbols.filter(s => s.stage === i).map(s => {
             if(["witness", "tmpPol", "challenge"].includes(s.type)) {
+                const op =  s.type === "witness" || (s.type === "tmpPol" && s.imPol) ? "cm" : s.type === "tmpPol" ? "tmp" : "challenge"; 
                 return {
-                    op: ["witness", "tmpPol"].includes(s.type) ? "cm" : "challenge",
+                    op,
                     stage: s.stage,
                     stageId: s.stageId,
                 }
@@ -162,20 +163,11 @@ function setStageInfoSymbols(res, symbols) {
                 res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
             }
         } else if(symbol.type === "tmpPol") {
-            // TODO: REVISIT THIS
-            // const prevPolsStage = res.cmPolsMap.filter((p, index) => p.stage === "tmpExp" && index < symbol.polId);
-            // symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
-            // symbol.stageId = prevPolsStage.length;
-            // res.cmPolsMap[symbol.polId].stagePos = symbol.stagePos;
-            // res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
-
-            const prevPolsStage = res[polsMapName].filter((p, index) => p.stage === stage && index < symbol.polId);
+            const prevPolsStage = res.cmPolsMap.filter((p, index) => p.stage === "tmpExp" && index < symbol.polId);
             symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
+            symbol.stageId = prevPolsStage.length;
             res.cmPolsMap[symbol.polId].stagePos = symbol.stagePos;
-            if(!symbol.stageId) {
-                symbol.stageId = res[polsMapName].filter(p => p.stageNum === symbol.stage).findIndex(p => p.name === symbol.name);
-                res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
-            }
+            res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
         }
     }
 }
@@ -190,7 +182,8 @@ function addHintsInfo(res, symbols, expressions) {
             if(hint[key].op === "exp") {
                 const symbol = symbols.find(s => s.expId === hint[key].id);
                 if(symbol) {
-                    const dest = { op: "cm", stage: symbol.stage, stageId: symbol.stageId};
+                    const op = symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol) ? "cm" : "tmp";
+                    const dest = { op, stage: symbol.stage, stageId: symbol.stageId};
                     hint[key] = dest;
                     hintSymbols.push(dest);
                 } else {

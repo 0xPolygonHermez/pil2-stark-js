@@ -1,9 +1,7 @@
 const workerpool = require("workerpool");
 const {BigBuffer} = require("ffjavascript");
-const { calculateH1H2 } = require("../helpers/polutils");
 const { starkgen_execute } = require("./stark_prover_worker");
 const { fflonkgen_execute } = require("./fflonk_prover_worker");
-const { create } = require("logplease");
 
 const maxNperThread = 1<<18;
 const minNperThread = 1<<12;
@@ -12,8 +10,7 @@ module.exports.addPublics = function addPublics(ctx, inputs, options) {
      for (let i=0; i<ctx.pilInfo.nPublics; i++) {
         const name = ctx.pilInfo.publicsNames[i];
         if(inputs[name]) {
-            ctx.publics[i] = inputs[name];
-            module.exports.setSymbolCalculated(ctx, {op: "public", stage: 1, id: i}, options);            
+            module.exports.setPublicValue(ctx, i, 1, inputs[name]);         
         }
     }
 }
@@ -22,7 +19,12 @@ module.exports.checkWitnessStageCalculated = function checkWitnessStageCalculate
     const stageWitness = ctx.pilInfo.cmPolsMap.filter(s => s.stageNum === stage);
     let witnessesToBeCalculated = 0;
     for(let i = 0; i < stageWitness.length; ++i) {
-        const symbol = { op: "cm", stage: stageWitness[i].stageNum, stageId: stageWitness[i].stageId };
+        let symbol;
+        if(stageWitness[i].stage === "tmpExp") {
+            symbol = { op: "tmp", stage: stageWitness[i].stageNum, stageId: stageWitness[i].stageId };
+        } else {
+            symbol = { op: "cm", stage: stageWitness[i].stageNum, stageId: stageWitness[i].stageId };
+        }
         const isCalculated = module.exports.isSymbolCalculated(ctx, symbol);
         if(!isCalculated) {
             ++witnessesToBeCalculated;
@@ -46,12 +48,45 @@ module.exports.checkStageCalculated = function checkStageCalculated(ctx, stage, 
     }
 }
 
+module.exports.setConstantsPolynomialsCalculated = function setConstantsPolynomialsCalculated(ctx, options) {
+    for(let i = 0; i < ctx.pilInfo.nConstants; ++i) {
+        module.exports.setSymbolCalculated(ctx, {op: "const", stage: 0, id: i}, options);
+    }
+}
+
+
 module.exports.setStage1PolynomialsCalculated = function setStage1PolynomialsCalculated(ctx, options) {
     for(let i = 0; i < ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1").length; ++i) {
         const polInfo = ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1")[i];
         if(!polInfo.imPol) {
             module.exports.setSymbolCalculated(ctx, {op: "cm", stage: 1, stageId: i}, options);
         }
+    }
+}
+
+module.exports.isSymbolCalculated = function isSymbolCalculated(ctx, symbol) {
+    const symbolFound = ctx.calculatedSymbols.find(s =>
+        (["cm", "challenge"].includes(symbol.op) && symbol.op === s.op && symbol.stage === s.stage && symbol.stageId === s.stageId)
+        || (symbol.op === "tmp" && symbol.op === s.op && symbol.stageId === s.stageId)
+        || (["subproofValue", "public", "const"].includes(symbol.op) && symbol.op === s.op && symbol.stage === s.stage && symbol.id === s.id));
+
+    const isCalculated = symbolFound ? true : false;
+    return isCalculated;
+}
+
+module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, options) {
+    let symbol;
+    if(["cm", "challenge"].includes(ref.op)) {
+        symbol = {op: ref.op, stage: ref.stage, stageId: ref.stageId}
+    } else if(ref.op === "tmp") {
+        symbol = {op: ref.op, stage: ref.stage, stageId: ref.stageId};
+    } else if(["public", "subproofValue", "const"].includes(ref.op)) {
+        symbol = {op: ref.op, stage: ref.stage, id: ref.id}
+    } else throw new Error("Invalid ref op " + ref.op);
+
+    if(!module.exports.isSymbolCalculated(ctx, symbol)) {
+        ctx.calculatedSymbols.push(symbol);
+        if(options?.logger) options.logger.debug(`Symbol ${symbol.op} for stage ${symbol.stage} and id ${["cm", "tmp", "challenge"].includes(symbol.op) ? symbol.stageId : symbol.id} has been calculated`);
     }
 }
 
@@ -317,10 +352,20 @@ function evalMap(ctx, polId, prime, dom, val) {
     }
 }
 
-module.exports.setPolByReference = function setPolByReference(ctx, reference, pol, dom, options) {
-    const polId = ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === reference.stage && c.stageId === reference.stageId);
+module.exports.setPublicValue = function setPublicValue(ctx, id, stage, value) {
+    ctx.publics[id] = value;
+    module.exports.setSymbolCalculated(ctx, { op: "public", stage, id });
+}
+
+module.exports.setSubAirValue = function setSubAirValue(ctx, id, stage, value) {
+    ctx.subAirValues[id] = value;
+    module.exports.setSymbolCalculated(ctx, { op: "public", stage, id });
+}
+
+module.exports.setPolByReference = function setPolByReference(ctx, dest, pol, dom, options) {
+    const polId = ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === dest.stage && c.stageId === dest.stageId);
     module.exports.setPol(ctx, polId, pol, dom);
-    module.exports.setSymbolCalculated(ctx, reference, options);
+    module.exports.setSymbolCalculated(ctx, dest, options);
 }
 
 module.exports.setPol = function setPol(ctx, idPol, pol, dom) {
@@ -610,167 +655,6 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
 
     await pool.terminate();
 }
-
-module.exports.isSymbolCalculated = function isSymbolCalculated(ctx, symbol) {
-    const symbolFound = ctx.calculatedSymbols.find(s =>
-        (["cm", "challenge"].includes(symbol.op) && symbol.op === s.op && symbol.stage === s.stage && symbol.stageId === s.stageId)
-        || (["subproofValue", "public", "const"].includes(symbol.op) && symbol.op === s.op && symbol.stage === s.stage && symbol.id === s.id));
-
-    const isCalculated = symbolFound ? true : false;
-    return isCalculated;
-}
-
-module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, options) {
-    let symbol;
-    if(["cm", "challenge"].includes(ref.op)) {
-        symbol = {op: ref.op, stage: ref.stage, stageId: ref.stageId}
-    } else if(["public", "subproofValue", "const"].includes(ref.op)) {
-        symbol = {op: ref.op, stage: ref.stage, id: ref.id}
-    } else throw new Error("Invalid ref op " + ref.op);
-
-    if(!module.exports.isSymbolCalculated(ctx, symbol)) {
-        ctx.calculatedSymbols.push(symbol);
-        if(options?.logger) options.logger.debug(`Symbol ${symbol.op} for stage ${symbol.stage} and id ${["cm", "challenge"].includes(symbol.op) ? symbol.stageId : symbol.id} has been calculated`);
-    }
-}
-
-module.exports.applyHints = async function applyHints(stage, ctx, options) {
-    for(let i = 0; i < ctx.pilInfo.hints.length; i++) {
-        const hint = ctx.pilInfo.hints[i];
-        if(hint.stage !== stage) continue;
-
-        const referenceFields = Object.keys(hint).filter(k => k.includes("reference"));
-        let isCalculated = true;
-        for(let j = 0; j < referenceFields.length; ++j) {
-            if(module.exports.isSymbolCalculated(ctx, hint[referenceFields[j]])) {
-                if(options?.logger) options.logger.debug(`Hint ${i} ${referenceFields[j]} is already calculated`);
-            } else {
-                isCalculated = false;
-                break;
-            }
-        }
-
-        if(isCalculated) continue;
-
-        const symbolsMissing = [];
-        for(let j = 0; j < hint.symbols.length; ++j) {
-            const symbol = hint.symbols[j];
-            if(!module.exports.isSymbolCalculated(ctx, symbol)) {
-                symbolsMissing.push(symbol);
-            }
-        }
-        if(symbolsMissing.length !== 0) {
-            if(options?.logger) options.logger.debug(`Skipping hint ${i} because ${symbolsMissing.length} symbols: ${JSON.stringify(symbolsMissing)} are missing`);
-            continue;
-        } else {
-            if(options?.logger) options.logger.debug(`Calculating hint ${i} expressions`);
-        }
-
-        const res = await module.exports.calculateHintExpressions(hint, ctx, options);
-        if(res) {
-            await resolveHint(res, ctx, options);
-        }
-    }
-}
-
-module.exports.calculateHintExpressions = async function calculateHintExpressions(hint, ctx, options) {
-    if(hint.name === "subproofvalue" || hint.name === "public") {
-        if(!hint.reference) throw new Error("Reference field is missing");
-        if(!hint.expression) throw new Error("Expression field is missing");
-        if(!hint.row_index) throw new Error("Row_index field is missing");
-
-        let value = getHintField(hint, "expression", ctx, true);
-        
-        if(hint.name === "subproofvalue") {
-            ctx.subAirValues[hint.reference.id] = value;
-        } else {
-            ctx.publics[hint.reference.id] = value;
-        }
-
-        if(hint.dest) {
-            for(let i = 0; i < hint.dest.length; ++i) {
-                module.exports.setSymbolCalculated(ctx, hint.dest[i], options);
-            }
-        }
-    } else {
-        const keys = Object.keys(hint);
-
-        const res = {};
-        for(let i = 0; i < keys.length; ++i) {
-            if(keys[i] === "code" || keys[i] === "stage" || keys[i] === "symbols" || keys[i] === "dest") continue;
-            if(keys[i] === "name" || keys[i].includes("reference")) {
-                res[keys[i]] = hint[keys[i]];
-            } else {
-                res[keys[i]] = getHintField(hint, keys[i], ctx);
-            }
-        }
-
-        return res;
-    }
-}
-
-function getHintField(hint, field, ctx, isOneValue) {
-    if(hint[field].op === "cm") {
-        const idPol = ctx.pilInfo.cmPolsMap.findIndex(c => c.stageNum === hint[field].stage && c.stageId === hint[field].stageId);
-        const pol = module.exports.getPol(ctx, idPol ,"n");
-        if(isOneValue) {
-            const pos = parseInt(hint.row_index.value);
-            return pol[pos];
-        } else {
-            return pol;
-        }
-    } else {
-        const pCtx = ctxProxy(ctx);
-        if(isOneValue) {
-            const i = parseInt(hint.row_index.value);
-            const expression = module.exports.getRef({...hint[field], type: hint[field].op}, ctx, "n");
-            return eval(expression.replaceAll("ctx", "pCtx"));
-        } else {
-            const expression = module.exports.getRef({...hint[field], type: hint[field].op}, ctx, "n");
-            return eval(expression.replaceAll("ctx", "pCtx"));
-        }
-    }
-}
-
-async function resolveHint(res, ctx, options) {
-    if(res.name === "gsum") {
-        const gsum = [];
-
-        // TODO: THIS IS A HACK, REMOVE WHEN PIL2 IS FIXED
-        if(res.numerator === 5n) res.numerator = ctx.F.negone;
-
-        const denInv = await ctx.F.batchInverse(res.denominator);
-
-        for(let i = 0; i < ctx.N; ++i) {
-            const val = ctx.F.mul(res.numerator, denInv[i]);
-            if(i === 0) {
-                gsum[i] = val;
-            } else {
-                gsum[i] = ctx.F.add(gsum[i - 1], val);
-            }
-        }
-
-        module.exports.setPolByReference(ctx, res.reference, gsum, "n", options);
-
-    } else if(res.name === "gprod") {
-        const gprod = [];
-
-        const denInv = await ctx.F.batchInverse(res.denominator);
-
-        gprod[0] = ctx.F.one;
-        for (let i=1; i<ctx.N; i++) {
-            gprod[i] = ctx.F.mul(gprod[i-1], ctx.F.mul(res.numerator[i-1], denInv[i-1]));
-        }
-
-        module.exports.setPolByReference(ctx, res.reference, gprod, "n", options);
-
-    } else if(res.name === "h1h2") {
-        const H1H2 = calculateH1H2(ctx.F, res.f, res.t);
-        module.exports.setPolByReference(ctx, res.referenceH1, H1H2[0], "n", options);
-        module.exports.setPolByReference(ctx, res.referenceH2, H1H2[1], "n", options);
-    } else throw new Error(`Hint ${hint.name} cannot be resolved.`);
-}
-
 
 module.exports.printPol = function printPol(buffer, Fr) {
     const len = buffer.byteLength / Fr.n8;
