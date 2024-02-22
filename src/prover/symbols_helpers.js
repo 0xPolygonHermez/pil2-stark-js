@@ -1,36 +1,37 @@
 const { callCalculateExps } = require("./prover_helpers");
 
-module.exports.checkWitnessStageCalculated = function checkWitnessStageCalculated(ctx, stage, options) {
-    const stageWitness = ctx.pilInfo.cmPolsMap.filter(s => s.stageNum === stage);
-    let witnessesToBeCalculated = 0;
-    for(let i = 0; i < stageWitness.length; ++i) {
-        let symbol;
-        if(stageWitness[i].stage === "tmpExp") {
-            symbol = { op: "tmp", stage: stageWitness[i].stageNum, stageId: stageWitness[i].stageId };
-        } else {
-            symbol = { op: "cm", stage: stageWitness[i].stageNum, stageId: stageWitness[i].stageId };
-        }
-        const isCalculated = module.exports.isSymbolCalculated(ctx, symbol);
-        if(!isCalculated) {
-            ++witnessesToBeCalculated;
-        }
-    }
-    if(options.logger) options.logger.debug(`There are ${witnessesToBeCalculated} out of ${stageWitness.length} witness polynomials to be calculated in stage ${stage}`);
-    return witnessesToBeCalculated;
-}
-
-module.exports.checkStageCalculated = function checkStageCalculated(ctx, stage, options) {
+module.exports.checkSymbolsCalculated = function checkSymbolsCalculated(ctx, stage, options) {
     const symbolsStage = ctx.pilInfo.symbolsStage[stage];
-    let symbolsNotCalculated = [];
+    let publicsToBeCalculated = 0;
+    let subproofValuesToBeCalculated = 0;
+    let commitsToBeCalculated = 0;
+    let tmpPolsToBeCalculated = 0;
+    let symbolsCalculated = 0;
+    let symbolsToBeCalculated = 0;
     for(let i = 0; i < symbolsStage.length; ++i) {
         if(!module.exports.isSymbolCalculated(ctx, symbolsStage[i])) {
-            symbolsNotCalculated.push(symbolsStage[i]);
+            if(symbolsStage[i].op === "cm") {
+                commitsToBeCalculated++;
+            }
+            if(symbolsStage[i].op === "tmp") {
+                tmpPolsToBeCalculated++;
+            } 
+            if(symbolsStage[i].op === "public") publicsToBeCalculated++;
+            if(symbolsStage[i].op === "subproofvalue") subproofValuesToBeCalculated++;
+            symbolsToBeCalculated++;
+        } else {
+            symbolsCalculated++;
         };
     }
-    if(symbolsNotCalculated.length > 0) {
-        if(options.logger) options.logger.error(`Not all the symbols for the stage ${stage} has been calculated: ${symbolsNotCalculated.map(s => JSON.stringify(s))}`);
-        throw new Error(`Not all the symbols for the stage ${stage} has been calculated`);
-    }
+    let nCommits = symbolsStage.filter(s => s.op === "cm").length;
+    let nTmpPols = symbolsStage.filter(s => s.op === "tmp").length;
+    let nPublics = symbolsStage.filter(s => s.op === "public").length;
+    let nSubproofValues = symbolsStage.filter(s => s.op === "subproofvalue").length;
+    if(options.logger && nCommits > 0) options.logger.debug(`There are ${commitsToBeCalculated} out of ${nCommits} committed polynomials to be calculated in stage ${stage}`);
+    if(options.logger && nTmpPols > 0) options.logger.debug(`There are ${tmpPolsToBeCalculated} out of ${nTmpPols} temporal polynomials to be calculated in stage ${stage}`);
+    if(options.logger && nPublics > 0) options.logger.debug(`There are ${publicsToBeCalculated} out of ${nPublics} public values to be calculated in stage ${stage}`);
+    if(options.logger && nSubproofValues > 0) options.logger.debug(`There are ${subproofValuesToBeCalculated} out of ${nSubproofValues} subproof values to be calculated in stage ${stage}`);
+    return { totalSymbolsStage: symbolsStage.length, symbolsCalculated, symbolsToBeCalculated, tmpPolsToBeCalculated, commitsToBeCalculated, publicsToBeCalculated, subproofValuesToBeCalculated};
 }
 
 module.exports.setConstantsPolynomialsCalculated = function setConstantsPolynomialsCalculated(ctx, options) {

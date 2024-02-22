@@ -2,7 +2,7 @@ const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk
 const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, computeFRIFolding, computeFRIQueries, calculateHashStark, addTranscriptStark, getChallengeStark, getPermutationsStark } = require("../stark/stark_gen_helpers");
 const { applyHints } = require("./hints_helpers");
 const { callCalculateExps } = require("./prover_helpers");
-const { setStage1PolynomialsCalculated, checkWitnessStageCalculated, setSymbolCalculated, tryCalculateExps, checkStageCalculated } = require("./symbols_helpers");
+const { setStage1PolynomialsCalculated, setSymbolCalculated, tryCalculateExps, checkSymbolsCalculated } = require("./symbols_helpers");
 
 module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, constPols, zkey, options) {
     const logger = options.logger;
@@ -207,15 +207,21 @@ async function computeStage(stage, ctx, options) {
     }
 
     if(stage !== qStage) {
-        while(checkWitnessStageCalculated(ctx, stage, options) > 0) {
-            await tryCalculateExps(ctx, stage, dom, options);
-    
+        let symbolsStageInfo = checkSymbolsCalculated(ctx, stage, options);
+        console.log(symbolsStageInfo);
+        while(symbolsStageInfo.symbolsToBeCalculated > 0) {
+            if(symbolsStageInfo.tmpPolsToBeCalculated > 0 || symbolsStageInfo.commitsToBeCalculated > 0) {
+                await tryCalculateExps(ctx, stage, dom, options); 
+            }
+
             await applyHints(stage, ctx, options);
+            
+            let symbolsStageInfoUpdated = checkSymbolsCalculated(ctx, stage, options);
+            if(symbolsStageInfoUpdated.symbolsToBeCalculated === symbolsStageInfo.symbolsToBeCalculated) {
+                throw new Error(`Something went wrong when calculating symbols for stage ${stage}`);
+            }
+            symbolsStageInfo = symbolsStageInfoUpdated;
         };
-
-        await applyHints(stage, ctx, options);
-
-        checkStageCalculated(ctx, stage, options);
 
         if (logger) logger.debug(`> STAGE ${stage} DONE`);
     }

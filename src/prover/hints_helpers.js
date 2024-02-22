@@ -45,10 +45,10 @@ async function resolveHint(ctx, hint, options) {
 
         if(hint.name === "public") {
             ctx.publics[hint.dest[0].id] = value;
-            setSymbolCalculated(ctx, hint.dest[0]);
+            setSymbolCalculated(ctx, hint.dest[0], options);
         } else {
             ctx.subAirValues[hint.dest[0].id] = value;
-            setSymbolCalculated(ctx, hint.dest[0]);
+            setSymbolCalculated(ctx, hint.dest[0], options);
         }    
     } else if(hint.name === "gsum") {
         if(!hint.numerator) throw new Error("Numerator field is missing");

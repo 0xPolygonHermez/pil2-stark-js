@@ -45,6 +45,10 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
 
     res.publicsNames = publicsNames;
 
+    for(let i = 0; i < res.nPublics; ++i) {
+        symbols.push({ type: "public", stage: 1, id: i });
+    }
+
     let dimCh = stark ? 3 : 1;
     let qStage = res.numChallenges.length + 1;
     symbols.push({type: "challenge", name: "std_vc", stage: qStage, dim: dimCh, stageId: 0})

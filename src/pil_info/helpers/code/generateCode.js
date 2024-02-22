@@ -9,6 +9,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
     for(let j = 0; j < expressions.length; ++j) {
         const exp = expressions[j];
         if(j === res.cExpId || j === res.friExpId) continue;
+        if(!exp.keep && !exp.imPol) continue;
         const ctx = {
             calculated: {},
             tmpUsed: 0,
