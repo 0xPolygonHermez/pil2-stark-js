@@ -1,7 +1,8 @@
 const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk, genProofFflonk, setChallengesFflonk, addTranscriptFflonk, getChallengeFflonk, calculateHashFflonk } = require("../fflonk/helpers/fflonk_prover_helpers");
 const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, computeFRIFolding, computeFRIQueries, calculateHashStark, addTranscriptStark, getChallengeStark, getPermutationsStark } = require("../stark/stark_gen_helpers");
 const { applyHints } = require("./hints_helpers");
-const { callCalculateExps, tryCalculateExps, checkWitnessStageCalculated, checkStageCalculated, addPublics, setStage1PolynomialsCalculated, setSymbolCalculated } = require("./prover_helpers");
+const { callCalculateExps } = require("./prover_helpers");
+const { setStage1PolynomialsCalculated, checkWitnessStageCalculated, setSymbolCalculated, tryCalculateExps, checkStageCalculated } = require("./symbols_helpers");
 
 module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, constPols, zkey, options) {
     const logger = options.logger;
@@ -129,6 +130,16 @@ async function initProver(pilInfo, constTree, constPols, zkey, stark, options) {
         return await initProverStark(pilInfo, constPols, constTree, options);
     } else {
         return await initProverFflonk(pilInfo, zkey, options)
+    }
+}
+
+function addPublics(ctx, inputs, options) {
+    for (let i=0; i<ctx.pilInfo.nPublics; i++) {
+        const name = ctx.pilInfo.publicsNames[i];
+        if(inputs[name]) {
+            ctx.publics[i] = inputs[name];
+            setSymbolCalculated(ctx, {op: "public", stage: 1, id: i}, options);
+        }
     }
 }
 

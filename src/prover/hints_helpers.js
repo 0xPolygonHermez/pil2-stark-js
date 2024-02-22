@@ -1,42 +1,29 @@
 const { calculateH1H2 } = require("../helpers/polutils");
-const { isSymbolCalculated, getPol, setPublicValue, setSubAirValue, setPolByReference } = require("./prover_helpers");
+const { getPol, setPol } = require("./prover_helpers");
+const { isSymbolCalculated, setSymbolCalculated } = require("./symbols_helpers");
 
 module.exports.applyHints = async function applyHints(stage, ctx, options) {
     for(let i = 0; i < ctx.pilInfo.hints.length; i++) {
         const hint = ctx.pilInfo.hints[i];
-        if(hint.stage !== stage) continue;
+        const stageHint = hint.dest[0].stage;
+        if(stageHint !== stage) continue;
 
-        const referenceFields = Object.keys(hint).filter(k => k.includes("reference"));
-        let isCalculated = true;
-        for(let j = 0; j < referenceFields.length; ++j) {
-            if(isSymbolCalculated(ctx, hint[referenceFields[j]])) {
-                if(options?.logger) options.logger.debug(`Hint ${i} ${referenceFields[j]} is already calculated`);
-            } else {
-                isCalculated = false;
-                break;
-            }
-        }
+        let isHintCalculated = hint.dest.map(d => isSymbolCalculated(ctx, d)).every(d => d);        
+        if(isHintCalculated) continue;
 
-        if(isCalculated) continue;
-
-        const symbolsMissing = [];
-        for(let j = 0; j < hint.symbols.length; ++j) {
-            const symbol = hint.symbols[j];
-            if(!isSymbolCalculated(ctx, symbol)) {
-                symbolsMissing.push(symbol);
-            }
-        }
+        const symbolsMissing = hint.symbols.filter(symbol => !isSymbolCalculated(ctx, symbol));
         if(symbolsMissing.length !== 0) {
             if(options?.logger) options.logger.debug(`Skipping hint ${i} because ${symbolsMissing.length} symbols: ${JSON.stringify(symbolsMissing)} are missing`);
             continue;
         }
 
-        if(options?.logger) options.logger.debug(`Calculating hint ${i}`);
         await resolveHint(ctx, hint, options);
     }
 }
 
-function getHintField(ctx, hintField) {
+function getHintField(ctx, hint, field) {
+    if(!hint[field]) throw new Error(`${field} field is missing`);
+    const hintField = hint[field];
     if(hintField.op === "cm") {
         const idPol = ctx.pilInfo.cmPolsMap.findIndex(c => c.stage !== "tmpExp" && c.stageNum === hintField.stage && c.stageId === hintField.stageId);
         return getPol(ctx, idPol, "n");
@@ -49,24 +36,28 @@ function getHintField(ctx, hintField) {
 }
 
 async function resolveHint(ctx, hint, options) {
-    if(hint.name === "subproofvalue" || hint.name === "public") {
-        if(!hint.reference) throw new Error("Reference field is missing");
-        if(!hint.expression) throw new Error("Expression field is missing");
-        if(!hint.row_index) throw new Error("Row_index field is missing");
+    if(options?.logger) hint.dest.forEach(dest => options.logger.debug(`Calculating hint ${hint.name} -> op: ${dest.op}, stage: ${dest.stage}, ${dest.op === "cm" ? `stageId: ${dest.stageId}` : `id: ${dest.id}`}`));
 
-        const pol = getHintField(ctx, hint.expression)
-        const value = pol[parseInt(hint.row_index.value)];
+    if(hint.name === "subproofvalue" || hint.name === "public") {
+        const pol = getHintField(ctx, hint, "expression");
+        const pos = getHintField(ctx, hint, "row_index");
+        const value = pol[pos];
 
         if(hint.name === "public") {
-            setPublicValue(ctx, hint.reference.id, hint.stage, value);
+            ctx.publics[hint.dest[0].id] = value;
+            setSymbolCalculated(ctx, hint.dest[0]);
         } else {
-            setSubAirValue(ctx, hint.reference.id, hint.stage, value);
+            ctx.subAirValues[hint.dest[0].id] = value;
+            setSymbolCalculated(ctx, hint.dest[0]);
         }    
     } else if(hint.name === "gsum") {
+        if(!hint.numerator) throw new Error("Numerator field is missing");
+        if(!hint.denominator) throw new Error("Denominator field is missing");
+
         const gsum = [];
 
-        let numerator = getHintField(ctx, hint.numerator);
-        let denominator = getHintField(ctx, hint.denominator);
+        let numerator = getHintField(ctx, hint, "numerator");
+        let denominator = getHintField(ctx, hint, "denominator");
 
         // TODO: THIS IS A HACK, REMOVE WHEN PIL2 IS FIXED
         if(numerator === 5n) numerator = ctx.F.negone;
@@ -82,13 +73,14 @@ async function resolveHint(ctx, hint, options) {
             }
         }
 
-        setPolByReference(ctx, hint.reference, gsum, "n", options);
+        setPol(ctx, hint.dest[0].id, gsum, "n");
+        setSymbolCalculated(ctx, hint.dest[0], options);
 
     } else if(hint.name === "gprod") {
         const gprod = [];
 
-        let numerator = getHintField(ctx, hint.numerator);
-        let denominator = getHintField(ctx, hint.denominator);
+        let numerator = getHintField(ctx, hint, "numerator");
+        let denominator = getHintField(ctx, hint, "denominator");
 
         const denInv = await ctx.F.batchInverse(denominator);
 
@@ -97,14 +89,16 @@ async function resolveHint(ctx, hint, options) {
             gprod[i] = ctx.F.mul(gprod[i-1], ctx.F.mul(numerator[i-1], denInv[i-1]));
         }
 
-        console.log(hint.dest);
-        setPolByReference(ctx, hint.reference, gprod, "n", options);
+        setPol(ctx, hint.dest[0].id, gprod, "n");
+        setSymbolCalculated(ctx, hint.dest[0], options);
 
     } else if(hint.name === "h1h2") {
-        let f = getHintField(ctx, hint.f);
-        let t = getHintField(ctx, hint.t);
+        let f = getHintField(ctx, hint, "f");
+        let t = getHintField(ctx, hint, "t");
         const H1H2 = calculateH1H2(ctx.F, f, t);
-        setPolByReference(ctx, hint.referenceH1, H1H2[0], "n", options);
-        setPolByReference(ctx, hint.referenceH2, H1H2[1], "n", options);
+        setPol(ctx, hint.dest[0].id, H1H2[0], "n");
+        setPol(ctx, hint.dest[1].id, H1H2[1], "n");
+        setSymbolCalculated(ctx, hint.dest[0], options);
+        setSymbolCalculated(ctx, hint.dest[1], options);
     } else throw new Error(`Hint ${hint.name} cannot be resolved.`);
 }

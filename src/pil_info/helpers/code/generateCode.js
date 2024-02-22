@@ -116,8 +116,6 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
         }
     }
     res.code["imPols"] = buildCode(ctx, expressions);
-
-    console.log(res.code);
 }
 
 module.exports.generateConstraintsDebugCode = function generateConstraintsDebugCode(res, symbols, constraints, expressions, stark) {

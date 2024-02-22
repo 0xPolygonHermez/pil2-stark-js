@@ -34,7 +34,6 @@ module.exports.formatHints = function formatHints(pilout, rawHints, symbols, exp
             if(value.op === "exp") expressions[value.id].keep = true;
             hint[name] = value;
         }
-        hint.stage = hint.reference.stage;
         hints.push(hint);
     }
     return hints;
