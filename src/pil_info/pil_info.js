@@ -32,25 +32,31 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, debug, star
 
     generatePilCode(res, symbols, constraints, newExpressions, debug, stark);
 
-    if(!debug && stark) {
+    res.nCols = {};
+
+    if(stark) {
         console.log("--------------------- POLINOMIALS INFO ---------------------")
         let nColumnsBaseField = 0;
         let nColumns = 0;
         for(let i = 1; i <= res.numChallenges.length + 1; ++i) {
             let stage = i === res.numChallenges.length + 1 ? "Q": i;
-            let nCols = res.cmPolsMap.filter(p => p.stage == "cm" + stage).length;
-            let nColsBaseField = res.mapSectionsN["cm" + stage + "_n"];
+            let stageName = "cm" + stage;
+            let nCols = res.cmPolsMap.filter(p => p.stage == stageName).length;
+            res.nCols[stageName] = nCols;
+            let nColsBaseField = res.mapSectionsN[stageName + "_n"];
             if(i === res.numChallenges.length + 1 || (i < res.numChallenges.length && imPolsLastStage)) {
                 console.log(`Columns stage ${stage}: ${nCols} -> Columns in the basefield: ${nColsBaseField}`);
             } else {
-                console.log(`Columns stage ${stage}: ${nCols} (${res.cmPolsMap.filter(p => p.stage == "cm" + stage && p.imPol).length} intermediate columns) -> Columns in the basefield: ${nColsBaseField}`);
+                console.log(`Columns stage ${stage}: ${nCols} (${res.cmPolsMap.filter(p => p.stage == stageName && p.imPol).length} intermediate columns) -> Columns in the basefield: ${nColsBaseField}`);
             }
             nColumns += nCols;
             nColumnsBaseField += nColsBaseField;
         }
+        
+        res.nCols["tmpExp"] = res.cmPolsMap.filter(p => p.stage == "tmpExp").length;
         console.log(`Total Columns: ${nColumns} -> Total Columns in the basefield: ${nColumnsBaseField}`);
         console.log(`Total Constraints: ${res.nConstraints}`)
-        console.log(`Number of evaluations: ${res.evMap.length}`)
+        if(!debug) console.log(`Number of evaluations: ${res.evMap.length}`)
         console.log("------------------------------------------------------------")
     }
     

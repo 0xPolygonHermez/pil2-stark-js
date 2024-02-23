@@ -4,14 +4,13 @@ const { pilCodeGen, buildCode } = require("./codegen");
 module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
     const expressionsCode = [];
 
-    const calculatedExps = [];
-
     for(let j = 0; j < expressions.length; ++j) {
         const exp = expressions[j];
         if(j === res.cExpId || j === res.friExpId) continue;
         if(!exp.keep && !exp.imPol) continue;
         const ctx = {
             calculated: {},
+            symbolsCalculated: [],
             tmpUsed: 0,
             code: [],
             expMap: [],
@@ -21,7 +20,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             stark,
         };
 
-        const tmpExpressionsIds = expressionsCode.filter(e => (e.stage < exp.stage || calculatedExps.includes[e.expId]) && e.dest).map(e => e.expId);
+        const tmpExpressionsIds = expressionsCode.filter(e => (e.stage < exp.stage) && e.dest).map(e => e.expId);
         //const tmpExpressionsIds = exp.tmpExps; // TODO: THIS CAN BE IMPROVED!
 
         for(let i = 0; i < tmpExpressionsIds.length; i++) {
@@ -33,6 +32,14 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             }
         }
         
+        let exprDest;
+        const symbolDest = symbols.find(s => s.expId === j);
+        if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
+            exprDest = { op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId };
+        } else {
+            exprDest = { op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId };
+        }
+
         pilCodeGen(ctx, symbols, expressions, j, 0);
         const code = buildCode(ctx, expressions);
         const expInfo = {
@@ -40,14 +47,9 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             stage: exp.stage,
             symbols: exp.symbols,
             code,
+            dest: exprDest, 
         }
 
-        if(code.code.length > 0 && code.code[code.code.length - 1].dest.type !== "tmp") {
-            const symbol = symbols.find( s => ["witness", "tmpPol"].includes(s.type) && s.polId === code.code[code.code.length - 1].dest.id);
-            const op = symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol) ? "cm" : "tmp";
-            expInfo.dest = {op, stage: symbol.stage, stageId: symbol.stageId};
-            calculatedExps.push(expInfo.expId);
-        }
         expressionsCode.push(expInfo);
     }
 

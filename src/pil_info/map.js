@@ -120,10 +120,21 @@ function setSymbolsStage(res, symbols) {
     res.symbolsStage = [];
     for(let i = 0; i < res.numChallenges.length + 1; ++i) {
         res.symbolsStage[i] = symbols.filter(s => s.stage === i).map(s => {
-            if(["witness", "tmpPol", "challenge"].includes(s.type)) {
-                const op =  s.type === "witness" || (s.type === "tmpPol" && s.imPol) ? "cm" : s.type === "tmpPol" ? "tmp" : "challenge"; 
+            if(s.type === "challenge") {
                 return {
-                    op,
+                    op: "challenge",
+                    stage: s.stage,
+                    stageId: s.stageId,
+                }
+            } else if(s.type === "witness" || (s.type === "tmpPol" && s.imPol)) {
+                return {
+                    op: "cm",
+                    stage: s.stage,
+                    stageId: s.stageId,
+                }
+            } else if(s.type === "tmpPol" && !s.imPol) {
+                return {
+                    op: "tmp",
                     stage: s.stage,
                     stageId: s.stageId,
                 }

@@ -209,9 +209,7 @@ async function computeStage(stage, ctx, options) {
     if(stage !== qStage) {
         let symbolsStageInfo = checkSymbolsCalculated(ctx, stage, options);
         while(symbolsStageInfo.symbolsToBeCalculated > 0) {
-            if(symbolsStageInfo.tmpPolsToBeCalculated > 0 || symbolsStageInfo.commitsToBeCalculated > 0) {
-                await tryCalculateExps(ctx, stage, dom, options); 
-            }
+            await tryCalculateExps(ctx, stage, dom, options); 
 
             await applyHints(stage, ctx, options);
             
@@ -222,6 +220,7 @@ async function computeStage(stage, ctx, options) {
             symbolsStageInfo = symbolsStageInfoUpdated;
         };
 
+        if(!ctx.calculatedSymbols.cm[stage].every(c => c)) throw new Error("Something went wrong");
         if (logger) logger.debug(`> STAGE ${stage} DONE`);
     }
     

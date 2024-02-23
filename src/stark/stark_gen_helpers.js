@@ -40,7 +40,30 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.challenges = [];
     ctx.challengesFRISteps = [];
 
-    ctx.calculatedSymbols = [];
+    ctx.calculatedSymbols = {
+        cm: {},
+        challenge: {}        
+    }
+
+    if(ctx.pilInfo.nPublics > 0) {
+        ctx.calculatedSymbols.public = new Array(ctx.pilInfo.nPublics).fill(false);
+    }
+
+    if(ctx.pilInfo.nConstants > 0) {
+        ctx.calculatedSymbols.const = new Array(ctx.pilInfo.nConstants).fill(false);
+    }
+
+    if(ctx.pilInfo.nSubAirValues > 0) {
+        ctx.calculatedSymbols.subproofValue = new Array(ctx.pilInfo.nSubAirValues).fill(false);
+    }
+
+    for(let s = 1; s <= ctx.pilInfo.numChallenges.length; s++) {
+        console.log(ctx.pilInfo.nCols)
+        ctx.calculatedSymbols.cm[s] = new Array(ctx.pilInfo.nCols["cm" + s]).fill(false);
+        ctx.calculatedSymbols.challenge[s] = new Array(ctx.pilInfo.numChallenges[s - 1]).fill(false);
+    }
+
+    ctx.calculatedSymbols.tmp = new Array(ctx.pilInfo.nCols["tmpExp"]).fill(false);
 
     ctx.publics = [];
 
@@ -64,13 +87,13 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         logger.debug(`  Domain size: ${ctx.N} (2^${ctx.nBits})`);
         logger.debug(`  Domain size ext: ${ctx.extN} (2^${ctx.nBitsExt})`);
         logger.debug(`  Const  pols:   ${ctx.pilInfo.nConstants}`);
-        logger.debug(`  Stage 1 pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1").length}`);
+        logger.debug(`  Stage 1 pols:   ${ctx.pilInfo.nCols["cm1"]}`);
         for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
             const stage = i + 2;
-            logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm" + stage).length}`);
+            logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.nCols["cm" + stage]}`);
         }
-        logger.debug(`  Stage Q pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cmQ").length}`);
-        logger.debug(`  Temp exp pols: ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "tmpExp").length}`);
+        logger.debug(`  Stage Q pols:   ${ctx.pilInfo.nCols["cmQ"]}`);
+        logger.debug(`  Temp exp pols: ${ctx.pilInfo.nCols["tmpExp"]}`);
         logger.debug("-----------------------------");
     }
 
@@ -389,7 +412,10 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
     if (logger) logger.debug("··· Merkelizing Stage " + stage);
     ctx.trees[stage] = await ctx.MH.merkelize(buffTo, nPols, ctx.extN);
 
-    return [ctx.MH.root(ctx.trees[stage])];
+    const root = ctx.MH.root(ctx.trees[stage]);
+    if (options.logger && !options.debug) options.logger.debug("··· Root stage : " + stage + ": " + ctx.F.toString(root));
+
+    return [root];
 }
 
 module.exports.setChallengesStark = function setChallengesStark(stage, ctx, transcript, challenge, options) {
@@ -417,8 +443,10 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, tran
         if (options.logger && !options.debug) options.logger.debug("··· challenges[" + (stage - 1) + "][" + i + "]: " + ctx.F.toString(ctx.challenges[stage - 1][i]));
     }
 
-    for(let i = 0; i < ctx.challenges[stage - 1].length; ++i) {
-        setSymbolCalculated(ctx, { op: "challenge", stage, stageId: i}, options);
+    if(stage < qStage) {
+        for(let i = 0; i < ctx.challenges[stage - 1].length; ++i) {
+            setSymbolCalculated(ctx, { op: "challenge", stage, stageId: i}, options);
+        }
     }
     
     return;

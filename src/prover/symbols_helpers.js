@@ -5,17 +5,17 @@ module.exports.checkSymbolsCalculated = function checkSymbolsCalculated(ctx, sta
     let publicsToBeCalculated = 0;
     let subproofValuesToBeCalculated = 0;
     let commitsToBeCalculated = 0;
-    let tmpPolsToBeCalculated = 0;
+let tmpPolsToBeCalculated = 0;
     let symbolsCalculated = 0;
     let symbolsToBeCalculated = 0;
     for(let i = 0; i < symbolsStage.length; ++i) {
         if(!module.exports.isSymbolCalculated(ctx, symbolsStage[i])) {
             if(symbolsStage[i].op === "cm") {
                 commitsToBeCalculated++;
-            }
+}
             if(symbolsStage[i].op === "tmp") {
                 tmpPolsToBeCalculated++;
-            } 
+            }
             if(symbolsStage[i].op === "public") publicsToBeCalculated++;
             if(symbolsStage[i].op === "subproofvalue") subproofValuesToBeCalculated++;
             symbolsToBeCalculated++;
@@ -50,33 +50,31 @@ module.exports.setStage1PolynomialsCalculated = function setStage1PolynomialsCal
 }
 
 module.exports.isSymbolCalculated = function isSymbolCalculated(ctx, symbol) {
-    const symbolFound = ctx.calculatedSymbols.find(s =>
-        (["cm", "challenge"].includes(symbol.op) && symbol.op === s.op && symbol.stage === s.stage && symbol.stageId === s.stageId)
-        || (symbol.op === "tmp" && symbol.op === s.op && symbol.stageId === s.stageId)
-        || (["subproofValue", "public", "const"].includes(symbol.op) && symbol.op === s.op && symbol.stage === s.stage && symbol.id === s.id));
-
-    const isCalculated = symbolFound ? true : false;
-    return isCalculated;
+    console.log(symbol);
+    if(["cm", "challenge"].includes(symbol.op)) {
+        return ctx.calculatedSymbols[symbol.op][symbol.stage][symbol.stageId];
+    } else if(symbol.op === "tmp") {
+        return ctx.calculatedSymbols["tmp"][symbol.stageId];
+    } else {
+        return ctx.calculatedSymbols[symbol.op][symbol.id];
+    }
 }
 
 module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, options) {
-    let symbol;
-    if(["cm", "challenge"].includes(ref.op)) {
-        symbol = {op: ref.op, stage: ref.stage, stageId: ref.stageId}
-    } else if(ref.op === "tmp") {
-        symbol = {op: ref.op, stage: ref.stage, stageId: ref.stageId};
-    } else if(["public", "subproofValue", "const"].includes(ref.op)) {
-        symbol = {op: ref.op, stage: ref.stage, id: ref.id}
-    } else throw new Error("Invalid ref op " + ref.op);
-
-    if(!module.exports.isSymbolCalculated(ctx, symbol)) {
-        ctx.calculatedSymbols.push(symbol);
-        if(options?.logger) options.logger.debug(`Symbol ${symbol.op} for stage ${symbol.stage} and id ${["cm", "tmp", "challenge"].includes(symbol.op) ? symbol.stageId : symbol.id} has been calculated`);
+    if(!module.exports.isSymbolCalculated(ctx, ref)) {
+        if(["cm", "challenge"].includes(ref.op)) {
+            ctx.calculatedSymbols[ref.op][ref.stage][ref.stageId] = true;
+        } else if(ref.op === "tmp") {
+            ctx.calculatedSymbols["tmp"][ref.stageId] = true;
+        } else {
+            ctx.calculatedSymbols[ref.op][ref.id] = true;
+        }
+        if(options?.logger) options.logger.debug(`Symbol ${ref.op} for stage ${ref.stage} and id ${["cm", "tmp", "challenge"].includes(ref.op) ? ref.stageId : ref.id} has been calculated`);
     }
 }
 
 module.exports.tryCalculateExps = async function tryCalculateExps(ctx, stage, dom, options) {
-    const expressionsStage = ctx.pilInfo.expressionsCode.filter(e => e.stage === stage && e.dest);
+    const expressionsStage = ctx.pilInfo.expressionsCode.filter(e => e.stage === stage);
     for(let i = 0; i < expressionsStage.length; ++i) {
         if(module.exports.isSymbolCalculated(ctx, expressionsStage[i].dest)) continue;
         const symbols = expressionsStage[i].symbols;
