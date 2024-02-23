@@ -130,7 +130,6 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
 
         const hint = {
             name: "gprod",
-            stage,
             reference: z,
             numerator: E.exp(ciCtx.numId, 0, stage),
             denominator: E.exp(ciCtx.denId, 0, stage),

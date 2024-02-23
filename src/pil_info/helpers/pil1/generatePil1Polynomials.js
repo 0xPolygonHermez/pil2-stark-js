@@ -51,7 +51,6 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
         const hint = {
             name: "public",
             reference: { op: "public", id: i, stage: 1 },
-            stage: 1,
             row_index: { op: 'number', value: pil.publics[i].idx },
             expression: expr,
         }

@@ -66,7 +66,6 @@ class ExpressionOps {
             op: "challenge",
             name,
             id,
-            stageId: id,
             stage,
             dim,
         };

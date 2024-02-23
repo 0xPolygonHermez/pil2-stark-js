@@ -133,7 +133,7 @@ function setSymbolsStage(res, symbols) {
                     stage: s.stage,
                     id: s.stageId,
                 }
-            } else if(["public", "subproofValue"].includes(s.type)) {
+            } else if(["public", "subproofValue", "challenge"].includes(s.type)) {
                 return {
                     op: s.type,
                     stage: s.stage,
@@ -177,9 +177,13 @@ function addHintsInfo(res, symbols, expressions) {
     for(let i = 0; i < res.hints.length; ++i) {
         const hint = res.hints[i];
         const hintSymbols = [];
-        for(let j = 0; j < Object.keys(hint).length; ++j) {
-            const key = Object.keys(hint)[j];
+        const keysHint = Object.keys(hint);
+        const hintField = [];
+        for(let j = 0; j < keysHint.length; ++j) {
+            const key = keysHint[j];
+            if(key === "name") continue;
             if(hint[key].op === "exp") {
+                hintField.push(key);
                 const symbol = symbols.find(s => s.expId === hint[key].id);
                 if(symbol) {
                     const op = symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol) ? "cm" : "tmp";
@@ -190,16 +194,27 @@ function addHintsInfo(res, symbols, expressions) {
                     hintSymbols.push(...expressions[hint[key].id].symbols);
                 }
             } else if(!key.includes("reference")) {
+                hintField.push(key);
                 if(["cm", "challenge"].includes(hint[key].op)) {
                     hintSymbols.push({op: hint[key].op, stage: hint[key].stage, stageId: hint[key].stageId});
                 } else if(["public", "subproofValue", "const"].includes(hint[key].op)) {
                     hintSymbols.push({op: hint[key].op, stage: hint[key].stage, id: hint[key].id});
                 }
             } else {
-                if(!hint.dest) hint.dest = [];
-                hint.dest.push(hint[key])
+                if(!hint.dest) hint.dest = []; 
+                const hintDest = { op: hint[key].op, stage: hint[key].stage };
+                if(["cm", "challenge"].includes(hintDest.op)) {
+                    hintDest.id = hint[key].id;
+                    hintDest.stageId = hint[key].stageId;
+                } else if(["public", "subproofValue"].includes(hintDest.op)) {
+                    hintDest.id = hint[key].id;
+                }
+                hint.dest.push(hintDest);
+                delete hint[key];
             }
         }
+
+        hint.fields = hintField;
 
         const uniqueSymbolsSet = new Set();
 

@@ -208,7 +208,6 @@ async function computeStage(stage, ctx, options) {
 
     if(stage !== qStage) {
         let symbolsStageInfo = checkSymbolsCalculated(ctx, stage, options);
-        console.log(symbolsStageInfo);
         while(symbolsStageInfo.symbolsToBeCalculated > 0) {
             if(symbolsStageInfo.tmpPolsToBeCalculated > 0 || symbolsStageInfo.commitsToBeCalculated > 0) {
                 await tryCalculateExps(ctx, stage, dom, options); 

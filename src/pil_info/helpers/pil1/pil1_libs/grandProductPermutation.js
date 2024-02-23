@@ -120,7 +120,6 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
 
         const hint = {
             name: "gprod",
-            stage,
             reference: z,
             numerator: E.exp(peCtx.numId, 0, stage),
             denominator: E.exp(peCtx.denId, 0, stage),

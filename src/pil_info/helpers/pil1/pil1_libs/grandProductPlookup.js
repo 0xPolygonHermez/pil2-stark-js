@@ -180,7 +180,6 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
 
         const hint1 = {
             name: "h1h2",
-            stage: stage1,
             referenceH1: h1,
             referenceH2: h2,
             f: E.exp(puCtx.fExpId, 0, stage1),
@@ -189,7 +188,6 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
 
         const hint2 = {
             name: "gprod",
-            stage: stage2,
             reference: z,
             numerator: E.exp(puCtx.numId, 0, stage2),
             denominator: E.exp(puCtx.denId, 0, stage2),
