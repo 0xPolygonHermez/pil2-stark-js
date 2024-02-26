@@ -165,7 +165,7 @@ module.exports.getRef = function getRef(r, ctx, dom, global) {
         }
         case "number": return `ctx.F.e(${r.value}n)`;
         case "public": return `ctx.publics[${r.id}]`;
-        case "challenge": return `ctx.challenges[${r.stage - 1}][${r.id}]`;
+        case "challenge": return `ctx.challenges[${r.stage - 1}][${r.stageId}]`;
         case "subproofValue": return global ? `ctx.subAirValues[${r.subproofId}][${r.id}]` : `ctx.subAirValues[${r.id}]`;
         case "eval": return `ctx.evals[${r.id}]`;
         case "xDivXSubXi": {
@@ -203,10 +203,8 @@ module.exports.getRef = function getRef(r, ctx, dom, global) {
 }
 
 function evalMap(ctx, polId, prime, dom, val) {
-    let p = ctx.pilInfo.cmPolsMap[polId];
-    offset = ctx.pilInfo.cmPolsMap
-        .filter((pol, index) => pol.stage === p.stage && index < polId)
-        .reduce((acc, pol) => acc + pol.dim, 0);
+    let p = module.exports.getPolRef(ctx, polId, dom);
+    let offset = p.offset;
     const N = dom === "n" ? ctx.N : ctx.extN;
     let next;
     if(dom === "n") {
@@ -215,7 +213,7 @@ function evalMap(ctx, polId, prime, dom, val) {
         next = prime < 0 ? (prime + N) << ctx.extendBits : prime << ctx.extendBits;
     }
     let index = prime ? `((i + ${next})%${N})` : "i";
-    let stage = dom === "n" ? p.stage + "_n" : p.stage + "_ext";
+    let stage = p.stage;
     let size = ctx.pilInfo.mapSectionsN[stage];
     let pos = `${offset} + ${index} * ${size}`;
     if(val) {

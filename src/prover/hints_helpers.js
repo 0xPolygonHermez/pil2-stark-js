@@ -23,16 +23,9 @@ module.exports.applyHints = async function applyHints(stage, ctx, options) {
 
 function getHintField(ctx, hint, field) {
     if(!hint[field]) throw new Error(`${field} field is missing`);
-    const hintField = hint[field];
-    if(hintField.op === "cm") {
-        const idPol = ctx.pilInfo.cmPolsMap.findIndex(c => c.stage !== "tmpExp" && c.stageNum === hintField.stage && c.stageId === hintField.stageId);
-        return getPol(ctx, idPol, "n");
-    } else if(hintField.op === "tmp") {
-        const idPol = ctx.pilInfo.cmPolsMap.findIndex(c => c.stage === "tmpExp" && c.stageNum === hintField.stage && c.stageId === hintField.stageId);
-        return getPol(ctx, idPol, "n");
-    } else if(["number", "subproofvalue"].includes(hintField.op)) {
-        return BigInt(hintField.value);
-    } else throw new Error("Case not considered");
+    if(["cm", "tmp"].includes(hint[field].op)) return getPol(ctx, hint[field].id, "n");
+    if(["number", "subproofvalue"].includes(hint[field].op)) return BigInt(hint[field].value);
+    throw new Error("Case not considered");
 }
 
 async function resolveHint(ctx, hint, options) {

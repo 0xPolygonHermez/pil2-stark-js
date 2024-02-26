@@ -23,16 +23,16 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
     const dim = stark ? 3 : 1;
 
     let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
-    const alpha = E.challenge("std_alpha", stage1, dim, alphaSymbol.stageId);
+    const alpha = E.challenge("std_alpha", stage1, dim, alphaSymbol.stageId, alphaSymbol.id);
 
     let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
-    const beta = E.challenge("std_beta", stage1, dim, betaSymbol.stageId);
+    const beta = E.challenge("std_beta", stage1, dim, betaSymbol.stageId, betaSymbol.id);
 
     let gammaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_gamma");
-    const gamma = E.challenge("std_gamma", stage2, dim, gammaSymbol.stageId);
+    const gamma = E.challenge("std_gamma", stage2, dim, gammaSymbol.stageId, gammaSymbol.id);
 
     let deltaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_delta");
-    const delta = E.challenge("std_delta", stage2, dim, deltaSymbol.stageId);
+    const delta = E.challenge("std_delta", stage2, dim, deltaSymbol.stageId, deltaSymbol.id);
 
 
     for (let i=0; i<pil.plookupIdentities.length; i++) {

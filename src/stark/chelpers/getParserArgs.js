@@ -191,8 +191,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
             }
             case "challenge":
             {
-                const globalId = starkInfo.numChallenges.slice(0, r.stage - 1).reduce((acc, c) => acc + c, 0) + r.id;
-                args.push(globalId);
+                args.push(r.id);
                 break;
             
             }

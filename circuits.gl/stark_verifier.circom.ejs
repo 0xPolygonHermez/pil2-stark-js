@@ -158,9 +158,9 @@ class Transcript {
             } else if(r.stage === evalsStage) {
                 return "challengeXi";
             } else if(r.stage === friStage) {
-                return "challengesFRI[" + r.id + "]";
+                return "challengesFRI[" + r.stageId + "]";
             } else {
-                return "challengesStage" + r.stage + "[" + r.id + "]";
+                return "challengesStage" + r.stage + "[" + r.stageId + "]";
             }
         } else if (r.type == "public") {
             return "publics[" + r.id + "]";

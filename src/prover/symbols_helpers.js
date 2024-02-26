@@ -41,16 +41,12 @@ module.exports.setConstantsPolynomialsCalculated = function setConstantsPolynomi
 }
 
 module.exports.setStage1PolynomialsCalculated = function setStage1PolynomialsCalculated(ctx, options) {
-    for(let i = 0; i < ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1").length; ++i) {
-        const polInfo = ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1")[i];
-        if(!polInfo.imPol) {
-            module.exports.setSymbolCalculated(ctx, {op: "cm", stage: 1, stageId: i}, options);
-        }
+    for(let i = 0; i < ctx.pilInfo.nCols["cm1"]; ++i) {
+        module.exports.setSymbolCalculated(ctx, {op: "cm", stage: 1, stageId: i, id: 1}, options);
     }
 }
 
 module.exports.isSymbolCalculated = function isSymbolCalculated(ctx, symbol) {
-    console.log(symbol);
     if(["cm", "challenge"].includes(symbol.op)) {
         return ctx.calculatedSymbols[symbol.op][symbol.stage][symbol.stageId];
     } else if(symbol.op === "tmp") {

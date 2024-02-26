@@ -61,10 +61,11 @@ class ExpressionOps {
     }
 
  
-    challenge(name, stage, dim, id) {
+    challenge(name, stage, dim, stageId, id) {
         return {
             op: "challenge",
             name,
+            stageId,
             id,
             stage,
             dim,

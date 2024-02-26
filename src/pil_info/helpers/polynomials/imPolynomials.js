@@ -15,7 +15,9 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     const dim = stark ? 3 : 1;
     const stage = res.numChallenges.length + 1;
 
-    const vc = E.challenge("vc", stage, dim, 0);
+    const vc_id = symbols.filter(s => s.type === "challenge" && s.stage < stage).length;
+
+    const vc = E.challenge("std_vc", stage, dim, 0, vc_id);
     vc.expDeg = 0;
     
     let multipleBoundaries = false;

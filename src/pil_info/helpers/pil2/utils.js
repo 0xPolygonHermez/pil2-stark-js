@@ -109,7 +109,8 @@ function addSymbol(exp, symbols, stark) {
         if(!challengeSymbol) {
             const dim = stark ? 3 : 1;
             const name = "challenge_" + exp.stage + "_" + exp.stageId;
-            symbols.push({ type: "challenge", stageId: exp.stageId, stage: exp.stage, dim, name});
+            const id = symbols.filter(si => si.type === "challenge" && ((si.stage < exp.stage) || (si.stage === exp.stage && si.stageId < exp.stageId))).length;
+            symbols.push({ type: "challenge", stageId: exp.stageId, stage: exp.stage, id, dim, name});
         }
     } else if(exp.op === "const") {
         const fixedSymbol = symbols.find(s => s.type === "fixed" && s.airId === exp.airId && s.subproofId === exp.subproofId
@@ -193,10 +194,12 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
                 return multiArraySymbols;
             }
         } else if(s.type === piloutTypes.CHALLENGE) {
+            const id = pilout.symbols.filter(si => si.type === piloutTypes.CHALLENGE && ((si.stage < s.stage) || (si.stage === s.stage && si.id < s.id))).length;
             return {
                 name: s.name,
                 type: "challenge",
                 stageId: s.id,
+                id,
                 stage: s.stage,
                 dim: stark ? 3 : 1,
             }

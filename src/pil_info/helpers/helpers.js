@@ -112,7 +112,7 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
                 const sym = symbols.find(s => ["tmpPol", "witness"].includes(s.type) && s.polId === exp.id);
                 exp.stageId = sym.stageId;
             }
-            exp.symbols = [{op: exp.op, stage: exp.stage, stageId: exp.stageId}];
+            exp.symbols = [{op: "cm", stage: exp.stage, stageId: exp.stageId, id: exp.id}];
         }
         if(exp.op === "const") exp.symbols = [{op: exp.op, stage: exp.stage, id: exp.id}];
     } else if(["add", "sub", "mul", "neg"].includes(exp.op)) {
@@ -128,7 +128,9 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
                 const sym = symbols.find(s => s.type === "witness" && s.polId === lhsValue.id);
                 lhsValue.stageId = sym.stageId;
             }
-            lhsSymbols.push({op: lhsValue.op, stage: lhsValue.stage, stageId: lhsValue.stageId});
+            const lSym = {op: lhsValue.op, stage: lhsValue.stage, stageId: lhsValue.stageId};
+            if(lSym === "cm") lSym.id = lhsValue.id;
+            lhsSymbols.push(lSym);
         } else if(["public", "subproofValue", "const"].includes(lhsValue.op)) {
             lhsSymbols.push({op: lhsValue.op, stage: lhsValue.stage, id: lhsValue.id});
         } else if(lhsValue.symbols) {
@@ -141,7 +143,9 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
                 const sym = symbols.find(s => s.type === "witness" && s.polId === rhsValue.id);
                 rhsValue.stageId = sym.stageId;
             }
-            rhsSymbols.push({op: rhsValue.op, stage: rhsValue.stage, stageId: rhsValue.stageId});
+            const rSym = {op: rhsValue.op, stage: rhsValue.stage, stageId: rhsValue.stageId};
+            if(rSym === "cm") rSym.id = rhsValue.id;
+            rhsSymbols.push(rSym);
         } else if(["public", "subproofValue", "const"].includes(rhsValue.op)) {
             rhsSymbols.push({op: rhsValue.op, stage: rhsValue.stage, id: rhsValue.id});
         } else if(rhsValue.symbols) {

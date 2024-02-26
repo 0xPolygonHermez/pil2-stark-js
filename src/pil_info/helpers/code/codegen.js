@@ -60,7 +60,7 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
     } else if (exp.op === "eval") {
         return { type: exp.op, id: exp.id, dim: exp.dim, subproofId: exp.subproofId, airId: exp.airId}
     } else if (exp.op === "challenge") {
-        return { type: exp.op, id: exp.id, dim: exp.dim, stage: exp.stage }
+        return { type: exp.op, id: exp.id, stageId: exp.stageId, dim: exp.dim, stage: exp.stage }
     } else if (exp.op === "public") {
         return { type: exp.op, id: exp.id, dim: 1}
     } else if (exp.op == "number") {

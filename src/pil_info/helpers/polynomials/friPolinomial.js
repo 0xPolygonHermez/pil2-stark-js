@@ -7,9 +7,14 @@ module.exports = function generateFRIPolynomial(res, symbols) {
 
     const stage = res.numChallenges.length + 3;
 
-    const vf1 = E.challenge("vf1", stage, 3, 0);
+    const vf1_id = symbols.filter(s => s.type === "challenge" && s.stage < stage).length;
+    const vf2_id = vf1_id + 1;
+    symbols.push({type: "challenge", name: "std_vf1", stage, dim: 3, stageId: 0, id: vf1_id});
+    symbols.push({type: "challenge", name: "std_vf2", stage, dim: 3, stageId: 1, id: vf2_id});
 
-    const vf2 = E.challenge("vf2", stage, 3, 1);
+    const vf1 = E.challenge("std_vf1", stage, 3, 0, vf1_id);
+    const vf2 = E.challenge("std_vf2", stage, 3, 1, vf2_id);
+
 
     let friExp = null;
     for (let i=0; i<res.nCommitments; i++) {

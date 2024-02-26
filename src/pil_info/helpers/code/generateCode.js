@@ -35,9 +35,9 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         let exprDest;
         const symbolDest = symbols.find(s => s.expId === j);
         if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
-            exprDest = { op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId };
+            exprDest = { op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId};
         } else {
-            exprDest = { op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId };
+            exprDest = { op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId };
         }
 
         pilCodeGen(ctx, symbols, expressions, j, 0);
@@ -76,9 +76,9 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
             const symbolDest = symbols.find(s => s.expId === j);
             if(symbolDest) {
                 if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
-                    ctx.symbolsCalculated.push({ op: "cm", stage: 1, stageId: symbolDest.stageId });
+                    ctx.symbolsCalculated.push({ op: "cm", stage: 1, stageId: symbolDest.stageId, id: symbolDest.polId});
                 } else {
-                    ctx.symbolsCalculated.push({ op: "tmp", stage: 1, stageId: symbolDest.stageId });
+                    ctx.symbolsCalculated.push({ op: "tmp", stage: 1, stageId: symbolDest.stageId, id: symbolDest.polId});
                 }
             };
             pilCodeGen(ctx, symbols, expressions, j, 0);
@@ -94,9 +94,9 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                 const symbolDest = symbols.find(s => s.expId === j);
                 if(symbolDest) {
                     if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
-                        ctx.symbolsCalculated.push({ op: "cm", stage, stageId: symbolDest.stageId });
+                        ctx.symbolsCalculated.push({ op: "cm", stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                     } else {
-                        ctx.symbolsCalculated.push({ op: "tmp", stage, stageId: symbolDest.stageId });
+                        ctx.symbolsCalculated.push({ op: "tmp", stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                     }
                 };
                 pilCodeGen(ctx, symbols, expressions, j, 0);
@@ -110,9 +110,9 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
             const symbolDest = symbols.find(s => s.expId === j);
             if(symbolDest) {
                 if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
-                    ctx.symbolsCalculated.push({ op: "cm", stage: nStages, stageId: symbolDest.stageId });
+                    ctx.symbolsCalculated.push({ op: "cm", stage: nStages, stageId: symbolDest.stageId, id: symbolDest.polId});
                 } else {
-                    ctx.symbolsCalculated.push({ op: "tmp", stage: nStages, stageId: symbolDest.stageId });
+                    ctx.symbolsCalculated.push({ op: "tmp", stage: nStages, stageId: symbolDest.stageId, id: symbolDest.polId});
                 }
             };       
             pilCodeGen(ctx, symbols, expressions, j, 0);

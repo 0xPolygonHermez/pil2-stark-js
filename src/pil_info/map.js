@@ -131,12 +131,14 @@ function setSymbolsStage(res, symbols) {
                     op: "cm",
                     stage: s.stage,
                     stageId: s.stageId,
+                    id: s.polId,
                 }
             } else if(s.type === "tmpPol" && !s.imPol) {
                 return {
                     op: "tmp",
                     stage: s.stage,
                     stageId: s.stageId,
+                    id: s.polId,
                 }
             } else if(s.type === "fixed") {
                 return {
@@ -198,7 +200,7 @@ function addHintsInfo(res, symbols, expressions) {
                 const symbol = symbols.find(s => s.expId === hint[key].id);
                 if(symbol) {
                     const op = symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol) ? "cm" : "tmp";
-                    const dest = { op, stage: symbol.stage, stageId: symbol.stageId};
+                    const dest = { op, stage: symbol.stage, stageId: symbol.stageId, id: symbol.polId};
                     hint[key] = dest;
                     hintSymbols.push(dest);
                 } else {
@@ -207,7 +209,7 @@ function addHintsInfo(res, symbols, expressions) {
             } else if(!key.includes("reference")) {
                 hintField.push(key);
                 if(["cm", "challenge"].includes(hint[key].op)) {
-                    hintSymbols.push({op: hint[key].op, stage: hint[key].stage, stageId: hint[key].stageId});
+                    hintSymbols.push({op: hint[key].op, stage: hint[key].stage, stageId: hint[key].stageId, id: hint[key].id});
                 } else if(["public", "subproofValue", "const"].includes(hint[key].op)) {
                     hintSymbols.push({op: hint[key].op, stage: hint[key].stage, id: hint[key].id});
                 }
