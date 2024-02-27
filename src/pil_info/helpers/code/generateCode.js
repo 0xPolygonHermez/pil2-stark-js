@@ -11,6 +11,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         const ctx = {
             calculated: {},
             symbolsCalculated: [],
+            symbolsUsed: [],
             tmpUsed: 0,
             code: [],
             expMap: [],
@@ -39,6 +40,15 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         } else {
             exprDest = { op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId };
         }
+        ctx.symbolsCalculated.push(exprDest);
+
+        for(let k = 0; k < exp.symbols.length; k++) {
+            const symbolUsed = exp.symbols[k];
+            if(!["cm", "const"].includes(symbolUsed.op)) continue;
+            if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                ctx.symbolsUsed.push(symbolUsed);
+            };
+        }
 
         pilCodeGen(ctx, symbols, expressions, j, 0);
         const code = buildCode(ctx, expressions);
@@ -60,6 +70,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
     const ctx = {
         calculated: {},
         symbolsCalculated: [],
+        symbolsUsed: [],
         tmpUsed: 0,
         code: [],
         expMap: [],
@@ -81,6 +92,14 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                     ctx.symbolsCalculated.push({ op: "tmp", stage: 1, stageId: symbolDest.stageId, id: symbolDest.polId});
                 }
             };
+
+            for(let k = 0; k < expressions[j].symbols.length; k++) {
+                const symbolUsed = expressions[j].symbols[k];
+                if(!["cm", "const"].includes(symbolUsed.op)) continue;
+                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                    ctx.symbolsUsed.push(symbolUsed);
+                };
+            }
             pilCodeGen(ctx, symbols, expressions, j, 0);
         }
     }   
@@ -99,6 +118,14 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                         ctx.symbolsCalculated.push({ op: "tmp", stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                     }
                 };
+
+                for(let k = 0; k < expressions[j].symbols.length; k++) {
+                    const symbolUsed = expressions[j].symbols[k];
+                    if(!["cm", "const"].includes(symbolUsed.op)) continue;
+                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                        ctx.symbolsUsed.push(symbolUsed);
+                    };
+                }
                 pilCodeGen(ctx, symbols, expressions, j, 0);
             }
         }
@@ -114,7 +141,14 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                 } else {
                     ctx.symbolsCalculated.push({ op: "tmp", stage: nStages, stageId: symbolDest.stageId, id: symbolDest.polId});
                 }
-            };       
+            };
+            for(let k = 0; k < expressions[j].symbols.length; k++) {
+                const symbolUsed = expressions[j].symbols[k];
+                if(!["cm", "const"].includes(symbolUsed.op)) continue;
+                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                    ctx.symbolsUsed.push(symbolUsed);
+                };
+            }       
             pilCodeGen(ctx, symbols, expressions, j, 0);
         }
     }

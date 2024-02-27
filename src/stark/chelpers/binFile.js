@@ -123,7 +123,7 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
     const buffOps = new Uint8Array(ops.length);
     const buffOpsV = new DataView(buffOps.buffer);
     for(let j = 0; j < ops.length; j++) {
-        buffOpsV.setUint8(j, ops[j], true);
+        buffOpsV.setUint8(j, ops[j]);
     }
     await cHelpersBin.write(buffOps);
 

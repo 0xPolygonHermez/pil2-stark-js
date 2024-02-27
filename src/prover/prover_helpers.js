@@ -284,9 +284,7 @@ module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
     const deg = dom === "ext" ? ctx.extN : ctx.N;
     let p = ctx.pilInfo.cmPolsMap[idPol];
     let stage = p.stage + "_" + dom;
-    let offset = ctx.pilInfo.cmPolsMap
-    .filter((pol, index) => pol.stage === p.stage && index < idPol)
-    .reduce((acc, pol) => acc + pol.dim, 0);
+    let offset = p.stagePos;
     let polRef = {
         stage,
         buffer: ctx[stage],
