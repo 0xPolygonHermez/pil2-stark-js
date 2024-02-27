@@ -1,6 +1,8 @@
 const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk, genProofFflonk, setChallengesFflonk, addTranscriptFflonk, getChallengeFflonk, calculateHashFflonk } = require("../fflonk/helpers/fflonk_prover_helpers");
 const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, computeFRIFolding, computeFRIQueries, calculateHashStark, addTranscriptStark, getChallengeStark, getPermutationsStark } = require("../stark/stark_gen_helpers");
-const { calculatePublics, callCalculateExps, applyHints } = require("./prover_helpers");
+const { applyHints } = require("./hints_helpers");
+const { callCalculateExps } = require("./prover_helpers");
+const { setStage1PolynomialsCalculated, setSymbolCalculated, tryCalculateExps, checkSymbolsCalculated } = require("./symbols_helpers");
 
 module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, constPols, zkey, options) {
     const logger = options.logger;
@@ -23,8 +25,10 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
         // Read committed polynomials
         await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1_n);
     }
+
+    setStage1PolynomialsCalculated(ctx, options);
     
-    await computePublics(ctx, inputs, stark, options);
+    addPublics(ctx, inputs, options);
 
     let challenge;
     
@@ -39,6 +43,10 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
             setChallenges(stage, ctx, ctx.transcript, challenge, options);
         }
         await computeStage(stage, ctx, options);
+
+        if(stage === 1) {
+            await addPublicsTranscript(ctx, stark, options);
+        }
 
         if(!options.debug) {
             let commits;
@@ -125,9 +133,17 @@ async function initProver(pilInfo, constTree, constPols, zkey, stark, options) {
     }
 }
 
-async function computePublics(ctx, inputs, stark, options) {
-    await calculatePublics(ctx, inputs);
+function addPublics(ctx, inputs, options) {
+    for (let i=0; i<ctx.pilInfo.nPublics; i++) {
+        const name = ctx.pilInfo.publicsNames[i];
+        if(inputs[name]) {
+            ctx.publics[i] = inputs[name];
+            setSymbolCalculated(ctx, {op: "public", stage: 1, id: i}, options);
+        }
+    }
+}
 
+async function addPublicsTranscript(ctx, stark, options) {
     // Transcript publics
     if(!options.debug) {
         let publicsCommits = [];
@@ -180,14 +196,34 @@ async function computeStage(stage, ctx, options) {
     const qStage = ctx.pilInfo.numChallenges.length + 1;
     const dom = stage === qStage ? "ext" : "n";
 
-    await callCalculateExps(`stage${stage}`, ctx.pilInfo.code[`stage${stage}`], dom, ctx, options.parallelExec, options.useThreads, false);
-    
-    await applyHints(stage, ctx);
+    const step = stage === qStage ? "qCode" : `stage${stage}`;
+    const symbolsCalculatedStep = ctx.pilInfo.code[step].symbolsCalculated;
 
-    if(stage === ctx.pilInfo.numChallenges.length) {
-        await callCalculateExps(`stage${stage}`, ctx.pilInfo.code[`imPols`], dom, ctx, options.parallelExec, options.useThreads, false);
+    await callCalculateExps(step, ctx.pilInfo.code[step], dom, ctx, options.parallelExec, options.useThreads);
+
+    for(let i = 0; i < symbolsCalculatedStep.length; i++) {
+        const symbolCalculated = symbolsCalculatedStep[i];
+        setSymbolCalculated(ctx, symbolCalculated, options);
     }
 
+    if(stage !== qStage) {
+        let symbolsStageInfo = checkSymbolsCalculated(ctx, stage, options);
+        while(symbolsStageInfo.symbolsToBeCalculated > 0) {
+            await tryCalculateExps(ctx, stage, dom, options); 
+
+            await applyHints(stage, ctx, options);
+            
+            let symbolsStageInfoUpdated = checkSymbolsCalculated(ctx, stage, options);
+            if(symbolsStageInfoUpdated.symbolsToBeCalculated === symbolsStageInfo.symbolsToBeCalculated) {
+                throw new Error(`Something went wrong when calculating symbols for stage ${stage}`);
+            }
+            symbolsStageInfo = symbolsStageInfoUpdated;
+        };
+
+        if(!ctx.calculatedSymbols.cm[stage].every(c => c)) throw new Error("Something went wrong");
+        if (logger) logger.debug(`> STAGE ${stage} DONE`);
+    }
+    
     if(options.debug) {
         const nConstraintsStage = ctx.pilInfo.constraints[`stage${stage}`].length;
         for(let i = 0; i < nConstraintsStage; i++) {

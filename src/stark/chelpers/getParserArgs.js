@@ -9,7 +9,7 @@ const operationsTypeMap = {
     "sub_swap": 3,
 }
 
-module.exports.getParserArgs = function getParserArgs(starkInfo, operations, code, dom, stage, imPols = false) {
+module.exports.getParserArgs = function getParserArgs(starkInfo, operations, code, dom) {
 
     var ops = [];
     var args = [];
@@ -59,9 +59,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         counters_ops[opsIndex] += 1;
     }
 
-    const stageInfo = {
-        stage,
-        imPols: imPols ? 1 : 0,
+    const expsInfo = {
         nTemp1: count1d,
         nTemp3: count3d,
         ops,
@@ -69,7 +67,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         args,
     }
     
-    const operationsUsed = counters_ops.reduce((acc, currentValue, currentIndex) => {
+    const opsUsed = counters_ops.reduce((acc, currentValue, currentIndex) => {
         if (currentValue !== 0) {
           acc.push(currentIndex);
         }
@@ -78,10 +76,10 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
 
     console.log("Number of operations: ", ops.length);
     console.log("Number of arguments: ", args.length);
-    console.log("Different operations types: ", operationsUsed.length, " of ", operations.length);
-    console.log("Operations used: ", operationsUsed.join(", "));
+    console.log("Different operations types: ", opsUsed.length, " of ", operations.length);
+    console.log("Operations used: ", opsUsed.join(", "));
 
-    return {operationsUsed, stageInfo};
+    return {expsInfo, opsUsed};
 
     function pushResArg(r, type) {
         switch (type) {
@@ -185,11 +183,17 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 break;
             }
             case "public":
-            case "challenge":
+            case "subproofValue":
             case "eval": 
             {
                 args.push(r.id);
                 break;
+            }
+            case "challenge":
+            {
+                args.push(r.id);
+                break;
+            
             }
         }
     }

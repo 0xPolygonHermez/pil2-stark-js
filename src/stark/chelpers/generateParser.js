@@ -7,14 +7,15 @@ const operationsMap = {
     "number": 6,
     "commit3": 7,
     "tmp3": 8,
-    "challenge": 9, 
-    "eval": 10,
-    "xDivXSubXi": 11,
-    "q": 12, 
-    "f": 13,
+    "subproofValue": 9,
+    "challenge": 10, 
+    "eval": 11,
+    "xDivXSubXi": 12,
+    "q": 13, 
+    "f": 14,
 }
 
-module.exports.generateParser = function generateParser(className, stageName = "", operations, operationsUsed, vectorizeEvals = false) {
+module.exports.generateParser = function generateParser(className, stageName = "", operations, operationsUsed) {
 
     let c_args = 0;
 
@@ -39,14 +40,13 @@ module.exports.generateParser = function generateParser(className, stageName = "
         "    uint16_t *args = &parserArgs.args[parserParams.argsOffset]; \n",
         "    uint64_t* numbers = &parserArgs.numbers[parserParams.numbersOffset];\n",
         "    __m256i numbers_[parserParams.nNumbers];\n",
-        "    uint64_t nStages = 3;",
-        "    uint64_t nOpenings = 2;",
-        "    int64_t openings[nOpenings] = {0, 1};",
+        "    uint64_t nStages = starkInfo.nStages;",
+        "    uint64_t nOpenings = starkInfo.openingPoints.size();",
         "    int64_t nextStrides[nOpenings];",
         "    int64_t minStride = 0;",
         "    int64_t maxStride = 0;",
         "    for(uint64_t i = 0; i < nOpenings; ++i) {",
-        "        uint64_t opening = openings[i] < 0 ? openings[i] + domainSize : openings[i];",
+        "        uint64_t opening = starkInfo.openingPoints[i] < 0 ? starkInfo.openingPoints[i] + domainSize : starkInfo.openingPoints[i];",
         "        nextStrides[i] = domainExtended ? opening << (starkInfo.starkStruct.nBitsExt - starkInfo.starkStruct.nBits) : opening;",
         "        if(nextStrides[i] < minStride) minStride = nextStrides[i];",
         "        if(nextStrides[i] > maxStride) maxStride = nextStrides[i];",
@@ -115,17 +115,27 @@ module.exports.generateParser = function generateParser(className, stageName = "
         "        publics[i] = _mm256_set1_epi64x(params.publicInputs[i].fe);",
         "    }\n",
     ]);
-    if(vectorizeEvals) {
-        parserCPP.push(...[
-            "    Goldilocks3::Element_avx evals[params.evals.degree()];",
-            "#pragma omp parallel for",
-            "    for(uint64_t i = 0; i < params.evals.degree(); ++i) {",
-            "        evals[i][0] = _mm256_set1_epi64x(params.evals[i][0].fe);",
-            "        evals[i][1] = _mm256_set1_epi64x(params.evals[i][1].fe);",
-            "        evals[i][2] = _mm256_set1_epi64x(params.evals[i][2].fe);",
-            "    }\n",
-        ]);
-    }
+
+    parserCPP.push(...[
+        "    Goldilocks3::Element_avx subproofValues[params.subproofValues.degree()];",
+        "#pragma omp parallel for",
+        "    for(uint64_t i = 0; i < params.subproofValues.degree(); ++i) {",
+        "        subproofValues[i][0] = _mm256_set1_epi64x(params.subproofValues[i][0].fe);",
+        "        subproofValues[i][1] = _mm256_set1_epi64x(params.subproofValues[i][1].fe);",
+        "        subproofValues[i][2] = _mm256_set1_epi64x(params.subproofValues[i][2].fe);",
+        "    }\n",
+    ]);
+
+    parserCPP.push(...[
+        "    Goldilocks3::Element_avx evals[params.evals.degree()];",
+        "#pragma omp parallel for",
+        "    for(uint64_t i = 0; i < params.evals.degree(); ++i) {",
+        "        evals[i][0] = _mm256_set1_epi64x(params.evals[i][0].fe);",
+        "        evals[i][1] = _mm256_set1_epi64x(params.evals[i][1].fe);",
+        "        evals[i][2] = _mm256_set1_epi64x(params.evals[i][2].fe);",
+        "    }\n",
+    ]);
+
     
     parserCPP.push(...[
         `#pragma omp parallel for`,
@@ -282,7 +292,7 @@ module.exports.generateParser = function generateParser(className, stageName = "
             if(operation.src1_type)  {
                 let dimType = "";
                 let dims1 = ["public", "x", "commit1", "tmp1", "const", "number"];
-                let dims3 = ["commit3", "tmp3", "challenge", "eval", "xDivXSubXi"];
+                let dims3 = ["commit3", "tmp3", "subproofValue", "challenge", "eval", "xDivXSubXi"];
                 if(dims1.includes(operation.src0_type)) dimType += "1";
                 if (dims3.includes(operation.src0_type)) dimType += "3";
                 if(dims1.includes(operation.src1_type)) dimType += "1";
@@ -374,7 +384,7 @@ module.exports.generateParser = function generateParser(className, stageName = "
 
             if(operation.src0_type === "commit3") {
                 name += `&${typeSrc0}, nOpenings, \n                        `;
-            } else if(["tmp3", "challenge", "eval"].includes(operation.src0_type)) {
+            } else if(["tmp3", "challenge", "eval", "subproofValue"].includes(operation.src0_type)) {
                 name += `&(${typeSrc0}[0]), 1, \n                        `;
             } else {
                 name += typeSrc0 + ", ";
@@ -382,7 +392,7 @@ module.exports.generateParser = function generateParser(className, stageName = "
             if(operation.src1_type) {
                 if(operation.src1_type === "commit3") {
                     name += `&${typeSrc1}, nOpenings, \n                        `;
-                } else if(["tmp3", "eval"].includes(operation.src1_type) || (!operation.op && operation.src1_type === "challenge")) {
+                } else if(["tmp3", "eval", "subproofValue"].includes(operation.src1_type) || (!operation.op && operation.src1_type === "challenge")) {
                     name += `&(${typeSrc1}[0]), 1, \n                        `;
                 } else if(operation.op === "mul" && operation.src1_type === "challenge") {
                     name += `${typeSrc1}, ${typeSrc1.replace("challenges", "challenges_ops")}, \n                        `;
@@ -432,6 +442,8 @@ module.exports.generateParser = function generateParser(className, stageName = "
                 return `challenges[args[i_args + ${c_args}]]`;
             case "eval":
                 return `evals[args[i_args + ${c_args}]]`;
+            case "subproofValue":
+                return `subproofValues[args[i_args + ${c_args}]]`;
             case "number":
                 return `numbers_[args[i_args + ${c_args}]]`;
             case "x":
@@ -457,6 +469,7 @@ module.exports.generateParser = function generateParser(className, stageName = "
             case "tmp3":
             case "challenge":
             case "eval":
+            case "subproofValue":
             case "number":
             case "xDivXSubXi":
                 return 1;

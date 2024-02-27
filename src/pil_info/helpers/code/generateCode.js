@@ -1,34 +1,76 @@
 const { getExpDim } = require("../helpers");
 const { pilCodeGen, buildCode } = require("./codegen");
 
-module.exports.generateHintsCode = function generateHintsCode(res, symbols, expressions, stark) {
-    for(let i = 0; i < res.hints.length; ++i) {
-        const hint = res.hints[i];
-        for(let j = 0; j < Object.keys(hint).length; ++j) {
-            const ctx = {
-                calculated: {},
-                tmpUsed: 0,
-                code: [],
-                expMap: [],
-                dom: "n",
-                airId: res.airId,
-                subproofId: res.subproofId,
-                stark,
-            };
-            if(hint.name === "public") ctx.publics = true;
-            const key = Object.keys(hint)[j];
-            if(hint[key].op === "exp") {
-                pilCodeGen(ctx, symbols, expressions, hint[key].id, 0);
-                if(!hint.code) hint.code = {};
-                hint.code[key] = buildCode(ctx, expressions);
+module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
+    const expressionsCode = [];
+
+    for(let j = 0; j < expressions.length; ++j) {
+        const exp = expressions[j];
+        if(j === res.cExpId || j === res.friExpId) continue;
+        if(!exp.keep && !exp.imPol) continue;
+        const ctx = {
+            calculated: {},
+            symbolsCalculated: [],
+            symbolsUsed: [],
+            tmpUsed: 0,
+            code: [],
+            expMap: [],
+            dom: "n",
+            airId: res.airId,
+            subproofId: res.subproofId,
+            stark,
+        };
+
+        const tmpExpressionsIds = expressionsCode.filter(e => (e.stage < exp.stage) && e.dest).map(e => e.expId);
+        //const tmpExpressionsIds = exp.tmpExps; // TODO: THIS CAN BE IMPROVED!
+
+        for(let i = 0; i < tmpExpressionsIds.length; i++) {
+            const expId = tmpExpressionsIds[i];
+            ctx.calculated[expId] = {};
+            for(let j = 0; j < res.openingPoints.length; ++j) {
+                const openingPoint = res.openingPoints[j];
+                ctx.calculated[expId][openingPoint] = true;
             }
         }
+        
+        let exprDest;
+        const symbolDest = symbols.find(s => s.expId === j);
+        if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
+            exprDest = { op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId};
+        } else {
+            exprDest = { op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId };
+        }
+        ctx.symbolsCalculated.push(exprDest);
+
+        for(let k = 0; k < exp.symbols.length; k++) {
+            const symbolUsed = exp.symbols[k];
+            if(!["cm", "const"].includes(symbolUsed.op)) continue;
+            if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                ctx.symbolsUsed.push(symbolUsed);
+            };
+        }
+
+        pilCodeGen(ctx, symbols, expressions, j, 0);
+        const code = buildCode(ctx, expressions);
+        const expInfo = {
+            expId: j,
+            stage: exp.stage,
+            symbols: exp.symbols,
+            code,
+            dest: exprDest, 
+        }
+
+        expressionsCode.push(expInfo);
     }
+
+    res.expressionsCode = expressionsCode;
 }
 
-module.exports.generateStagesCode = function generateStagesCode(res, symbols, constraints, expressions, stark) {
+module.exports.generateStagesCode = function generateStagesCode(res, symbols, expressions, stark) {
     const ctx = {
         calculated: {},
+        symbolsCalculated: [],
+        symbolsUsed: [],
         tmpUsed: 0,
         code: [],
         expMap: [],
@@ -42,17 +84,48 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, co
 
     for(let j = 0; j < expressions.length; ++j) {
         if(expressions[j].stage === 1 && symbols.find(s => s.stage === 1 && s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId)) {
+            const symbolDest = symbols.find(s => s.expId === j);
+            if(symbolDest) {
+                if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
+                    ctx.symbolsCalculated.push({ op: "cm", stage: 1, stageId: symbolDest.stageId, id: symbolDest.polId});
+                } else {
+                    ctx.symbolsCalculated.push({ op: "tmp", stage: 1, stageId: symbolDest.stageId, id: symbolDest.polId});
+                }
+            };
+
+            for(let k = 0; k < expressions[j].symbols.length; k++) {
+                const symbolUsed = expressions[j].symbols[k];
+                if(!["cm", "const"].includes(symbolUsed.op)) continue;
+                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                    ctx.symbolsUsed.push(symbolUsed);
+                };
+            }
             pilCodeGen(ctx, symbols, expressions, j, 0);
         }
     }   
-    res.code[`stage1`] =  buildCode(ctx, expressions);
+    res.code[`stage1`] = buildCode(ctx, expressions);
     
-
     for(let i = 0; i < nStages - 1; ++i) {
         const stage = 2 + i;
         for(let j = 0; j < expressions.length; ++j) {
             if(expressions[j].stage === stage) {
                 if(stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === stage).length !== 0) continue;
+                const symbolDest = symbols.find(s => s.expId === j);
+                if(symbolDest) {
+                    if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
+                        ctx.symbolsCalculated.push({ op: "cm", stage, stageId: symbolDest.stageId, id: symbolDest.polId});
+                    } else {
+                        ctx.symbolsCalculated.push({ op: "tmp", stage, stageId: symbolDest.stageId, id: symbolDest.polId});
+                    }
+                };
+
+                for(let k = 0; k < expressions[j].symbols.length; k++) {
+                    const symbolUsed = expressions[j].symbols[k];
+                    if(!["cm", "const"].includes(symbolUsed.op)) continue;
+                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                        ctx.symbolsUsed.push(symbolUsed);
+                    };
+                }
                 pilCodeGen(ctx, symbols, expressions, j, 0);
             }
         }
@@ -61,12 +134,39 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, co
 
     for(let j = 0; j < expressions.length; ++j) {
         if(expressions[j].stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === nStages).length !== 0) {
+            const symbolDest = symbols.find(s => s.expId === j);
+            if(symbolDest) {
+                if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
+                    ctx.symbolsCalculated.push({ op: "cm", stage: nStages, stageId: symbolDest.stageId, id: symbolDest.polId});
+                } else {
+                    ctx.symbolsCalculated.push({ op: "tmp", stage: nStages, stageId: symbolDest.stageId, id: symbolDest.polId});
+                }
+            };
+            for(let k = 0; k < expressions[j].symbols.length; k++) {
+                const symbolUsed = expressions[j].symbols[k];
+                if(!["cm", "const"].includes(symbolUsed.op)) continue;
+                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                    ctx.symbolsUsed.push(symbolUsed);
+                };
+            }       
             pilCodeGen(ctx, symbols, expressions, j, 0);
         }
     }
     res.code["imPols"] = buildCode(ctx, expressions);
+}
 
-    for(let i = 0; i < nStages; ++i) {
+module.exports.generateConstraintsDebugCode = function generateConstraintsDebugCode(res, symbols, constraints, expressions, stark) {
+    for(let i = 0; i < res.numChallenges.length; ++i) {
+        const ctx = {
+            calculated: {},
+            tmpUsed: 0,
+            code: [],
+            expMap: [],
+            dom: "n",
+            airId: res.airId,
+            subproofId: res.subproofId,
+            stark,
+        };
         const stage = i + 1;
         const stageConstraints = constraints.filter(c => c.stage === stage);
         res.constraints[`stage${stage}`] = [];
@@ -89,6 +189,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, co
 module.exports.generateConstraintPolynomialCode = function generateConstraintPolynomialCode(res, symbols, constraints, expressions, stark) {
     const ctxExt = {
         calculated: {},
+        symbolsCalculated: [],
         tmpUsed: 0,
         code: [],
         expMap: [],
@@ -140,9 +241,8 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
             src: [code[code.length-1].dest],
         });
     }
-    
-    res.code[`stage${qStage}`] = buildCode(ctxExt, expressions);
-    res.code[`stage${qStage}`].code[res.code[`stage${qStage}`].code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
+    res.code.qCode = buildCode(ctxExt, expressions);
+    res.code.qCode.code[res.code.qCode.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
 }
 
 module.exports.generateConstraintPolynomialVerifierCode = function generateConstraintPolynomialVerifierCode(res, symbols, expressions, stark) {       

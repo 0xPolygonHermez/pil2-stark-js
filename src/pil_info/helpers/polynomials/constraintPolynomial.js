@@ -1,15 +1,18 @@
 const ExpressionOps = require("../../expressionops");
 const { getExpDim } = require("../helpers");
 
-module.exports.generateConstraintPolynomial = function generateConstraintPolynomial(res, expressions, constraints, stark) {
+module.exports.generateConstraintPolynomial = function generateConstraintPolynomial(res, expressions, symbols, constraints, stark) {
 
     const E = new ExpressionOps();
 
     const dim = stark ? 3 : 1;
     const stage = res.numChallenges.length + 1;
 
-    const vc = E.challenge("vc", stage, dim, 0);
-    vc.stageId = 0;
+    const vc_id = symbols.filter(s => s.type === "challenge" && s.stage < stage).length;
+    symbols.push({type: "challenge", name: "std_vc", stage: stage, dim: 3, stageId: 0, id: vc_id})
+
+    const vc = E.challenge("std_vc", stage, dim, 0, vc_id);
+
     vc.expDeg = 0;
     
     res.cExpId = expressions.length;
@@ -46,4 +49,7 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
     }
     
     res.qDim = getExpDim(expressions, res.cExpId, stark);
+
+    const xi_id = symbols.filter(s => s.type === "challenge" && s.stage < stage + 1).length;
+    symbols.push({type: "challenge", name: "std_xi", stage: stage + 1, dim: 3, stageId: 0, id: xi_id})
 }

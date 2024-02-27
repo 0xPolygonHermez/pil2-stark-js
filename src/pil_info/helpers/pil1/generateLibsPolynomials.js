@@ -47,6 +47,14 @@ function calculateChallenges(res, symbols, challenges) {
             symbols.push({type: "challenge", ...challenges[i]});
         }
     }
+
+    const symbolsChallenges = symbols.filter(s => s.type === "challenge");
+    for(let j = 0; j < symbolsChallenges.length; ++j) {
+        const ch = symbolsChallenges[j];
+        const id = symbolsChallenges.filter(c => c.stage < ch.stage || (c.stage === ch.stage && c.stageId < ch.stageId)).length;
+        ch.id = id;
+    }
+
     const numChallenges = challenges.map(c => c.stage - 1).reduce((acc, s) => {
         if(!acc[s]) acc[s] = 0;
         acc[s]++;

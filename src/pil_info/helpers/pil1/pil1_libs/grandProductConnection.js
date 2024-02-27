@@ -21,10 +21,10 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
     const dim = stark ? 3 : 1;
 
     let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
-    const alpha = E.challenge("std_alpha", stage, dim, alphaSymbol.stageId);
+    const alpha = E.challenge("std_alpha", stage, dim, alphaSymbol.stageId, alphaSymbol.id);
 
     let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
-    const beta = E.challenge("std_beta", stage, dim, betaSymbol.stageId);
+    const beta = E.challenge("std_beta", stage, dim, betaSymbol.stageId, betaSymbol.id);
 
     for (let i=0; i<pil.connectionIdentities.length; i++) {
         const ci = pil.connectionIdentities[i];
@@ -124,16 +124,12 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
         pil.expressions[c2Id].dim = c2Dim;
 
         const numDim = getExpDim(pil.expressions, ciCtx.numId, stark);
-        symbols.push({ type: "tmpPol", name: `Connection${i}.num`, expId: ciCtx.numId, stage, dim: numDim, airId: 0, subproofId: 0 });
-
         const denDim = getExpDim(pil.expressions, ciCtx.denId, stark);
-        symbols.push({ type: "tmpPol", name: `Connection${i}.den`, expId: ciCtx.denId, stage, dim: denDim, airId: 0, subproofId: 0 });
 
         symbols.push({ type: "witness", name: `Connection${i}.z`, polId: ciCtx.zId, stage, dim: Math.max(numDim, denDim), airId: 0, subproofId: 0 });
 
         const hint = {
             name: "gprod",
-            stage,
             reference: z,
             numerator: E.exp(ciCtx.numId, 0, stage),
             denominator: E.exp(ciCtx.denId, 0, stage),

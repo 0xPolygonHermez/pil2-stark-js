@@ -45,14 +45,8 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
 
     res.publicsNames = publicsNames;
 
-    let dimCh = stark ? 3 : 1;
-    let qStage = res.numChallenges.length + 1;
-    symbols.push({type: "challenge", name: "std_vc", stage: qStage, dim: dimCh, stageId: 0})
-
-    if(stark) {
-        symbols.push({type: "challenge", name: "std_xi", stage: qStage + 1, dim: dimCh, stageId: 0})
-        symbols.push({type: "challenge", name: "std_vf1", stage: qStage + 2, dim: dimCh, stageId: 0})
-        symbols.push({type: "challenge", name: "std_vf2", stage: qStage + 2, dim: dimCh, stageId: 1})
+    for(let i = 0; i < res.nPublics; ++i) {
+        symbols.push({ type: "public", stage: 1, id: i });
     }
 
     for(let i = 0; i < constraints.length; ++i) {
@@ -70,11 +64,10 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
 
     res.boundaries = [{ name: "everyRow" }];
 
-    if(!debug) {
-        generateConstraintPolynomial(res, expressions, constraints, stark);
-        addInfoExpressions(symbols, expressions, expressions[res.cExpId], stark);
+    res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
 
-        res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
+    if(!debug) {
+        generateConstraintPolynomial(res, expressions, symbols, constraints, stark);
     }
 
     return {res, expressions, constraints, symbols}

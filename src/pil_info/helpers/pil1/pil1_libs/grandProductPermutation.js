@@ -19,13 +19,13 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
     const dim = stark ? 3 : 1;
 
     let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
-    const alpha = E.challenge("std_alpha", stage, dim, alphaSymbol.stageId);
+    const alpha = E.challenge("std_alpha", stage, dim, alphaSymbol.stageId, alphaSymbol.id);
 
     let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
-    const beta = E.challenge("std_beta", stage, dim, betaSymbol.stageId);
+    const beta = E.challenge("std_beta", stage, dim, betaSymbol.stageId, betaSymbol.id);
 
     let epsilonSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_epsilon");
-    const epsilon = E.challenge("std_epsilon", stage, dim, epsilonSymbol.stageId);
+    const epsilon = E.challenge("std_epsilon", stage, dim, epsilonSymbol.stageId, epsilonSymbol.id);
     
 
     for (let i=0; i<pil.permutationIdentities.length; i++) {
@@ -120,7 +120,6 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
 
         const hint = {
             name: "gprod",
-            stage,
             reference: z,
             numerator: E.exp(peCtx.numId, 0, stage),
             denominator: E.exp(peCtx.denId, 0, stage),
@@ -128,10 +127,6 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
 
         hints.push(hint);
 
-        symbols.push({ type: "tmpPol", name: `Permutation${i}.f`, expId: peCtx.fExpId, stage, dim: fDim, airId: 0, subproofId: 0 });
-        symbols.push({ type: "tmpPol", name: `Permutation${i}.t`, expId: peCtx.tExpId, stage, dim: tDim, airId: 0, subproofId: 0 });
-        symbols.push({ type: "tmpPol", name: `Permutation${i}.num`, expId: peCtx.numId, stage, dim: numDim, airId: 0, subproofId: 0 });
-        symbols.push({ type: "tmpPol", name: `Permutation${i}.den`, expId: peCtx.denId, stage, dim: denDim, airId: 0, subproofId: 0 });
         symbols.push({ type: "witness", name: `Permutation${i}.z`, polId: peCtx.zId, stage, dim: Math.max(numDim, denDim), airId: 0, subproofId: 0 });
     }
 }

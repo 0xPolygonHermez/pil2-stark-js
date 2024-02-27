@@ -30,33 +30,33 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
 
     if (exp.op == "exp") {
         addInfoExpressions(symbols, expressions, expressions[exp.id], stark);
-            
         exp.expDeg = expressions[exp.id].expDeg;
         exp.rowsOffsets = expressions[exp.id].rowsOffsets;
-        exp.symbols = expressions[exp.id].symbols;
         if(!exp.dim) exp.dim = expressions[exp.id].dim;
         if(!exp.stage) exp.stage = expressions[exp.id].stage;
 
         if(["cm", "const"].includes(expressions[exp.id].op)) {
             exp = expressions[exp.id];
         }
+
+        exp.tmpExps = expressions[exp.id].tmpExps;
+        if(expressions[exp.id].keep) exp.tmpExps.push(exp.id);
     } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         exp.expDeg = 1;
-        if(!exp.stage) exp.stage = exp.op === "cm" ? 1 : 0;
+        if(!exp.stage || exp.op === "const") exp.stage = exp.op === "cm" ? 1 : 0;
         if(!exp.dim) exp.dim = 1; 
 
         if("rowOffset" in exp) {
             exp.rowsOffsets = [exp.rowOffset];
         }
-
-        if(!exp.symbols) {
-            if(exp.op === "const") exp.symbols = [];
-            if(exp.op === "cm") exp.symbols = [{op: "cm", stage: exp.stage, stageId: exp.stageId}];
-        }
     } else if (["challenge", "eval", "subproofValue"].includes(exp.op)) {
         exp.expDeg = 0;
         exp.dim = stark ? 3 : 1;
-    } else if (["number", "public"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
+    } else if (exp.op === "public") {
+        exp.expDeg = 0;
+        exp.stage = 1; 
+        if(!exp.dim) exp.dim = 1;
+    } else if (exp.op === "number" || (exp.op === "Zi" && exp.boundary === "everyRow")) {
         exp.expDeg = 0;
         exp.stage = 0; 
         if(!exp.dim) exp.dim = 1;
@@ -89,19 +89,70 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
         const rhsRowOffsets = rhsValue.rowsOffsets || [0];
         exp.rowsOffsets = [...new Set([...lhsRowOffsets, ...rhsRowOffsets])];
 
+        const lhsTmpExps = lhsValue.tmpExps || [];
+        const rhsTmpExps = rhsValue.tmpExps || [];
+        exp.tmpExps = [...new Set([...lhsTmpExps, ...rhsTmpExps])];
+    } else {
+        throw new Error("Exp op not defined: "+ exp.op);
+    }
+
+    return;
+}
+
+module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(symbols, expressions, exp, stark) {
+    if("symbols" in exp) return;
+
+    if (exp.op == "exp") {
+        addInfoExpressionsSymbols(symbols, expressions, expressions[exp.id], stark);
+        exp.symbols = expressions[exp.id].symbols;
+      
+
+        if(expressions[exp.id].keep) {
+            const expSym = symbols.find(s => ["witness", "tmpPol"].includes(s.type) && s.expId === exp.id);
+            if(!exp.symbols.find(s => s.op === "tmp" && s.stage === expSym.stage && s.stageId === expSym.stageId && s.id === exp.id)) {
+                exp.symbols.push({op: "tmp", stage: expSym.stage, stageId: expSym.stageId, id: exp.id});
+            }
+        }
+
+    } else if (["cm", "const"].includes(exp.op) && !exp.symbols) {
+        if(exp.op === "cm") {
+            if(exp.stageId === undefined) {
+                const sym = symbols.find(s => ["tmpPol", "witness"].includes(s.type) && s.polId === exp.id);
+                exp.stageId = sym.stageId;
+            }
+            exp.symbols = [{op: "cm", stage: exp.stage, stageId: exp.stageId, id: exp.id}];
+        }
+        if(exp.op === "const") exp.symbols = [{op: exp.op, stage: exp.stage, id: exp.id}];
+    } else if(["add", "sub", "mul", "neg"].includes(exp.op)) {
+        const lhsValue = exp.values[0];
+        const rhsValue = exp.values[1];
+       
+        addInfoExpressionsSymbols(symbols, expressions, lhsValue, stark);
+        addInfoExpressionsSymbols(symbols, expressions, rhsValue, stark);
+
         let lhsSymbols = [];
         if(["cm", "challenge"].includes(lhsValue.op)) {
-            lhsSymbols.push({op: lhsValue.op, stage: lhsValue.stage, stageId: lhsValue.stageId});
-        } else if(["public", "subproofValue"].includes(lhsValue.op)) {
-            lhsSymbols.push({op: lhsValue.op, stage: lhsValue.stage, id: rhsValue.id});
+            if(lhsValue.stageId === undefined) {
+                const sym = symbols.find(s => s.type === "witness" && s.polId === lhsValue.id);
+                lhsValue.stageId = sym.stageId;
+            }
+            const lSym = {op: lhsValue.op, stage: lhsValue.stage, stageId: lhsValue.stageId, id: lhsValue.id};
+            lhsSymbols.push(lSym);
+        } else if(["public", "subproofValue", "const"].includes(lhsValue.op)) {
+            lhsSymbols.push({op: lhsValue.op, stage: lhsValue.stage, id: lhsValue.id});
         } else if(lhsValue.symbols) {
             lhsSymbols.push(...lhsValue.symbols);
         }
 
         let rhsSymbols = [];
         if(["cm", "challenge"].includes(rhsValue.op)) {
-            rhsSymbols.push({op: rhsValue.op, stage: rhsValue.stage, stageId: rhsValue.stageId});
-        } else if(["public", "subproofValue"].includes(rhsValue.op)) {
+            if(rhsValue.stageId === undefined) {
+                const sym = symbols.find(s => s.type === "witness" && s.polId === rhsValue.id);
+                rhsValue.stageId = sym.stageId;
+            }
+            const rSym = {op: rhsValue.op, stage: rhsValue.stage, stageId: rhsValue.stageId, id: rhsValue.id};
+            rhsSymbols.push(rSym);
+        } else if(["public", "subproofValue", "const"].includes(rhsValue.op)) {
             rhsSymbols.push({op: rhsValue.op, stage: rhsValue.stage, id: rhsValue.id});
         } else if(rhsValue.symbols) {
             rhsSymbols.push(...rhsValue.symbols);
@@ -113,8 +164,6 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
           
         exp.symbols = Array.from(uniqueSymbolsSet).map((symbol) => JSON.parse(symbol))
             .sort((a, b) => a.stage !== b.stage ? a.stage - b.stage : a.op !== b.op ? b.op.localeCompare(a.op) : a.stageId - b.stageId);
-    } else {
-        throw new Error("Exp op not defined: "+ exp.op);
     }
 
     return;

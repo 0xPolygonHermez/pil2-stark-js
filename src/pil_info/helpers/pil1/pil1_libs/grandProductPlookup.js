@@ -23,16 +23,16 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
     const dim = stark ? 3 : 1;
 
     let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
-    const alpha = E.challenge("std_alpha", stage1, dim, alphaSymbol.stageId);
+    const alpha = E.challenge("std_alpha", stage1, dim, alphaSymbol.stageId, alphaSymbol.id);
 
     let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
-    const beta = E.challenge("std_beta", stage1, dim, betaSymbol.stageId);
+    const beta = E.challenge("std_beta", stage1, dim, betaSymbol.stageId, betaSymbol.id);
 
     let gammaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_gamma");
-    const gamma = E.challenge("std_gamma", stage2, dim, gammaSymbol.stageId);
+    const gamma = E.challenge("std_gamma", stage2, dim, gammaSymbol.stageId, gammaSymbol.id);
 
     let deltaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_delta");
-    const delta = E.challenge("std_delta", stage2, dim, deltaSymbol.stageId);
+    const delta = E.challenge("std_delta", stage2, dim, deltaSymbol.stageId, deltaSymbol.id);
 
 
     for (let i=0; i<pil.plookupIdentities.length; i++) {
@@ -180,7 +180,6 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
 
         const hint1 = {
             name: "h1h2",
-            stage: stage1,
             referenceH1: h1,
             referenceH2: h2,
             f: E.exp(puCtx.fExpId, 0, stage1),
@@ -189,7 +188,6 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
 
         const hint2 = {
             name: "gprod",
-            stage: stage2,
             reference: z,
             numerator: E.exp(puCtx.numId, 0, stage2),
             denominator: E.exp(puCtx.denId, 0, stage2),
@@ -198,15 +196,8 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
         hints.push(hint1);
         hints.push(hint2);
 
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.f`, expId: puCtx.fExpId, stage: stage1, dim: fDim, airId: 0, subproofId: 0 });
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.t`, expId: puCtx.tExpId, stage: stage1, dim: tDim, airId: 0, subproofId: 0 });
-
         symbols.push({ type: "witness", name: `Plookup${i}.h1`, polId: puCtx.h1Id, stage: stage1, dim: Math.max(fDim, tDim), airId: 0, subproofId: 0 });
         symbols.push({ type: "witness", name: `Plookup${i}.h2`, polId: puCtx.h2Id, stage: stage1, dim: Math.max(fDim, tDim), airId: 0, subproofId: 0  });
-        
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.num`, expId: puCtx.numId, stage: stage2, dim: numDim, airId: 0, subproofId: 0 });
-        symbols.push({ type: "tmpPol", name: `Plookup${i}.den`, expId: puCtx.denId, stage: stage2, dim: denDim, airId: 0, subproofId: 0 });
-
         symbols.push({ type: "witness", name: `Plookup${i}.z`, polId: puCtx.zId, stage: stage2, dim: Math.max(numDim, denDim), airId: 0, subproofId: 0 });
     }
 }

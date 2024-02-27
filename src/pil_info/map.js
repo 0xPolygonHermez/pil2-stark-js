@@ -1,5 +1,17 @@
+const { addInfoExpressionsSymbols } = require("./helpers/helpers");
 
-module.exports = function map(res, symbols, stark, debug) {  
+module.exports = function map(res, symbols, expressions, stark, debug) {  
+    for(let i = 0; i < expressions.length; i++) {
+        if(expressions[i].keep || expressions[i].imPol) {
+            const symbol = { type: "tmpPol", name: `tmpPol${i}`, expId: i, stage: expressions[i].stage, dim: expressions[i].dim, subproofId: res.subproofId, airId: res.airId };
+            if(expressions[i].imPol) {
+                symbol.imPol = true;
+                symbol.polId = expressions[i].polId;
+            }
+            symbols.push(symbol);
+        }    
+    }
+
     mapSymbols(res, symbols);
 
     res.mapSectionsN["q_ext"] = res.qDim;
@@ -25,6 +37,14 @@ module.exports = function map(res, symbols, stark, debug) {
     
     
     setStageInfoSymbols(res, symbols);
+
+    for(let i = 0; i < expressions.length; i++) {
+        addInfoExpressionsSymbols(symbols, expressions, expressions[i], stark);
+    }
+
+    addHintsInfo(res, symbols, expressions);
+
+    setSymbolsStage(res, symbols);
 }
 
 function mapSymbols(res, symbols) {
@@ -70,6 +90,7 @@ function addPol(res, stage, symbol) {
     if(symbol.stageId >= 0) ref[pos].stageId = symbol.stageId;
     res.mapSectionsN[stage + "_n"] += dim;
     if(stage !== "tmpExp") res.mapSectionsN[stage + "_ext"] += dim;
+    if(symbol.imPol) ref[pos].imPol = symbol.imPol;
 }
 
 function setMapOffsets(res) {
@@ -95,31 +116,124 @@ function setMapOffsets(res) {
     res.mapTotalN = res.mapOffsets.f_ext +  extN * res.mapSectionsN.f_ext;
 }
 
+function setSymbolsStage(res, symbols) {
+    res.symbolsStage = [];
+    for(let i = 0; i < res.numChallenges.length + 1; ++i) {
+        res.symbolsStage[i] = symbols.filter(s => s.stage === i).map(s => {
+            if(s.type === "challenge") {
+                return {
+                    op: "challenge",
+                    stage: s.stage,
+                    stageId: s.stageId,
+                }
+            } else if(s.type === "witness" || (s.type === "tmpPol" && s.imPol)) {
+                return {
+                    op: "cm",
+                    stage: s.stage,
+                    stageId: s.stageId,
+                    id: s.polId,
+                }
+            } else if(s.type === "tmpPol" && !s.imPol) {
+                return {
+                    op: "tmp",
+                    stage: s.stage,
+                    stageId: s.stageId,
+                    id: s.polId,
+                }
+            } else if(s.type === "fixed") {
+                return {
+                    op: "const",
+                    stage: s.stage,
+                    id: s.stageId,
+                }
+            } else if(["public", "subproofValue", "challenge"].includes(s.type)) {
+                return {
+                    op: s.type,
+                    stage: s.stage,
+                    id: s.id,
+                }
+            }
+        })
+    }
+}
+
 function setStageInfoSymbols(res, symbols) {
     for(let i = 0; i < symbols.length; ++i) {
         const symbol = symbols[i];
         if(!["fixed", "witness", "tmpPol"].includes(symbol.type)) continue;
         const polsMapName = symbol.type === "fixed" ? "constPolsMap" : "cmPolsMap";
         const stage = symbol.type === "fixed" ? "const" : "cm" + symbol.stage;
-        if(symbol.type === "witness" || symbol.type === "tmpPol"){
-            if(res.cmPolsMap[symbol.polId].stage !== "tmpExp") {
-                const prevPolsStage = res[polsMapName]
-                .filter((p, index) => p.stage === stage && index < symbol.polId);
+        if(symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol)){
+            const prevPolsStage = res[polsMapName]
+            .filter((p, index) => p.stage === stage && index < symbol.polId);
 
-                symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
-                res.cmPolsMap[symbol.polId].stagePos = symbol.stagePos;
-                if(!symbol.stageId) {
-                    symbol.stageId = prevPolsStage.length;
-                    res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
+            symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
+            res.cmPolsMap[symbol.polId].stagePos = symbol.stagePos;
+            if(!symbol.stageId) {
+                symbol.stageId = symbol.stage === "Q" 
+                    ? prevPolsStage.length 
+                    : res[polsMapName].filter(p => p.stageNum === symbol.stage).findIndex(p => p.name === symbol.name);
+                res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
+            }
+        } else if(symbol.type === "tmpPol") {
+            const prevPolsStage = res.cmPolsMap.filter((p, index) => p.stage === "tmpExp" && index < symbol.polId);
+            symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
+            symbol.stageId = prevPolsStage.length;
+            res.cmPolsMap[symbol.polId].stagePos = symbol.stagePos;
+            res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
+        }
+    }
+}
+
+
+function addHintsInfo(res, symbols, expressions) {
+    for(let i = 0; i < res.hints.length; ++i) {
+        const hint = res.hints[i];
+        const hintSymbols = [];
+        const keysHint = Object.keys(hint);
+        const hintField = [];
+        for(let j = 0; j < keysHint.length; ++j) {
+            const key = keysHint[j];
+            if(key === "name") continue;
+            if(hint[key].op === "exp") {
+                hintField.push(key);
+                const symbol = symbols.find(s => s.expId === hint[key].id);
+                if(symbol) {
+                    const op = symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol) ? "cm" : "tmp";
+                    const dest = { op, stage: symbol.stage, stageId: symbol.stageId, id: symbol.polId};
+                    hint[key] = dest;
+                    hintSymbols.push(dest);
+                } else {
+                    hintSymbols.push(...expressions[hint[key].id].symbols);
+                }
+            } else if(!key.includes("reference")) {
+                hintField.push(key);
+                if(["cm", "challenge"].includes(hint[key].op)) {
+                    hintSymbols.push({op: hint[key].op, stage: hint[key].stage, stageId: hint[key].stageId, id: hint[key].id});
+                } else if(["public", "subproofValue", "const"].includes(hint[key].op)) {
+                    hintSymbols.push({op: hint[key].op, stage: hint[key].stage, id: hint[key].id});
                 }
             } else {
-                const prevPolsStage = res.cmPolsMap.filter((p, index) => p.stage === "tmpExp" && index < symbol.polId);
-                symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
-                symbol.stageId = prevPolsStage.length;
-                res.cmPolsMap[symbol.polId].stagePos = symbol.stagePos;
-                res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
-
+                if(!hint.dest) hint.dest = []; 
+                const hintDest = { op: hint[key].op, stage: hint[key].stage };
+                if(["cm", "challenge"].includes(hintDest.op)) {
+                    hintDest.id = hint[key].id;
+                    hintDest.stageId = hint[key].stageId;
+                } else if(["public", "subproofValue"].includes(hintDest.op)) {
+                    hintDest.id = hint[key].id;
+                }
+                hint.dest.push(hintDest);
+                delete hint[key];
             }
         }
+
+        hint.fields = hintField;
+
+        const uniqueSymbolsSet = new Set();
+
+        hintSymbols.forEach((symbol) => { uniqueSymbolsSet.add(JSON.stringify(symbol)); });
+          
+        hint.symbols = Array.from(uniqueSymbolsSet).map((symbol) => JSON.parse(symbol))
+            .sort((a, b) => a.stage !== b.stage ? a.stage - b.stage : a.op !== b.op ? b.op.localeCompare(a.op) : a.stageId - b.stageId);
     }
 }

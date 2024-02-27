@@ -15,7 +15,9 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     const dim = stark ? 3 : 1;
     const stage = res.numChallenges.length + 1;
 
-    const vc = E.challenge("vc", stage, dim, 0);
+    const vc_id = symbols.filter(s => s.type === "challenge" && s.stage < stage).length;
+
+    const vc = E.challenge("std_vc", stage, dim, 0, vc_id);
     vc.expDeg = 0;
     
     let multipleBoundaries = false;
@@ -24,27 +26,14 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
         const stageIm = imPolsLastStage ? res.numChallenges.length : expressions[expId].stage;
-        const cmStagesExp = Math.max(...expressions[expId].symbols.filter(s => s.op === "cm").map(s => s.stage));
-        if(cmStagesExp < expressions[expId].stage) {
-            expressions[expId].keep = true;
-        } else if(cmStagesExp === expressions[expId].stage) {
-            expressions[expId].stage = res.numChallenges.length;
-        }
-        const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId && s.airId === res.airId && s.subproofId === res.subproofId);
+        expressions[expId].imPol = true;
+        expressions[expId].polId = res.nCommitments++;
         const dim = getExpDim(expressions, expId, stark);
-        if(!symbol) {
-            symbols.push({ type: "tmpPol", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage: stageIm, dim, imPol: true, airId: res.airId, subproofId: res.subproofId });
-        } else {
-            symbol.imPol = true;
-            symbol.expId = expId;
-            symbol.polId = res.nCommitments++;
-            symbol.stage = stageIm;
-        };
         let e = {
             op: "sub",
             values: [
                 Object.assign({}, expressions[imExps[i]]),
-                E.cm(res.nCommitments-1, 0, stage, dim),
+                E.cm(res.nCommitments-1, 0, stageIm, dim),
             ]
         };
         if(stark && multipleBoundaries) e = E.mul(E.zi(res.boundaries.findIndex(b => b.name === "everyRow")), e);

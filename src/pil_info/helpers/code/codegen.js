@@ -16,11 +16,9 @@ function pilCodeGen(ctx, symbols, expressions, expId, prime, debug) {
         ctx.tmpUsed--;
         fixExpression(r, ctx, symbols, expressions);
         ctx.code[ctx.code.length - 1].dest = r;
-    } else {
-        if(ctx.publics || debug || expressions[expId].op === "exp") {
-            fixExpression(r, ctx, symbols, expressions);
-            ctx.code.push({ op: "copy", dest: r, src: [ retRef ] })
-        }        
+    } else if(expressions[expId].keep || debug || expressions[expId].op === "exp") {
+        fixExpression(r, ctx, symbols, expressions);
+        ctx.code.push({ op: "copy", dest: r, src: [ retRef ] })
     }
 
     if(!ctx.calculated[expId]) ctx.calculated[expId] = {};
@@ -62,7 +60,7 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
     } else if (exp.op === "eval") {
         return { type: exp.op, id: exp.id, dim: exp.dim, subproofId: exp.subproofId, airId: exp.airId}
     } else if (exp.op === "challenge") {
-        return { type: exp.op, id: exp.id, dim: exp.dim, stage: exp.stage }
+        return { type: exp.op, id: exp.id, stageId: exp.stageId, dim: exp.dim, stage: exp.stage }
     } else if (exp.op === "public") {
         return { type: exp.op, id: exp.id, dim: 1}
     } else if (exp.op == "number") {
@@ -195,9 +193,19 @@ function buildCode(ctx, expressions) {
         if (!e.keep) delete ctx.calculated[i];
     }
 
-    let code = { tmpUsed: ctx.tmpUsed, code: ctx.code };
+
+    let code = { tmpUsed: ctx.tmpUsed, code: ctx.code, symbolsCalculated: ctx.symbolsCalculated };
+    if(ctx.symbolsUsed) {
+        code.symbolsUsed = ctx.symbolsUsed.sort((s1, s2) => {
+            const order = { const: 0, cm: 1, tmp: 2 };
+            if (order[s1.op] !== order[s2.op]) return order[s1.op] - order[s2.op];
+            return s1.stage !== s2.stage ? s1.stage - s2.stage : s1.id - s2.id;
+        });
+    }
 
     ctx.code = [];
+    ctx.symbolsCalculated = [];
+    ctx.symbolsUsed = [];
 
     return code;
 }

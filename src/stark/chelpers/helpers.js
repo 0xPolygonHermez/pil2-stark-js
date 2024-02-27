@@ -130,6 +130,8 @@ function isIntersecting(segment1, segment2) {
 }
 
 module.exports.findPatterns = function findPatterns(array, operations, maxLength = 16, minReducedOperations = 400) {
+    console.log("Number of operations before join: " + array.length);
+
     const slidingWindow = [];
     const patterns = {};
     let i = 0;
@@ -180,6 +182,8 @@ module.exports.findPatterns = function findPatterns(array, operations, maxLength
             console.log(`Sequence ${pattern} reduces ${reductionApplied} operations`);
         }
     }
+
+    console.log("Number of operations after join: " + array.length);
 
     return patternOps;
 }

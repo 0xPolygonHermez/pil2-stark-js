@@ -251,7 +251,7 @@ module.exports.executeCode = function executeCode(F, ctx, code, global) {
             case "eval": return ctx.evals[r.id];
             case "number": return BigInt(r.value);
             case "public": return BigInt(ctx.publics[r.id]);
-            case "challenge": return ctx.challenges[r.stage - 1][r.id];
+            case "challenge": return ctx.challenges[r.stage - 1][r.stageId];
             case "subproofValue": return global ? ctx.subAirValues[r.subproofId][r.id] : ctx.subAirValues[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
             case "x": {
