@@ -13,11 +13,7 @@ const CHELPERS_BUFFERS_SECTION = 5;
 exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expressionsInfo) {
     console.log("> Writing the chelpers file");
 
-    const cHelpersBin = await createBinFile(cHelpersFilename, "chps", 1, CHELPERS_NSECTIONS, 1 << 22, 1 << 24);
-    
-    console.log(`··· Writing Section ${CHELPERS_HEADER_SECTION}. CHelpers header section`);
-    await startWriteSection(cHelpersBin, CHELPERS_HEADER_SECTION);
-
+    const cHelpersBin = await createBinFile(cHelpersFilename, "chps", 1, CHELPERS_NSECTIONS, 1 << 22, 1 << 24);    
     const ops = [];
     const args = [];
     const numbers = [];
@@ -56,6 +52,9 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
         numbers.push(...expressionsInfo[i].numbers); 
     }
 
+    console.log(`··· Writing Section ${CHELPERS_HEADER_SECTION}. CHelpers header section`);
+    await startWriteSection(cHelpersBin, CHELPERS_HEADER_SECTION);
+    
     await cHelpersBin.writeULE32(ops.length);
     await cHelpersBin.writeULE32(args.length);
     await cHelpersBin.writeULE32(numbers.length);
@@ -125,20 +124,21 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
     for(let j = 0; j < ops.length; j++) {
         buffOpsV.setUint8(j, ops[j]);
     }
-    await cHelpersBin.write(buffOps);
 
     const buffArgs = new Uint8Array(2*args.length);
     const buffArgsV = new DataView(buffArgs.buffer);
     for(let j = 0; j < args.length; j++) {
         buffArgsV.setUint16(2*j, args[j], true);
     }
-    await cHelpersBin.write(buffArgs);
 
     const buffNumbers = new Uint8Array(8*numbers.length);
     const buffNumbersV = new DataView(buffNumbers.buffer);
     for(let j = 0; j < numbers.length; j++) {
         buffNumbersV.setBigUint64(8*j, BigInt(numbers[j]), true);
     }
+
+    await cHelpersBin.write(buffOps);
+    await cHelpersBin.write(buffArgs);
     await cHelpersBin.write(buffNumbers);
 
     await endWriteSection(cHelpersBin);

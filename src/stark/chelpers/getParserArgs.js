@@ -9,18 +9,13 @@ const operationsTypeMap = {
     "sub_swap": 3,
 }
 
-module.exports.getParserArgs = function getParserArgs(starkInfo, operations, code, dom) {
+module.exports.getParserArgs = function getParserArgs(starkInfo, operations, code, dom, debug = false) {
 
     var ops = [];
     var args = [];
     var numbers = [];
 
     var counters_ops = new Array(operations.length).fill(0);
-
-    const nBits = starkInfo.starkStruct.nBits;
-    const nBitsExt = starkInfo.starkStruct.nBitsExt;
-
-    const next = (dom == "n" ? 1 : 1 << (nBitsExt - nBits));
 
     // Evaluate max and min temporal variable for tmp_ and tmp3_
     let maxid = 100000;
@@ -201,7 +196,9 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
     function evalMap_(polId, prime) {
         let p = starkInfo.cmPolsMap[polId];
 
-        args.push(Number(p.stageNum));
+        const stage = p.stage === "tmpExp" ? starkInfo.numChallenges.length + 1 : p.stageNum;
+    
+        args.push(Number(stage));
         args.push(Number(p.stagePos));
         args.push(Number(prime));
     }

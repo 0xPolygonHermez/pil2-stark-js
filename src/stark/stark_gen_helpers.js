@@ -216,7 +216,10 @@ module.exports.computeQStark = async function computeQStark(ctx, options) {
 
     const nPolsQ = ctx.pilInfo.mapSectionsN.cmQ_n || 0;
     ctx.trees[qStage] = await ctx.MH.merkelize(ctx.cmQ_ext, nPolsQ, ctx.extN);
-    return [ctx.MH.root(ctx.trees[qStage])];
+    const root = ctx.MH.root(ctx.trees[qStage]);
+    if (options.logger && !options.debug) options.logger.debug("··· Root stage " + qStage + ": " + ctx.F.toString(root[0]) + " " + ctx.F.toString(root[1]) + " " + ctx.F.toString(root[2]) + " " + ctx.F.toString(root[3]));
+
+    return [root];
 }
 
 module.exports.computeEvalsStark = async function computeEvalsStark(ctx, options) {
@@ -413,7 +416,7 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
     ctx.trees[stage] = await ctx.MH.merkelize(buffTo, nPols, ctx.extN);
 
     const root = ctx.MH.root(ctx.trees[stage]);
-    if (options.logger && !options.debug) options.logger.debug("··· Root stage : " + stage + ": " + ctx.F.toString(root));
+    if (options.logger && !options.debug) options.logger.debug("··· Root stage " + stage + ": " + ctx.F.toString(root[0]) + " " + ctx.F.toString(root[1]) + " " + ctx.F.toString(root[2]) + " " + ctx.F.toString(root[3]));
 
     return [root];
 }

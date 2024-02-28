@@ -83,13 +83,13 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
     const nStages = res.numChallenges.length;
 
     for(let j = 0; j < expressions.length; ++j) {
-        if(expressions[j].stage === 1 && symbols.find(s => s.stage === 1 && s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId)) {
+        if(expressions[j].stage === 1 && symbols.find(s => s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId)) {
             const symbolDest = symbols.find(s => s.expId === j);
             if(symbolDest) {
                 if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
-                    ctx.symbolsCalculated.push({ op: "cm", stage: 1, stageId: symbolDest.stageId, id: symbolDest.polId});
+                    ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                 } else {
-                    ctx.symbolsCalculated.push({ op: "tmp", stage: 1, stageId: symbolDest.stageId, id: symbolDest.polId});
+                    ctx.symbolsCalculated.push({ op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                 }
             };
 
@@ -113,9 +113,9 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                 const symbolDest = symbols.find(s => s.expId === j);
                 if(symbolDest) {
                     if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
-                        ctx.symbolsCalculated.push({ op: "cm", stage, stageId: symbolDest.stageId, id: symbolDest.polId});
+                        ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                     } else {
-                        ctx.symbolsCalculated.push({ op: "tmp", stage, stageId: symbolDest.stageId, id: symbolDest.polId});
+                        ctx.symbolsCalculated.push({ op: "tmp",  stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                     }
                 };
 
@@ -137,9 +137,9 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
             const symbolDest = symbols.find(s => s.expId === j);
             if(symbolDest) {
                 if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
-                    ctx.symbolsCalculated.push({ op: "cm", stage: nStages, stageId: symbolDest.stageId, id: symbolDest.polId});
+                    ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                 } else {
-                    ctx.symbolsCalculated.push({ op: "tmp", stage: nStages, stageId: symbolDest.stageId, id: symbolDest.polId});
+                    ctx.symbolsCalculated.push({ op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                 }
             };
             for(let k = 0; k < expressions[j].symbols.length; k++) {

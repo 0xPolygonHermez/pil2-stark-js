@@ -32,10 +32,11 @@ module.exports = async function buildCHelpers(starkInfo, className = "") {
 
     let totalSubsetOperationsUsed = [];
 
+    let debug = false;
     // Get parser args for each stage
     for(let i = 0; i < nStages; ++i) {
         let stage = i + 1;
-        const stageInfo = getParserArgsCode(`step${stage}`, starkInfo.code[`stage${stage}`].code, "n");
+        const stageInfo = getParserArgsCode(`step${stage}`, starkInfo.code[`stage${stage}`].code, "n", debug);
         stageInfo.stage = stage;
         stagesInfo.push(stageInfo);
     }
@@ -95,10 +96,10 @@ module.exports = async function buildCHelpers(starkInfo, className = "") {
 
     return {code: result, stagesInfo, expressionsInfo };
 
-    function getParserArgsCode(name, code, dom) {
+    function getParserArgsCode(name, code, dom, debug = false) {
         console.log(`Getting parser args for ${name}`);
 
-        const {expsInfo, opsUsed} = getParserArgs(starkInfo, operations, code, dom);
+        const {expsInfo, opsUsed} = getParserArgs(starkInfo, operations, code, dom, debug);
 
         const patternOps = findPatterns(expsInfo.ops, operations);
         opsUsed.push(...patternOps);
