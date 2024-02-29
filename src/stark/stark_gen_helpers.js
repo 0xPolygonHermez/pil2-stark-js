@@ -442,8 +442,9 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, tran
     }
 
     if(stage < qStage) {
+        const challengeIndex = ctx.pilInfo.numChallenges.filter((s, i) => i < stage - 1).reduce((a, b) => a + b, 0);
         for(let i = 0; i < ctx.challenges[stage - 1].length; ++i) {
-            setSymbolCalculated(ctx, { op: "challenge", stage, stageId: i}, options);
+            setSymbolCalculated(ctx, { op: "challenge", stage, stageId: i, id: challengeIndex + i}, options);
         }
     }
     

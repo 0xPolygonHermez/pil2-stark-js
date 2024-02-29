@@ -121,6 +121,7 @@ function setSymbolsStage(res, symbols) {
                     op: "challenge",
                     stage: s.stage,
                     stageId: s.stageId,
+                    id: s.id,
                 }
             } else if(s.type === "witness" || (s.type === "tmpPol" && s.imPol)) {
                 return {
