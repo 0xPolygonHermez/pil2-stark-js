@@ -42,29 +42,20 @@ module.exports.setConstantsPolynomialsCalculated = function setConstantsPolynomi
 
 module.exports.setStage1PolynomialsCalculated = function setStage1PolynomialsCalculated(ctx, options) {
     for(let i = 0; i < ctx.pilInfo.nCols["cm1"]; ++i) {
-        module.exports.setSymbolCalculated(ctx, {op: "cm", stage: 1, stageId: i, id: 1}, options);
+        module.exports.setSymbolCalculated(ctx, {op: "cm", stage: 1, stageId: i, id: i}, options);
     }
 }
 
 module.exports.isSymbolCalculated = function isSymbolCalculated(ctx, symbol) {
-    if(["cm", "challenge"].includes(symbol.op)) {
-        return ctx.calculatedSymbols[symbol.op][symbol.stage][symbol.stageId];
-    } else if(symbol.op === "tmp") {
-        return ctx.calculatedSymbols["tmp"][symbol.stageId];
-    } else {
-        return ctx.calculatedSymbols[symbol.op][symbol.id];
-    }
+    const op = symbol.op === "tmp" ? "cm" : symbol.op;
+    return ctx.calculatedSymbols[op][symbol.id];
 }
 
 module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, options) {
     if(!module.exports.isSymbolCalculated(ctx, ref)) {
-        if(["cm", "challenge"].includes(ref.op)) {
-            ctx.calculatedSymbols[ref.op][ref.stage][ref.stageId] = true;
-        } else if(ref.op === "tmp") {
-            ctx.calculatedSymbols["tmp"][ref.stageId] = true;
-        } else {
-            ctx.calculatedSymbols[ref.op][ref.id] = true;
-        }
+        
+        const op = ref.op === "tmp" ? "cm" : ref.op;
+        ctx.calculatedSymbols[op][ref.id] = true;
         if(options?.logger) options.logger.debug(`Symbol ${ref.op} for stage ${ref.stage} and id ${["cm", "tmp", "challenge"].includes(ref.op) ? ref.stageId : ref.id} has been calculated`);
     }
 }

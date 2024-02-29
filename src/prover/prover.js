@@ -220,7 +220,6 @@ async function computeStage(stage, ctx, options) {
             symbolsStageInfo = symbolsStageInfoUpdated;
         };
 
-        if(!ctx.calculatedSymbols.cm[stage].every(c => c)) throw new Error("Something went wrong");
         if (logger) logger.debug(`> STAGE ${stage} DONE`);
     }
     

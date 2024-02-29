@@ -40,10 +40,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.challenges = [];
     ctx.challengesFRISteps = [];
 
-    ctx.calculatedSymbols = {
-        cm: {},
-        challenge: {}        
-    }
+    ctx.calculatedSymbols = {};
 
     if(ctx.pilInfo.nPublics > 0) {
         ctx.calculatedSymbols.public = new Array(ctx.pilInfo.nPublics).fill(false);
@@ -57,14 +54,11 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         ctx.calculatedSymbols.subproofValue = new Array(ctx.pilInfo.nSubAirValues).fill(false);
     }
 
-    for(let s = 1; s <= ctx.pilInfo.numChallenges.length; s++) {
-        console.log(ctx.pilInfo.nCols)
-        ctx.calculatedSymbols.cm[s] = new Array(ctx.pilInfo.nCols["cm" + s]).fill(false);
-        ctx.calculatedSymbols.challenge[s] = new Array(ctx.pilInfo.numChallenges[s - 1]).fill(false);
-    }
-
-    ctx.calculatedSymbols.tmp = new Array(ctx.pilInfo.nCols["tmpExp"]).fill(false);
-
+    const nChallenges = ctx.pilInfo.numChallenges.reduce((a, b) => a + b, 0) + 4;
+    ctx.calculatedSymbols.challenge = new Array(nChallenges).fill(false);
+    
+    ctx.calculatedSymbols.cm = new Array(ctx.pilInfo.cmPolsMap.length).fill(false);
+    
     ctx.publics = [];
 
     ctx.subAirValues = new Array(pilInfo.nSubAirValues).fill(0n) || [];
