@@ -296,8 +296,9 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
     ctx.friProof = [];
     ctx.friTrees = [];
 
-    const s0_trees = [ctx.constTree];
+    const s0_trees = [];
     for(let i = 0; i < ctx.pilInfo.numChallenges.length + 1; ++i) s0_trees.push(ctx.trees[i + 1]);
+    s0_trees.push(ctx.constTree);
     ctx.friTrees[0] = s0_trees;
     ctx.friProof[0] = {};
 

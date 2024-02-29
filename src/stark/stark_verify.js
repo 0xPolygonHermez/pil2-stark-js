@@ -14,6 +14,10 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     const F = poseidon.F;
 
+    if(!proof.rootQ) {
+        proof.rootQ = proof["root" + (starkInfo.numChallenges.length + 1)];
+    }
+
     ctx = {
         evals: proof.evals,
         subAirValues: proof.subAirValues,
@@ -159,34 +163,36 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
     const checkQuery = (query, idx) => {
         if(logger) logger.debug("Verifying query: " + idx);
 
-        let res = MH.verifyGroupProof(constRoot, query[0][1], idx, query[0][0]);
-        if (!res) {
-            if(logger) logger.warn(`Invalid constRoot`);
-            return false;
-        }
-
+        let res;
+        
         for(let i = 0; i < starkInfo.numChallenges.length; ++i) {
             const stage = i + 1;
-            let res = MH.verifyGroupProof(proof[`root${stage}`], query[stage][1], idx, query[stage][0]);
+            let res = MH.verifyGroupProof(proof[`root${stage}`], query[i][1], idx, query[i][0]);
             if (!res) {
                 if(logger) logger.warn(`Invalid root${stage}`);
                 return false;
             }
         }
         
-        res = MH.verifyGroupProof(proof.rootQ, query[starkInfo.numChallenges.length + 1][1], idx, query[starkInfo.numChallenges.length + 1][0]);
+        res = MH.verifyGroupProof(proof.rootQ, query[starkInfo.numChallenges.length][1], idx, query[starkInfo.numChallenges.length][0]);
         if (!res) {
             if(logger) logger.warn(`Invalid rootQ`);
             return false;
         }
+
+        res = MH.verifyGroupProof(constRoot, query[starkInfo.numChallenges.length + 1][1], idx, query[starkInfo.numChallenges.length + 1][0]);
+        if (!res) {
+            if(logger) logger.warn(`Invalid constRoot`);
+            return false;
+        }
         
         const ctxQry = {};
-        ctxQry.consts = query[0][0];
         for(let i = 0; i < starkInfo.numChallenges.length; ++i) {
             const stage = i + 1;
-            ctxQry[`tree${stage}`] = query[stage][0];
+            ctxQry[`tree${stage}`] = query[i][0];
         }
-        ctxQry.treeQ = query[starkInfo.numChallenges.length + 1][0];
+        ctxQry.treeQ = query[starkInfo.numChallenges.length][0];
+        ctxQry.consts = query[starkInfo.numChallenges.length + 1][0];
         ctxQry.evals = ctx.evals;
         ctxQry.publics = ctx.publics;
         ctxQry.challenges = ctx.challenges;

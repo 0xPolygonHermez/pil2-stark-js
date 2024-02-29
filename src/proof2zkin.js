@@ -45,20 +45,20 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
 
     for (let i=0; i<nQueries; i++) {
         const query = p.fri[0].polQueries[i];
-        zkin.s0_valsC[i] = query[0][0];
-        zkin.s0_siblingsC[i] = query[0][1];
+        
+        zkin.s0_vals1[i] = query[0][0];
+        zkin.s0_siblings1[i] = query[0][1];
 
-        zkin.s0_vals1[i] = query[1][0];
-        zkin.s0_siblings1[i] = query[1][1];
-
-        for(let j = 0; j < nStages - 1; ++j) {
-            const stage = j + 2;
-            zkin[`s0_vals${stage}`][i] = query[stage][0];
-            zkin[`s0_siblings${stage}`][i] = query[stage][1];
+        for(let stage = 1; stage <= nStages; ++stage) {
+            zkin[`s0_vals${stage}`][i] = query[stage - 1][0];
+            zkin[`s0_siblings${stage}`][i] = query[stage - 1][1];
         }
 
-        zkin.s0_valsQ[i] = query[nStages + 1][0];
-        zkin.s0_siblingsQ[i] = query[nStages + 1][1];
+        zkin.s0_valsQ[i] = query[nStages][0];
+        zkin.s0_siblingsQ[i] = query[nStages][1];
+
+        zkin.s0_valsC[i] = query[nStages + 1][0];
+        zkin.s0_siblingsC[i] = query[nStages + 1][1];
     }
 
     zkin.finalPol = p.fri[friSteps.length];
