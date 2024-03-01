@@ -30,7 +30,7 @@ async function run() {
 
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
 
-    const {code: cCode, stagesInfo, expressionsInfo } = await buildCHelpers(starkInfo, cls);
+    const {code: cCode, stagesInfo, expressionsInfo, constraintsInfo } = await buildCHelpers(starkInfo, cls);
 
     await mkdir(chelpersFile, { recursive: true });
 
@@ -41,7 +41,7 @@ async function run() {
         await fs.promises.writeFile(fileName, cCode[cpart], "utf8");
     }
 
-    await writeCHelpersFile(binFile, stagesInfo, expressionsInfo);
+    await writeCHelpersFile(binFile, stagesInfo, expressionsInfo, constraintsInfo);
     
     console.log("files Generated Correctly");
 }

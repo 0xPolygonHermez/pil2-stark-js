@@ -247,6 +247,32 @@ module.exports.generateParser = function generateParser(className, stageName = "
     ]);
 
     parserCPP.push(...[
+        "        if (parserParams.destDim != 0) {",
+        "            if(parserParams.destDim == 1) {",
+        "                Goldilocks::Element res[4];",
+        "                Goldilocks::store_avx(res, tmp1[parserParams.destId]);",
+        "                for(uint64_t i = 0; i < 4; ++i) {",
+        "                    if(!Goldilocks::isZero(res[i])) {",
+        `                        std::cout << "Result is not zero!" << std::endl;`,
+        "                        break;",
+        "                    }",
+        "                }",
+        "            } else if(parserParams.destDim == 3) {",
+        "                Goldilocks::Element res[12];",
+        "                Goldilocks::store_avx(&res[0], tmp3[parserParams.destId][0]);",
+        "                Goldilocks::store_avx(&res[4], tmp3[parserParams.destId][1]);",
+        "                Goldilocks::store_avx(&res[8], tmp3[parserParams.destId][2]);",
+        "                for(uint64_t i = 0; i < 12; ++i) {",
+        "                    if(!Goldilocks::isZero(res[i])) {",
+        `                        std::cout << "Result is not zero!" << std::endl;`,
+        "                        break;",
+        "                    }",
+        "                }",
+        "            } ",
+        "        }",
+    ]);
+
+    parserCPP.push(...[
         `        if (i_args != parserParams.nArgs) std::cout << " " << i_args << " - " << parserParams.nArgs << std::endl;`,
         "        assert(i_args == parserParams.nArgs);",
         "    }"

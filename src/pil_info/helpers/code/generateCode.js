@@ -177,6 +177,7 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
     for(let i = 0; i < res.numChallenges.length; ++i) {
         const ctx = {
             calculated: {},
+            symbolsUsed: [],
             tmpUsed: 0,
             code: [],
             expMap: [],
@@ -189,6 +190,16 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
         const stageConstraints = constraints.filter(c => c.stage === stage);
         res.constraints[`stage${stage}`] = [];
         for(let j = 0; j < stageConstraints.length; ++j) {
+            const e = expressions[stageConstraints[j].e];
+            for(let k = 0; k < e.symbols.length; k++) {
+                const symbolUsed = e.symbols[k];
+                if(["cm", "const", "tmp"].includes(symbolUsed.op)) {
+                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                        ctx.symbolsUsed.push(symbolUsed);
+                    };
+                }  
+            }
+
             pilCodeGen(ctx, symbols, expressions, stageConstraints[j].e, 0, true);
             const constraint = buildCode(ctx, expressions);
             constraint.boundary = stageConstraints[j].boundary;

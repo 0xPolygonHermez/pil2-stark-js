@@ -70,6 +70,18 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         cmPolsIds,
         constPolsIds,
     }
+
+    if(debug) {
+        const destTmp = code_[code_.length - 1].dest;
+        if(destTmp.type !== "tmp") throw new Error("Something went wrong.");
+        if(destTmp.dim == 1) {
+            expsInfo.destDim = 1;
+            expsInfo.destId = ID1D[destTmp.id];
+        } else if(destTmp.dim == 3) {
+            expsInfo.destDim = 3;
+            expsInfo.destId = ID3D[destTmp.id];
+        }
+    }
     
     const opsUsed = counters_ops.reduce((acc, currentValue, currentIndex) => {
         if (currentValue !== 0) {

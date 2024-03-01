@@ -9,6 +9,7 @@ module.exports = async function buildCHelpers(starkInfo, className = "") {
     
     const stagesInfo = [];
     const expressionsInfo = [];
+    const constraintsInfo = [];
 
     const nStages = starkInfo.numChallenges.length;
     const cHelpersStepsHpp = [
@@ -49,6 +50,20 @@ module.exports = async function buildCHelpers(starkInfo, className = "") {
     stageFriInfo.stage = nStages + 2;
     stagesInfo.push(stageFriInfo);
 
+
+    // Get parser args for each constraint
+    for(let s = 1; s <= nStages; ++s) {
+        const stage = `stage${s}`;
+        const constraintsStage = starkInfo.constraints[stage];
+        for(let j = 0; j < constraintsStage.length; ++j) {
+            const constraintCode = constraintsStage[j];
+            const constraintInfo = getParserArgsCode(`constraint${s}_${j}`, constraintCode, "n", true);
+            constraintInfo.stage = s;
+            constraintsInfo.push(constraintInfo);
+        }
+    }
+
+
     // Get parser args for each expression
     for(let i = 0; i < starkInfo.expressionsCode.length; ++i) {
         const expCode = starkInfo.expressionsCode[i];
@@ -87,6 +102,10 @@ module.exports = async function buildCHelpers(starkInfo, className = "") {
         expressionsInfo[i].ops = expressionsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
     }
 
+    for(let i = 0; i < constraintsInfo.length; ++i) {
+        constraintsInfo[i].ops = constraintsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
+    }
+
     result[`${className}_generic_parser_cpp`] = result[`${className}_generic_parser_cpp`].replace(/case (\d+):/g, (match, caseNumber) => {
         caseNumber = parseInt(caseNumber, 10);
         const newIndex = totalSubsetOperationsUsed.findIndex(o => o === caseNumber);
@@ -94,7 +113,7 @@ module.exports = async function buildCHelpers(starkInfo, className = "") {
         return `case ${newIndex}:`;
     });
 
-    return {code: result, stagesInfo, expressionsInfo };
+    return {code: result, stagesInfo, expressionsInfo, constraintsInfo };
 
     function getParserArgsCode(name, code, dom, debug = false) {
         console.log(`Getting parser args for ${name}`);

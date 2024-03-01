@@ -201,8 +201,6 @@ async function computeStage(stage, ctx, options) {
 
     await callCalculateExps(step, ctx.pilInfo.code[step], dom, ctx, options.parallelExec, options.useThreads);
 
-    console.log(symbolsCalculatedStep);
-    
     for(let i = 0; i < symbolsCalculatedStep.length; i++) {
         const symbolCalculated = symbolsCalculatedStep[i];
         setSymbolCalculated(ctx, symbolCalculated, options);

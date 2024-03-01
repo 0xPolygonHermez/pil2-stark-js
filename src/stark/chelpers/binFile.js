@@ -3,15 +3,17 @@ const { createBinFile,
     startWriteSection
      } = require("@iden3/binfileutils");
 
-const CHELPERS_NSECTIONS = 5;
+const CHELPERS_NSECTIONS = 7;
 
 const CHELPERS_HEADER_SECTION = 2;
 const CHELPERS_STAGES_SECTION = 3;
 const CHELPERS_EXPRESSIONS_SECTION = 4;
 const CHELPERS_BUFFERS_SECTION = 5;
 const CHELPERS_SYMBOLS_SECTION = 6;
+const CHELPERS_CONSTRAINTS_DEBUG_SECTION = 7;
 
-exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expressionsInfo) {
+
+exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expressionsInfo, constraintsInfo) {
     console.log("> Writing the chelpers file");
 
     const cHelpersBin = await createBinFile(cHelpersFilename, "chps", 1, CHELPERS_NSECTIONS, 1 << 22, 1 << 24);    
@@ -197,6 +199,121 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
     
     await endWriteSection(cHelpersBin);
 
+    console.log(`··· Writing Section ${CHELPERS_CONSTRAINTS_DEBUG_SECTION}. CHelpers constraints debug section`);
+
+    await startWriteSection(cHelpersBin, CHELPERS_CONSTRAINTS_DEBUG_SECTION);
+
+    const opsDebug = [];
+    const argsDebug = [];
+    const numbersDebug = [];
+    const constPolsIdsDebug = [];
+    const cmPolsIdsDebug = [];
+
+    const opsOffsetDebug = [];
+    const argsOffsetDebug = [];
+    const numbersOffsetDebug = [];
+    const constPolsIdsOffsetDebug = [];
+    const cmPolsIdsOffsetDebug = [];
+
+    const nConstraints = constraintsInfo.length;
+
+    for(let i = 0; i < nConstraints; i++) {
+        if(i == 0) {
+            opsOffsetDebug.push(0);
+            argsOffsetDebug.push(0);
+            numbersOffsetDebug.push(0);
+            constPolsIdsOffsetDebug.push(0);
+            cmPolsIdsOffsetDebug.push(0);
+        } else {
+            opsOffsetDebug.push(opsOffsetDebug[i-1] + constraintsInfo[i-1].ops.length);
+            argsOffsetDebug.push(argsOffsetDebug[i-1] + constraintsInfo[i-1].args.length);
+            numbersOffsetDebug.push(numbersOffsetDebug[i-1] + constraintsInfo[i-1].numbers.length);
+            constPolsIdsOffsetDebug.push(constPolsIdsOffsetDebug[i-1] + constraintsInfo[i-1].constPolsIds.length);
+            cmPolsIdsOffsetDebug.push(cmPolsIdsOffsetDebug[i-1] + constraintsInfo[i-1].cmPolsIds.length);
+        }
+        opsDebug.push(...constraintsInfo[i].ops);
+        argsDebug.push(...constraintsInfo[i].args);
+        numbersDebug.push(...constraintsInfo[i].numbers);
+        constPolsIdsDebug.push(...constraintsInfo[i].constPolsIds);
+        cmPolsIdsDebug.push(...constraintsInfo[i].cmPolsIds);
+    }
+
+    await cHelpersBin.writeULE32(opsDebug.length);
+    await cHelpersBin.writeULE32(argsDebug.length);
+    await cHelpersBin.writeULE32(numbersDebug.length);
+    await cHelpersBin.writeULE32(constPolsIdsDebug.length);
+    await cHelpersBin.writeULE32(cmPolsIdsDebug.length);
+
+    await cHelpersBin.writeULE32(nConstraints);
+
+    for(let i = 0; i < nConstraints; i++) {
+        const constraintInfo = constraintsInfo[i];
+
+        console.log(constraintInfo);
+
+        await cHelpersBin.writeULE32(constraintInfo.stage);
+
+        await cHelpersBin.writeULE32(constraintInfo.destDim);
+        await cHelpersBin.writeULE32(constraintInfo.destId);
+
+        await cHelpersBin.writeULE32(constraintInfo.nTemp1);
+        await cHelpersBin.writeULE32(constraintInfo.nTemp3);
+
+        await cHelpersBin.writeULE32(constraintInfo.ops.length);
+        await cHelpersBin.writeULE32(opsOffsetDebug[i]);
+
+        console.log(i, constraintInfo.args.length);
+        await cHelpersBin.writeULE32(constraintInfo.args.length);
+        await cHelpersBin.writeULE32(argsOffsetDebug[i]);
+
+        await cHelpersBin.writeULE32(constraintInfo.numbers.length);
+        await cHelpersBin.writeULE32(numbersOffsetDebug[i]);
+        
+        await cHelpersBin.writeULE32(constraintInfo.constPolsIds.length);
+        await cHelpersBin.writeULE32(constPolsIdsOffsetDebug[i]);
+
+        await cHelpersBin.writeULE32(constraintInfo.cmPolsIds.length);
+        await cHelpersBin.writeULE32(cmPolsIdsOffsetDebug[i]);
+    }
+
+    const buffOpsDebug = new Uint8Array(opsDebug.length);
+    const buffOpsDebugV = new DataView(buffOpsDebug.buffer);
+    for(let j = 0; j < opsDebug.length; j++) {
+        buffOpsDebugV.setUint8(j, opsDebug[j]);
+    }
+
+    const buffArgsDebug = new Uint8Array(2*argsDebug.length);
+    const buffArgsDebugV = new DataView(buffArgsDebug.buffer);
+    for(let j = 0; j < argsDebug.length; j++) {
+        buffArgsDebugV.setUint16(2*j, argsDebug[j], true);
+    }
+
+    const buffNumbersDebug = new Uint8Array(8*numbersDebug.length);
+    const buffNumbersDebugV = new DataView(buffNumbersDebug.buffer);
+    for(let j = 0; j < numbersDebug.length; j++) {
+        buffNumbersDebugV.setBigUint64(8*j, BigInt(numbersDebug[j]), true);
+    }
+
+    const buffConstPolsIdsDebug = new Uint8Array(2*constPolsIdsDebug.length);
+    const buffConstPolsIdsDebugV = new DataView(buffConstPolsIdsDebug.buffer);
+    for(let j = 0; j < constPolsIdsDebug.length; j++) {
+        buffConstPolsIdsDebugV.setUint16(2*j, constPolsIdsDebug[j], true);
+    }
+
+    const buffCmPolsIdsDebug = new Uint8Array(2*cmPolsIdsDebug.length);
+    const buffCmPolsIdsDebugV = new DataView(buffCmPolsIdsDebug.buffer);
+    for(let j = 0; j < cmPolsIdsDebug.length; j++) {
+        buffCmPolsIdsDebugV.setUint16(2*j, cmPolsIdsDebug[j], true);
+    }
+    
+    await cHelpersBin.write(buffOpsDebug);
+    await cHelpersBin.write(buffArgsDebug);
+    await cHelpersBin.write(buffNumbersDebug);
+
+    await cHelpersBin.write(buffConstPolsIdsDebug);
+    await cHelpersBin.write(buffCmPolsIdsDebug);
+
+    await endWriteSection(cHelpersBin);
 
     console.log("> Writing the chelpers file finished");
 
