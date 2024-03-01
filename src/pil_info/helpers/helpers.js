@@ -109,8 +109,9 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
 
         if(expressions[exp.id].keep) {
             const expSym = symbols.find(s => ["witness", "tmpPol"].includes(s.type) && s.expId === exp.id);
-            if(!exp.symbols.find(s => s.op === "tmp" && s.stage === expSym.stage && s.stageId === expSym.stageId && s.id === exp.id)) {
-                exp.symbols.push({op: "tmp", stage: expSym.stage, stageId: expSym.stageId, id: exp.id});
+            const op = expressions[exp.id].imPol ? "cm" : "tmp";
+            if(!exp.symbols.find(s => s.op === op && s.stage === expSym.stage && s.stageId === expSym.stageId && s.id === expSym.polId)) {
+                exp.symbols.push({op: op, stage: expSym.stage, stageId: expSym.stageId, id: expSym.polId});
             }
         }
 

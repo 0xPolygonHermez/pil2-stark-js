@@ -36,23 +36,23 @@ module.exports = async function buildCHelpers(starkInfo, className = "") {
     // Get parser args for each stage
     for(let i = 0; i < nStages; ++i) {
         let stage = i + 1;
-        const stageInfo = getParserArgsCode(`step${stage}`, starkInfo.code[`stage${stage}`].code, "n", debug);
+        const stageInfo = getParserArgsCode(`step${stage}`, starkInfo.code[`stage${stage}`], "n", debug);
         stageInfo.stage = stage;
         stagesInfo.push(stageInfo);
     }
 
-    const stageQInfo = getParserArgsCode(`step${nStages + 1}`, starkInfo.code.qCode.code, "ext");
+    const stageQInfo = getParserArgsCode(`step${nStages + 1}`, starkInfo.code.qCode, "ext");
     stageQInfo.stage = nStages + 1;
     stagesInfo.push(stageQInfo);
 
-    const stageFriInfo = getParserArgsCode(`step${nStages + 2}`, starkInfo.code.fri.code, "ext");
+    const stageFriInfo = getParserArgsCode(`step${nStages + 2}`, starkInfo.code.fri, "ext");
     stageFriInfo.stage = nStages + 2;
     stagesInfo.push(stageFriInfo);
 
     // Get parser args for each expression
     for(let i = 0; i < starkInfo.expressionsCode.length; ++i) {
         const expCode = starkInfo.expressionsCode[i];
-        const expInfo = getParserArgsCode(`exp${expCode.expId}`,expCode.code.code, "n");
+        const expInfo = getParserArgsCode(`exp${expCode.expId}`,expCode.code, "n");
         expInfo.expId = expCode.expId;
         expInfo.stage = expCode.stage;
         expressionsInfo.push(expInfo);

@@ -44,10 +44,11 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
 
         for(let k = 0; k < exp.symbols.length; k++) {
             const symbolUsed = exp.symbols[k];
-            if(!["cm", "const"].includes(symbolUsed.op)) continue;
-            if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                ctx.symbolsUsed.push(symbolUsed);
-            };
+            if(["cm", "const", "tmp"].includes(symbolUsed.op)) {
+                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                    ctx.symbolsUsed.push(symbolUsed);
+                };
+            }
         }
 
         pilCodeGen(ctx, symbols, expressions, j, 0);
@@ -95,10 +96,11 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
 
             for(let k = 0; k < expressions[j].symbols.length; k++) {
                 const symbolUsed = expressions[j].symbols[k];
-                if(!["cm", "const"].includes(symbolUsed.op)) continue;
-                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                    ctx.symbolsUsed.push(symbolUsed);
-                };
+                if(["cm", "const", "tmp"].includes(symbolUsed.op)) {
+                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                        ctx.symbolsUsed.push(symbolUsed);
+                    };
+                }
             }
             pilCodeGen(ctx, symbols, expressions, j, 0);
         }
@@ -109,7 +111,21 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
         const stage = 2 + i;
         for(let j = 0; j < expressions.length; ++j) {
             if(expressions[j].stage === stage) {
-                if(stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === stage).length !== 0) continue;
+                if(stage === nStages) {
+                    const symbolsStage = expressions[j].symbols.filter(s => s.op === "cm" && s.stage === stage);
+                    let skipExp = false;
+                    for(let k = 0; k < symbolsStage.length; k++) {
+                        const polInfo = res.cmPolsMap[symbolsStage[k].id];
+                        if(!polInfo.imPol) {
+                            skipExp = true;
+                            break;
+                        } else {
+                            // TODO!!!!
+                        }
+                    }
+                    if(skipExp) continue;
+                }
+                // if(stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === stage).length !== 0) continue;
                 const symbolDest = symbols.find(s => s.expId === j);
                 if(symbolDest) {
                     if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
@@ -121,10 +137,11 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
 
                 for(let k = 0; k < expressions[j].symbols.length; k++) {
                     const symbolUsed = expressions[j].symbols[k];
-                    if(!["cm", "const"].includes(symbolUsed.op)) continue;
-                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                        ctx.symbolsUsed.push(symbolUsed);
-                    };
+                    if(["cm", "const", "tmp"].includes(symbolUsed.op)) {
+                        if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                            ctx.symbolsUsed.push(symbolUsed);
+                        };
+                    }  
                 }
                 pilCodeGen(ctx, symbols, expressions, j, 0);
             }
@@ -144,10 +161,11 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
             };
             for(let k = 0; k < expressions[j].symbols.length; k++) {
                 const symbolUsed = expressions[j].symbols[k];
-                if(!["cm", "const"].includes(symbolUsed.op)) continue;
-                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                    ctx.symbolsUsed.push(symbolUsed);
-                };
+                if(["cm", "const", "tmp"].includes(symbolUsed.op)) {
+                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                        ctx.symbolsUsed.push(symbolUsed);
+                    };
+                }
             }       
             pilCodeGen(ctx, symbols, expressions, j, 0);
         }
@@ -190,6 +208,7 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
     const ctxExt = {
         calculated: {},
         symbolsCalculated: [],
+        symbolsUsed: [],
         tmpUsed: 0,
         code: [],
         expMap: [],
@@ -209,7 +228,13 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
         }
     }
 
-    const qStage = res.numChallenges.length + 1;
+    for(let k = 0; k < expressions[res.cExpId].symbols.length; k++) {
+        const symbolUsed = expressions[res.cExpId].symbols[k];
+        if(!["cm", "const"].includes(symbolUsed.op)) continue;
+        if(!ctxExt.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+            ctxExt.symbolsUsed.push(symbolUsed);
+        };
+    } 
 
     pilCodeGen(ctxExt, symbols, expressions, res.cExpId, 0);
     if(stark) {
@@ -298,9 +323,10 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 }
 
 
-module.exports.generateFRICode = function generateFRICode(res, friExp, symbols, expressions) {
+module.exports.generateFRICode = function generateFRICode(res, symbols, expressions) {
     const ctxExt = {
         calculated: {},
+        symbolsUsed: [],
         tmpUsed: 0,
         code: [],
         expMap: [],
@@ -310,9 +336,18 @@ module.exports.generateFRICode = function generateFRICode(res, friExp, symbols, 
         stark: true,
     };
 
-    let friExpId = expressions.length;
-    expressions.push(friExp);
-    expressions[friExpId].dim = getExpDim(expressions, friExpId, true);
+
+    const friExpId = res.friExpId;
+
+    for(let k = 0; k < expressions[friExpId].symbols.length; k++) {
+        const symbolUsed = expressions[friExpId].symbols[k];
+        if(!["cm", "const"].includes(symbolUsed.op)) continue;
+        if(!ctxExt.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+            ctxExt.symbolsUsed.push(symbolUsed);
+        };
+    } 
+
+    console.log(ctxExt.symbolsUsed);
 
     pilCodeGen(ctxExt, symbols, expressions, friExpId, 0);
     res.code.fri = buildCode(ctxExt, expressions);

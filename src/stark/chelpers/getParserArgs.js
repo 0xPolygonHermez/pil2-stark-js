@@ -17,14 +17,18 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
 
     var counters_ops = new Array(operations.length).fill(0);
 
+    let code_ = code.code;
+
+    let symbolsUsed = code.symbolsUsed;
+
     // Evaluate max and min temporal variable for tmp_ and tmp3_
     let maxid = 100000;
     let ID1D = new Array(maxid).fill(-1);
     let ID3D = new Array(maxid).fill(-1);
-    let { count1d, count3d } = getIdMaps(maxid, ID1D, ID3D, code);
+    let { count1d, count3d } = getIdMaps(maxid, ID1D, ID3D, code_);
         
-    for (let j = 0; j < code.length; j++) {
-        const r = code[j];
+    for (let j = 0; j < code_.length; j++) {
+        const r = code_[j];
         
         let operation = getOperation(r);
 
@@ -54,12 +58,17 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         counters_ops[opsIndex] += 1;
     }
 
+    const constPolsIds = symbolsUsed.filter(s => s.op === "const").map(s => s.id).sort();
+    const cmPolsIds = symbolsUsed.filter(s => s.op === "cm" || s.op === "tmp").map(s => s.id).sort();
+
     const expsInfo = {
         nTemp1: count1d,
         nTemp3: count3d,
         ops,
         numbers,
         args,
+        cmPolsIds,
+        constPolsIds,
     }
     
     const opsUsed = counters_ops.reduce((acc, currentValue, currentIndex) => {
