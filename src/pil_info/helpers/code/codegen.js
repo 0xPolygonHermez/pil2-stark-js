@@ -6,23 +6,40 @@ function pilCodeGen(ctx, symbols, expressions, expId, prime, debug) {
     let e = expressions[expId];
     if (ctx.addMul) e = findAddMul(e);
     
-    const retRef = evalExp(ctx, symbols, expressions, e, prime);
-
-    if (!ctx.expMap[prime]) ctx.expMap[prime] = {};
-
-    const r =  { type: "exp", prime, id: expId, dim: e.dim };
-
-    if (retRef.type === "tmp") {
-        ctx.tmpUsed--;
-        fixExpression(r, ctx, symbols, expressions);
-        ctx.code[ctx.code.length - 1].dest = r;
-    } else if(expressions[expId].keep || debug || expressions[expId].op === "exp") {
-        fixExpression(r, ctx, symbols, expressions);
-        ctx.code.push({ op: "copy", dest: r, src: [ retRef ] })
+    const codeCtx = {
+        expId: expId,
+        tmpUsed: ctx.tmpUsed,
+        calculated: ctx.calculated,
+        dom: ctx.dom,
+        stark: ctx.stark,
+        verifierEvaluations: ctx.verifierEvaluations,
+        verifierQuery: ctx.verifierQuery,
+        evMap: ctx.evMap,
+        airId: ctx.airId,
+        subproofId: ctx.subproofId,
+        code: []
     }
 
+    const retRef = evalExp(codeCtx, symbols, expressions, e, prime);
+
+    const r = { type: "exp", prime, id: expId, dim: e.dim };
+    
+    if (retRef.type === "tmp") {
+        fixCommitPol(r, codeCtx, symbols);
+        codeCtx.code[codeCtx.code.length-1].dest = r;
+        codeCtx.tmpUsed--;
+    } else {
+        fixCommitPol(r, codeCtx, symbols);
+        codeCtx.code.push({ op: "copy", dest: r, src: [ retRef ] })
+    }
+
+    ctx.code.push(...codeCtx.code);
+    
     if(!ctx.calculated[expId]) ctx.calculated[expId] = {};
     ctx.calculated[expId][prime] = true;
+
+    if (codeCtx.tmpUsed > ctx.tmpUsed) ctx.tmpUsed = codeCtx.tmpUsed;
+    ctx.evMap = codeCtx.evMap;
 }
 
 function evalExp(ctx, symbols, expressions, exp, prime) {
@@ -33,7 +50,6 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
             values[i] = evalExp(ctx, symbols, expressions, exp.values[i], prime);
         }
         const r = { type: "tmp", id: ctx.tmpUsed++, dim: Math.max(...values.map(v => v.dim)) };
-        if(ctx.verifierEvaluations && ctx.stark) r.dim = 3;
 
         ctx.code.push({
             op: exp.op,
@@ -47,15 +63,15 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
         let p = expr.rowOffset || prime; 
         const r = { type: expr.op, id: expr.id, prime: p, dim: expr.dim }
         if(ctx.verifierEvaluations) {
-            fixEval(ctx, symbols, r);
+            fixEval(r, ctx, symbols);
         } else if(ctx.verifierQuery && expr.op === "cm") {
-            fixCommitsQuery(ctx, symbols, r);
+            fixCommitsQuery(r, ctx, symbols);
         }
         return r;
     } else if (exp.op === "exp") {
         let p = exp.rowOffset || prime; 
         const r = { type: exp.op, expId: exp.id, id: exp.id, prime: p, dim: exp.dim };
-        fixExpression(r, ctx, symbols, expressions);
+        fixCommitPol(r, ctx, symbols);
         return r;
     } else if (exp.op === "eval") {
         return { type: exp.op, id: exp.id, dim: exp.dim, subproofId: exp.subproofId, airId: exp.airId}
@@ -72,11 +88,7 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
     } else if (exp.op == "Zi") {
         return { type: exp.op, boundaryId: exp.boundaryId, dim: 1 }
     } else if (exp.op === "x") {
-        if(ctx.verifierEvaluations) {
-            return { type: exp.op, dim: ctx.stark ? 3 : 1 }
-        } else {
-            return { type: exp.op, dim: 1 }
-        }
+        return { type: exp.op, dim: 1 }
     } else {
         throw new Error(`Invalid op: ${exp.op}`);
     }
@@ -122,33 +134,56 @@ function findAddMul(exp) {
     }
 }
 
-function fixExpression(r, ctx, symbols, expressions) {
+function fixExpression(r, ctx) {
     const prime = r.prime || 0;
+    if (!ctx.expMap[prime]) ctx.expMap[prime] = {};
+    if (typeof ctx.expMap[prime][r.id] === "undefined") {
+        ctx.expMap[prime][r.id] = ctx.tmpUsed++;
+    }
+
+    r.type= "tmp";
+    r.id= ctx.expMap[prime][r.id];
+}
+
+function fixDimensionsVerifier(ctx) {
+    const tmpDim = [];
+
+    for (let i=0; i<ctx.code.length; i++) {
+        if (!["add", "sub", "mul", "muladd", "copy"].includes(ctx.code[i].op)) throw new Error("Invalid op:"+ ctx.code[i].op);
+        if (ctx.code[i].dest.type !== "tmp") throw new Error("Invalid dest type:"+ ctx.code[i].dest.type);
+        let newDim = Math.max(...ctx.code[i].src.map(s => getDim(s)));
+        tmpDim[ctx.code[i].dest.id] = newDim;
+        ctx.code[i].dest.dim = newDim;
+    }
+
+    function getDim(r) {
+        let d;
+        if(r.type === "tmp") {
+            d = tmpDim[r.id];
+        } else if(r.type.includes("tree")) {
+            d = r.dim;
+        } else if(["const", "number", "public"].includes(r.type)) {
+            d = 1;
+        } else if(["eval", "challenge", "xDivXSubXi", "x", "Zi", "subproofValue"].includes(r.type)) {
+            d = ctx.stark ? 3 : 1;
+        } else throw new Error("Invalid type: " + r.type);
+        r.dim = d;
+        return d;
+    }
+
+}
+
+function fixCommitPol(r, ctx, symbols) {
     const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
     if(symbol && (symbol.imPol || (!ctx.verifierEvaluations && ctx.dom === "n"))) {
         r.type = "cm";
         r.id = symbol.polId;
         r.dim = symbol.dim;
-        if(ctx.verifierEvaluations) fixEval(ctx, symbols, r);
-    } else {
-        if (!ctx.expMap[prime]) ctx.expMap[prime] = {};
-        if (typeof ctx.expMap[prime][r.id] === "undefined") {
-            ctx.expMap[prime][r.id] = ctx.tmpUsed++;
-        }
-        let dim;
-        if(ctx.verifierEvaluations) {
-            dim = ctx.stark ? 3 : 1;
-        } else {
-            dim = expressions[r.id].dim;
-        }
-        r.type= "tmp";
-        r.expId = r.id;
-        r.dim = dim;
-        r.id= ctx.expMap[prime][r.id];
+        if(ctx.verifierEvaluations) fixEval(r, ctx, symbols);
     }
 }
 
-function fixEval(ctx, symbols, r) {
+function fixEval(r, ctx, symbols) {
     const prime = r.prime || 0;
     let evalIndex = ctx.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === prime && e.airId === ctx.airId && e.subproofId === ctx.subproofId);
     if (evalIndex == -1) {  
@@ -178,7 +213,7 @@ function fixEval(ctx, symbols, r) {
     return r;
 }
 
-function fixCommitsQuery(ctx, symbols, r) {
+function fixCommitsQuery(r, ctx, symbols) {
     const symbol = symbols.find(s => s.polId === r.id && ["tmpPol", "witness"].includes(s.type) && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
     r.type = "tree" + symbol.stage;
     r.stageId = symbol.stageId;
@@ -193,6 +228,15 @@ function buildCode(ctx, expressions) {
         if (!e.keep) delete ctx.calculated[i];
     }
 
+    ctx.expMap = [];
+    for(let i = 0; i < ctx.code.length; i++) {
+        for(let j = 0; j < ctx.code[i].src.length; j++) {
+            if(ctx.code[i].src[j].type === "exp") fixExpression(ctx.code[i].src[j], ctx);
+        }
+        if(ctx.code[i].dest.type === "exp") fixExpression(ctx.code[i].dest, ctx);
+    }
+
+    if(ctx.verifierEvaluations || ctx.verifierQuery) fixDimensionsVerifier(ctx);
 
     let code = { tmpUsed: ctx.tmpUsed, code: ctx.code, symbolsCalculated: ctx.symbolsCalculated };
     if(ctx.symbolsUsed) {
@@ -206,6 +250,7 @@ function buildCode(ctx, expressions) {
     ctx.code = [];
     ctx.symbolsCalculated = [];
     ctx.symbolsUsed = [];
+    ctx.tmpUsed = 0;
 
     return code;
 }

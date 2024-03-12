@@ -39,7 +39,7 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
             exp = expressions[exp.id];
         }
 
-        exp.tmpExps = expressions[exp.id].tmpExps;
+        exp.tmpExps = expressions[exp.id].tmpExps || [];
         if(expressions[exp.id].keep) exp.tmpExps.push(exp.id);
     } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         exp.expDeg = 1;

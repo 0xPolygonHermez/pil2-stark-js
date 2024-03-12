@@ -88,12 +88,14 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
                 
         puCtx.zId = pil.nCommitments++;
 
-        const h1 = E.cm(puCtx.h1Id, 0, stage1, dim);
-        const h1p = E.cm(puCtx.h1Id, 1, stage1, dim);
-        const h2 =  E.cm(puCtx.h2Id, 0, stage1, dim);
-        const f = E.exp(puCtx.fExpId, 0, stage1, dim);
-        const t = E.exp(puCtx.tExpId, 0, stage1, dim);
-        const tp = E.exp(puCtx.tExpId, 1, stage1, dim);
+        const hDim = Math.max(fDim, tDim);
+
+        const h1 = E.cm(puCtx.h1Id, 0, stage1, hDim);
+        const h1p = E.cm(puCtx.h1Id, 1, stage1, hDim);
+        const h2 =  E.cm(puCtx.h2Id, 0, stage1, hDim);
+        const f = E.exp(puCtx.fExpId, 0, stage1);
+        const t = E.exp(puCtx.tExpId, 0, stage1);
+        const tp = E.exp(puCtx.tExpId, 1, stage1);
         const z = E.cm(puCtx.zId, 0, stage2, dim);
         const zp = E.cm(puCtx.zId, 1, stage2, dim);
         

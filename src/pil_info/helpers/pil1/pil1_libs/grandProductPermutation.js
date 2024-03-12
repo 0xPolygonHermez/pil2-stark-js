@@ -77,8 +77,8 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
 
         peCtx.zId = pil.nCommitments++;
 
-        const f = E.exp(peCtx.fExpId,0,stage, dim);
-        const t = E.exp(peCtx.tExpId,0,stage, dim);
+        const f = E.exp(peCtx.fExpId,0,stage);
+        const t = E.exp(peCtx.tExpId,0,stage);
         const z = E.cm(peCtx.zId, 0,stage, dim);
         const zp = E.cm(peCtx.zId, 1,stage, dim);
         z.stageId = pil.nCm2++;

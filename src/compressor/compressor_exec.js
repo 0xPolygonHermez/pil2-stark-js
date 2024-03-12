@@ -7,19 +7,19 @@ module.exports.compressorExec = async function compressorExec(F, pil, wasm, inpu
 
     const nCommittedPols =cmPols.Compressor.a.length;
     
-    const { nAdds, nSMap, adds, sMap } = exec;
+    const { nAdds, nSMap, addsBuff, sMapBuff } = exec;
     
     const wc = await WitnessCalculatorBuilder(wasm);
     const w = await wc.calculateWitness(input);
 
     for (let i=0; i<nAdds; i++) {
-        w.push( F.add( F.mul( w[adds[i*4]], adds[i*4 + 2]), F.mul( w[adds[i*4+1]],  adds[i*4+3]  )));
+        w.push( F.add( F.mul( w[addsBuff[i*4]], addsBuff[i*4 + 2]), F.mul( w[addsBuff[i*4+1]],  addsBuff[i*4+3]  )));
     }
 
     for (let i=0; i<nSMap; i++) {
         for (let j=0; j<nCommittedPols; j++) {
-            if (sMap[nCommittedPols*i+j] != 0) {
-                cmPols.Compressor.a[j][i] = w[sMap[nCommittedPols*i+j]];
+            if (sMapBuff[nCommittedPols*i+j] != 0) {
+                cmPols.Compressor.a[j][i] = w[sMapBuff[nCommittedPols*i+j]];
             } else {
                 cmPols.Compressor.a[j][i] = 0n;
             }

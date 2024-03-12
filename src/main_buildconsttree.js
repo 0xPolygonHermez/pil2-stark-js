@@ -28,13 +28,17 @@ async function run() {
     const constTreeFile = typeof(argv.consttree) === "string" ?  argv.consttree.trim() : "mycircuit.consttree";
     const verKeyFile = typeof(argv.verkey) === "string" ?  argv.verkey.trim() : "mycircuit.verkey.json";
 
+    const options = {};
+    options.arity = Number(argv.arity) || 16;
+    options.custom = argv.custom || false;
+
     const starkStruct = JSON.parse(await fs.promises.readFile(starkStructFile, "utf8"));
     const pil = await compile(F, pilFile, null, pilConfig);
 
     const constPols = newConstantPolsArray(pil, F);
     await constPols.loadFromFile(constFile);
 
-    const {MH, constTree, verKey} = await buildConstTree(starkStruct, pil, constPols);
+    const {MH, constTree, verKey} = await buildConstTree(starkStruct, pil, constPols, options);
 
     await fs.promises.writeFile(verKeyFile, JSONbig.stringify(verKey, null, 1), "utf8");
 

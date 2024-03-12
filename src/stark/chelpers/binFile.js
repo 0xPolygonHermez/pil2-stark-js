@@ -44,11 +44,21 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
             constPolsIdsOffset.push(constPolsIdsOffset[i-1] + stagesInfo[i-1].constPolsIds.length);
             cmPolsIdsOffset.push(cmPolsIdsOffset[i-1] + stagesInfo[i-1].cmPolsIds.length);
         }
-        ops.push(...stagesInfo[i].ops);
-        args.push(...stagesInfo[i].args);
-        numbers.push(...stagesInfo[i].numbers);
-        constPolsIds.push(...stagesInfo[i].constPolsIds);
-        cmPolsIds.push(...stagesInfo[i].cmPolsIds);
+        for(let j = 0; j < stagesInfo[i].ops.length; j++) {
+            ops.push(stagesInfo[i].ops[j]);
+        }
+        for(let j = 0; j < stagesInfo[i].args.length; j++) {
+            args.push(stagesInfo[i].args[j]);
+        }
+        for(let j = 0; j < stagesInfo[i].numbers.length; j++) {
+            numbers.push(stagesInfo[i].numbers[j]);
+        }
+        for(let j = 0; j < stagesInfo[i].constPolsIds.length; j++) {
+            constPolsIds.push(stagesInfo[i].constPolsIds[j]);
+        }
+        for(let j = 0; j < stagesInfo[i].cmPolsIds.length; j++) {
+            cmPolsIds.push(stagesInfo[i].cmPolsIds[j]);
+        } 
     }
 
     for(let i = 0; i < expressionsInfo.length; i++) {
@@ -65,11 +75,21 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
             constPolsIdsOffset.push(constPolsIdsOffset[i-1] + expressionsInfo[i-1].constPolsIds.length);
             cmPolsIdsOffset.push(cmPolsIdsOffset[i-1] + expressionsInfo[i-1].cmPolsIds.length);
         }
-        ops.push(...expressionsInfo[i].ops);
-        args.push(...expressionsInfo[i].args);
-        numbers.push(...expressionsInfo[i].numbers);
-        constPolsIds.push(...expressionsInfo[i].constPolsIds);
-        cmPolsIds.push(...expressionsInfo[i].cmPolsIds);
+        for(let j = 0; j < expressionsInfo[i].ops.length; j++) {
+            ops.push(expressionsInfo[i].ops[j]);
+        }
+        for(let j = 0; j < expressionsInfo[i].args.length; j++) {
+            args.push(expressionsInfo[i].args[j]);
+        }
+        for(let j = 0; j < expressionsInfo[i].numbers.length; j++) {
+            numbers.push(expressionsInfo[i].numbers[j]);
+        }
+        for(let j = 0; j < expressionsInfo[i].constPolsIds.length; j++) {
+            constPolsIds.push(expressionsInfo[i].constPolsIds[j]);
+        }
+        for(let j = 0; j < expressionsInfo[i].cmPolsIds.length; j++) {
+            cmPolsIds.push(expressionsInfo[i].cmPolsIds[j]);
+        } 
     }
 
     console.log(`··· Writing Section ${CHELPERS_HEADER_SECTION}. CHelpers header section`);
@@ -231,11 +251,21 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
             constPolsIdsOffsetDebug.push(constPolsIdsOffsetDebug[i-1] + constraintsInfo[i-1].constPolsIds.length);
             cmPolsIdsOffsetDebug.push(cmPolsIdsOffsetDebug[i-1] + constraintsInfo[i-1].cmPolsIds.length);
         }
-        opsDebug.push(...constraintsInfo[i].ops);
-        argsDebug.push(...constraintsInfo[i].args);
-        numbersDebug.push(...constraintsInfo[i].numbers);
-        constPolsIdsDebug.push(...constraintsInfo[i].constPolsIds);
-        cmPolsIdsDebug.push(...constraintsInfo[i].cmPolsIds);
+        for(let j = 0; j < constraintsInfo[i].ops.length; j++) {
+            opsDebug.push(constraintsInfo[i].ops[j]);
+        }
+        for(let j = 0; j < constraintsInfo[i].args.length; j++) {
+            argsDebug.push(constraintsInfo[i].args[j]);
+        }
+        for(let j = 0; j < constraintsInfo[i].numbers.length; j++) {
+            numbersDebug.push(constraintsInfo[i].numbers[j]);
+        }
+        for(let j = 0; j < constraintsInfo[i].constPolsIds.length; j++) {
+            constPolsIdsDebug.push(constraintsInfo[i].constPolsIds[j]);
+        }
+        for(let j = 0; j < constraintsInfo[i].cmPolsIds.length; j++) {
+            cmPolsIdsDebug.push(constraintsInfo[i].cmPolsIds[j]);
+        } 
     }
 
     await cHelpersBin.writeULE32(opsDebug.length);
@@ -249,8 +279,6 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
     for(let i = 0; i < nConstraints; i++) {
         const constraintInfo = constraintsInfo[i];
 
-        console.log(constraintInfo);
-
         await cHelpersBin.writeULE32(constraintInfo.stage);
 
         await cHelpersBin.writeULE32(constraintInfo.destDim);
@@ -262,7 +290,6 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
         await cHelpersBin.writeULE32(constraintInfo.ops.length);
         await cHelpersBin.writeULE32(opsOffsetDebug[i]);
 
-        console.log(i, constraintInfo.args.length);
         await cHelpersBin.writeULE32(constraintInfo.args.length);
         await cHelpersBin.writeULE32(argsOffsetDebug[i]);
 

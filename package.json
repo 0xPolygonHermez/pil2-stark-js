@@ -76,7 +76,7 @@
     "all_buildconsttree_gpu": "NODE_OPTIONS=--max-old-space-size=32000 node src/main_buildconsttree.js -c tmp/all.const -p test/state_machines/sm_all/all_main.pil -s test/state_machines/sm_all/all.starkstruct.gpu.json -t tmp/all.consttree -v tmp/all.verkey.json",
     "all_prove": "NODE_OPTIONS=--max-old-space-size=32000 node src/main_prover.js -m tmp/all.commit -c tmp/all.const -t tmp/all.consttree -p test/state_machines/sm_all/all_main.pil -s tmp/all.starkinfo.json -o tmp/all.proof.json -z tmp/all.proof.zkin.json -b tmp/all.public.json -v tmp/all.challenges.json",
     "all_verify": "NODE_OPTIONS=--max-old-space-size=32000 node src/main_verifier.js -s tmp/all.starkinfo.json -o tmp/all.proof.json -b tmp/all.public.json -v tmp/all.verkey.json",
-    "all_gencircom": "NODE_OPTIONS=--max-old-space-size=32000 node src/main_pil2circom.js --skipMain --hashCommits -s tmp/all.starkinfo.json -v tmp/all.verkey.json -o tmp/all.verifier.circom",
+    "all_gencircom": "NODE_OPTIONS=--max-old-space-size=32000 node src/main_pil2circom.js -s tmp/all.starkinfo.json -v tmp/all.verkey.json -o tmp/all.verifier.circom",
     "all_compileverifier": "circom -l circuits.gl --O1 --inspect --prime goldilocks --r1cs --sym --wasm --verbose tmp/all.verifier.circom -o tmp",
     "all_starkVerifier": "mocha test/stark/all_gl_verifier.circuit.test",
     "all_starkVerifier_gpu": "mocha test/stark/all_gl_verifier_gpu.circuit.test",

@@ -1,4 +1,3 @@
-const { getExpDim } = require("../helpers");
 const { pilCodeGen, buildCode } = require("./codegen");
 
 module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
@@ -14,7 +13,6 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             symbolsUsed: [],
             tmpUsed: 0,
             code: [],
-            expMap: [],
             dom: "n",
             airId: res.airId,
             subproofId: res.subproofId,
@@ -74,7 +72,6 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
         symbolsUsed: [],
         tmpUsed: 0,
         code: [],
-        expMap: [],
         dom: "n",
         airId: res.airId,
         subproofId: res.subproofId,
@@ -180,7 +177,6 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
             symbolsUsed: [],
             tmpUsed: 0,
             code: [],
-            expMap: [],
             dom: "n",
             airId: res.airId,
             subproofId: res.subproofId,
@@ -222,7 +218,6 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
         symbolsUsed: [],
         tmpUsed: 0,
         code: [],
-        expMap: [],
         dom: "ext",
         airId: res.airId,
         subproofId: res.subproofId,
@@ -289,7 +284,6 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
         tmpUsed: 0,
         code: [],
         evMap: [],
-        expMap: [],
         dom: "n",
         airId: res.airId,
         subproofId: res.subproofId,
@@ -340,7 +334,6 @@ module.exports.generateFRICode = function generateFRICode(res, symbols, expressi
         symbolsUsed: [],
         tmpUsed: 0,
         code: [],
-        expMap: [],
         dom: "ext",
         airId: res.airId,
         subproofId: res.subproofId,
@@ -357,8 +350,6 @@ module.exports.generateFRICode = function generateFRICode(res, symbols, expressi
             ctxExt.symbolsUsed.push(symbolUsed);
         };
     } 
-
-    console.log(ctxExt.symbolsUsed);
 
     pilCodeGen(ctxExt, symbols, expressions, friExpId, 0);
     res.code.fri = buildCode(ctxExt, expressions);
