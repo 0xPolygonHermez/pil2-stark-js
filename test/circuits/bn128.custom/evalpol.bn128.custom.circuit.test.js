@@ -45,7 +45,7 @@ describe("EvalPol BN128 Circuit Test Custom", function () {
             const content = ejs.render(template, {n: i, dirName:path.join(__dirname, "circom")});
             const circuitFile = path.join(new tmp.Dir().path, "circuit.circom");
             await fs.promises.writeFile(circuitFile, content);
-            circuit[i] = await wasm_tester(circuitFile, {O:1, include: ["circuits.custom.bn128", "node_modules/circomlib/circuits"]});
+            circuit[i] = await wasm_tester(circuitFile, {O:1, include: ["circuits.bn128", "node_modules/circomlib/circuits"]});
         }
     });
 

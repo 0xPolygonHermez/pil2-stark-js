@@ -9,7 +9,8 @@ include "utils.circom";
     - eSize: Size of the extended field (usually it will be either 3 if we are in Fp³ or 1)
     - elementsInLinear: Each leave of the merkle tree is made by this number of values. 
 */
-template MerkleHash(eSize, elementsInLinear, nBits, arity) {
+template MerkleHash(eSize, elementsInLinear, nLinears, arity) {
+    var nBits = log2(nLinears);
     var logArity = log2(arity);
     var nLevels = (nBits - 1)\logArity +1;
     signal input values[elementsInLinear][eSize];
@@ -32,8 +33,10 @@ template MerkleHash(eSize, elementsInLinear, nBits, arity) {
     - elementsInLinear: Each leave of the merkle tree is made by this number of values. 
     - nLinears: Number of leaves of the merkle tree
 */
-template parallel VerifyMerkleHash(eSize, elementsInLinear, nBits, arity) {
+template parallel VerifyMerkleHash(eSize, elementsInLinear, nLinears, arity) {
     var nLeaves = log2(arity);
+    var nBits = log2(nLinears);
+    assert(1 << nBits == nLinears);
     var nLevels = (nBits - 1)\nLeaves +1;
     signal input values[elementsInLinear][eSize];
     signal input siblings[nLevels][arity]; // Sibling path to calculate the merkle root given a set of values.
@@ -42,7 +45,7 @@ template parallel VerifyMerkleHash(eSize, elementsInLinear, nBits, arity) {
     signal input {binary} enable; // Boolean that determines either we want to check that roots matches or not
 
     // Calculate the merkle root 
-    signal merkleRoot <== MerkleHash(eSize, elementsInLinear, nBits, arity)(values, siblings, key);
+    signal merkleRoot <== MerkleHash(eSize, elementsInLinear, nLinears, arity)(values, siblings, key);
 
     // If enable is set to 1, check that the merkleRoot being calculated matches with the one sent as input
     enable * (merkleRoot - root) === 0;

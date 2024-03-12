@@ -1079,16 +1079,16 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
 <% for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
 <%  const stage = i + 1; -%>
     for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
-        VerifyMerkleHash(1, <%- starkInfo.mapSectionsN[`cm${stage}_n`] %>, <%- starkStruct.steps[0].nBits %>,<%- arity %>)(s0_vals<%- stage %>_p[q], s0_siblings<%- stage %>[q], queriesFRIGL[q], root<%- stage %>, enabled);
+        VerifyMerkleHash(1, <%- starkInfo.mapSectionsN[`cm${stage}_n`] %>, <%- 1 << starkStruct.steps[0].nBits %>,<%- arity %>)(s0_vals<%- stage %>_p[q], s0_siblings<%- stage %>[q], queriesFRIGL[q], root<%- stage %>, enabled);
     }
 <% } -%>
 
     for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
-        VerifyMerkleHash(1, <%- starkInfo.mapSectionsN.cmQ_n %>, <%- starkStruct.steps[0].nBits %>,<%- arity %>)(s0_valsQ_p[q], s0_siblingsQ[q], queriesFRIGL[q], rootQ, enabled);
+        VerifyMerkleHash(1, <%- starkInfo.mapSectionsN.cmQ_n %>, <%- 1 << starkStruct.steps[0].nBits %>,<%- arity %>)(s0_valsQ_p[q], s0_siblingsQ[q], queriesFRIGL[q], rootQ, enabled);
     }
 
     for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
-        VerifyMerkleHash(1, <%- starkInfo.nConstants %>, <%- starkStruct.steps[0].nBits %>, <%- arity %>)(s0_valsC_p[q], s0_siblingsC[q], queriesFRIGL[q], rootC, enabled);  
+        VerifyMerkleHash(1, <%- starkInfo.nConstants %>, <%- 1 << starkStruct.steps[0].nBits %>, <%- arity %>)(s0_valsC_p[q], s0_siblingsC[q], queriesFRIGL[q], rootC, enabled);  
     }                                  
 
 <% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
@@ -1096,7 +1096,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
     for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
         // Calculate merkle root for s<%- s %> vals
         for(var i = 0; i < <%-starkStruct.steps[s].nBits %>; i++) { s<%- s %>_keys_merkle[q][i] <== queriesFRIGL[q][i]; }
-        VerifyMerkleHash(3, <%- 1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits) %>, <%- starkStruct.steps[s].nBits %>,<%- arity %>)(s<%- s %>_vals_p[q], s<%- s %>_siblings[q], s<%- s %>_keys_merkle[q], s<%- s %>_root, enabled);
+        VerifyMerkleHash(3, <%- 1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits) %>, <%- 1 << starkStruct.steps[s].nBits %>,<%- arity %>)(s<%- s %>_vals_p[q], s<%- s %>_siblings[q], s<%- s %>_keys_merkle[q], s<%- s %>_root, enabled);
     }
 <% } -%>
 
