@@ -416,7 +416,7 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
     if (logger) logger.debug("··· Merkelizing Stage " + stage);
     ctx.trees[stage] = await ctx.MH.merkelize(buffTo, nPols, ctx.extN);
 
-    await printRootPols(ctx, stage, options);
+    // await printRootPols(ctx, stage, options);
 
     const root = ctx.MH.root(ctx.trees[stage]);
     if (options.logger && !options.debug) {

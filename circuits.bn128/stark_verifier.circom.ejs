@@ -1192,13 +1192,17 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
     // Leaves values of the merkle tree used to check all the queries
 <% for(let i=0; i < starkInfo.numChallenges.length; i++) {  -%>
 <%  const stage = i + 1; -%>
+<%  if(starkInfo.mapSectionsN[`cm${stage}_n`] > 0) { -%>
     signal input s0_vals<%- stage %>[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>];
+<%  } -%>
 <% } -%>
     signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cmQ_n %>];
     signal input s0_valsC[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants%>];
 <% for(let i=0; i < starkInfo.numChallenges.length; i++) {  -%>
 <%  const stage = i + 1; -%>
+<%  if(starkInfo.mapSectionsN[`cm${stage}_n`] > 0) { -%>
     signal input s0_siblings<%- stage %>[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/nBitsArity)+1 %>][<%- arity %>];
+<% } -%>
 <% } -%>
     signal input s0_siblingsQ[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/nBitsArity)+1 %>][<%- arity %>];
     signal input s0_siblingsC[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/nBitsArity)+1 %>][<%- arity %>];
@@ -1244,13 +1248,17 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
 
 <% for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
 <%  const stage = i + 1; -%>
+<%  if(starkInfo.mapSectionsN[`cm${stage}_n`] > 0) { -%>
     sv.s0_vals<%- stage %> <== s0_vals<%- stage %>;
+<%  } -%>
 <% } -%> 
     sv.s0_valsQ <== s0_valsQ;
     sv.s0_valsC <== s0_valsC;
 <% for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
 <%  const stage = i + 1; -%>
+<%  if(starkInfo.mapSectionsN[`cm${stage}_n`] > 0) { -%>
     sv.s0_siblings<%- stage %> <== s0_siblings<%- stage %>;
+<%  } -%>
 <% } -%>
     sv.s0_siblingsQ <== s0_siblingsQ;
     sv.s0_siblingsC <== s0_siblingsC;
