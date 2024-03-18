@@ -21,10 +21,10 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
     const dim = stark ? 3 : 1;
 
     let gammaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_gamma");
-    const gamma = E.challenge("std_gamma", stage, dim, gammaSymbol.stageId, gammaSymbol.id);
+    const gamma = E.challenge("std_gamma", gammaSymbol.stage, gammaSymbol.dim, gammaSymbol.stageId, gammaSymbol.id);
 
     let deltaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_delta");
-    const delta = E.challenge("std_delta", stage, dim, deltaSymbol.stageId, deltaSymbol.id);
+    const delta = E.challenge("std_delta", deltaSymbol.stage, deltaSymbol.dim, deltaSymbol.stageId, deltaSymbol.id);
 
     for (let i=0; i<pil.connectionIdentities.length; i++) {
         const ci = pil.connectionIdentities[i];

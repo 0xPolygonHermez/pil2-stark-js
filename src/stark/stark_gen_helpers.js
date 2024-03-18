@@ -12,7 +12,7 @@ const FRI = require("./fri.js");
 const _ = require("json-bigint");
 const { interpolate, ifft, fft } = require("../helpers/fft/fft_p.js");
 const {BigBuffer} = require("pilcom");
-const { callCalculateExps, getPolRef } = require("../prover/prover_helpers.js");
+const { callCalculateExps, getPolRef, getPol } = require("../prover/prover_helpers.js");
 const { setConstantsPolynomialsCalculated, setSymbolCalculated } = require("../prover/symbols_helpers.js");
 
 module.exports.initProverStark = async function initProverStark(pilInfo, constPols, constTree, options = {}) {
@@ -416,6 +416,8 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
     if (logger) logger.debug("··· Merkelizing Stage " + stage);
     ctx.trees[stage] = await ctx.MH.merkelize(buffTo, nPols, ctx.extN);
 
+    await printRootPols(ctx, stage, options);
+
     const root = ctx.MH.root(ctx.trees[stage]);
     if (options.logger && !options.debug) {
         if(ctx.pilInfo.starkStruct.verificationHashType === "GL") {
@@ -519,4 +521,19 @@ module.exports.getPermutationsStark = async function getPermutationsStark(ctx, c
     const friQueries = transcript.getPermutations(ctx.pilInfo.starkStruct.nQueries, ctx.pilInfo.starkStruct.steps[0].nBits);
     
     return friQueries;
+}
+
+async function printRootPols(ctx, stage, options) {
+    for(let i = 0; i < ctx.pilInfo.cmPolsMap.length; ++i) {
+        const cmPol = ctx.pilInfo.cmPolsMap[i];
+        if(cmPol.stageNum != stage) continue;
+
+        let p = getPolRef(ctx, i, "n");
+        let pol = getPol(ctx, i, "n");
+
+        const tree = await ctx.MH.merkelize(pol.flat(), p.dim, ctx.N);
+        const rootN = ctx.MH.root(tree);
+        options.logger.debug("··· " + cmPol.name + " " + stage + ": " + ctx.F.toString(rootN[0]) + " " + ctx.F.toString(rootN[1]) + " " + ctx.F.toString(rootN[2]) + " " + ctx.F.toString(rootN[3]));   
+        options.logger.debug('---------------------------');
+    }
 }

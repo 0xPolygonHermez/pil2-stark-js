@@ -19,13 +19,13 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
     const dim = stark ? 3 : 1;
 
     let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
-    const alpha = E.challenge("std_alpha", stage, dim, alphaSymbol.stageId, alphaSymbol.id);
+    const alpha = E.challenge("std_alpha", alphaSymbol.stage, alphaSymbol.dim, alphaSymbol.stageId, alphaSymbol.id);
 
     let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
-    const beta = E.challenge("std_beta", stage, dim, betaSymbol.stageId, betaSymbol.id);
+    const beta = E.challenge("std_beta", betaSymbol.stage, betaSymbol.symbol, betaSymbol.stageId, betaSymbol.id);
 
     let gammaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_gamma");
-    const gamma = E.challenge("std_gamma", stage, dim, gammaSymbol.stageId, gammaSymbol.id);
+    const gamma = E.challenge("std_gamma", gammaSymbol.stage, gammaSymbol.dim, gammaSymbol.stageId, gammaSymbol.id);
     
 
     for (let i=0; i<pil.permutationIdentities.length; i++) {
