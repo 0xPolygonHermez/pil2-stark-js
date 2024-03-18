@@ -4,7 +4,7 @@ const workerpool = require('workerpool');
 const F = new F3g();
 
 function interpolatePrepareBlock(buff, width, start, inc, st_i, st_n) {
-    console.log(`linear interpolatePrepare start.... ${st_i}/${st_n}`);
+    // console.log(`linear interpolatePrepare start.... ${st_i}/${st_n}`);
 
     const heigth = buff.length/width;
     let w = start;
@@ -14,7 +14,7 @@ function interpolatePrepareBlock(buff, width, start, inc, st_i, st_n) {
         }
         w = F.mul(w, inc);
     }
-    console.log(`linear interpolatePrepare end.... ${st_i}/${st_n}`);
+    // console.log(`linear interpolatePrepare end.... ${st_i}/${st_n}`);
     return buff;
 }
 
@@ -60,9 +60,9 @@ function _fft_block(buff, rel_pos, start_pos, nPols, nBits, s, blockBits, layers
 }
 
 function fft_block(buff, start_pos, nPols, nBits, s, blockBits, layers) {
-    console.log(`start block ${s} ${start_pos}`)
+    // console.log(`start block ${s} ${start_pos}`)
     _fft_block(buff, start_pos, start_pos, nPols, nBits, s, blockBits, layers);
-    console.log(`end block ${s} ${start_pos}`)
+    // console.log(`end block ${s} ${start_pos}`)
     return buff;
 }
 

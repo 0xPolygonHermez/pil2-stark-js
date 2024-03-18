@@ -11,7 +11,7 @@ function alloc(wasmMem, length) {
 }
 
 async function linearHash(wasmModule, buffIn, width, st_i, st_n, arity, custom) {
-    console.log(`linear hash bn128 start.... ${st_i}/${st_n}`);
+    // console.log(`linear hash bn128 start.... ${st_i}/${st_n}`);
 
     const heigth = buffIn.length/width;
     const buffOut64 = new BigUint64Array(heigth*4);
@@ -42,7 +42,7 @@ async function linearHash(wasmModule, buffIn, width, st_i, st_n, arity, custom) 
         buffOut64.set(st64,  i*4);
     }
 
-    console.log(`linear hash bn128 end.... ${st_i}/${st_n}`);
+    // console.log(`linear hash bn128 end.... ${st_i}/${st_n}`);
     return buffOut64;
 
     function hash(vals) {
@@ -102,7 +102,7 @@ async function linearHash(wasmModule, buffIn, width, st_i, st_n, arity, custom) 
 
 // a deliberately inefficient implementation of the fibonacci sequence
 async function merkelizeLevel(wasmModule, buffIn, st_i, st_n, arity) {
-    console.log(`merkelizing bn128 hash start.... ${st_i}/${st_n}`);
+    // console.log(`merkelizing bn128 hash start.... ${st_i}/${st_n}`);
     const nOps = buffIn.byteLength / (32*arity);
 
     const bytesRequired = arity*32 + 32 + 32;
@@ -139,7 +139,7 @@ async function merkelizeLevel(wasmModule, buffIn, st_i, st_n, arity) {
         buffOut64.set(out64, i*4);
     }
 
-    console.log(`merkelizing bn128 hash end.... ${st_i}/${st_n}`);
+    // console.log(`merkelizing bn128 hash end.... ${st_i}/${st_n}`);
     return buffOut64;
 }
 

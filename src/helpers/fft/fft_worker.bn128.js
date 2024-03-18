@@ -8,7 +8,7 @@ async function buildFr() {
 
 async function interpolatePrepareBlock(buff, width, start, st_i, st_n) {
     const Fr = await buildFr();
-    console.log(`linear interpolatePrepare start.... ${st_i}/${st_n}`);
+    // console.log(`linear interpolatePrepare start.... ${st_i}/${st_n}`);
 
     const height = buff.byteLength / Fr.n8 / width;
 
@@ -22,7 +22,7 @@ async function interpolatePrepareBlock(buff, width, start, st_i, st_n) {
         }
     }
 
-    console.log(`linear interpolatePrepare end.... ${st_i}/${st_n}`);
+    // console.log(`linear interpolatePrepare end.... ${st_i}/${st_n}`);
 
     return buff;
 }
@@ -73,9 +73,9 @@ function _fft_block(buff, rel_pos, start_pos, nPols, nBits, s, blockBits, layers
 
 async function fft_block(buff, start_pos, nPols, nBits, s, blockBits, layers) {
     const Fr = await buildFr();
-    console.log(`start block ${s} ${start_pos}`)
+    // console.log(`start block ${s} ${start_pos}`)
     _fft_block(buff, start_pos, start_pos, nPols, nBits, s, blockBits, layers, Fr);
-    console.log(`end block ${s} ${start_pos}`)
+    // console.log(`end block ${s} ${start_pos}`)
     return buff;
 }
 

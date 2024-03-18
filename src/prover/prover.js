@@ -39,7 +39,7 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
     for(let i = 1; i <= qStage; i++) {
         const stage = i;
         if(stage === qStage && options.debug) continue;
-        if(stage !== 1) {
+        if(stage === qStage || ctx.pilInfo.numChallenges[i - 1] > 0) {
             setChallenges(stage, ctx, ctx.transcript, challenge, options);
         }
         await computeStage(stage, ctx, options);
@@ -58,7 +58,9 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
 
             addTranscript(ctx.transcript, commits, stark);
 
-            challenge = getChallenge(ctx.transcript, stark);
+            if(stage >= ctx.pilInfo.numChallenges.length || ctx.pilInfo.mapSectionsN[`cm${stage + 1}_n`] > 0) {
+                challenge = getChallenge(ctx.transcript, stark);
+            }
 
         } else {
             challenge = ctx.F.random();

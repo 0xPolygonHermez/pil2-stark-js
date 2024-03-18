@@ -41,6 +41,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
         
         expressions[expId].imPol = true;
         expressions[expId].polId = res.nCommitments - 1;
+        expressions[expId].keep = true;
 
         let e = {
             op: "sub",

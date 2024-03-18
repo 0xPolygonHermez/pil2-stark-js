@@ -35,7 +35,7 @@ async function buildWasm(nPages) {
 
 // a deliberately inefficient implementation of the fibonacci sequence
 async function linearHash(buffIn, width, st_i, st_n, splitLinearHash) {
-    console.log(`linear hash start.... ${st_i}/${st_n}`);
+    // console.log(`linear hash start.... ${st_i}/${st_n}`);
     const heigth = buffIn.length / width;
     const buffOut = new BigUint64Array(heigth*4);
 
@@ -76,7 +76,7 @@ async function linearHash(buffIn, width, st_i, st_n, splitLinearHash) {
         buffOut.set(dst, i*4);
     }
 
-    console.log(`linear hash end.... ${st_i}/${st_n}`);
+    // console.log(`linear hash end.... ${st_i}/${st_n}`);
 
     return buffOut;
 }
@@ -84,7 +84,7 @@ async function linearHash(buffIn, width, st_i, st_n, splitLinearHash) {
 
 // a deliberately inefficient implementation of the fibonacci sequence
 async function merkelizeLevel(buffIn, st_i, st_n) {
-    console.log(`merkelizing hash start.... ${st_i}/${st_n}`);
+    // console.log(`merkelizing hash start.... ${st_i}/${st_n}`);
 
     const nOps = buffIn.length/8;
 
@@ -112,7 +112,7 @@ async function merkelizeLevel(buffIn, st_i, st_n) {
         buffOut.set(dst, i*4);
     }
 
-    console.log(`merkelizing hash end.... ${st_i}/${st_n}`);
+    // console.log(`merkelizing hash end.... ${st_i}/${st_n}`);
     return buffOut;
 }
 

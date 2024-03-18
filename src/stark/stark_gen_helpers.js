@@ -523,17 +523,18 @@ module.exports.getPermutationsStark = async function getPermutationsStark(ctx, c
     return friQueries;
 }
 
-async function printRootPols(ctx, stage, options) {
+async function printPolsRoot(ctx, stage, options) {
+    let MH = await buildMerkleHashGL(false);
+
     for(let i = 0; i < ctx.pilInfo.cmPolsMap.length; ++i) {
         const cmPol = ctx.pilInfo.cmPolsMap[i];
-        if(cmPol.stageNum != stage) continue;
-
+        if(stage !== 0 && cmPol.stageNum != stage) continue;
         let p = getPolRef(ctx, i, "n");
         let pol = getPol(ctx, i, "n");
 
-        const tree = await ctx.MH.merkelize(pol.flat(), p.dim, ctx.N);
-        const rootN = ctx.MH.root(tree);
-        options.logger.debug("··· " + cmPol.name + " " + stage + ": " + ctx.F.toString(rootN[0]) + " " + ctx.F.toString(rootN[1]) + " " + ctx.F.toString(rootN[2]) + " " + ctx.F.toString(rootN[3]));   
+        const tree = await MH.merkelize(pol.flat(), p.dim, ctx.N);
+        const rootN = MH.root(tree);
+        options.logger.debug("··· " + cmPol.name + " " + stage + ": " + ctx.F.toString(rootN[0]) + " " + ctx.F.toString(rootN[1]) + " " + ctx.F.toString(rootN[2]) + " " + ctx.F.toString(rootN[3]));  
         options.logger.debug('---------------------------');
     }
 }

@@ -157,7 +157,7 @@ async function _fft(buffSrc, nPols, nBits, buffDst, inverse, Fr) {
         const promisesFFT = [];
         let results = [];
         for (j = 0; j < nBlocks; j++) {
-            console.log("nBlocks", nBlocks);
+            // console.log("nBlocks", nBlocks);
             const bb = bIn.slice(j * blockSize * nPols * Fr.n8, (j + 1) * blockSize * nPols * Fr.n8);
             if (useThreads) {
                 promisesFFT.push(pool.exec("fft_block", [bb, j * blockSize, nPols, nBits, i + sInc, blockBits, sInc]));
@@ -233,12 +233,12 @@ async function interpolate(buffSrc, nPols, nBits, buffDstCoefs, buffDst, nBitsEx
         bIn = tmpBuff;
     }
 
-    console.log("Interpolating reverse....")
+    // console.log("Interpolating reverse....")
     await interpolateBitReverse(bOut, buffSrc, nPols, nBits, Fr);
     [bIn, bOut] = [bOut, bIn];
 
     for (let i = 0; i < nBits; i += blockBits) {
-        console.log("Layer ifft" + i);
+        // console.log("Layer ifft" + i);
         const sInc = Math.min(blockBits, nBits - i);
         const promisesFFT = [];
         let results = [];
@@ -261,16 +261,16 @@ async function interpolate(buffSrc, nPols, nBits, buffDstCoefs, buffDst, nBitsEx
         }
     }
 
-    console.log("Interpolating prepare....")
+    // console.log("Interpolating prepare....")
     await interpolatePrepare(pool, bIn, nPols, nBits, Fr);
     buffDstCoefs.set(bIn.slice(0, buffDstCoefs.byteLength));
 
-    console.log("Bit reverse....")
+    // console.log("Bit reverse....")
     await bitReverse(bOut, bIn, nPols, nBitsExt, Fr);
     [bIn, bOut] = [bOut, bIn];
 
     for (let i = 0; i < nBitsExt; i += blockBitsExt) {
-        console.log("Layer fft " + i);
+        // console.log("Layer fft " + i);
         const sInc = Math.min(blockBitsExt, nBitsExt - i);
         const promisesFFT = [];
         let results = [];
@@ -294,10 +294,10 @@ async function interpolate(buffSrc, nPols, nBits, buffDstCoefs, buffDst, nBitsEx
             [bIn, bOut] = [bOut, bIn];
         }
     }
-    console.log("interpolation terminated");
+    // console.log("interpolation terminated");
 
     await pool.terminate();
-    console.log("pool terminated");
+    // console.log("pool terminated");
 }
 
 module.exports.fft = fft;

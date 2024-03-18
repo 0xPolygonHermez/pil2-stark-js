@@ -231,12 +231,12 @@ async function interpolate(buffSrc, nPols, nBits, buffDst, nBitsExt) {
         bIn = tmpBuff;
     }
 
-    console.log("Interpolating reverse....")
+    // console.log("Interpolating reverse....")
     await interpolateBitReverse(bOut, buffSrc, nPols, nBits);
     [bIn, bOut] = [bOut, bIn];
 
     for (let i=0; i<nBits; i+= blockBits) {
-        console.log("Layer ifft"+i);
+        // console.log("Layer ifft"+i);
         const sInc = Math.min(blockBits, nBits-i);
         const promisesFFT = [];
         let results = [];
@@ -259,14 +259,14 @@ async function interpolate(buffSrc, nPols, nBits, buffDst, nBitsExt) {
         }
     }
 
-    console.log("Interpolating prepare....")
+    // console.log("Interpolating prepare....")
     await interpolatePrepare(pool, bIn, nPols, nBits, nBitsExt);
-    console.log("Bit reverse....")
+    // console.log("Bit reverse....")
     await bitReverse(bOut, bIn, nPols, nBitsExt);
     [bIn, bOut] = [bOut, bIn];
 
     for (let i=0; i<nBitsExt; i+= blockBitsExt) {
-        console.log("Layer fft "+i);
+        // console.log("Layer fft "+i);
         const sInc = Math.min(blockBitsExt, nBitsExt-i);
         const promisesFFT = [];
         let results = [];
@@ -290,10 +290,10 @@ async function interpolate(buffSrc, nPols, nBits, buffDst, nBitsExt) {
             [bIn, bOut] = [bOut, bIn];
         }
     }
-    console.log("interpolation terminated");
+    // console.log("interpolation terminated");
 
     await pool.terminate();
-    console.log("pool terminated");
+    // console.log("pool terminated");
 }
 
 module.exports.fft = fft;
