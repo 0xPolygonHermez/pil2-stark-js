@@ -15,22 +15,11 @@ const operationsMap = {
     "f": 14,
 }
 
-module.exports.generateParser = function generateParser(className, stageName = "", operations, operationsUsed) {
+module.exports.generateParser = function generateParser(operations, operationsUsed) {
 
     let c_args = 0;
 
-    let isStage = stageName !== "";
-    let parserName = isStage ? `${stageName}_parser_avx` : "parser_avx";
-    
-    let functionName = `void ${className}::${parserName}(StarkInfo &starkInfo, StepsParams &params, ParserArgs &parserArgs, ParserParams &parserParams, uint32_t nrowsBatch, bool domainExtended) {`;
-
-    if(operationsUsed && operationsUsed.length === 0) {
-        return `#include "${className}.hpp"\n${functionName}`;
-    }
-
     const parserCPP = [
-        `#include "${className}.hpp"\n`,
-        `${functionName}`,
         "    uint64_t domainSize = domainExtended ? 1 << starkInfo.starkStruct.nBitsExt : 1 << starkInfo.starkStruct.nBits;",
         "    Polinomial &x = domainExtended ? params.x_2ns : params.x_n;", 
         "    ConstantPolsStarks *constPols = domainExtended ? params.pConstPols2ns : params.pConstPols;",
@@ -281,7 +270,7 @@ module.exports.generateParser = function generateParser(className, stageName = "
     parserCPP.push("}");
        
     
-    const parserCPPCode = parserCPP.join("\n");
+    const parserCPPCode = parserCPP.map(l => `    ${l}`).join("\n");
 
     return parserCPPCode;
 

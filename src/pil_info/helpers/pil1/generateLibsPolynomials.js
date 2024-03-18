@@ -11,6 +11,14 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
     pil.nCm2 = 0;
     pil.nCm3 = 0;
 
+    if(pil.plookupIdentities.length > 0) {
+        pilLibs.push({
+            lib: function() { grandProductPlookup(pil, symbols, hints, stark) },
+        });
+        const challenges = initChallengesPlookup(stark);
+        calculateChallenges(res, symbols, challenges);
+    }
+
     if(pil.permutationIdentities.length > 0) {
         pilLibs.push({
             lib: function() { grandProductPermutation(pil, symbols, hints, stark)},
@@ -26,14 +34,6 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
         const challenges = initChallengesConnection(stark);
         calculateChallenges(res, symbols, challenges);
 
-    }
-
-    if(pil.plookupIdentities.length > 0) {
-        pilLibs.push({
-            lib: function() { grandProductPlookup(pil, symbols, hints, stark) },
-        });
-        const challenges = initChallengesPlookup(stark);
-        calculateChallenges(res, symbols, challenges);
     }
 
     for(let i = 0; i < pilLibs.length; ++i) {

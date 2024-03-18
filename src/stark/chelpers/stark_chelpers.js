@@ -1,9 +1,15 @@
 const { getParserArgs } = require("./getParserArgs.js");
 const { generateParser, getAllOperations } = require("./generateParser.js");
 const { findPatterns } = require("./helpers.js");
-const { C } = require("../../helpers/hash/poseidon/poseidon_constants_opt.js");
+const { writeCHelpersFile } = require("./binFile.js");
+const path = require("path");
+const fs = require("fs");
+const { mkdir } = require("fs-extra");
 
-module.exports = async function buildCHelpers(starkInfo, className = "") {
+module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersFile, binFile, className = "") {
+
+    if(className === "") className = "Stark";
+    className = className[0].toUpperCase() + className.slice(1) + "Steps";
 
     let result = {};
     
@@ -12,23 +18,16 @@ module.exports = async function buildCHelpers(starkInfo, className = "") {
     const constraintsInfo = [];
 
     const nStages = starkInfo.numChallenges.length;
+
     const cHelpersStepsHpp = [
         `#include "chelpers_steps.hpp"\n\n`,
         `class ${className} : public CHelpersSteps {`,
-        "    public:",
-        "        void calculateExpressions(StarkInfo &starkInfo, StepsParams &params, ParserArgs &parserArgs, ParserParams &parserParams, bool useGeneric);",
-        "    private:",
-        "        void parser_avx(StarkInfo &starkInfo, StepsParams &params, ParserArgs &parserArgs, ParserParams &parserParams, uint32_t nrowsBatch, bool domainExtended);"
+        "public:",
+        "    void calculateExpressions(StarkInfo &starkInfo, StepsParams &params, ParserArgs &parserArgs, ParserParams &parserParams) {",
+        `        uint32_t nrowsBatch = 4;`,
+        `        bool domainExtended = parserParams.stage > 3 ? true : false;`,
     ];
-    
-    const cHelpersStepsCpp = [
-        `#include "${className}.hpp"\n`,
-        `void ${className}::calculateExpressions(StarkInfo &starkInfo, StepsParams &params, ParserArgs &parserArgs, ParserParams &parserParams, bool useGeneric) {`,
-        `    uint32_t nrowsBatch = 4;`,
-        `    bool domainExtended = parserParams.stage > 3 ? true : false;`,
-        `    ${className}::parser_avx(starkInfo, params, parserArgs, parserParams, nrowsBatch, domainExtended);`,
-    ];
-   
+
     let operations = getAllOperations();
 
     let totalSubsetOperationsUsed = [];
@@ -78,13 +77,12 @@ module.exports = async function buildCHelpers(starkInfo, className = "") {
     console.log("Total subset of operations used: " + totalSubsetOperationsUsed.join(", "));
     console.log("--------------------------------");
     
-    result[`${className}_generic_parser_cpp`] = generateParser(className, "", operations, totalSubsetOperationsUsed, true);
+    const genericParser = generateParser(operations, totalSubsetOperationsUsed);
 
-    cHelpersStepsCpp.push("}");
+    cHelpersStepsHpp.push(genericParser);
     cHelpersStepsHpp.push("};");
 
 
-    result[`${className}_cpp`] = cHelpersStepsCpp.join("\n");
     result[`${className}_hpp`] = cHelpersStepsHpp.join("\n"); 
     
     const operationsPatterns = operations.filter(op => op.isGroupOps);
@@ -106,14 +104,30 @@ module.exports = async function buildCHelpers(starkInfo, className = "") {
         constraintsInfo[i].ops = constraintsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
     }
 
-    result[`${className}_generic_parser_cpp`] = result[`${className}_generic_parser_cpp`].replace(/case (\d+):/g, (match, caseNumber) => {
+    result[`${className}_hpp`] = result[`${className}_hpp`].replace(/case (\d+):/g, (match, caseNumber) => {
         caseNumber = parseInt(caseNumber, 10);
         const newIndex = totalSubsetOperationsUsed.findIndex(o => o === caseNumber);
         if(newIndex === -1) throw new Error("Invalid operation!");
         return `case ${newIndex}:`;
     });
 
-    return {code: result, stagesInfo, expressionsInfo, constraintsInfo };
+    const baseDir = path.dirname(cHelpersFile);
+    if (!fs.existsSync(baseDir)) {
+        fs.mkdirSync(baseDir, { recursive: true });
+    }
+
+    await mkdir(cHelpersFile, { recursive: true });
+
+    for (r in result) {
+        let fileName = cHelpersFile + "/" + r;
+        fileName = fileName.substring(0, fileName.lastIndexOf('_')) + '.' + fileName.substring(fileName.lastIndexOf('_') + 1);
+        console.log(fileName);
+        await fs.promises.writeFile(fileName, result[r], "utf8");
+    }
+
+    await writeCHelpersFile(binFile, stagesInfo, expressionsInfo, constraintsInfo);
+
+    return;
 
     function getParserArgsCode(name, code, dom, debug = false) {
         console.log(`Getting parser args for ${name}`);

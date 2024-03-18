@@ -2,20 +2,20 @@ const ExpressionOps = require("../../../expressionops");
 const { getExpDim } = require("../../helpers");
 
 module.exports.initChallengesPermutation = function initChallengesPermutation(stark) {
-    const stage = 2;
+    const stage = 3;
     const dim = stark ? 3 : 1;
 
-    const alpha = {name: "std_alpha", stage, dim, stageId: 0};
-    const beta = {name: "std_beta", stage, dim, stageId: 1};
-    const epsilon = {name: "std_epsilon", stage, dim, stageId: 2};
+    const alpha = {name: "std_alpha", stage: stage - 1, dim, stageId: 0};
+    const beta = {name: "std_beta", stage: stage - 1, dim, stageId: 1};
+    const gamma = {name: "std_gamma", stage, dim, stageId: 0};
 
-    return [alpha, beta, epsilon];
+    return [alpha, beta, gamma];
 }
 
 module.exports.grandProductPermutation = function grandProductPermutation(pil, symbols, hints, stark) {
     const E = new ExpressionOps();
 
-    const stage = 2;
+    const stage = 3;
     const dim = stark ? 3 : 1;
 
     let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
@@ -24,8 +24,8 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
     let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
     const beta = E.challenge("std_beta", stage, dim, betaSymbol.stageId, betaSymbol.id);
 
-    let epsilonSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_epsilon");
-    const epsilon = E.challenge("std_epsilon", stage, dim, epsilonSymbol.stageId, epsilonSymbol.id);
+    let gammaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_gamma");
+    const gamma = E.challenge("std_gamma", stage, dim, gammaSymbol.stageId, gammaSymbol.id);
     
 
     for (let i=0; i<pil.permutationIdentities.length; i++) {
@@ -94,7 +94,7 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
         let c1Dim = getExpDim(pil.expressions, c1Id, stark);
         pil.expressions[c1Id].dim = c1Dim;
 
-        const numExp = E.add(f, epsilon);
+        const numExp = E.add(f, gamma);
         peCtx.numId = pil.expressions.length;
         numExp.keep = true;
         numExp.stage = stage;
@@ -102,7 +102,7 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
         const numDim = getExpDim(pil.expressions, peCtx.numId, stark);
         pil.expressions[peCtx.numId].deg = numDim;
 
-        const denExp = E.add(t, epsilon);
+        const denExp = E.add(t, gamma);
         peCtx.denId = pil.expressions.length;
         denExp.keep = true;
         denExp.stage = stage;

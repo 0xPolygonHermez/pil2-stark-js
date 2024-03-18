@@ -57,11 +57,6 @@ function mapSymbols(res, symbols) {
                 stage = "cm" + symbol.stage;
             }
             
-            if(!res.mapSectionsN[stage + "_n"]) {
-                res.mapSectionsN[stage + "_n"] = 0;
-                if(stage !== "tmpExp") res.mapSectionsN[stage + "_ext"] = 0;
-
-            }
 
             if(symbol.type === "tmpPol") {
                 const im = symbol.imPol;

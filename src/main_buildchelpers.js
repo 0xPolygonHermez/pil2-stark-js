@@ -1,10 +1,7 @@
 const fs = require("fs");
-const path = require("path");
 const version = require("../package").version;
 
-const buildCHelpers = require("./stark/chelpers/stark_chelpers.js");
-const { writeCHelpersFile } = require("./stark/chelpers/binFile.js");
-const { mkdir } = require("fs/promises");
+const {buildCHelpers} = require("./stark/chelpers/stark_chelpers.js");
 
 const argv = require("yargs")
     .version(version)
@@ -18,30 +15,12 @@ const argv = require("yargs")
 async function run() {
     let cls = typeof (argv.cls) === "string" ? argv.cls.trim() : "Stark";
     const starkInfoFile = typeof (argv.starkinfo) === "string" ? argv.starkinfo.trim() : "mycircuit.starkinfo.json";
-    const chelpersFile = typeof (argv.chelpers) === "string" ? argv.chelpers.trim() : "mycircuit.chelpers";
-    const binFile = typeof (argv.chelpers) === "string" ? argv.binfile.trim() : "mycircuit.chelpers.bin";
-
-    const baseDir = path.dirname(chelpersFile);
-    if (!fs.existsSync(baseDir)) {
-        fs.mkdirSync(baseDir, { recursive: true });
-    }
-    
-    cls = cls[0].toUpperCase() + cls.slice(1) + "Steps";
+    const cHelpersFile = typeof (argv.chelpers) === "string" ? argv.chelpers.trim() : "mycircuit.chelpers";
+    const binFile = typeof (argv.binfile) === "string" ? argv.binfile.trim() : "mycircuit.chelpers.bin";
 
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
 
-    const {code: cCode, stagesInfo, expressionsInfo, constraintsInfo } = await buildCHelpers(starkInfo, cls);
-
-    await mkdir(chelpersFile, { recursive: true });
-
-    for (cpart in cCode) {
-        let fileName = chelpersFile + "/" + cpart;
-        fileName = fileName.substring(0, fileName.lastIndexOf('_')) + '.' + fileName.substring(fileName.lastIndexOf('_') + 1);
-        console.log(fileName);
-        await fs.promises.writeFile(fileName, cCode[cpart], "utf8");
-    }
-
-    await writeCHelpersFile(binFile, stagesInfo, expressionsInfo, constraintsInfo);
+    await buildCHelpers(starkInfo, cHelpersFile, binFile, cls);
     
     console.log("files Generated Correctly");
 }

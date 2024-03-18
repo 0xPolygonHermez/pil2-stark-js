@@ -143,6 +143,7 @@
     "circomlibjs": "^0.1.6",
     "ejs": "^3.1.8",
     "fastfile": "^0.0.20",
+    "fs-extra": "^11.2.0",
     "json-bigint": "^1.0.0",
     "pilcom": "https://github.com/0xPolygonHermez/pilcom.git#polsArrayGeneric",
     "pilcom2": "https://github.com/0xPolygonHermez/pilcom.git#feature/pil2-piloutDir",

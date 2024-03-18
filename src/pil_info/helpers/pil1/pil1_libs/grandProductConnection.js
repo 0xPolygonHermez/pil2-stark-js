@@ -5,26 +5,26 @@ const { getExpDim } = require("../../helpers");
 const getKs = require("pilcom").getKs;
 
 module.exports.initChallengesConnection = function initChallengesConnection(stark) {
-    const stage = 2;
+    const stage = 3;
     const dim = stark ? 3 : 1;
 
-    const alpha = {name: "std_alpha", stage, dim, stageId: 0};
-    const beta = {name: "std_beta", stage, dim, stageId: 1};
+    const gamma = {name: "std_gamma", stage, dim, stageId: 0};
+    const delta = {name: "std_delta", stage, dim, stageId: 1};
 
-    return [alpha, beta];
+    return [gamma, delta];
 }
 
 module.exports.grandProductConnection = function grandProductConnection(pil, symbols, hints, stark, F) {
     const E = new ExpressionOps();
 
-    const stage = 2;
+    const stage = 3;
     const dim = stark ? 3 : 1;
 
-    let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
-    const alpha = E.challenge("std_alpha", stage, dim, alphaSymbol.stageId, alphaSymbol.id);
+    let gammaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_gamma");
+    const gamma = E.challenge("std_gamma", stage, dim, gammaSymbol.stageId, gammaSymbol.id);
 
-    let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
-    const beta = E.challenge("std_beta", stage, dim, betaSymbol.stageId, betaSymbol.id);
+    let deltaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_delta");
+    const delta = E.challenge("std_delta", stage, dim, deltaSymbol.stageId, deltaSymbol.id);
 
     for (let i=0; i<pil.connectionIdentities.length; i++) {
         const ci = pil.connectionIdentities[i];
@@ -35,14 +35,14 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
         let numExp = E.add(
             E.add(
                 E.exp(ci.pols[0],0,stage),
-                E.mul(beta, E.x())
-            ), alpha);
+                E.mul(delta, E.x())
+            ), gamma);
 
         let denExp = E.add(
             E.add(
                 E.exp(ci.pols[0],0,stage),
-                E.mul(beta, E.exp(ci.connections[0],0,stage))
-            ), alpha);
+                E.mul(delta, E.exp(ci.connections[0],0,stage))
+            ), gamma);
 
         ciCtx.numId = pil.expressions.length;
         numExp.stage = stage;
@@ -64,9 +64,9 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
                     E.add(
                         E.add(
                             E.exp(ci.pols[i],0,stage),
-                            E.mul(E.mul(beta, E.number(ks[i-1])), E.x())
+                            E.mul(E.mul(delta, E.number(ks[i-1])), E.x())
                         ),
-                        alpha
+                        gamma
                     )
                 );
             numExp.keep = true;
@@ -77,9 +77,9 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
                     E.add(
                         E.add(
                             E.exp(ci.pols[i]),
-                            E.mul(beta, E.exp(ci.connections[i],0,stage))
+                            E.mul(delta, E.exp(ci.connections[i],0,stage))
                         ),
-                        alpha
+                        gamma
                     )
                 );
             denExp.keep = true;

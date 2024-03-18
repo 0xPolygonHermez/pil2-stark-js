@@ -13,6 +13,8 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
     res.constPolsMap = [];
 
     res.mapSectionsN = {
+        "const_n": 0,
+        "const_ext": 0,
         "tmpExp_n": 0,
     };
 
@@ -30,6 +32,11 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
         ({expressions, symbols, hints, constraints, publicsNames} = getPiloutInfo(res, pil, stark));
     } else {
         ({expressions, symbols, hints, constraints, publicsNames} = generatePil1Polynomials(F, res, pil, stark));   
+    }
+
+    for(let s = 1; s <= res.numChallenges.length; s++) {
+        res.mapSectionsN["cm" + s + "_n"] = 0;
+        res.mapSectionsN["cm" + s + "_ext"] = 0;
     }
 
     if(stark && !debug) {
