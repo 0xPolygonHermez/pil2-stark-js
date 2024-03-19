@@ -7,8 +7,8 @@ const CHELPERS_NSECTIONS = 7;
 
 const CHELPERS_HEADER_SECTION = 2;
 const CHELPERS_STAGES_SECTION = 3;
-const CHELPERS_EXPRESSIONS_SECTION = 4;
-const CHELPERS_BUFFERS_SECTION = 5;
+const CHELPERS_BUFFERS_SECTION = 4;
+const CHELPERS_EXPRESSIONS_SECTION = 5;
 const CHELPERS_SYMBOLS_SECTION = 6;
 const CHELPERS_CONSTRAINTS_DEBUG_SECTION = 7;
 
@@ -61,36 +61,6 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
         } 
     }
 
-    for(let i = 0; i < expressionsInfo.length; i++) {
-        if(i == 0) {
-            opsOffset.push(stagesInfo[stagesInfo.length-1].ops.length);
-            argsOffset.push(stagesInfo[stagesInfo.length-1].args.length);
-            numbersOffset.push(stagesInfo[stagesInfo.length-1].numbers.length);
-            constPolsIdsOffset.push(stagesInfo[stagesInfo.length-1].constPolsIds.length);
-            cmPolsIdsOffset.push(stagesInfo[stagesInfo.length-1].cmPolsIds.length);
-        } else {
-            opsOffset.push(opsOffset[i-1] + expressionsInfo[i-1].ops.length);
-            argsOffset.push(argsOffset[i-1] + expressionsInfo[i-1].args.length);
-            numbersOffset.push(numbersOffset[i-1] + expressionsInfo[i-1].numbers.length);
-            constPolsIdsOffset.push(constPolsIdsOffset[i-1] + expressionsInfo[i-1].constPolsIds.length);
-            cmPolsIdsOffset.push(cmPolsIdsOffset[i-1] + expressionsInfo[i-1].cmPolsIds.length);
-        }
-        for(let j = 0; j < expressionsInfo[i].ops.length; j++) {
-            ops.push(expressionsInfo[i].ops[j]);
-        }
-        for(let j = 0; j < expressionsInfo[i].args.length; j++) {
-            args.push(expressionsInfo[i].args[j]);
-        }
-        for(let j = 0; j < expressionsInfo[i].numbers.length; j++) {
-            numbers.push(expressionsInfo[i].numbers[j]);
-        }
-        for(let j = 0; j < expressionsInfo[i].constPolsIds.length; j++) {
-            constPolsIds.push(expressionsInfo[i].constPolsIds[j]);
-        }
-        for(let j = 0; j < expressionsInfo[i].cmPolsIds.length; j++) {
-            cmPolsIds.push(expressionsInfo[i].cmPolsIds[j]);
-        } 
-    }
 
     console.log(`··· Writing Section ${CHELPERS_HEADER_SECTION}. CHelpers header section`);
     await startWriteSection(cHelpersBin, CHELPERS_HEADER_SECTION);
@@ -134,40 +104,6 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
 
     await endWriteSection(cHelpersBin);
 
-    console.log(`··· Writing Section ${CHELPERS_EXPRESSIONS_SECTION}. CHelpers expressions section`);
-    await startWriteSection(cHelpersBin, CHELPERS_EXPRESSIONS_SECTION);
-
-    const nExpressions = expressionsInfo.length;
-
-    //Write the number of expressions
-    await cHelpersBin.writeULE32(nExpressions);
-
-    for(let i = 0; i < nExpressions; i++) {
-        const expInfo = expressionsInfo[i];
-
-        await cHelpersBin.writeULE32(expInfo.expId);
-        await cHelpersBin.writeULE32(expInfo.stage);
-        await cHelpersBin.writeULE32(expInfo.nTemp1);
-        await cHelpersBin.writeULE32(expInfo.nTemp3);
-
-        await cHelpersBin.writeULE32(expInfo.ops.length);
-        await cHelpersBin.writeULE32(opsOffset[nStages + i]);
-
-        await cHelpersBin.writeULE32(expInfo.args.length);
-        await cHelpersBin.writeULE32(argsOffset[nStages + i]);
-
-        await cHelpersBin.writeULE32(expInfo.numbers.length);
-        await cHelpersBin.writeULE32(numbersOffset[nStages + i]);
-        
-        await cHelpersBin.writeULE32(expInfo.constPolsIds.length);
-        await cHelpersBin.writeULE32(constPolsIdsOffset[nStages + i]);
-
-        await cHelpersBin.writeULE32(expInfo.cmPolsIds.length);
-        await cHelpersBin.writeULE32(cmPolsIdsOffset[nStages + i]);
-    }
-
-    await endWriteSection(cHelpersBin);
-
     console.log(`··· Writing Section ${CHELPERS_BUFFERS_SECTION}. CHelpers buffers section`);
     await startWriteSection(cHelpersBin, CHELPERS_BUFFERS_SECTION);
 
@@ -192,6 +128,127 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
     await cHelpersBin.write(buffOps);
     await cHelpersBin.write(buffArgs);
     await cHelpersBin.write(buffNumbers);
+
+    await endWriteSection(cHelpersBin);
+
+    console.log(`··· Writing Section ${CHELPERS_EXPRESSIONS_SECTION}. CHelpers expressions section`);
+    await startWriteSection(cHelpersBin, CHELPERS_EXPRESSIONS_SECTION);
+
+    const opsExpressions = [];
+    const argsExpressions = [];
+    const numbersExpressions = [];
+    const constPolsIdsExpressions = [];
+    const cmPolsIdsExpressions = [];
+
+    const opsExpressionsOffset = [];
+    const argsExpressionsOffset = [];
+    const numbersExpressionsOffset = [];
+    const constPolsIdsExpressionsOffset = [];
+    const cmPolsIdsExpressionsOffset = [];
+
+    for(let i = 0; i < expressionsInfo.length; i++) {
+        if(i == 0) {
+            opsExpressionsOffset.push(0);
+            argsExpressionsOffset.push(0);
+            numbersExpressionsOffset.push(0);
+            constPolsIdsExpressionsOffset.push(0);
+            cmPolsIdsExpressionsOffset.push(0);
+        } else {
+            opsExpressionsOffset.push(opsExpressionsOffset[i-1] + expressionsInfo[i-1].ops.length);
+            argsExpressionsOffset.push(argsExpressionsOffset[i-1] + expressionsInfo[i-1].args.length);
+            numbersExpressionsOffset.push(numbersExpressionsOffset[i-1] + expressionsInfo[i-1].numbers.length);
+            constPolsIdsExpressionsOffset.push(constPolsIdsExpressionsOffset[i-1] + expressionsInfo[i-1].constPolsIds.length);
+            cmPolsIdsExpressionsOffset.push(cmPolsIdsExpressionsOffset[i-1] + expressionsInfo[i-1].cmPolsIds.length);
+        }
+        for(let j = 0; j < expressionsInfo[i].ops.length; j++) {
+            opsExpressions.push(expressionsInfo[i].ops[j]);
+        }
+        for(let j = 0; j < expressionsInfo[i].args.length; j++) {
+            argsExpressions.push(expressionsInfo[i].args[j]);
+        }
+        for(let j = 0; j < expressionsInfo[i].numbers.length; j++) {
+            numbersExpressions.push(expressionsInfo[i].numbers[j]);
+        }
+        for(let j = 0; j < expressionsInfo[i].constPolsIds.length; j++) {
+            constPolsIdsExpressions.push(expressionsInfo[i].constPolsIds[j]);
+        }
+        for(let j = 0; j < expressionsInfo[i].cmPolsIds.length; j++) {
+            cmPolsIdsExpressions.push(expressionsInfo[i].cmPolsIds[j]);
+        } 
+    }
+    
+    await cHelpersBin.writeULE32(opsExpressions.length);
+    await cHelpersBin.writeULE32(argsExpressions.length);
+    await cHelpersBin.writeULE32(numbersExpressions.length);
+    await cHelpersBin.writeULE32(constPolsIdsExpressions.length);
+    await cHelpersBin.writeULE32(cmPolsIdsExpressions.length);
+
+    const nExpressions = expressionsInfo.length;
+
+    //Write the number of expressions
+    await cHelpersBin.writeULE32(nExpressions);
+
+    for(let i = 0; i < nExpressions; i++) {
+        const expInfo = expressionsInfo[i];
+
+        await cHelpersBin.writeULE32(expInfo.expId);
+        await cHelpersBin.writeULE32(expInfo.stage);
+        await cHelpersBin.writeULE32(expInfo.nTemp1);
+        await cHelpersBin.writeULE32(expInfo.nTemp3);
+
+        await cHelpersBin.writeULE32(expInfo.ops.length);
+        await cHelpersBin.writeULE32(opsExpressionsOffset[i]);
+
+        await cHelpersBin.writeULE32(expInfo.args.length);
+        await cHelpersBin.writeULE32(argsExpressionsOffset[i]);
+
+        await cHelpersBin.writeULE32(expInfo.numbers.length);
+        await cHelpersBin.writeULE32(numbersExpressionsOffset[i]);
+        
+        await cHelpersBin.writeULE32(expInfo.constPolsIds.length);
+        await cHelpersBin.writeULE32(constPolsIdsExpressionsOffset[i]);
+
+        await cHelpersBin.writeULE32(expInfo.cmPolsIds.length);
+        await cHelpersBin.writeULE32(cmPolsIdsExpressionsOffset[i]);
+    }
+
+    const buffOpsExpressions = new Uint8Array(opsExpressions.length);
+    const buffOpsExpressionsV = new DataView(buffOpsExpressions.buffer);
+    for(let j = 0; j < opsExpressions.length; j++) {
+        buffOpsExpressionsV.setUint8(j, opsExpressions[j]);
+    }
+
+    const buffArgsExpressions = new Uint8Array(2*argsExpressions.length);
+    const buffArgsExpressionsV = new DataView(buffArgsExpressions.buffer);
+    for(let j = 0; j < argsExpressions.length; j++) {
+        buffArgsExpressionsV.setUint16(2*j, argsExpressions[j], true);
+    }
+
+    const buffNumbersExpressions = new Uint8Array(8*numbersExpressions.length);
+    const buffNumbersExpressionsV = new DataView(buffNumbersExpressions.buffer);
+    for(let j = 0; j < numbersExpressions.length; j++) {
+        buffNumbersExpressionsV.setBigUint64(8*j, BigInt(numbersExpressions[j]), true);
+    }
+
+    const buffConstPolsIdsExpressions = new Uint8Array(2*constPolsIdsExpressions.length);
+    const buffConstPolsIdsExpressionsV = new DataView(buffConstPolsIdsExpressions.buffer);
+    for(let j = 0; j < constPolsIdsExpressions.length; j++) {
+        buffConstPolsIdsExpressionsV.setUint16(2*j, constPolsIdsExpressions[j], true);
+    }
+
+    const buffCmPolsIdsExpressions = new Uint8Array(2*cmPolsIdsExpressions.length);
+    const buffCmPolsIdsExpressionsV = new DataView(buffCmPolsIdsExpressions.buffer);
+    for(let j = 0; j < cmPolsIdsExpressions.length; j++) {
+        buffCmPolsIdsExpressionsV.setUint16(2*j, cmPolsIdsExpressions[j], true);
+    }
+    
+    await cHelpersBin.write(buffOpsExpressions);
+    await cHelpersBin.write(buffArgsExpressions);
+    await cHelpersBin.write(buffNumbersExpressions);
+
+    await cHelpersBin.write(buffConstPolsIdsExpressions);
+    await cHelpersBin.write(buffCmPolsIdsExpressions);
+
 
     await endWriteSection(cHelpersBin);
 

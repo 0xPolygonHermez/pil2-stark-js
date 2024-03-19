@@ -189,7 +189,9 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 break;
             }
             case "number": {
-                let numString = `${BigInt(r.value).toString()}`;
+                let num = BigInt(r.value);
+                if(num < 0n) num += BigInt(0xFFFFFFFF00000001n);
+                let numString = `${num.toString()}`;
                 if(!numbers.includes(numString)) numbers.push(numString); 
                 args.push(numbers.indexOf(numString));
                 break;

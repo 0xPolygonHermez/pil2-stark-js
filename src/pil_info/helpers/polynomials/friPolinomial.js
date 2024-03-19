@@ -1,6 +1,6 @@
 
 const ExpressionOps = require("../../expressionops");
-const { getExpDim, addInfoExpressionsSymbols } = require("../helpers");
+const { getExpDim } = require("../helpers");
 
 
 module.exports.generateFRIPolynomial = function generateFRIPolynomial(res, symbols, expressions) {
@@ -53,6 +53,4 @@ module.exports.generateFRIPolynomial = function generateFRIPolynomial(res, symbo
     res.friExpId = friExpId;
     expressions.push(friExp);
     expressions[friExpId].dim = getExpDim(expressions, friExpId, true);
-
-    addInfoExpressionsSymbols(symbols, expressions, expressions[friExpId], true);  
 }

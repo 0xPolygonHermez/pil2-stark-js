@@ -104,8 +104,7 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
 
     if (exp.op == "exp") {
         addInfoExpressionsSymbols(symbols, expressions, expressions[exp.id], stark);
-        exp.symbols = expressions[exp.id].symbols;
-      
+        exp.symbols = [...expressions[exp.id].symbols];
 
         if(expressions[exp.id].keep) {
             const expSym = symbols.find(s => ["witness", "tmpPol"].includes(s.type) && s.expId === exp.id);
@@ -122,8 +121,9 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
                 exp.stageId = sym.stageId;
             }
             exp.symbols = [{op: "cm", stage: exp.stage, stageId: exp.stageId, id: exp.id}];
+        } else {
+            exp.symbols = [{op: exp.op, stage: exp.stage, id: exp.id}];
         }
-        if(exp.op === "const") exp.symbols = [{op: exp.op, stage: exp.stage, id: exp.id}];
     } else if(["add", "sub", "mul", "neg"].includes(exp.op)) {
         const lhsValue = exp.values[0];
         const rhsValue = exp.values[1];
@@ -164,7 +164,7 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
         [...lhsSymbols, ...rhsSymbols].forEach((symbol) => { uniqueSymbolsSet.add(JSON.stringify(symbol)); });
           
         exp.symbols = Array.from(uniqueSymbolsSet).map((symbol) => JSON.parse(symbol))
-            .sort((a, b) => a.stage !== b.stage ? a.stage - b.stage : a.op !== b.op ? b.op.localeCompare(a.op) : a.stageId - b.stageId);
+            .sort((a, b) => a.stage !== b.stage ? a.stage - b.stage : a.op !== b.op ? b.op.localeCompare(a.op) : ["const", "subproofValue", "public"].includes(a.op) ? a.id - b.id : a.stageId - b.stageId);
     }
 
     return;

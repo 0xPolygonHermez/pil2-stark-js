@@ -1,5 +1,6 @@
 const { pilCodeGen, buildCode } = require("./codegen");
 
+// TODO: COMPLETE!
 module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
     const expressionsCode = [];
 
@@ -20,7 +21,6 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         };
 
         const tmpExpressionsIds = expressionsCode.filter(e => (e.stage < exp.stage) && e.dest).map(e => e.expId);
-        //const tmpExpressionsIds = exp.tmpExps; // TODO: THIS CAN BE IMPROVED!
 
         for(let i = 0; i < tmpExpressionsIds.length; i++) {
             const expId = tmpExpressionsIds[i];
@@ -80,58 +80,23 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
 
     const nStages = res.numChallenges.length;
 
-    for(let j = 0; j < expressions.length; ++j) {
-        if(expressions[j].stage === 1 && symbols.find(s => s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId)) {
-            const symbolDest = symbols.find(s => s.expId === j);
-            if(symbolDest) {
+    for(let stage = 1; stage <= nStages; ++stage) {
+        for(let j = 0; j < expressions.length; ++j) {
+            if(expressions[j].stage === stage) {
+                let symbolDest = symbols.find(s => s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId);
+                if(!symbolDest) continue;
+                for(let k = 0; k < expressions[j].symbols.length; k++) {
+                    const symbol = expressions[j].symbols[k];
+                    if(symbol.stage > stage) continue;
+                    if(stage != 1 && symbol.op === "cm" && symbol.stage === stage) continue;
+                }
+
                 if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
                     ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                 } else {
-                    ctx.symbolsCalculated.push({ op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
+                    ctx.symbolsCalculated.push({ op: "tmp",  stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                 }
-            };
-
-            for(let k = 0; k < expressions[j].symbols.length; k++) {
-                const symbolUsed = expressions[j].symbols[k];
-                if(["cm", "const", "tmp"].includes(symbolUsed.op)) {
-                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                        ctx.symbolsUsed.push(symbolUsed);
-                    };
-                }
-            }
-            pilCodeGen(ctx, symbols, expressions, j, 0);
-        }
-    }   
-    res.code[`stage1`] = buildCode(ctx, expressions);
-    
-    for(let i = 0; i < nStages - 1; ++i) {
-        const stage = 2 + i;
-        for(let j = 0; j < expressions.length; ++j) {
-            if(expressions[j].stage === stage) {
-                if(stage === nStages) {
-                    const symbolsStage = expressions[j].symbols.filter(s => s.op === "cm" && s.stage === stage);
-                    let skipExp = false;
-                    for(let k = 0; k < symbolsStage.length; k++) {
-                        const polInfo = res.cmPolsMap[symbolsStage[k].id];
-                        if(!polInfo.imPol) {
-                            skipExp = true;
-                            break;
-                        } else {
-                            // TODO!!!!
-                        }
-                    }
-                    if(skipExp) continue;
-                }
-                // if(stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === stage).length !== 0) continue;
-                const symbolDest = symbols.find(s => s.expId === j);
-                if(symbolDest) {
-                    if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
-                        ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
-                    } else {
-                        ctx.symbolsCalculated.push({ op: "tmp",  stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
-                    }
-                };
-
+                
                 for(let k = 0; k < expressions[j].symbols.length; k++) {
                     const symbolUsed = expressions[j].symbols[k];
                     if(["cm", "const", "tmp"].includes(symbolUsed.op)) {
@@ -145,29 +110,6 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
         }
         res.code[`stage${stage}`] =  buildCode(ctx, expressions);
     }
-
-    for(let j = 0; j < expressions.length; ++j) {
-        if(expressions[j].stage === nStages && expressions[j].symbols.filter(s => s.op === "cm" && s.stage === nStages).length !== 0) {
-            const symbolDest = symbols.find(s => s.expId === j);
-            if(symbolDest) {
-                if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
-                    ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
-                } else {
-                    ctx.symbolsCalculated.push({ op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
-                }
-            };
-            for(let k = 0; k < expressions[j].symbols.length; k++) {
-                const symbolUsed = expressions[j].symbols[k];
-                if(["cm", "const", "tmp"].includes(symbolUsed.op)) {
-                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                        ctx.symbolsUsed.push(symbolUsed);
-                    };
-                }
-            }       
-            pilCodeGen(ctx, symbols, expressions, j, 0);
-        }
-    }
-    res.code["imPols"] = buildCode(ctx, expressions);
 }
 
 module.exports.generateConstraintsDebugCode = function generateConstraintsDebugCode(res, symbols, constraints, expressions, stark) {

@@ -416,8 +416,6 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
     if (logger) logger.debug("··· Merkelizing Stage " + stage);
     ctx.trees[stage] = await ctx.MH.merkelize(buffTo, nPols, ctx.extN);
 
-    // await printRootPols(ctx, stage, options);
-
     const root = ctx.MH.root(ctx.trees[stage]);
     if (options.logger && !options.debug) {
         if(ctx.pilInfo.starkStruct.verificationHashType === "GL") {
@@ -523,18 +521,16 @@ module.exports.getPermutationsStark = async function getPermutationsStark(ctx, c
     return friQueries;
 }
 
-async function printPolsRoot(ctx, stage, options) {
+module.exports.printPolRoot = async function printPolRoot(ctx, polId, options) {
     let MH = await buildMerkleHashGL(false);
 
-    for(let i = 0; i < ctx.pilInfo.cmPolsMap.length; ++i) {
-        const cmPol = ctx.pilInfo.cmPolsMap[i];
-        if(stage !== 0 && cmPol.stageNum != stage) continue;
-        let p = getPolRef(ctx, i, "n");
-        let pol = getPol(ctx, i, "n");
+    const cmPol = ctx.pilInfo.cmPolsMap[polId];
+    let p = getPolRef(ctx, polId, "n");
+    let pol = getPol(ctx, polId, "n");
 
-        const tree = await MH.merkelize(pol.flat(), p.dim, ctx.N);
-        const rootN = MH.root(tree);
-        options.logger.debug("··· " + cmPol.name + " " + stage + ": " + ctx.F.toString(rootN[0]) + " " + ctx.F.toString(rootN[1]) + " " + ctx.F.toString(rootN[2]) + " " + ctx.F.toString(rootN[3]));  
-        options.logger.debug('---------------------------');
-    }
+    const tree = await MH.merkelize(pol.flat(), p.dim, ctx.N);
+    const rootN = MH.root(tree);
+    options.logger.debug("··· " + cmPol.name + " " + ": " + ctx.F.toString(rootN[0]) + " " + ctx.F.toString(rootN[1]) + " " + ctx.F.toString(rootN[2]) + " " + ctx.F.toString(rootN[3]));  
+    options.logger.debug('---------------------------');
+    
 }

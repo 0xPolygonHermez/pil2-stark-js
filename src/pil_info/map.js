@@ -1,5 +1,3 @@
-const { addInfoExpressionsSymbols } = require("./helpers/helpers");
-
 module.exports = function map(res, symbols, expressions, stark, debug) {  
     for(let i = 0; i < expressions.length; i++) {
         if(expressions[i].keep && !expressions[i].imPol) {
@@ -33,10 +31,6 @@ module.exports = function map(res, symbols, expressions, stark, debug) {
     
     
     setStageInfoSymbols(res, symbols);
-
-    for(let i = 0; i < expressions.length; i++) {
-        addInfoExpressionsSymbols(symbols, expressions, expressions[i], stark);
-    }
 
     addHintsInfo(res, symbols, expressions);
 
