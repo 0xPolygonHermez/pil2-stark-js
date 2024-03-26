@@ -85,12 +85,16 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
             if(expressions[j].stage === stage) {
                 let symbolDest = symbols.find(s => s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId);
                 if(!symbolDest) continue;
+                let skip = false;
                 for(let k = 0; k < expressions[j].symbols.length; k++) {
                     const symbol = expressions[j].symbols[k];
-                    if(symbol.stage > stage) continue;
-                    if(stage != 1 && symbol.op === "cm" && symbol.stage === stage) continue;
+                    if(symbol.stage > stage || (stage != 1 && symbol.op === "cm" && symbol.stage === stage)) {
+                       skip = true;
+                       break; 
+                    }
                 }
 
+                if(skip) continue;
                 if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
                     ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                 } else {
