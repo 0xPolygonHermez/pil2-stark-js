@@ -12,9 +12,6 @@ const argv = require("yargs")
     .alias("v", "verkey")
     .alias("o", "proof")
     .alias("b", "public")
-    .string("vadcop")
-    .string("hashcommits")
-    .string("arity")
     .argv;
 
 async function run() {
@@ -34,15 +31,12 @@ async function run() {
 
     const logger = Logger.create("pil-stark", {showTimestamp: false});
     Logger.setLogLevel("DEBUG");
-
-    let vadcop = argv.vadcop || false;
-    let hashCommits = argv.hashcommits || false;
     
-    let options = {logger, vadcop, hashCommits};
+    let options = {logger};
     if (starkInfo.starkStruct.verificationHashType === "BN128") {
-        options.arity = Number(argv.arity) || 16;
-        options.custom = argv.custom || false;
-        console.log(`Arity: ${options.arity}, Custom: ${options.custom}, hashCommits: ${options.hashCommits}, vadcop: ${options.vadcop}`);
+        options.arity = starkInfo.merkleTreeArity || 16;
+        options.custom = starkInfo.merkleTreeCustom || false;
+        console.log(`Arity: ${options.arity}, Custom: ${options.custom}`);
 
     } 
     

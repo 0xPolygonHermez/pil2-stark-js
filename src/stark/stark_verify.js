@@ -14,10 +14,6 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     const F = poseidon.F;
 
-    if(!proof.rootQ) {
-        proof.rootQ = proof["root" + (starkInfo.numChallenges.length + 1)];
-    }
-
     ctx = {
         evals: proof.evals,
         subAirValues: proof.subAirValues,
@@ -31,10 +27,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
     if (starkStruct.verificationHashType == "GL") {
         MH = await buildMerkleHashGL(starkStruct.splitLinearHash);
     } else if (starkStruct.verificationHashType == "BN128") {
-        ctx.arity = options.arity || 16;
-        ctx.custom = options.custom || false; 
-        ctx.transcriptArity = ctx.custom ? ctx.arity : 16;   
-        MH = await buildMerkleHashBN128(ctx.arity, ctx.custom);
+        MH = await buildMerkleHashBN128(starkInfo.merkleTreeArity, starkInfo.merkleTreeCustom);
     } else {
         throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
     }
@@ -44,6 +37,8 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
     const extendBits = starkStruct.nBitsExt - starkStruct.nBits;
 
     assert(nBits+extendBits == starkStruct.steps[0].nBits, "First step must be just one");
+
+    const qStage = starkInfo.numChallenges.length + 1;
 
     if (logger) {
         logger.debug("-----------------------------");
@@ -58,11 +53,16 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
             const stage = i + 1;
             logger.debug(`  Stage ${stage} pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == "cm" + stage).length}`);
         }
-        logger.debug(`  Stage Q pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == "cmQ").length}`);
+        logger.debug(`  Stage ${qStage} pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == `cm${qStage}`).length}`);
+        logger.debug("-----------------------------");
+        logger.debug(" PIL-STARK VERIFY OPTIONS");
+        logger.debug(`  Debug mode: ${options.debug}`);
+        logger.debug(`  Hash Commits: ${starkInfo.hashCommits || false}`);
+        logger.debug(`  Vadcop: ${starkInfo.isVadcop || false}`);
         logger.debug("-----------------------------");
     }
 
-    if(!options.vadcop) {
+    if(!starkInfo.isVadcop) {
         ctx.challenges = [];
         if (logger) logger.debug("Calculating transcript");
         const challenges = await calculateTranscript(F, starkInfo, proof, publics, constRoot, options);
@@ -174,9 +174,9 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
             }
         }
         
-        res = MH.verifyGroupProof(proof.rootQ, query[starkInfo.numChallenges.length][1], idx, query[starkInfo.numChallenges.length][0]);
+        res = MH.verifyGroupProof(proof[`root${qStage}`], query[starkInfo.numChallenges.length][1], idx, query[starkInfo.numChallenges.length][0]);
         if (!res) {
-            if(logger) logger.warn(`Invalid rootQ`);
+            if(logger) logger.warn(`Invalid root${qStage}`);
             return false;
         }
 
@@ -191,7 +191,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
             const stage = i + 1;
             ctxQry[`tree${stage}`] = query[i][0];
         }
-        ctxQry.treeQ = query[starkInfo.numChallenges.length][0];
+        ctxQry[`tree${qStage}`] = query[starkInfo.numChallenges.length][0];
         ctxQry.consts = query[starkInfo.numChallenges.length + 1][0];
         ctxQry.evals = ctx.evals;
         ctxQry.publics = ctx.publics;

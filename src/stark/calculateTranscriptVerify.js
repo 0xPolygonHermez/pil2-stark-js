@@ -7,15 +7,14 @@ const buildPoseidonBN128 = require("circomlibjs").buildPoseidon;
 module.exports.calculateTranscript = async function calculateTranscript(F, starkInfo, proof, publics, constRoot, options) {
     let challenges = [];
     let transcript;
+    let transcriptArity;
     if (starkInfo.starkStruct.verificationHashType == "GL") {
         const poseidonGL = await buildPoseidonGL();
         transcript = new Transcript(poseidonGL);
     } else if (starkInfo.starkStruct.verificationHashType == "BN128") {
+        transcriptArity = starkInfo.merkleTreeCustom ? starkInfo.merkleTreeArity : 16;
         const poseidonBN128 = await buildPoseidonBN128();
-        let arity = options.arity || 16;
-        let custom = options.custom || false; 
-        options.transcriptArity = custom ? arity : 16;   
-        transcript = new TranscriptBN128(poseidonBN128, options.transcriptArity);
+        transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
         throw new Error("Invalid Hash Type: "+ starkInfo.starkStruct.verificationHashType);
     }
@@ -24,11 +23,11 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
 
     const ctx = {
         pilInfo: starkInfo,
-        arity: options.transcriptArity,
+        arity: transcriptArity,
     };
 
     transcript.put(constRoot);
-    if(!options.hashCommits) {
+    if(!starkInfo.hashCommits) {
         for (let i=0; i<publics.length; i++) {
             transcript.put(publics[i]);
         }
@@ -48,18 +47,18 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
         transcript.put(proof["root" + stage]);
     }
     
-    let qStage = starkInfo.numChallenges.length;
-    challenges[qStage] = [];
-    challenges[qStage][0] = transcript.getField();
-    if (logger) logger.debug("··· challenges[" + qStage + "][0]: " + F.toString(challenges[qStage][0]));
-    transcript.put(proof.rootQ);
+    let qStep = starkInfo.numChallenges.length;
+    challenges[qStep] = [];
+    challenges[qStep][0] = transcript.getField();
+    if (logger) logger.debug("··· challenges[" + qStep + "][0]: " + F.toString(challenges[qStep][0]));
+    transcript.put(proof[`root${qStep + 1}`]);
     
     let evalsStage = starkInfo.numChallenges.length + 1;
     challenges[evalsStage] = [];
     challenges[evalsStage][0] = transcript.getField();
     if (logger) logger.debug("··· challenges[" + evalsStage + "][0]: " + F.toString(challenges[evalsStage][0]));
     
-    if(!options.hashCommits) {
+    if(!starkInfo.hashCommits) {
         for (let i=0; i<proof.evals.length; i++) {
             transcript.put(proof.evals[i]);
         }
@@ -85,7 +84,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
         if (step < starkInfo.starkStruct.steps.length - 1) {
             transcript.put(proof.fri[step+1].root);
         } else {
-            if(!options.hashCommits) {
+            if(!starkInfo.hashCommits) {
                 for (let i=0; i<proof.fri[proof.fri.length-1].length; i++) {
                     transcript.put(proof.fri[proof.fri.length-1][i]);
                 }

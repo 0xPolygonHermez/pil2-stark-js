@@ -3,6 +3,8 @@ const path = require("path");
 
 const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
 
+const starkStruct = require("../state_machines/sm_all/all.starkstruct.json");
+
 const smGlobal = require("../state_machines/sm/sm_global.js");
 const smPlookup = require("../state_machines/sm_plookup/sm_plookup.js");
 const smFibonacci = require("../state_machines/sm_fibonacci/sm_fibonacci.js");
@@ -19,17 +21,6 @@ describe("test All sm", async function () {
     it("Testing all", async () => {
         const logger = Logger.create("pil-stark", {showTimestamp: false});
         Logger.setLogLevel("DEBUG");
-
-        const starkStruct = {
-            nBits: 8,
-            nBitsExt: 9,
-            nQueries: 8,
-            verificationHashType : "GL",
-            steps: [
-                {nBits: 9},
-                {nBits: 3}
-            ]
-        };
 
         const F = new F3g("0xFFFFFFFF00000001");
         const pil = await compile(F, path.join(__dirname, "../state_machines/", "sm_all", "all_main.pil"));
@@ -56,17 +47,6 @@ describe("test All sm", async function () {
     it("Testing all with hashCommits set to true", async () => {
         const logger = Logger.create("pil-stark", {showTimestamp: false});
         Logger.setLogLevel("DEBUG");
-
-        const starkStruct = {
-            nBits: 8,
-            nBitsExt: 9,
-            nQueries: 8,
-            verificationHashType : "GL",
-            steps: [
-                {nBits: 9},
-                {nBits: 3}
-            ]
-        };
 
         const F = new F3g("0xFFFFFFFF00000001");
         const pil = await compile(F, path.join(__dirname, "../state_machines/", "sm_all", "all_main.pil"));

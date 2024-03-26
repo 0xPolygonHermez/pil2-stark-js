@@ -1,7 +1,7 @@
 pragma circom 2.1.0;
-<% if(options.custom) { -%> pragma custom_templates; <% } -%>
+<% if(custom) { -%> pragma custom_templates; <% } -%>
 
-<% if(options.custom) { -%>
+<% if(custom) { -%>
 include "custom/evalpol.circom";
 include "custom/fft.circom";
 include "custom/gl.circom";
@@ -26,7 +26,7 @@ include "bitify.circom";
 include "sha256/sha256.circom";
 <% } -%>
 
-<%  const transcriptArity = options.custom ? arity : options.transcriptArity; -%>
+<%  const transcriptArity = starkInfo.merkleTreeCustom ? starkInfo.merkleTreeArity : 16; -%>
 <%  const NFields = Math.floor(((starkStruct.nQueries *  starkStruct.steps[0].nBits) - 1)/253)+1; -%>
 <%
 class Transcript {
@@ -82,7 +82,7 @@ class Transcript {
         while (this.pending.length < transcriptArity) {
             this.pending.push("0");
         }
-        const poseidon = options.custom ? `CustomPoseidon(${transcriptArity})` : `PoseidonEx(${transcriptArity}, ${transcriptArity + 1})`;
+        const poseidon = custom ? `CustomPoseidon(${transcriptArity})` : `PoseidonEx(${transcriptArity}, ${transcriptArity + 1})`;
         this.code.push(`\n    signal ${signalName}_${this.hCnt++}[${Number(transcriptArity) + 1}] <== ${poseidon}([${this.pending.join(',')}], ${this.state});`);
         for (let i=0; i<transcriptArity+1; i++) {
             this.out[i] = `${signalName}_${this.hCnt-1}[${i}]`;
@@ -165,7 +165,7 @@ class Transcript {
 <%  let v = 0; -%>
 <%  let values = {}; -%>
 <%    function ref(r, destDim) { -%>
-<%        const trees = ["treeQ"]; -%>
+<%        const trees = ["tree" + qStage]; -%>
 <%        for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
 <%            const stage = i + 1; -%>
 <%            trees.push(`tree${stage}`); -%>
@@ -325,7 +325,7 @@ template calculateFRIQueries() {
 <%- transcriptQueries.getCode(); %>
 }
 
-<% if (!options.vadcop) { -%>
+<% if (!starkInfo.isVadcop) { -%>
 
 /* 
     Calculate the transcript
@@ -338,7 +338,7 @@ template Transcript() {
 <%  const stage = i + 1; -%>
     signal input root<%- stage %>;
 <% } -%>
-    signal input rootQ;
+    signal input root<%- qStage %>;
     signal input {maxNum} evals[<%- starkInfo.evMap.length %>][3]; 
 <% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
     signal input s<%- s %>_root;
@@ -356,14 +356,14 @@ template Transcript() {
     signal output {maxNum} challengesFRISteps[<%- starkStruct.steps.length %>][3];
     signal output {binary} queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
 
-    <%  if(options.hashCommits) { -%> 
+    <%  if(starkInfo.hashCommits) { -%> 
     signal publicsHash[3];
     signal evalsHash[3];
     signal lastPolFRIHash[3];
 <%  } -%>
 <%  const transcript = new Transcript(); -%>
 <%  transcript.put("rootC"); -%>
-<%   if(!options.hashCommits) { -%>
+<%   if(!starkInfo.hashCommits) { -%>
 <%         transcript.put("publics", starkInfo.nPublics); -%>
 <%   } else { -%>
 <%-      transcript.getCode(); %>
@@ -383,10 +383,10 @@ template Transcript() {
     }    
     
     transcript.getField("challengeQ", 3);
-    transcript.put("rootQ");
+    transcript.put("root" + qStage);
 
     transcript.getField("challengeXi", 3); -%>
-<%   if(!options.hashCommits) { -%>
+<%   if(!starkInfo.hashCommits) { -%>
 <%      for (let i=0; i<starkInfo.evMap.length; i++) {
             transcript.put(`evals[${i}]`, 3);
         } -%>
@@ -408,7 +408,7 @@ template Transcript() {
 <%      if (si < starkStruct.steps.length-1) { -%>
 <%          transcript.put(`s${si+1}_root`); -%>
 <%        } else { -%>
-<%          if(!options.hashCommits) { -%>
+<%          if(!starkInfo.hashCommits) { -%>
 <%              for (let j=0; j< 1<<starkStruct.steps[starkStruct.steps.length-1].nBits; j++ ) {
                     transcript.put(`finalPol[${j}]`, 3);
                 } -%>
@@ -656,7 +656,7 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
     signal input {maxNum} tree<%- stage %>[<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>];
 <%  } -%>
 <% } -%>
-    signal input {maxNum} treeQ[<%- starkInfo.mapSectionsN.cmQ_n %>];
+    signal input {maxNum} tree<%- qStage %>[<%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>];
     signal input {maxNum} consts[<%- starkInfo.nConstants %>];
     signal input {maxNum} s1_vals[1 << nextStep][3];
     signal input {binary} enable;
@@ -670,7 +670,7 @@ template parallel VerifyQuery(currStepBits, nextStepBits) {
     mapValues.vals<%- stage %> <== tree<%- stage %>;
 <%  } -%>
 <% } -%>
-    mapValues.valsQ <== treeQ;
+    mapValues.vals<%- qStage %> <== tree<%- qStage %>;
 
     var q = 0xFFFFFFFFFFFFFFFF;
 
@@ -766,10 +766,10 @@ template MapValues() {
     signal input {maxNum} vals<%- stage %>[<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>];
 <%  } -%>
 <% } -%>
-    signal input {maxNum} valsQ[<%- starkInfo.mapSectionsN.cmQ_n  %>];
+    signal input {maxNum} vals<%- qStage %>[<%- starkInfo.mapSectionsN[`cm${qStage}_n`]  %>];
 
 <% for (let t = 1; t<=starkInfo.numChallenges.length + 1; t++) {                              -%>
-<%      let index = t === starkInfo.numChallenges.length + 1 ? "Q" : t;                       -%>
+<%      let index = t;                       -%>
 <%      let sectionsStage = starkInfo.cmPolsMap.filter(p => p.stage === "cm" + index);  -%>
 <%      for (let i=0; i< sectionsStage.length; i++) {         -%>
 <%          const p = sectionsStage[i];  -%>
@@ -782,7 +782,7 @@ template MapValues() {
 <% }                                                                             -%>
 
 <% for (let t = 1; t<=starkInfo.numChallenges.length + 1; t++) {                              -%>
-<%      let index = t === starkInfo.numChallenges.length + 1 ? "Q" : t;                       -%>
+<%      let index = t;                       -%>
 <%      let sectionsStage = starkInfo.cmPolsMap.filter(p => p.stage === "cm" + index);  -%>
 <%      for (let i=0; i< sectionsStage.length; i++) {         -%>
 <%          const p = sectionsStage[i];  -%>
@@ -835,7 +835,7 @@ template StarkVerifier() {
 <%  const stage = i + 1; -%>
     signal input root<%- stage %>; // Merkle tree root of stage <%- stage %>
 <% } -%>
-    signal input rootQ; // Merkle tree root of the evaluations of the quotient Q1 and Q2 polynomials
+    signal input root<%- qStage %>; // Merkle tree root of the evaluations of the quotient Q1 and Q2 polynomials
 
 <% if (options.verkeyInput) {  -%>
 <% /* Depending on the STARK being verified, the rootC will be hardcoded or passed as an input */%>
@@ -853,7 +853,7 @@ template StarkVerifier() {
     signal input s0_vals<%- stage %>[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>];
 <%  } -%>
 <% } -%>
-signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cmQ_n %>];
+signal input s0_vals<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>];
     signal input s0_valsC[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants%>];
     
     // Merkle proofs for each of the evaluations
@@ -863,7 +863,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
     signal input s0_siblings<%- stage %>[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/nBitsArity)+1 %>][<%- arity %>];
 <% } -%>
 <% } -%>
-    signal input s0_siblingsQ[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/nBitsArity)+1 %>][<%- arity %>];
+    signal input s0_siblings<%- qStage %>[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/nBitsArity)+1 %>][<%- arity %>];
     signal input s0_siblingsC[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/nBitsArity)+1 %>][<%- arity %>];
 
     // Contains the root of the original polynomial and all the intermediate FRI polynomials except for the last step
@@ -920,7 +920,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
     signal {maxNum} s0_vals<%- stage %>GL[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>];
 <% } -%>
 <% } -%>
-    signal {maxNum} s0_valsQGL[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cmQ_n %>];
+    signal {maxNum} s0_vals<%- qStage %>GL[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>];
     signal {maxNum} s0_valsCGL[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants%>];
     
 <% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
@@ -932,8 +932,8 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
             s0_valsCGL[i][j] <== LessThan64Bits()(s0_valsC[i][j]);
         }
 
-        for(var j = 0; j < <%- starkInfo.mapSectionsN.cmQ_n %>; j++) {
-            s0_valsQGL[i][j] <== LessThan64Bits()(s0_valsQ[i][j]);
+        for(var j = 0; j < <%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>; j++) {
+            s0_vals<%- qStage %>GL[i][j] <== LessThan64Bits()(s0_vals<%- qStage %>[i][j]);
         }
 
 <% for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
@@ -980,14 +980,14 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
     // Each of the queries values represented in binary
     signal {binary} queriesFRIGL[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
 
-<% if (!options.vadcop) { -%>
+<% if (!starkInfo.isVadcop) { -%>
     ///////////
     // Calculate challenges, challengesFRISteps and queriesFRI
     ///////////
 
 <%  const stageRoots = []; -%> 
 <%  for(let i = 0; i < starkInfo.numChallenges.length; i++) { stageRoots.push(`root${i + 1}`) } -%>
-    (<%- challengeNames.join(",") %>,challengesFRIStepsGL,queriesFRIGL) <== Transcript()(publicsGL, rootC, <%- stageRoots.join(",") %>,rootQ,evalsGL, <%- si_roots.join(",") %>,finalPolGL);
+    (<%- challengeNames.join(",") %>,challengesFRIStepsGL,queriesFRIGL) <== Transcript()(publicsGL, rootC, <%- stageRoots.join(",") %>,root<%- qStage %>,evalsGL, <%- si_roots.join(",") %>,finalPolGL);
 
 <% } else { -%>
 <%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
@@ -1056,7 +1056,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
     signal {maxNum} s0_vals<%- stage %>_p[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>][1];
 <% } -%>
 <% } -%> 
-    signal {maxNum} s0_valsQ_p[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cmQ_n %>][1];
+    signal {maxNum} s0_vals<%- qStage %>_p[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>][1];
     signal {maxNum} s0_valsC_p[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants %>][1];
 <% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
     signal {maxNum} s<%- s %>_vals_p[<%- starkStruct.nQueries %>][<%- (1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits)) %>][3]; 
@@ -1072,8 +1072,8 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
         }
 <%  } -%>
 <% } -%> 
-        for (var i = 0; i < <%- starkInfo.mapSectionsN.cmQ_n %>; i++) {
-            s0_valsQ_p[q][i][0] <== GLCopy()(s0_valsQGL[q][i]);
+        for (var i = 0; i < <%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>; i++) {
+            s0_vals<%- qStage %>_p[q][i][0] <== GLCopy()(s0_vals<%- qStage %>GL[q][i]);
         }
         for (var i = 0; i < <%- starkInfo.nConstants %>; i++) {
             s0_valsC_p[q][i][0] <== GLCopy()(s0_valsCGL[q][i]);
@@ -1104,7 +1104,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
 <% } -%>
 
     for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
-        VerifyMerkleHash(1, <%- starkInfo.mapSectionsN.cmQ_n %>, <%- 1 << starkStruct.steps[0].nBits %>,<%- arity %>)(s0_valsQ_p[q], s0_siblingsQ[q], queriesFRIGL[q], rootQ, enabled);
+        VerifyMerkleHash(1, <%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>, <%- 1 << starkStruct.steps[0].nBits %>,<%- arity %>)(s0_vals<%- qStage %>_p[q], s0_siblings<%- qStage %>[q], queriesFRIGL[q], root<%- qStage %>, enabled);
     }
 
     for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
@@ -1139,7 +1139,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
             queryVals.push(`s0_vals${stage}GL[q]`);
         }
     }
-    queryVals.push("s0_valsQGL[q]");
+    queryVals.push("s0_vals" + qStage + "GL[q]");
     queryVals.push("s0_valsCGL[q]");
 -%>
         // Verify that the query is properly constructed. This is done by checking that the linear combination of the set of 
@@ -1186,7 +1186,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
 <%  const stage = i + 1; -%>
     signal input root<%- stage %>;
 <% } -%>
-    signal input rootQ;
+    signal input root<%- qStage %>;
     signal input evals[<%- starkInfo.evMap.length %>][3];
 
     // Leaves values of the merkle tree used to check all the queries
@@ -1196,7 +1196,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
     signal input s0_vals<%- stage %>[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>];
 <%  } -%>
 <% } -%>
-    signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cmQ_n %>];
+    signal input s0_vals<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>];
     signal input s0_valsC[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants%>];
 <% for(let i=0; i < starkInfo.numChallenges.length; i++) {  -%>
 <%  const stage = i + 1; -%>
@@ -1204,7 +1204,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
     signal input s0_siblings<%- stage %>[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/nBitsArity)+1 %>][<%- arity %>];
 <% } -%>
 <% } -%>
-    signal input s0_siblingsQ[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/nBitsArity)+1 %>][<%- arity %>];
+    signal input s0_siblings<%- qStage %>[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/nBitsArity)+1 %>][<%- arity %>];
     signal input s0_siblingsC[<%- starkStruct.nQueries %>][<%- Math.floor((starkStruct.steps[0].nBits - 1)/nBitsArity)+1 %>][<%- arity %>];
 
 <% for (let s=0; s<starkStruct.steps.length-1; s++) {   -%>
@@ -1221,7 +1221,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
 
     signal input finalPol[<%- 1 << starkStruct.steps[starkStruct.steps.length-1].nBits %>][3];
 
-<% if(options.vadcop) { -%>
+<% if(starkInfo.isVadcop) { -%>
 <%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
 <%  if(starkInfo.numChallenges[i] === 0) continue; -%>
     signal input challengesStage<%- i + 1 %>[<% starkInfo.numChallenges[i] -%>][3];
@@ -1242,7 +1242,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
 <%  const stage = i + 1; -%>
     sv.root<%- stage %> <== root<%- stage %>;
 <% } -%> 
-    sv.rootQ <== rootQ;
+    sv.root<%- qStage %> <== root<%- qStage %>;
     sv.evals <== evals;
 
 
@@ -1252,7 +1252,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
     sv.s0_vals<%- stage %> <== s0_vals<%- stage %>;
 <%  } -%>
 <% } -%> 
-    sv.s0_valsQ <== s0_valsQ;
+    sv.s0_vals<%- qStage %> <== s0_vals<%- qStage %>;
     sv.s0_valsC <== s0_valsC;
 <% for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
 <%  const stage = i + 1; -%>
@@ -1260,7 +1260,7 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
     sv.s0_siblings<%- stage %> <== s0_siblings<%- stage %>;
 <%  } -%>
 <% } -%>
-    sv.s0_siblingsQ <== s0_siblingsQ;
+    sv.s0_siblings<%- qStage %> <== s0_siblings<%- qStage %>;
     sv.s0_siblingsC <== s0_siblingsC;
 
 <% for (let s=0; s<starkStruct.steps.length-1; s++) {   -%>
@@ -1273,12 +1273,12 @@ signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cm
 <% }                                                  -%>
     sv.finalPol <== finalPol;
 
-<% if(options.vadcop) { -%>
+<% if(starkInfo.isVadcop) { -%>
 <%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
 <%  if(starkInfo.numChallenges[i] === 0) continue; -%>
     sv.challengesStage<%- i + 1 %> <== challengesStage<%- i + 1 %>;
 <%  }-%>
-    sv.challengeQ <==   challengeQ;
+    sv.challengeQ <== challengeQ;
     sv.challengeXi <== challengeXi;
     sv.challengesFRI <== challengesFRI;
 

@@ -3,7 +3,7 @@ const buildMerkleHashGL = require("../helpers/hash/merklehash/merklehash_p.js");
 const buildMerkleHashBN128 = require("../helpers/hash/merklehash/merklehash_bn128_p.js");
 const {interpolate} = require("../helpers/fft/fft_p");
 
-module.exports.buildConstTree = async function buildConstTree(starkStruct, pil, constPols, options) {
+module.exports.buildConstTree = async function buildConstTree(starkStruct, pil, constPols) {
     
     const nBits = starkStruct.nBits;
     const nBitsExt = starkStruct.nBitsExt;
@@ -19,10 +19,8 @@ module.exports.buildConstTree = async function buildConstTree(starkStruct, pil, 
     if (starkStruct.verificationHashType == "GL") {
         MH = await buildMerkleHashGL(starkStruct.splitLinearHash);
     } else if (starkStruct.verificationHashType == "BN128") {
-        let arity = options.arity || 16;
-        let custom = options.custom || false;
-        console.log(`Arity: ${arity}, Custom: ${custom}`);
-        MH = await buildMerkleHashBN128(arity, custom);
+        console.log(`Merkle tree Arity: ${starkInfo.merkleTreeArity}, Merkle tree custom: ${starkInfo.merkleTreeCustom}`);
+        MH = await buildMerkleHashBN128(starkInfo.merkleTreeArity, starkInfo.merkleTreeCustom);
     } else {
         throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
     }

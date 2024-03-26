@@ -104,7 +104,7 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
 
     if (exp.op == "exp") {
         addInfoExpressionsSymbols(symbols, expressions, expressions[exp.id], stark);
-        exp.symbols = [...expressions[exp.id].symbols];
+        exp.symbols = expressions[exp.id].symbols ? [...expressions[exp.id].symbols] : [];
 
         if(expressions[exp.id].keep) {
             const expSym = symbols.find(s => ["witness", "tmpPol"].includes(s.type) && s.expId === exp.id);

@@ -6,11 +6,10 @@ const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_pil2circom.js -o <verifier.circom> -v <verification_key.json> -s <starkinfo.json> [--skipMain] [--vadcop] [--hashCommits] [--enableInput] [--verkeyInput] [--custom] [--arity]")
+    .usage("node main_pil2circom.js -o <verifier.circom> -v <verification_key.json> -s <starkinfo.json> [--skipMain] [--enableInput] [--verkeyInput]")
     .alias("s", "starkinfo")
     .alias("v", "verkey")
     .alias("o", "output")
-    .string("arity")
     .argv;
 
 async function run() {
@@ -21,11 +20,8 @@ async function run() {
 
     const options = {
         skipMain: argv.skipMain || false,
-        vadcop: argv.vadcop || false,
-        hashCommits: argv.hashcommits || false,
         enableInput: argv.enableInput || false,
         verkeyInput: argv.verkeyInput || false,
-        custom: argv.custom || false,
     }
 
     console.log("Options: ", options);
@@ -39,9 +35,9 @@ async function run() {
     
 
     if(starkInfo.starkStruct.verificationHashType === "BN128") {
-        options.arity =  Number(argv.arity) || 16;
-        options.transcriptArity = 16;
-        console.log(`Arity: ${options.arity}, transcriptArity: ${options.transcriptArity}, Custom: ${options.custom}`);
+        options.arity = starkInfo.merkleTreeArity || 16;
+        options.custom = starkInfo.merkleTreeCustom || false;
+        options.transcriptArity = options.custom ? starkInfo.merkleTreeArity : 16;
     }
 
     const verifier = await pil2circom(constRoot, starkInfo, options);

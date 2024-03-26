@@ -13,6 +13,13 @@ const argv = require("yargs")
     .alias("P", "pilconfig")
     .alias("s", "starkstruct")
     .alias("f", "infopil")
+    .alias("v", "pil2")
+    .string("subproofId")
+    .string("airId")
+    .string("arity")
+    .string("custom")
+    .string("vadcop")
+    .string("hashcommits")
     .argv;
 
 async function run() {
@@ -36,7 +43,17 @@ async function run() {
 
     const starkStruct = JSON.parse(await fs.promises.readFile(starkStructFile, "utf8"));
 
-    const infoPil = preparePil(F, pil, true, pil2, false, starkStruct);
+    const options = { debug: false };
+
+    if(starkStruct.verificationHashType === "BN128") {
+        options.arity = Number(argv.arity) || 16;
+        options.custom = argv.custom || false;
+    }
+    
+    options.isVadcop = argv.vadcop || false;
+    options.hashCommits = argv.hashcommits || false;
+
+    const infoPil = preparePil(F, pil, starkStruct, true, pil2, options);
 
     let maxDeg =  (1 << (starkStruct.nBitsExt - starkStruct.nBits)) + 1;
 

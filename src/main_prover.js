@@ -30,7 +30,6 @@ const argv = require("yargs")
     .alias("b", "public")
     .alias("v", "vadcopchallenges")
     .string("proverAddr")
-    .string("arity")
     .argv;
 
 async function run() {
@@ -46,7 +45,6 @@ async function run() {
     const proofFile = typeof(argv.proof) === "string" ?  argv.proof.trim() : "mycircuit.proof.json";
     const zkinFile = typeof(argv.zkin) === "string" ?  argv.zkin.trim() : "mycircuit.proof.zkin.json";
     const publicFile = typeof(argv.public) === "string" ?  argv.public.trim() : "mycircuit.public.json";
-    const challengesFile = typeof(argv.vadcopchallenges) === "string" ?  argv.vadcopchallenges.trim() : "mycircuit.challenges.json";
 
     const pil = await compile(F, pilFile, null, pilConfig);
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
@@ -62,23 +60,20 @@ async function run() {
     const logger = Logger.create("pil-stark", {showTimestamp: false});
     Logger.setLogLevel("DEBUG");
 
-    let vadcop = argv.vadcop || false;
-    let hashCommits = argv.hashcommits || false;
     
-    let options = {logger, vadcop, hashCommits};
+    let options = {
+        logger, 
+        vadcop: starkInfo.isVadcop || false, 
+        hashCommits: starkInfo.hashCommits || false,
+    };
     
     let MH;
     if (starkInfo.starkStruct.verificationHashType == "GL") {
+        console.log(`hashCommits: ${starkInfo.hashCommits}, vadcop: ${starkInfo.isVadcop}`);
         MH = await buildMerkleHashGL();
     } else if (starkInfo.starkStruct.verificationHashType == "BN128") {
-        let arity = Number(argv.arity) || 16;
-        let custom = argv.custom || false;
-
-        options.arity = arity;
-        options.custom = custom;
-
-        console.log(`Arity: ${arity}, Custom: ${custom}, hashCommits: ${hashCommits}, vadcop: ${vadcop}`);
-        MH = await buildMerkleHashBN128(arity, custom);
+        console.log(`Arity: ${starkInfo.merkleTreeArity}, Custom: ${starkInfo.merkleTreeCustom}, hashCommits: ${starkInfo.hashCommits}, vadcop: ${starkInfo.isVadcop}`);
+        MH = await buildMerkleHashBN128(merkleTreeArity, merkleTreeCustom);
     } else {
         throw new Error("Invalid Hash Type: "+ starkInfo.starkStruct.verificationHashType);
     }
@@ -92,9 +87,11 @@ async function run() {
     const zkIn = proof2zkin(resP.proof, starkInfo);
     zkIn.publics = resP.publics;
 
-    if(vadcop) {
+    if(starkInfo.isVadcop) {
         zkIn.challenges = resP.challenges;
         zkIn.challengesFRISteps = resP.challengesFRISteps;
+
+        const challengesFile = typeof(argv.vadcopchallenges) === "string" ?  argv.vadcopchallenges.trim() : "mycircuit.challenges.json";
 
         await fs.promises.writeFile(challengesFile, JSONbig.stringify({challenges: resP.challenges, challengesFRISteps: resP.challengesFRISteps}, null, 1), "utf8");
     }

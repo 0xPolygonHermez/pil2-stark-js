@@ -149,7 +149,7 @@ async function addPublicsTranscript(ctx, stark, options) {
     // Transcript publics
     if(!options.debug) {
         let publicsCommits = [];
-        if(options.hashCommits) {
+        if(ctx.pilInfo.hashCommits) {
             if(!stark) {
                 const commitsStage0 = ctx.zkey.f.filter(f => f.stages[0].stage === 0).map(f => `f${f.index}_0`);
                 const constInputs = [];
@@ -201,8 +201,9 @@ async function computeStage(stage, ctx, options) {
     const step = stage === qStage ? "qCode" : `stage${stage}`;
     const symbolsCalculatedStep = ctx.pilInfo.code[step].symbolsCalculated;
 
-    console.log("Calculating expressions...");
+    if (logger) logger.debug("Calculating expressions...");
     await callCalculateExps(step, ctx.pilInfo.code[step], dom, ctx, options.parallelExec, options.useThreads);
+    if (logger) logger.debug("Expressions calculated.");
 
     for(let i = 0; i < symbolsCalculatedStep.length; i++) {
         const symbolCalculated = symbolsCalculatedStep[i];

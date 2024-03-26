@@ -6,13 +6,15 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
     const nStages = starkInfo.numChallenges.length;
     const nSubAirValues = starkInfo.nSubAirValues;
 
+    const qStage = nStages + 1;
+    
     const zkin = {};
     zkin.root1 = p.root1;
     for(let i = 0; i < nStages - 1; ++i) {
         const stage = i + 2;
         zkin[`root${stage}`] = p[`root${stage}`];
     }
-    zkin.rootQ = p.rootQ;
+    zkin[`root${qStage}`] = p[`root${qStage}`];
     zkin.evals = p.evals;
 
     for (let i=1; i<friSteps.length; i++) {
@@ -33,7 +35,7 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
         const stage = i + 2;
         zkin[`s0_vals${stage}`] = [];
     }
-    zkin.s0_valsQ = [];
+    zkin[`s0_vals${qStage}`] = [];
 
     zkin.s0_siblingsC = [];
     zkin.s0_siblings1 = [];
@@ -41,7 +43,7 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
         const stage = i + 2;
         zkin[`s0_siblings${stage}`] = [];
     }
-    zkin.s0_siblingsQ = [];
+    zkin[`s0_siblings${qStage}`] = [];
 
     for (let i=0; i<nQueries; i++) {
         const query = p.fri[0].polQueries[i];
@@ -54,8 +56,8 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
             zkin[`s0_siblings${stage}`][i] = query[stage - 1][1];
         }
 
-        zkin.s0_valsQ[i] = query[nStages][0];
-        zkin.s0_siblingsQ[i] = query[nStages][1];
+        zkin[`s0_vals${qStage}`][i] = query[nStages][0];
+        zkin[`s0_siblings${qStage}`][i] = query[nStages][1];
 
         zkin.s0_valsC[i] = query[nStages + 1][0];
         zkin.s0_siblingsC[i] = query[nStages + 1][1];
@@ -79,6 +81,8 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
     const nSubAirValues = starkInfo.nSubAirValues;
     const nEvals = starkInfo.evMap.length;
 
+    const qStage = nStages + 1;
+
     zkin.evals = [];
 
     zkin.s0_valsC = [];
@@ -93,8 +97,8 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
         zkin[`s0_siblings${stage}`] = [];
     }
 
-    zkin.s0_valsQ = [];
-    zkin.s0_siblingsQ = [];
+    zkin[`s0_vals${qStage}`] = [];
+    zkin[`s0_siblings${qStage}`] = [];
 
     for (let i=1; i<friSteps.length; i++) {
         zkin[`s${i}_vals`] = [];
@@ -113,7 +117,7 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
         const stage = i + 2;
         zkin[`root${stage}`] = ["0", "0", "0", "0"];
     }
-    zkin.rootQ = ["0", "0", "0", "0"];
+    zkin[`root${qStage}`] = ["0", "0", "0", "0"];
 
     for (let i=0; i < nQueries; i++) {
         zkin.s0_valsC[i] = [];
@@ -134,18 +138,18 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
             }
         }
 
-        zkin.s0_valsQ[i] = [];
-        for(let j = 0; j < starkInfo.mapSectionsN.cmQ_n; j++) {
-            zkin.s0_valsQ[i][j] = "0";
+        zkin[`s0_vals${qStage}`][i] = [];
+        for(let j = 0; j < starkInfo.mapSectionsN[`cm${qStage}_n`]; j++) {
+            zkin[`s0_vals${qStage}`][i][j] = "0";
         }
 
         zkin.s0_siblingsC[i] = [];
         zkin.s0_siblings1[i] = [];
-        zkin.s0_siblingsQ[i] = [];
+        zkin[`s0_siblings${qStage}`][i] = [];
         for(let j = 0; j < friSteps[0].nBits; ++j) {
             zkin.s0_siblingsC[i][j] = ["0", "0", "0", "0"];
             zkin.s0_siblings1[i][j] = ["0", "0", "0", "0"];
-            zkin.s0_siblingsQ[i][j] = ["0", "0", "0", "0"];
+            zkin[`s0_siblings${qStage}`][i][j] = ["0", "0", "0", "0"];
         }
 
         for(let s = 0; s < nStages - 1; ++s) {

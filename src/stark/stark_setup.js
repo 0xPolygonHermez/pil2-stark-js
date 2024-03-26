@@ -9,8 +9,9 @@ const { interpolate } = require("../helpers/fft/fft_p");
 module.exports = async function starkSetup(constPols, pil, starkStruct, options) {
 
     const F = options.F;
+    
     const pil2 = options.pil2 || false;
-    const debug = options.debug || false;
+    
     const nConstants = pil2 ? pil.symbols.filter(s => s.type == 1).length : pil.nConstants;
     const nBits = starkStruct.nBits;
     const nBitsExt = starkStruct.nBitsExt;
@@ -20,12 +21,12 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
     const constBuff  = constPols.writeToBuff();
     await interpolate(constBuff, nConstants, nBits, constPolsArrayE, nBitsExt );
 
-    let arity = options.arity || 16;
-    let custom = options.custom || false;    
     let MH;
     if (starkStruct.verificationHashType == "GL") {
         MH = await buildMerkleHashGL();
     } else if (starkStruct.verificationHashType == "BN128") {
+        let arity = options.arity || 16;
+        let custom = options.custom || false;    
         MH = await buildMerkleHashBN128(arity, custom);
     } else {
         throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
@@ -37,6 +38,6 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
         fixedPols: constPols,
         constTree,
         constRoot: MH.root(constTree),
-        starkInfo: pilInfo(F, pil, true, pil2, debug, starkStruct),
+        starkInfo: pilInfo(F, pil, true, pil2, starkStruct, options ),
     }
 }

@@ -10,7 +10,7 @@ const path = require('path');
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_genstarkinfo.js -p <pil.json> [-P <pilconfig.json] -s <starkstruct.json> -i <starkinfo.json>")
+    .usage("node main_genstarkinfo.js -p <pil.json> [-P <pilconfig.json] -s <starkstruct.json> -i <starkinfo.json> [--vadcop <boolean>] [--hashCommits <boolean>] [--arity <number>] [--custom <boolean>] [--pil2] [--subproofId <number>] [--airId <number>]")
     .alias("p", "pil")
     .alias("P", "pilconfig")
     .alias("s", "starkstruct")
@@ -18,6 +18,10 @@ const argv = require("yargs")
     .alias("v", "pil2")
     .string("subproofId")
     .string("airId")
+    .string("arity")
+    .string("custom")
+    .string("vadcop")
+    .string("hashcommits")
     .argv;
 
 async function run() {
@@ -57,7 +61,16 @@ async function run() {
 
     const starkStruct = JSON.parse(await fs.promises.readFile(starkStructFile, "utf8"));
 
-    const starkInfo = pilInfo(F, pil, true, pil2, false, starkStruct);
+    const options = {};
+    if(starkStruct.verificationHashType === "BN128") {
+        options.arity = Number(argv.arity) || 16;
+        options.custom = argv.custom || false;
+    }
+    
+    options.isVadcop = argv.vadcop || false;
+    options.hashCommits = argv.hashcommits || false;
+
+    const starkInfo = pilInfo(F, pil, true, pil2, starkStruct, options);
 
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
 

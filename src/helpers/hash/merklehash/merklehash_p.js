@@ -66,18 +66,18 @@ class MerkleHash {
         if (nPerThreadF<minCorrected) nPerThreadF = minCorrected;
         for (let i=0; i< height; i+=nPerThreadF) {
             const curN = Math.min(nPerThreadF, height-i);
-            console.log("slicing buff "+i);
+            // console.log("slicing buff "+i);
             const bb = tree.elements.slice(i*width, (i+curN)*width);
 //            const bb = new BigUint64Array(tree.elements.buffer, tree.elements.byteOffset + i*width*8, curN*width);
             if (self.useThreads) {
-                console.log("creating thread "+i);
+                // console.log("creating thread "+i);
                 promisesLH.push(pool.exec("linearHash", [bb, width, i, height, this.splitLinearHash]));
             } else {
                 res.push(await linearHash(bb, width, i, curN, this.splitLinearHash));
             }
         }
         if (self.useThreads) {
-            console.log("waiting..");
+            // console.log("waiting..");
             res = await Promise.all(promisesLH)
         }
         for (let i=0; i<res.length; i++) {
@@ -92,7 +92,7 @@ class MerkleHash {
             // FIll with zeros if n nodes in the leve is not even
             await _merkelizeLevel(tree.nodes, pIn, nextN64/4, pOut);
             if (global.gc) {
-                console.log("cleaning");
+                // console.log("cleaning");
                 global.gc();
             }
 
@@ -238,7 +238,7 @@ class MerkleHash {
         async function writeBigBuffer(fd, buff) {
             const MaxBuffSize = 1024*1024*32;  //  256Mb
             for (let i=0; i<buff.length; i+= MaxBuffSize) {
-                console.log(`writting tree.. ${i} / ${buff.length}`);
+                // console.log(`writting tree.. ${i} / ${buff.length}`);
                 const n = Math.min(buff.length -i, MaxBuffSize);
                 const sb = buff.slice(i, n+i);
                 await fd.write(sb);
@@ -264,7 +264,7 @@ class MerkleHash {
             const MaxBuffSize = 1024*1024*32;  //  256Mb
             let o =0;
             for (let i=0; i<buff.length; i+= MaxBuffSize) {
-                console.log(`Loading tree.. ${i}/${buff.length}`);
+                // console.log(`Loading tree.. ${i}/${buff.length}`);
                 const n = Math.min(buff.length -i, MaxBuffSize);
                 const buff8 = new Uint8Array(n*8);
                 await fd.read({buffer: buff8, offset: 0, length:n*8, position:pos + i*8});

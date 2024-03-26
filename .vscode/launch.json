@@ -1209,7 +1209,7 @@
                 "-t ${workspaceFolder}/tmp/fibonacci.c12.custom.consttree",
                 "-v ${workspaceFolder}/tmp/fibonacci.c12.custom.verkey.json",
                 "--custom=true",
-                "--arity=6",
+                "--arity=4",
             ],
             "runtimeArgs": [
                 "--max-old-space-size=32000"

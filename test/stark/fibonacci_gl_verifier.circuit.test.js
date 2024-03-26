@@ -42,8 +42,8 @@ describe("Stark Verification Circuit Test", function () {
         const starkStruct = JSON.parse(await fs.promises.readFile(starkStructFile, "utf8"));
         const publics = JSONbig.parse(await fs.promises.readFile(publicsFile, "utf8"));
 
-        const starkInfo = pilInfo(F, pil, true, true, false, starkStruct);
-        const circuitSrc = await pil2circom(constRoot, starkInfo, {arity: 4});
+        const starkInfo = pilInfo(F, pil, true, true, starkStruct);
+        const circuitSrc = await pil2circom(constRoot, starkInfo);
 
         await fs.promises.writeFile(circomFile, circuitSrc, "utf8");
 
@@ -85,12 +85,12 @@ describe("Stark Verification Circuit Test", function () {
         const publics = JSONbig.parse(await fs.promises.readFile(publicsFile, "utf8"));
         const proof= JSONbig.parse( await fs.promises.readFile(proofFile, "utf8") );
 
-        const starkInfo = pilInfo(F, pil, true, true, false, starkStruct);
+        const starkInfo = pilInfo(F, pil, true, true, starkStruct);
 
     
         const challenges = await calculateTranscript(F, starkInfo, proof, publics, constRoot, {});
 
-        const circuitSrc = await pil2circom(constRoot, starkInfo, {arity: 4, vadcop:true });
+        const circuitSrc = await pil2circom(constRoot, starkInfo);
 
         await fs.promises.writeFile(circomFile, circuitSrc, "utf8");
 

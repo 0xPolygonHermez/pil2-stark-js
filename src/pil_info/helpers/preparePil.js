@@ -6,8 +6,16 @@ const { getPiloutInfo } = require("./pil2/piloutInfo.js");
 const { generateConstraintPolynomial } = require("./polynomials/constraintPolynomial.js");
 
 
-module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, starkStruct) {
+module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2, options = {}) {
     const res = {};
+
+    if(starkStruct.verificationHashType === "BN128") {
+        res.merkleTreeArity = options.arity || 16;
+        res.merkleTreeCustom = options.custom || false;
+    }
+
+    res.isVadcop = options.vadcop || false;
+    res.hashCommits = options.hashCommits || false;
 
     res.cmPolsMap = [];
     res.constPolsMap = [];
@@ -39,7 +47,7 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
         res.mapSectionsN["cm" + s + "_ext"] = 0;
     }
 
-    if(stark && !debug) {
+    if(stark && !options.debug) {
         res.starkStruct = starkStruct;
         if (res.starkStruct.nBits != res.pilPower) {
             throw new Error(`starkStruct and pilfile have degree mismatch (airId: ${pil.airId} subproofId: ${pil.subproofId} starkStruct:${res.starkStruct.nBits} pilfile:${res.pilPower})`);
@@ -73,7 +81,7 @@ module.exports.preparePil = function preparePil(F, pil, stark, pil2, debug, star
 
     res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
 
-    if(!debug) {
+    if(!options.debug) {
         generateConstraintPolynomial(res, expressions, symbols, constraints, stark);
     }
 

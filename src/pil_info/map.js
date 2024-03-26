@@ -11,9 +11,9 @@ module.exports = function map(res, symbols, expressions, stark, debug) {
     res.mapSectionsN["q_ext"] = res.qDim;
 	
     if(stark) {
-        res.mapSectionsN["cmQ_n"] = 0;
-        res.mapSectionsN["cmQ_ext"] = 0;
         const qStage = res.numChallenges.length + 1;
+        res.mapSectionsN[`cm${qStage}_n`] = 0;
+        res.mapSectionsN[`cm${qStage}_ext`] = 0;
         for (let i=0; i<res.qDeg; i++) {
             const symbol = {
                 stage: qStage,
@@ -22,7 +22,7 @@ module.exports = function map(res, symbols, expressions, stark, debug) {
                 polId: res.qs[i],
                 stageId: i,
             }
-            addPol(res, "cmQ", symbol);
+            addPol(res, `cm${qStage}`, symbol);
         }
         res.mapSectionsN["f_ext"] = 3;
 
@@ -88,15 +88,16 @@ function setMapOffsets(res) {
         const stage = 2 + i;
         res.mapOffsets["cm" + stage + "_n"] = res.mapOffsets["cm" + (stage - 1) + "_n"] + N * res.mapSectionsN["cm" + (stage - 1) + "_n"];
     }
-    res.mapOffsets.cmQ_n = res.mapOffsets["cm" + res.numChallenges.length + "_n"] +  N * res.mapSectionsN["cm" + res.numChallenges.length + "_n"];
-    res.mapOffsets.tmpExp_n = res.mapOffsets.cmQ_n +  N * res.mapSectionsN.cmQ_n;
+    const qStage = res.numChallenges.length + 1;
+    res.mapOffsets[`cm${qStage}_n`] = res.mapOffsets["cm" + res.numChallenges.length + "_n"] +  N * res.mapSectionsN["cm" + res.numChallenges.length + "_n"];
+    res.mapOffsets.tmpExp_n = res.mapOffsets[`cm${qStage}_n`] +  N * res.mapSectionsN[`cm${qStage}_n`];
     res.mapOffsets.cm1_ext = res.mapOffsets.tmpExp_n +  N * res.mapSectionsN.tmpExp_n;
     for(let i = 0; i < res.numChallenges.length - 1; ++i) {
         const stage = 2 + i;
         res.mapOffsets["cm" + stage + "_ext"] = res.mapOffsets["cm" + (stage - 1) + "_ext"] + extN * res.mapSectionsN["cm" +  (stage - 1) + "_ext"];
     }
-    res.mapOffsets.cmQ_ext = res.mapOffsets["cm" + res.numChallenges.length + "_ext"] +  extN * res.mapSectionsN["cm" + res.numChallenges.length + "_ext"];
-    res.mapOffsets.q_ext = res.mapOffsets.cmQ_ext +  extN * res.mapSectionsN.cmQ_ext;
+    res.mapOffsets[`cm${qStage}_ext`] = res.mapOffsets["cm" + res.numChallenges.length + "_ext"] +  extN * res.mapSectionsN["cm" + res.numChallenges.length + "_ext"];
+    res.mapOffsets.q_ext = res.mapOffsets[`cm${qStage}_ext`] +  extN * res.mapSectionsN[`cm${qStage}_ext`];
     res.mapOffsets.f_ext = res.mapOffsets.q_ext +  extN * res.mapSectionsN.q_ext;
     res.mapTotalN = res.mapOffsets.f_ext +  extN * res.mapSectionsN.f_ext;
 }
@@ -144,6 +145,7 @@ function setSymbolsStage(res, symbols) {
 }
 
 function setStageInfoSymbols(res, symbols) {
+    const qStage = res.numChallenges.length + 1;
     for(let i = 0; i < symbols.length; ++i) {
         const symbol = symbols[i];
         if(!["fixed", "witness", "tmpPol"].includes(symbol.type)) continue;
@@ -156,7 +158,7 @@ function setStageInfoSymbols(res, symbols) {
             symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
             res.cmPolsMap[symbol.polId].stagePos = symbol.stagePos;
             if(!symbol.stageId) {
-                symbol.stageId = symbol.stage === "Q" 
+                symbol.stageId = symbol.stage === qStage 
                     ? prevPolsStage.length 
                     : res[polsMapName].filter(p => p.stageNum === symbol.stage).findIndex(p => p.name === symbol.name);
                 res.cmPolsMap[symbol.polId].stageId = symbol.stageId;

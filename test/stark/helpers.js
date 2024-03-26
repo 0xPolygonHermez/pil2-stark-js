@@ -14,34 +14,33 @@ const { calculateTranscript } = require("../../src/stark/calculateTranscriptVeri
 
 module.exports.generateStarkProof = async function generateStarkProof(constPols, cmPols, pil, starkStruct, inputs, options) {
     const logger = options.logger;
+
     const debug = options.debug;
-    const hashCommits = options.hashCommits;
-    const vadcop = options.vadcop;
     const F = options.F;
     const pil2 = options.pil2;
     const skip = options.skip || false;
-
+    
     if(debug) {
         const verificationHashType = "GL";
         const splitLinearHash = false;
 
         const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
 
-        const starkInfo = pilInfo(F, pil, true, pil2, debug, {});
+        const starkInfo = pilInfo(F, pil, true, pil2, {}, {debug: debug});
         const pilVerification = await starkGen(cmPols, constPols, {}, starkInfo, inputs, optionsPilVerify);
         assert(pilVerification==true);
     }
 
-    const setup = await starkSetup(constPols, pil, starkStruct, {F, pil2});
+    const setup = await starkSetup(constPols, pil, starkStruct, {...options, debug: false});
 
-    const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, inputs, {logger, hashCommits});
+    const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, inputs, {...options, debug: false});
 
-    const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, undefined, setup.starkInfo, {logger, hashCommits});
+    const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, { challenges: resP.challenges, challengesFRISteps: resP.challengesFRISteps }, setup.starkInfo, {...options, debug: false});
 
     assert(resV==true);
 
     if(!skip) {
-        const verifier = await pil2circom(setup.constRoot, setup.starkInfo, {hashCommits, vadcop});
+        const verifier = await pil2circom(setup.constRoot, setup.starkInfo);
 
         const fileName = await tmp.tmpName();
         await fs.promises.writeFile(fileName, verifier, "utf8");
@@ -50,8 +49,8 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
 
         let input = proof2zkin(resP.proof, setup.starkInfo);
 
-        if(vadcop) {
-            const challenges = await calculateTranscript(F, setup.starkInfo, resP.proof, resP.publics, setup.constRoot, {logger, hashCommits});
+        if(setup.starkInfo.isVadcop) {
+            const challenges = await calculateTranscript(F, setup.starkInfo, resP.proof, resP.publics, setup.constRoot, {logger});
             input = challenges2zkin(challenges, setup.starkInfo, input);
         }
 

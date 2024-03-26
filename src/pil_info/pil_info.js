@@ -4,9 +4,11 @@ const { preparePil } = require("./helpers/preparePil");
 const { generatePilCode } = require("./helpers/generatePilCode");
 const map = require("./map");
 
-module.exports = function pilInfo(F, pil, stark = true, pil2 = true, debug, starkStruct, imPolsLastStage = true) {
+module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct, options = {}) {
 
-    const infoPil = preparePil(F, pil, stark, pil2, debug, starkStruct);
+    const infoPil = preparePil(F, pil, starkStruct, stark, pil2, options);
+
+    const imPolsLastStage = options.imPolsLastStage || true;
 
     const expressions = infoPil.expressions;
     const constraints = infoPil.constraints;
@@ -14,7 +16,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, debug, star
     const res = infoPil.res;
  
     let newExpressions;
-    if(!debug) {
+    if(!options.debug) {
         let maxDeg;
         if(stark) {
             maxDeg = (1 << (res.starkStruct.nBitsExt- res.starkStruct.nBits)) + 1;
@@ -28,18 +30,18 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, debug, star
         newExpressions = expressions;
     }
     
-    map(res, symbols, newExpressions, stark, debug);       
+    map(res, symbols, newExpressions, stark, options.debug);       
 
-    generatePilCode(res, symbols, constraints, newExpressions, debug, stark);
+    generatePilCode(res, symbols, constraints, newExpressions, options.debug, stark);
 
-    res.nCols = {};
+    res.nCols = {}; 
 
     if(stark) {
         console.log("--------------------- POLINOMIALS INFO ---------------------")
         let nColumnsBaseField = 0;
         let nColumns = 0;
         for(let i = 1; i <= res.numChallenges.length + 1; ++i) {
-            let stage = i === res.numChallenges.length + 1 ? "Q": i;
+            let stage = i;
             let stageName = "cm" + stage;
             let nCols = res.cmPolsMap.filter(p => p.stage == stageName).length;
             res.nCols[stageName] = nCols;
@@ -56,7 +58,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, debug, star
         res.nCols["tmpExp"] = res.cmPolsMap.filter(p => p.stage == "tmpExp").length;
         console.log(`Total Columns: ${nColumns} -> Total Columns in the basefield: ${nColumnsBaseField}`);
         console.log(`Total Constraints: ${res.nConstraints}`)
-        if(!debug) console.log(`Number of evaluations: ${res.evMap.length}`)
+        if(!options.debug) console.log(`Number of evaluations: ${res.evMap.length}`)
         console.log("------------------------------------------------------------")
     }
     

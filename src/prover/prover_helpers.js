@@ -374,11 +374,10 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             dom = "ext";
         } else if (execPart == "fri") {
             execInfo.inputSections.push({ name: "const_ext" });
-            for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+            for(let i = 0; i < ctx.pilInfo.numChallenges.length + 1; i++) {
                 const stage = i + 1;
                 execInfo.inputSections.push({ name: `cm${stage}_ext` });
             }
-            execInfo.inputSections.push({ name: "cmQ_ext" });
             execInfo.inputSections.push({ name: "xDivXSubXi_ext" });
             execInfo.outputSections.push({ name: "f_ext" });
             dom = "ext";
@@ -559,7 +558,7 @@ function ctxProxy(ctx) {
     createProxy("q_ext", stark);
 
     if(stark) {
-        createProxy("cmQ_ext", stark);
+        createProxy(`cm${ctx.pilInfo.numChallenges.length + 1}_ext`, stark);
 
         createProxy("Zi_ext", stark);
 

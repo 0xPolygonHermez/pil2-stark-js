@@ -28,9 +28,9 @@ module.exports = async function pil2circom(constRoot, starkInfo, options) {
         starkStruct,
         constRoot,
         options,
-        arity: options.arity ? Number(options.arity) : undefined,
-        nBitsArity: options.arity ? log2(options.arity) : undefined,
-        custom: options.custom,
+        arity: starkInfo.merkleTreeArity,
+        nBitsArity: starkInfo.merkleTreeArity ? log2(starkInfo.merkleTreeArity) : undefined,
+        custom: starkInfo.merkleTreeCustom,
     };
 
     return ejs.render(template ,  obj);

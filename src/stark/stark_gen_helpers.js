@@ -71,6 +71,8 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         ctx.extendBits = ctx.nBitsExt - ctx.nBits;
     }
 
+    const qStage = ctx.pilInfo.numChallenges.length + 1;
+
     if (logger && !options.debug) {
         logger.debug("-----------------------------");
         logger.debug("  PIL-STARK PROVE SETTINGS");
@@ -86,8 +88,13 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
             const stage = i + 2;
             logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.nCols["cm" + stage]}`);
         }
-        logger.debug(`  Stage Q pols:   ${ctx.pilInfo.nCols["cmQ"]}`);
+        logger.debug(`  Stage ${qStage} pols:   ${ctx.pilInfo.nCols["cm" + qStage]}`);
         logger.debug(`  Temp exp pols: ${ctx.pilInfo.nCols["tmpExp"]}`);
+        logger.debug("-----------------------------");
+        logger.debug(" PIL-STARK PROVE OPTIONS");
+        logger.debug(`  Debug mode: ${options.debug}`);
+        logger.debug(`  Hash Commits: ${ctx.pilInfo.hashCommits || false}`);
+        logger.debug(`  Vadcop: ${ctx.pilInfo.isVadcop || false}`);
         logger.debug("-----------------------------");
     }
 
@@ -107,12 +114,9 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         ctx.transcript = new Transcript(poseidon);
     } else if (verificationHashType == "BN128") {
         const poseidonBN128 = await buildPoseidonBN128();
-        ctx.arity = options.arity || 16;
-        ctx.custom = options.custom || false;
-        ctx.transcriptArity = ctx.custom ? ctx.arity : 16;
-        logger.debug(`Arity: ${ctx.arity},  transcriptArity: ${ctx.transcriptArity}, Custom: ${ctx.custom}`);
-        ctx.MH = await buildMerkleHashBN128(ctx.arity, ctx.custom);
-        ctx.transcript = new TranscriptBN128(poseidonBN128, ctx.transcriptArity);
+        let transcriptArity = starkInfo.merkleTreeCustom ? starkInfo.merkleTreeArity : 16;
+        ctx.MH = await buildMerkleHashBN128(starkInfo.merkleTreeArity, starkInfo.merkleTreeCustom);
+        ctx.transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
         throw new Error("Invalid Hash Type: "+ verificationHashType);
     }
@@ -143,7 +147,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
             const stage = i + 1;
             ctx[`cm${stage}_ext`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}_n`]*ctx.extN);
         }
-        ctx.cmQ_ext = new BigBuffer(ctx.pilInfo.mapSectionsN.cmQ_n*ctx.extN);
+        ctx["cm" + qStage + "_ext"] = new BigBuffer(ctx.pilInfo.mapSectionsN["cm" + qStage + "_n"]*ctx.extN);
         ctx.q_ext = new BigBuffer(ctx.pilInfo.qDim*ctx.extN);
         ctx.f_ext = new BigBuffer(3*ctx.extN);
         ctx.x_ext = new BigBuffer(ctx.extN);
@@ -204,12 +208,12 @@ module.exports.computeQStark = async function computeQStark(ctx, options) {
         curS = ctx.F.mul(curS, shiftIn);
     }
 
-    await fft(qq2, ctx.pilInfo.qDim * ctx.pilInfo.qDeg, ctx.nBitsExt, ctx.cmQ_ext);
+    await fft(qq2, ctx.pilInfo.qDim * ctx.pilInfo.qDeg, ctx.nBitsExt, ctx["cm" + qStage + "_ext"]);
 
     if (logger) logger.debug("··· Merkelizing Q polynomial tree");
 
-    const nPolsQ = ctx.pilInfo.mapSectionsN.cmQ_n || 0;
-    ctx.trees[qStage] = await ctx.MH.merkelize(ctx.cmQ_ext, nPolsQ, ctx.extN);
+    const nPolsQ = ctx.pilInfo.mapSectionsN["cm" + qStage + "_n"] || 0;
+    ctx.trees[qStage] = await ctx.MH.merkelize(ctx["cm" + qStage + "_ext"], nPolsQ, ctx.extN);
     const root = ctx.MH.root(ctx.trees[qStage]);
     if (options.logger && !options.debug) {
         if(ctx.pilInfo.starkStruct.verificationHashType === "GL") {
@@ -279,7 +283,7 @@ module.exports.computeEvalsStark = async function computeEvalsStark(ctx, options
         ctx.evals[i] = acc;
     }
 
-    if(options.hashCommits) {
+    if(ctx.pilInfo.hashCommits) {
         const evalsHash = await module.exports.calculateHashStark(ctx, ctx.evals);
         return [evalsHash];
     } else {
@@ -359,7 +363,7 @@ module.exports.computeFRIFolding = async function computeFRIFolding(step, ctx, c
     if (step+1 < ctx.pilInfo.starkStruct.steps.length) {
         return [ctx.friProof[step+1].root];
     } else {
-        if(options.hashCommits) {
+        if(ctx.pilInfo.hashCommits) {
             const lastPolHash = await module.exports.calculateHashStark(ctx, ctx.friPol[step+1]);
             return [lastPolHash];
         } else {
@@ -374,18 +378,16 @@ module.exports.computeFRIQueries = function computeFRIQueries(ctx, friQueries) {
 
 module.exports.genProofStark = async function genProof(ctx, options) {
     const logger = options.logger;
-    const vadcop = options.vadcop;
 
     if(logger) logger.debug("Generating proof");
     
     const proof = {
-        rootQ: ctx.MH.root(ctx.trees[ctx.pilInfo.numChallenges.length + 1]),
         evals: ctx.evals,
         subAirValues: ctx.subAirValues,
         fri: ctx.friProof
     };
 
-    for(let i = 0; i < ctx.pilInfo.numChallenges.length; ++i) {
+    for(let i = 0; i < ctx.pilInfo.numChallenges.length + 1; ++i) {
         const stage = i + 1;
         proof["root" + stage] = ctx.MH.root(ctx.trees[stage]);
     }
@@ -394,7 +396,7 @@ module.exports.genProofStark = async function genProof(ctx, options) {
 
     const res = {proof, publics};
 
-    if(vadcop) {
+    if(ctx.pilInfo.isVadcop) {
         res.challenges = ctx.challenges;
         res.challengesFRISteps = ctx.challengesFRISteps;
     }
@@ -470,7 +472,7 @@ module.exports.calculateHashStark = async function calculateHashStark(ctx, input
         const poseidon = await buildPoseidonGL();
         transcript = new Transcript(poseidon);
     } else if (verificationHashType == "BN128") {
-        let transcriptArity = ctx.custom ? ctx.arity : 16;
+        let transcriptArity = starkInfo.merkleTreeCustom ? starkInfo.merkleTreeArity : 16;
         const poseidonBN128 = await buildPoseidonBN128();
         transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
@@ -507,7 +509,7 @@ module.exports.getPermutationsStark = async function getPermutationsStark(ctx, c
         const poseidon = await buildPoseidonGL();
         transcript = new Transcript(poseidon);
     } else if (verificationHashType == "BN128") {
-        let transcriptArity = ctx.custom ? ctx.arity : 16;
+        let transcriptArity = starkInfo.merkleTreeCustom ? starkInfo.merkleTreeArity : 16;
         const poseidonBN128 = await buildPoseidonBN128();
         transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {

@@ -15,8 +15,8 @@ include "merklehash.circom";
 <% } -%>
 <%  const NFields = Math.floor(((starkStruct.nQueries *  starkStruct.steps[0].nBits) - 1)/63)+1; -%>
 <% let subproofId; -%>
-<% if(options.subproofId !== undefined) { -%>
-<%      subproofId = options.subproofId; -%>
+<% if(starkInfo.subproofId !== undefined) { -%>
+<%      subproofId = starkInfo.subproofId; -%>
 <% } -%>
 <%
 class Transcript {
@@ -145,7 +145,7 @@ class Transcript {
 <% function unrollCode(code) {                                                          -%>
 <%
     function ref(r) {
-        const trees = ["treeQ"];
+        const trees = ["tree" + qStage];
         for(let i = 0; i < starkInfo.numChallenges.length; ++i) {
             const stage = i + 1;
             trees.push(`tree${stage}`);
@@ -266,7 +266,7 @@ template <%- calculateFriQueriesName %>() {
 <% if(subproofId !== undefined) { -%>
 <%      transcriptName += subproofId; -%>
 <% } -%>
-<% if (!options.vadcop) { -%>
+<% if (!starkInfo.isVadcop) { -%>
 
 /* 
     Calculate the transcript
@@ -279,7 +279,7 @@ template <%- transcriptName %>() {
 <%  const stage = i + 1; -%>
     signal input root<%- stage %>[4];
 <% } -%>                  
-    signal input rootQ[4];
+    signal input root<%- qStage %>[4];
     signal input evals[<%- starkInfo.evMap.length %>][3]; 
 <% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
     signal input s<%- s %>_root[4];
@@ -297,7 +297,7 @@ template <%- transcriptName %>() {
     signal output challengesFRISteps[<%- starkStruct.steps.length + 1 %>][3];
     signal output {binary} queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
 
-<%  if(options.hashCommits) { -%> 
+<%  if(starkInfo.hashCommits) { -%> 
     signal publicsHash[3];
     signal evalsHash[3];
     signal lastPolFRIHash[3];
@@ -305,7 +305,7 @@ template <%- transcriptName %>() {
 
 <%   const transcript = new Transcript(); -%>
 <%   transcript.put("rootC", 4  ); -%>
-<%   if(!options.hashCommits) { -%>
+<%   if(!starkInfo.hashCommits) { -%>
 <%         transcript.put("publics", starkInfo.nPublics); -%>
 <%   } else { -%>
 <%-      transcript.getCode(); %>
@@ -325,10 +325,10 @@ template <%- transcriptName %>() {
     }    
     
     transcript.getField("challengeQ", 3);
-    transcript.put("rootQ", 4);
+    transcript.put(`root${qStage}`, 4);
 
     transcript.getField("challengeXi", 3); -%>
-<%   if(!options.hashCommits) { -%>
+<%   if(!starkInfo.hashCommits) { -%>
 <%      for (let i=0; i<starkInfo.evMap.length; i++) {
             transcript.put(`evals[${i}]`, 3);
         } -%>
@@ -350,7 +350,7 @@ template <%- transcriptName %>() {
 <%      if (si < starkStruct.steps.length-1) { -%>
 <%          transcript.put(`s${si+1}_root`, 4); -%>
 <%        } else { -%>
-<%          if(!options.hashCommits) { -%>
+<%          if(!starkInfo.hashCommits) { -%>
 <%              for (let j=0; j< 1<<starkStruct.steps[starkStruct.steps.length-1].nBits; j++ ) {
                     transcript.put(`finalPol[${j}]`, 3);
                 } -%>
@@ -555,7 +555,7 @@ template parallel <%- verifyQueryName %>(currStepBits, nextStepBits) {
     signal input tree<%- stage %>[<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>];
 <%  } -%>
 <% } -%>
-    signal input treeQ[<%- starkInfo.mapSectionsN.cmQ_n %>];
+    signal input tree<%- qStage %>[<%- starkInfo.mapSectionsN[`cm${qStage}_n`]  %>];
     signal input consts[<%- starkInfo.nConstants %>];
     signal input s1_vals[1 << nextStep][3];
     signal input {binary} enable;
@@ -574,7 +574,7 @@ template parallel <%- verifyQueryName %>(currStepBits, nextStepBits) {
     mapValues.vals<%- stage %> <== tree<%- stage %>;
 <%  } -%>
 <% } -%>
-    mapValues.valsQ <== treeQ;
+    mapValues.vals<%- qStage %> <== tree<%- qStage %>;
 
     signal xacc[<%- starkStruct.steps[0].nBits %>];
     xacc[0] <== queriesFRI[0]*(<%- F.shift %> * roots(<%- starkStruct.steps[0].nBits %>)-<%- F.shift %>) + <%- F.shift %>;
@@ -622,10 +622,10 @@ template <%- mapValuesName %>() {
     signal input vals<%- stage %>[<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>];
 <%  } -%>
 <% } -%>
-    signal input valsQ[<%- starkInfo.mapSectionsN.cmQ_n  %>];
+    signal input vals<%- qStage %>[<%- starkInfo.mapSectionsN[`cm${qStage}_n`]  %>];
 
 <% for (let t = 1; t<=starkInfo.numChallenges.length + 1; t++) {                              -%>
-<%      let index = t === starkInfo.numChallenges.length + 1 ? "Q" : t;                       -%>
+<%      let index = t;                       -%>
 <%      let sectionsStage = starkInfo.cmPolsMap.filter(p => p.stage === "cm" + index);  -%>
 <%      for (let i=0; i< sectionsStage.length; i++) {         -%>
 <%          const p = sectionsStage[i];  -%>
@@ -638,7 +638,7 @@ template <%- mapValuesName %>() {
 <% }                                                                             -%>
 
 <% for (let t = 1; t<=starkInfo.numChallenges.length + 1; t++) {                              -%>
-<%      let index = t === starkInfo.numChallenges.length + 1 ? "Q" : t;                       -%>
+<%      let index = t;                       -%>
 <%      let sectionsStage = starkInfo.cmPolsMap.filter(p => p.stage === "cm" + index);  -%>
 <%      for (let i=0; i< sectionsStage.length; i++) {         -%>
 <%          const p = sectionsStage[i];  -%>
@@ -697,13 +697,13 @@ template <%- verifierName %>() {
 <%  const stage = i + 1; -%>
     signal input root<%- stage %>[4]; // Merkle tree root of stage <%- stage %>
 <% } -%>
-    signal input rootQ[4]; // Merkle tree root of the evaluations of the quotient Q1 and Q2 polynomials
+    signal input root<%- qStage %>[4]; // Merkle tree root of the evaluations of the quotient Q1 and Q2 polynomials
 
 <% if (options.verkeyInput) {  -%>
 <% /* Depending on the STARK being verified, the rootC will be hardcoded or passed as an input */%>
     signal input rootC[4]; // Merkle tree root of the evaluations of constant polynomials
 <% } else { -%>
-<%      if (options.vadcop) { -%>
+<%      if (starkInfo.isVadcop) { -%>
     signal output rootC[4] <== [<%- constRoot.join(',') %> ]; // Merkle tree root of the evaluations of constant polynomials
 <%      } else { -%>
     signal rootC[4] <== [<%- constRoot.join(',') %> ]; // Merkle tree root of the evaluations of constant polynomials
@@ -721,7 +721,7 @@ template <%- verifierName %>() {
     signal input s0_vals<%- stage %>[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>];
 <%  } -%>
 <% } -%>                                       
-    signal input s0_valsQ[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cmQ_n %>];
+    signal input s0_vals<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>];
     signal input s0_valsC[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants %>];
 
     // Merkle proofs for each of the evaluations
@@ -731,7 +731,7 @@ template <%- verifierName %>() {
     signal input s0_siblings<%- stage %>[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>][4];
 <%  } -%>
 <% } -%> 
-    signal input s0_siblingsQ[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>][4];
+    signal input s0_siblings<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>][4];
     signal input s0_siblingsC[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>][4];
 
     // Contains the root of the original polynomial and all the intermediate FRI polynomials except for the last step
@@ -761,7 +761,7 @@ template <%- verifierName %>() {
     enabled <== 1;
 <% } -%>
 
-<% if (!options.vadcop) { -%>
+<% if (!starkInfo.isVadcop) { -%>
 <%  let challengeNames = []; -%>
 <%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
 <%  if(starkInfo.numChallenges[i] === 0) continue; -%>
@@ -791,7 +791,7 @@ template <%- verifierName %>() {
 
 <%  const stageRoots = []; -%> 
 <%  for(let i = 0; i < starkInfo.numChallenges.length; i++) { stageRoots.push(`root${i + 1}`) } -%>
-    (<%- challengeNames.join(",") %>,challengesFRISteps,queriesFRI) <== <%- transcriptName %>()(publics,rootC,<%- stageRoots.join(",") %>,rootQ,evals, <%- si_roots.join(",") %>,finalPol);
+    (<%- challengeNames.join(",") %>,challengesFRISteps,queriesFRI) <== <%- transcriptName %>()(publics,rootC,<%- stageRoots.join(",") %>,root<%- qStage %>,evals, <%- si_roots.join(",") %>,finalPol);
 
 <% } else { -%>
 <%  for(let i = 0; i < starkInfo.numChallenges.length; ++i) { -%>
@@ -845,7 +845,7 @@ template <%- verifierName %>() {
     var s0_vals<%- stage %>_p[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>][1];
 <%  } -%>
 <% } -%> 
-    var s0_valsQ_p[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN.cmQ_n %>][1];
+    var s0_vals<%- qStage %>_p[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>][1];
     var s0_valsC_p[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants %>][1];
 <% for (let s=0; s<starkStruct.steps.length; s++) {   -%>
 <%  let exponent = s === 0 ? 1 : (1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits)); -%>
@@ -862,8 +862,8 @@ template <%- verifierName %>() {
         }
 <%  } -%>
 <% } -%> 
-        for (var i = 0; i < <%- starkInfo.mapSectionsN.cmQ_n %>; i++) {
-            s0_valsQ_p[q][i][0] = s0_valsQ[q][i];
+        for (var i = 0; i < <%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>; i++) {
+            s0_vals<%- qStage %>_p[q][i][0] = s0_vals<%- qStage %>[q][i];
         }
         for (var i = 0; i < <%- starkInfo.nConstants %>; i++) {
             s0_valsC_p[q][i][0] = s0_valsC[q][i];
@@ -894,7 +894,7 @@ template <%- verifierName %>() {
 <% } -%>
 
     for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
-        VerifyMerkleHash(1, <%- starkInfo.mapSectionsN.cmQ_n %>, <%- 1 << starkStruct.steps[0].nBits %>)(s0_valsQ_p[q], s0_siblingsQ[q], queriesFRI[q], rootQ, enabled);
+        VerifyMerkleHash(1, <%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>, <%- 1 << starkStruct.steps[0].nBits %>)(s0_vals<%- qStage %>_p[q], s0_siblings<%- qStage %>[q], queriesFRI[q], root<%- qStage %>, enabled);
     }
 
     for (var q=0; q<<%- starkStruct.nQueries %>; q++) {
@@ -931,7 +931,7 @@ template <%- verifierName %>() {
             queryVals.push(`s0_vals${stage}[q]`);
         }
     }
-    queryVals.push("s0_valsQ[q]");
+    queryVals.push(`s0_vals${qStage}[q]`);
     queryVals.push("s0_valsC[q]");
 -%>
         // Verify that the query is properly constructed. This is done by checking that the linear combination of the set of 
@@ -961,5 +961,5 @@ template <%- verifierName %>() {
 }
     
 <% if (!options.skipMain) {  -%>
-component main {public [publics]}= StarkVerifier();
+component main {public [publics]}= <%- verifierName %>();
 <% } -%>
