@@ -110,7 +110,8 @@ module.exports.calculateFRIQueries = async function calculateFRIQueries(starkInf
         transcriptFRIQuery = new Transcript(poseidonGL);
     } else if (starkInfo.starkStruct.verificationHashType == "BN128") {
         const poseidonBN128 = await buildPoseidonBN128();
-        transcriptFRIQuery = new TranscriptBN128(poseidonBN128, options.transcriptArity);
+        let transcriptArity = starkInfo.merkleTreeCustom ? starkInfo.merkleTreeArity : 16;
+        transcriptFRIQuery = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
         throw new Error("Invalid Hash Type: "+ starkInfo.starkStruct.verificationHashType == "GL");
     }
