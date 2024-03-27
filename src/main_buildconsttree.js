@@ -33,7 +33,7 @@ async function run() {
     const constPols = newConstantPolsArray(pil, F);
     await constPols.loadFromFile(constFile);
 
-    const {MH, constTree, verKey} = await buildConstTree(starkInfo.starkStruct, pil, constPols);
+    const {MH, constTree, verKey} = await buildConstTree(starkInfo, pil, constPols);
 
     await fs.promises.writeFile(verKeyFile, JSONbig.stringify(verKey, null, 1), "utf8");
 
