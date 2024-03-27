@@ -6,7 +6,7 @@ const path = require("path");
 const fs = require("fs");
 const { mkdir } = require("fs-extra");
 
-module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersFile, binFile, className = "") {
+module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersFile, className = "", binFile) {
 
     if(className === "") className = "Stark";
     className = className[0].toUpperCase() + className.slice(1) + "Steps";
