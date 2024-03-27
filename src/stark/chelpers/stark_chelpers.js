@@ -4,18 +4,19 @@ const { findPatterns } = require("./helpers.js");
 const { writeCHelpersFile } = require("./binFile.js");
 const path = require("path");
 const fs = require("fs");
-const { mkdir } = require("fs-extra");
 
-module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersFile, className = "", binFile) {
+module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersFile, className = "", binFile, genericBinFile) {
 
     if(className === "") className = "Stark";
     className = className[0].toUpperCase() + className.slice(1) + "Steps";
-
-    let result = {};
     
     const stagesInfo = [];
     const expressionsInfo = [];
     const constraintsInfo = [];
+
+    const stagesInfoGeneric = [];
+    const expressionsInfoGeneric = [];
+    const constraintsInfoGeneric = [];
 
     const nStages = starkInfo.numChallenges.length;
 
@@ -29,6 +30,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     ];
 
     let operations = getAllOperations();
+    let operationsWithPatterns = getAllOperations();
 
     let totalSubsetOperationsUsed = [];
 
@@ -39,6 +41,12 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
         const stageInfo = getParserArgsCode(`step${stage}`, starkInfo.code[`stage${stage}`], "n", debug);
         stageInfo.stage = stage;
         stagesInfo.push(stageInfo);
+
+        if(genericBinFile) {
+            const stageInfoGeneric = getParserArgsCodeGeneric(`step${stage}`, starkInfo.code[`stage${stage}`], "n", debug);
+            stageInfoGeneric.stage = stage;
+            stagesInfoGeneric.push(stageInfoGeneric);
+        }
     }
 
     const stageQInfo = getParserArgsCode(`step${nStages + 1}`, starkInfo.code.qCode, "ext");
@@ -49,6 +57,15 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     stageFriInfo.stage = nStages + 2;
     stagesInfo.push(stageFriInfo);
 
+    if(genericBinFile) {
+        const stageQInfoGeneric = getParserArgsCodeGeneric(`step${nStages + 1}`, starkInfo.code.qCode, "ext");
+        stageQInfoGeneric.stage = nStages + 1;
+        stagesInfoGeneric.push(stageQInfoGeneric);
+
+        const stageFriInfoGeneric = getParserArgsCodeGeneric(`step${nStages + 2}`, starkInfo.code.fri, "ext");
+        stageFriInfoGeneric.stage = nStages + 2;
+        stagesInfoGeneric.push(stageFriInfoGeneric);
+    }
 
     // Get parser args for each constraint
     for(let s = 1; s <= nStages; ++s) {
@@ -59,6 +76,12 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
             const constraintInfo = getParserArgsCode(`constraint${s}_${j}`, constraintCode, "n", true);
             constraintInfo.stage = s;
             constraintsInfo.push(constraintInfo);
+
+            if(genericBinFile) {
+                const constraintInfoGeneric = getParserArgsCodeGeneric(`constraint${s}_${j}`, constraintCode, "n", true);
+                constraintInfoGeneric.stage = s;
+                constraintsInfoGeneric.push(constraintInfoGeneric);
+            }
         }
     }
 
@@ -70,6 +93,13 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
         expInfo.expId = expCode.expId;
         expInfo.stage = expCode.stage;
         expressionsInfo.push(expInfo);
+
+        if(genericBinFile) {
+            const expInfoGeneric = getParserArgsCodeGeneric(`exp${expCode.expId}`,expCode.code, "n");
+            expInfoGeneric.expId = expCode.expId;
+            expInfoGeneric.stage = expCode.stage;
+            expressionsInfoGeneric.push(expInfoGeneric);
+        }
     }
 
     totalSubsetOperationsUsed = totalSubsetOperationsUsed.sort((a, b) => a - b);
@@ -77,15 +107,15 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     console.log("Total subset of operations used: " + totalSubsetOperationsUsed.join(", "));
     console.log("--------------------------------");
     
-    const genericParser = generateParser(operations, totalSubsetOperationsUsed);
+    const parser = generateParser(operationsWithPatterns, totalSubsetOperationsUsed);
 
-    cHelpersStepsHpp.push(genericParser);
+    cHelpersStepsHpp.push(parser);
     cHelpersStepsHpp.push("};");
 
 
-    result[`${className}_hpp`] = cHelpersStepsHpp.join("\n"); 
+    let cHelpers = cHelpersStepsHpp.join("\n"); 
     
-    const operationsPatterns = operations.filter(op => op.isGroupOps);
+    const operationsPatterns = operationsWithPatterns.filter(op => op.isGroupOps);
     console.log("Number of patterns used: " + operationsPatterns.length);
     for(let i = 0; i < operationsPatterns.length; ++i) {
         console.log("case " + operationsPatterns[i].opIndex + " ->    " + operationsPatterns[i].ops.join(", "));
@@ -104,7 +134,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
         constraintsInfo[i].ops = constraintsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
     }
 
-    result[`${className}_hpp`] = result[`${className}_hpp`].replace(/case (\d+):/g, (match, caseNumber) => {
+    cHelpers = cHelpers.replace(/case (\d+):/g, (match, caseNumber) => {
         caseNumber = parseInt(caseNumber, 10);
         const newIndex = totalSubsetOperationsUsed.findIndex(o => o === caseNumber);
         if(newIndex === -1) throw new Error("Invalid operation!");
@@ -115,26 +145,23 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     if (!fs.existsSync(baseDir)) {
         fs.mkdirSync(baseDir, { recursive: true });
     }
-
-    await mkdir(cHelpersFile, { recursive: true });
-
-    for (r in result) {
-        let fileName = cHelpersFile + "/" + r;
-        fileName = fileName.substring(0, fileName.lastIndexOf('_')) + '.' + fileName.substring(fileName.lastIndexOf('_') + 1);
-        console.log(fileName);
-        await fs.promises.writeFile(fileName, result[r], "utf8");
-    }
-
+    
+    await fs.promises.writeFile(cHelpersFile, cHelpers, "utf8");
+    
     await writeCHelpersFile(binFile, stagesInfo, expressionsInfo, constraintsInfo);
+
+    if(genericBinFile) {
+        await writeCHelpersFile(genericBinFile, stagesInfoGeneric, expressionsInfoGeneric, constraintsInfoGeneric);
+    }
 
     return;
 
     function getParserArgsCode(name, code, dom, debug = false) {
         console.log(`Getting parser args for ${name}`);
 
-        const {expsInfo, opsUsed} = getParserArgs(starkInfo, operations, code, dom, debug);
+        const {expsInfo, opsUsed} = getParserArgs(starkInfo, operationsWithPatterns, code, dom, debug);
 
-        const patternOps = findPatterns(expsInfo.ops, operations);
+        const patternOps = findPatterns(expsInfo.ops, operationsWithPatterns);
         opsUsed.push(...patternOps);
 
         for(let j = 0; j < opsUsed.length; ++j) {
@@ -142,6 +169,14 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
         }
 
         console.log("--------------------------------");
+
+        return expsInfo;
+    }
+
+    function getParserArgsCodeGeneric(name, code, dom, debug = false) {
+        console.log(`Getting parser args for ${name}`);
+
+        const {expsInfo} = getParserArgs(starkInfo, operations, code, dom, debug);
 
         return expsInfo;
     }

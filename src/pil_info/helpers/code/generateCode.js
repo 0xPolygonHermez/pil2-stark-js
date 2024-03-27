@@ -1,6 +1,5 @@
 const { pilCodeGen, buildCode } = require("./codegen");
 
-// TODO: COMPLETE!
 module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
     const expressionsCode = [];
 
