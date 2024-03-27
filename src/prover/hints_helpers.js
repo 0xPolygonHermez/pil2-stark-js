@@ -21,9 +21,11 @@ module.exports.applyHints = async function applyHints(stage, ctx, options) {
     }
 }
 
-function getHintField(ctx, hint, field) {
+function getHintField(ctx, hint, field, options = {}) {
     if(!hint[field]) throw new Error(`${field} field is missing`);
-    if(["cm", "tmp"].includes(hint[field].op)) return getPol(ctx, hint[field].id, "n");
+    if(["cm", "tmp"].includes(hint[field].op)) {
+        return getPol(ctx, hint[field].id, "n");
+    }
     if(["number", "subproofvalue"].includes(hint[field].op)) return BigInt(hint[field].value);
     throw new Error("Case not considered");
 }
@@ -32,8 +34,8 @@ async function resolveHint(ctx, hint, options) {
     if(options?.logger) hint.dest.forEach(dest => options.logger.debug(`Calculating hint ${hint.name} -> op: ${dest.op}, stage: ${dest.stage}, ${dest.op === "cm" ? `stageId: ${dest.stageId}` : `id: ${dest.id}`}`));
 
     if(hint.name === "subproofvalue" || hint.name === "public") {
-        const pol = getHintField(ctx, hint, "expression");
-        const pos = getHintField(ctx, hint, "row_index");
+        const pol = getHintField(ctx, hint, "expression", options);
+        const pos = getHintField(ctx, hint, "row_index", options);
         const value = pol[pos];
 
         if(hint.name === "public") {
@@ -49,8 +51,8 @@ async function resolveHint(ctx, hint, options) {
 
         const gsum = [];
 
-        let numerator = getHintField(ctx, hint, "numerator");
-        let denominator = getHintField(ctx, hint, "denominator");
+        let numerator = getHintField(ctx, hint, "numerator", options);
+        let denominator = getHintField(ctx, hint, "denominator", options);
 
         // TODO: THIS IS A HACK, REMOVE WHEN PIL2 IS FIXED
         if(numerator === 5n) numerator = ctx.F.negone;
@@ -72,8 +74,8 @@ async function resolveHint(ctx, hint, options) {
     } else if(hint.name === "gprod") {
         const gprod = [];
 
-        let numerator = getHintField(ctx, hint, "numerator");
-        let denominator = getHintField(ctx, hint, "denominator");
+        let numerator = getHintField(ctx, hint, "numerator", options);
+        let denominator = getHintField(ctx, hint, "denominator", options);
 
         const denInv = await ctx.F.batchInverse(denominator);
 
@@ -86,8 +88,8 @@ async function resolveHint(ctx, hint, options) {
         setSymbolCalculated(ctx, hint.dest[0], options);
 
     } else if(hint.name === "h1h2") {
-        let f = getHintField(ctx, hint, "f");
-        let t = getHintField(ctx, hint, "t");
+        let f = getHintField(ctx, hint, "f", options);
+        let t = getHintField(ctx, hint, "t", options);
         const H1H2 = calculateH1H2(ctx.F, f, t);
         setPol(ctx, hint.dest[0].id, H1H2[0], "n");
         setPol(ctx, hint.dest[1].id, H1H2[1], "n");

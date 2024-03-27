@@ -42,11 +42,9 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
 
         for(let k = 0; k < exp.symbols.length; k++) {
             const symbolUsed = exp.symbols[k];
-            if(["cm", "const", "tmp"].includes(symbolUsed.op)) {
-                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                    ctx.symbolsUsed.push(symbolUsed);
-                };
-            }
+            if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                ctx.symbolsUsed.push(symbolUsed);
+            };
         }
 
         pilCodeGen(ctx, symbols, expressions, j, 0);
@@ -104,11 +102,9 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                 
                 for(let k = 0; k < expressions[j].symbols.length; k++) {
                     const symbolUsed = expressions[j].symbols[k];
-                    if(["cm", "const", "tmp"].includes(symbolUsed.op)) {
-                        if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                            ctx.symbolsUsed.push(symbolUsed);
-                        };
-                    }  
+                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                        ctx.symbolsUsed.push(symbolUsed);
+                    };
                 }
                 pilCodeGen(ctx, symbols, expressions, j, 0);
             }
@@ -136,11 +132,9 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
             const e = expressions[stageConstraints[j].e];
             for(let k = 0; k < e.symbols.length; k++) {
                 const symbolUsed = e.symbols[k];
-                if(["cm", "const", "tmp"].includes(symbolUsed.op)) {
-                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                        ctx.symbolsUsed.push(symbolUsed);
-                    };
-                }  
+                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                    ctx.symbolsUsed.push(symbolUsed);
+                };
             }
 
             pilCodeGen(ctx, symbols, expressions, stageConstraints[j].e, 0, true);
@@ -183,7 +177,6 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
 
     for(let k = 0; k < expressions[res.cExpId].symbols.length; k++) {
         const symbolUsed = expressions[res.cExpId].symbols[k];
-        if(!["cm", "const"].includes(symbolUsed.op)) continue;
         if(!ctxExt.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
             ctxExt.symbolsUsed.push(symbolUsed);
         };
@@ -292,7 +285,6 @@ module.exports.generateFRICode = function generateFRICode(res, symbols, expressi
 
     for(let k = 0; k < expressions[friExpId].symbols.length; k++) {
         const symbolUsed = expressions[friExpId].symbols[k];
-        if(!["cm", "const"].includes(symbolUsed.op)) continue;
         if(!ctxExt.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
             ctxExt.symbolsUsed.push(symbolUsed);
         };
