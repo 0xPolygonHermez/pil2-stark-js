@@ -114,8 +114,8 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         ctx.transcript = new Transcript(poseidon);
     } else if (verificationHashType == "BN128") {
         const poseidonBN128 = await buildPoseidonBN128();
-        let transcriptArity = starkInfo.merkleTreeCustom ? starkInfo.merkleTreeArity : 16;
-        ctx.MH = await buildMerkleHashBN128(starkInfo.merkleTreeArity, starkInfo.merkleTreeCustom);
+        let transcriptArity = ctx.pilInfo.merkleTreeCustom ? ctx.pilInfo.merkleTreeArity : 16;
+        ctx.MH = await buildMerkleHashBN128(ctx.pilInfo.merkleTreeArity, ctx.pilInfo.merkleTreeCustom);
         ctx.transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
         throw new Error("Invalid Hash Type: "+ verificationHashType);
@@ -472,7 +472,7 @@ module.exports.calculateHashStark = async function calculateHashStark(ctx, input
         const poseidon = await buildPoseidonGL();
         transcript = new Transcript(poseidon);
     } else if (verificationHashType == "BN128") {
-        let transcriptArity = starkInfo.merkleTreeCustom ? starkInfo.merkleTreeArity : 16;
+        let transcriptArity = ctx.pilInfo.merkleTreeCustom ? ctx.pilInfo.merkleTreeArity : 16;
         const poseidonBN128 = await buildPoseidonBN128();
         transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
@@ -509,7 +509,7 @@ module.exports.getPermutationsStark = async function getPermutationsStark(ctx, c
         const poseidon = await buildPoseidonGL();
         transcript = new Transcript(poseidon);
     } else if (verificationHashType == "BN128") {
-        let transcriptArity = starkInfo.merkleTreeCustom ? starkInfo.merkleTreeArity : 16;
+        let transcriptArity = ctx.pilInfo.merkleTreeCustom ? ctx.pilInfo.merkleTreeArity : 16;
         const poseidonBN128 = await buildPoseidonBN128();
         transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {

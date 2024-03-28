@@ -73,7 +73,7 @@ async function run() {
         MH = await buildMerkleHashGL();
     } else if (starkInfo.starkStruct.verificationHashType == "BN128") {
         console.log(`Arity: ${starkInfo.merkleTreeArity}, Custom: ${starkInfo.merkleTreeCustom}, hashCommits: ${starkInfo.hashCommits}, vadcop: ${starkInfo.isVadcop}`);
-        MH = await buildMerkleHashBN128(merkleTreeArity, merkleTreeCustom);
+        MH = await buildMerkleHashBN128(starkInfo.merkleTreeArity, starkInfo.merkleTreeCustom);
     } else {
         throw new Error("Invalid Hash Type: "+ starkInfo.starkStruct.verificationHashType);
     }

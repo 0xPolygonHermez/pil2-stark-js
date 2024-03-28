@@ -552,9 +552,6 @@ module.exports.getAllOperations = function getAllOperations() {
         }
     }
 
-    // Extra for step Q
-    possibleOps.push({ dest_type: "tmp3", src0_type: "tmp3", src1_type: "Zi"});
-
     // Step FRI
     possibleOps.push({ dest_type: "tmp3", src0_type: "eval"});
     possibleOps.push({ op: "mul", dest_type: "tmp3", src0_type: "eval", src1_type: "challenge"});

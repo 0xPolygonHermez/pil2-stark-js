@@ -26,7 +26,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
         "public:",
         "    void calculateExpressions(StarkInfo &starkInfo, StepsParams &params, ParserArgs &parserArgs, ParserParams &parserParams) {",
         `        uint32_t nrowsBatch = 4;`,
-        `        bool domainExtended = parserParams.stage > 3 ? true : false;`,
+        `        bool domainExtended = parserParams.stage > starkInfo.numChallenges.size() ? true : false;`,
     ];
 
     let operations = getAllOperations();
@@ -68,7 +68,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     }
 
     // Get parser args for each constraint
-    for(let s = 1; s <= nStages; ++s) {
+    for(let s = 1; s <= nStages + 1; ++s) {
         const stage = `stage${s}`;
         const constraintsStage = starkInfo.constraints[stage];
         for(let j = 0; j < constraintsStage.length; ++j) {
@@ -154,6 +154,9 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
         await writeCHelpersFile(genericBinFile, stagesInfoGeneric, expressionsInfoGeneric, constraintsInfoGeneric);
     }
 
+    console.log(stagesInfo[1]);
+    console.log(stagesInfoGeneric[1]);
+
     return;
 
     function getParserArgsCode(name, code, dom, debug = false) {
@@ -174,10 +177,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     }
 
     function getParserArgsCodeGeneric(name, code, dom, debug = false) {
-        console.log(`Getting parser args for ${name}`);
-
         const {expsInfo} = getParserArgs(starkInfo, operations, code, dom, debug);
-
         return expsInfo;
     }
 }

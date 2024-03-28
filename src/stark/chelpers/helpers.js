@@ -92,8 +92,8 @@ module.exports.getIdMaps = function getIdMaps(maxid, ID1D, ID3D, code) {
         }
         ++count3d;
     }
-    console.log(`Number of tmp1: ${count1d}`);
-    console.log(`Number of tmp3: ${count3d}`);
+    // console.log(`Number of tmp1: ${count1d}`);
+    // console.log(`Number of tmp3: ${count3d}`);
     return { count1d, count3d };
 }
 
@@ -130,14 +130,14 @@ function isIntersecting(segment1, segment2) {
 }
 
 module.exports.findPatterns = function findPatterns(array, operations, maxLength = 16, minReducedOperations = 400) {
-    console.log("Number of operations before join: " + array.length);
+    // console.log("Number of operations before join: " + array.length);
 
     const slidingWindow = [];
     const patterns = {};
     let i = 0;
     while (i < array.length) {
         while(slidingWindow.length < 2) {
-            if(i%1000 === 0) console.log("Checking repetitions..." + i + " out of " + array.length);
+            // if(i%1000 === 0) console.log("Checking repetitions..." + i + " out of " + array.length);
             slidingWindow.push(array[i++]);
         }
 
@@ -147,7 +147,7 @@ module.exports.findPatterns = function findPatterns(array, operations, maxLength
             let reducedOps = countReducedOps(array, slidingWindow);
             if(reducedOps >= minReducedOperations) {
                 patterns[slidingWindow.join(", ")] = reducedOps;
-                if(i%1000 === 0) console.log("Checking repetitions..." + i + " out of " + array.length);
+                // if(i%1000 === 0) console.log("Checking repetitions..." + i + " out of " + array.length);
                 slidingWindow.push(array[i++]);
             } else {
                 slidingWindow.shift();
@@ -179,11 +179,11 @@ module.exports.findPatterns = function findPatterns(array, operations, maxLength
                 }
                 i++;
             }
-            console.log(`Sequence ${pattern} reduces ${reductionApplied} operations`);
+            // console.log(`Sequence ${pattern} reduces ${reductionApplied} operations`);
         }
     }
 
-    console.log("Number of operations after join: " + array.length);
+    // console.log("Number of operations after join: " + array.length);
 
     return patternOps;
 }

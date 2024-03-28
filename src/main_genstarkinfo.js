@@ -15,13 +15,13 @@ const argv = require("yargs")
     .alias("P", "pilconfig")
     .alias("s", "starkstruct")
     .alias("i", "starkinfo")
-    .alias("v", "pil2")
+    .alias("n", "pil2")
+    .alias("c", "custom")
+    .alias("v", "vadcop")
+    .alias("h", "hashcommits")
     .string("subproofId")
     .string("airId")
     .string("arity")
-    .string("custom")
-    .string("vadcop")
-    .string("hashcommits")
     .argv;
 
 async function run() {

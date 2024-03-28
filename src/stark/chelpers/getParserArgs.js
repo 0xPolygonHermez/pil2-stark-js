@@ -96,10 +96,10 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         return acc;
     }, []);
 
-    console.log("Number of operations: ", ops.length);
-    console.log("Number of arguments: ", args.length);
-    console.log("Different operations types: ", opsUsed.length, " of ", operations.length);
-    console.log("Operations used: ", opsUsed.join(", "));
+    // console.log("Number of operations: ", ops.length);
+    // console.log("Number of arguments: ", args.length);
+    // console.log("Different operations types: ", opsUsed.length, " of ", operations.length);
+    // console.log("Operations used: ", opsUsed.join(", "));
 
     return {expsInfo, opsUsed};
 
