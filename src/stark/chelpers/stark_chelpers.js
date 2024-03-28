@@ -70,7 +70,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     // Get parser args for each constraint
     for(let s = 1; s <= nStages + 1; ++s) {
         const stage = `stage${s}`;
-        const constraintsStage = starkInfo.constraints[stage];
+        const constraintsStage = starkInfo.constraints[stage] || [];
         for(let j = 0; j < constraintsStage.length; ++j) {
             const constraintCode = constraintsStage[j];
             const constraintInfo = getParserArgsCode(`constraint${s}_${j}`, constraintCode, "n", true);
@@ -148,14 +148,11 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     
     await fs.promises.writeFile(cHelpersFile, cHelpers, "utf8");
     
-    await writeCHelpersFile(binFile, stagesInfo, expressionsInfo, constraintsInfo);
+    await writeCHelpersFile(binFile, stagesInfo, expressionsInfo, constraintsInfo, starkInfo.hints);
 
     if(genericBinFile) {
-        await writeCHelpersFile(genericBinFile, stagesInfoGeneric, expressionsInfoGeneric, constraintsInfoGeneric);
+        await writeCHelpersFile(genericBinFile, stagesInfoGeneric, expressionsInfoGeneric, constraintsInfoGeneric, starkInfo.hints);
     }
-
-    console.log(stagesInfo[1]);
-    console.log(stagesInfoGeneric[1]);
 
     return;
 

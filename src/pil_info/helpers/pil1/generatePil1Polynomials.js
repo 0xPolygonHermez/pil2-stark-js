@@ -65,5 +65,9 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
         }   
     }
 
+    for(let i = 0; i < res.nPublics; ++i) {
+        symbols.push({ type: "public", stage: 1, id: i });
+    }
+
     return { publicsNames, symbols, hints, expressions, constraints };
 }

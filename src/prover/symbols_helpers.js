@@ -5,7 +5,7 @@ module.exports.checkSymbolsCalculated = function checkSymbolsCalculated(ctx, sta
     let publicsToBeCalculated = 0;
     let subproofValuesToBeCalculated = 0;
     let commitsToBeCalculated = 0;
-let tmpPolsToBeCalculated = 0;
+    let tmpPolsToBeCalculated = 0;
     let symbolsCalculated = 0;
     let symbolsToBeCalculated = 0;
     for(let i = 0; i < symbolsStage.length; ++i) {
@@ -56,7 +56,7 @@ module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, opti
         
         const op = ref.op === "tmp" ? "cm" : ref.op;
         ctx.calculatedSymbols[op][ref.id] = true;
-        if(options?.logger) options.logger.debug(`Symbol ${ref.op} for stage ${ref.stage} and id ${["cm", "tmp", "challenge"].includes(ref.op) ? ref.stageId : ref.id} has been calculated`);
+        if(options?.logger) options.logger.debug(`Symbol ${ref.op} for with id ${ref.id} has been calculated`);
     }
 }
 

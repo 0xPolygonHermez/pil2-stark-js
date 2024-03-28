@@ -3,15 +3,24 @@ const { createBinFile,
     startWriteSection
      } = require("@iden3/binfileutils");
 
-const CHELPERS_NSECTIONS = 4;
+const CHELPERS_NSECTIONS = 5;
 
 const CHELPERS_STAGES_SECTION = 2;
 const CHELPERS_EXPRESSIONS_SECTION = 3;
 const CHELPERS_CONSTRAINTS_DEBUG_SECTION = 4;
-// const CHELPERS_HINTS_SECTION = 5;
+const CHELPERS_HINTS_SECTION = 5;
 
+async function writeStringToFile(fd, str) {
+    let buff = new Uint8Array(str.length + 1);
+    for (let i = 0; i < str.length; i++) {
+        buff[i] = str.charCodeAt(i);
+    }
+    buff[str.length] = 0;
 
-exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expressionsInfo, constraintsInfo) {
+    await fd.write(buff);
+}
+
+exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expressionsInfo, constraintsInfo, hintsInfo) {
     console.log("> Writing the chelpers file");
 
     const cHelpersBin = await createBinFile(cHelpersFilename, "chps", 1, CHELPERS_NSECTIONS, 1 << 22, 1 << 24);    
@@ -542,7 +551,33 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
 
     await endWriteSection(cHelpersBin);
 
+    console.log(`··· Writing Section ${CHELPERS_HINTS_SECTION}. Hints section`);
+    await startWriteSection(cHelpersBin, CHELPERS_HINTS_SECTION);
+
+    const nHints = hintsInfo.length;
+    await cHelpersBin.writeULE32(nHints);
+
+    for(let j = 0; j < nHints; j++) {
+        const hint = hintsInfo[j];
+        await writeStringToFile(cHelpersBin, hint.name);
+        const nFields = hint.fields.length;
+        await cHelpersBin.writeULE32(nFields);
+        for(let k = 0; k < nFields; k++) {
+            const field = hint.fields[k];
+            await writeStringToFile(cHelpersBin, field.name);
+            await writeStringToFile(cHelpersBin, field.op);
+            if(field.op === "number") {
+                await cHelpersBin.writeULE32(field.value);
+            } else {
+                await cHelpersBin.writeULE32(field.id);
+            }
+        }
+    }
+
     console.log("> Writing the chelpers file finished");
+    console.log("---------------------------------------------");
+
+    await endWriteSection(cHelpersBin);
 
     await cHelpersBin.close();
 }

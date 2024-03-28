@@ -30,7 +30,14 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
         newExpressions = expressions;
     }
     
-    map(res, symbols, newExpressions, stark, options.debug);       
+    for(let i = 0; i < newExpressions.length; i++) {
+        if(newExpressions[i].keep && !newExpressions[i].imPol) {
+            const symbol = { type: "tmpPol", name: `tmpPol${i}`, expId: i, stage: newExpressions[i].stage, dim: newExpressions[i].dim, subproofId: res.subproofId, airId: res.airId };
+            symbols.push(symbol);
+        }    
+    }
+
+    map(res, symbols, stark, options.debug);       
 
     generatePilCode(res, symbols, constraints, newExpressions, options.debug, stark);
 

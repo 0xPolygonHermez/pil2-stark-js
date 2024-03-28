@@ -60,10 +60,6 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
 
     res.publicsNames = publicsNames;
 
-    for(let i = 0; i < res.nPublics; ++i) {
-        symbols.push({ type: "public", stage: 1, id: i });
-    }
-
     for(let i = 0; i < constraints.length; ++i) {
         addInfoExpressions(symbols, expressions, expressions[constraints[i].e], stark);
         constraints[i].stage = expressions[constraints[i].e].stage;

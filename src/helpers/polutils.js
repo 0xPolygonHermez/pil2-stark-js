@@ -129,6 +129,43 @@ module.exports.calculateH1H2 = function calculateH1H2(F, f, t) {
     return [h1, h2];
 }
 
+module.exports.calculateZ = async function calculateZ(F, num, den) {
+    const gprod = [];
+
+    const N = den.length;
+
+    const denInv = await F.batchInverse(den);
+
+    gprod[0] = F.one;
+    for (let i=1; i< N; i++) {
+        gprod[i] = F.mul(gprod[i-1], F.mul(num[i-1], denInv[i-1]));
+    }
+
+    return gprod;
+}
+
+module.exports.calculateS = async function calculateS(F, num, den) {
+    const gsum = [];
+
+    const N = den.length;
+
+    // TODO: THIS IS A HACK, REMOVE WHEN PIL2 IS FIXED
+    if(num === 5n) num = F.negone;
+
+    const denInv = await F.batchInverse(den);
+
+    for(let i = 0; i < N; ++i) {
+        const val = F.mul(num, denInv[i]);
+        if(i === 0) {
+            gsum[i] = val;
+        } else {
+            gsum[i] = F.add(gsum[i - 1], val);
+        }
+    }
+
+    return gsum;
+}
+
 module.exports.connect = function connect(p1, i1, p2, i2) {
     [p1[i1], p2[i2]] = [p2[i2], p1[i1]];
 }

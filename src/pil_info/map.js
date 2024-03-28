@@ -1,11 +1,4 @@
-module.exports = function map(res, symbols, expressions, stark, debug) {  
-    for(let i = 0; i < expressions.length; i++) {
-        if(expressions[i].keep && !expressions[i].imPol) {
-            const symbol = { type: "tmpPol", name: `tmpPol${i}`, expId: i, stage: expressions[i].stage, dim: expressions[i].dim, subproofId: res.subproofId, airId: res.airId };
-            symbols.push(symbol);
-        }    
-    }
-
+module.exports = function map(res, symbols, stark, debug) {  
     mapSymbols(res, symbols);
 
     res.mapSectionsN["q_ext"] = res.qDim;
@@ -32,7 +25,7 @@ module.exports = function map(res, symbols, expressions, stark, debug) {
     
     setStageInfoSymbols(res, symbols);
 
-    addHintsInfo(res, symbols, expressions);
+    addHintsInfo(res, symbols);
 
     setSymbolsStage(res, symbols);
 }
@@ -174,54 +167,36 @@ function setStageInfoSymbols(res, symbols) {
 }
 
 
-function addHintsInfo(res, symbols, expressions) {
+function addHintsInfo(res, symbols) {
     for(let i = 0; i < res.hints.length; ++i) {
         const hint = res.hints[i];
-        const hintSymbols = [];
-        const keysHint = Object.keys(hint);
-        const hintField = [];
-        for(let j = 0; j < keysHint.length; ++j) {
-            const key = keysHint[j];
-            if(key === "name") continue;
-            if(hint[key].op === "exp") {
-                hintField.push(key);
-                const symbol = symbols.find(s => s.expId === hint[key].id);
-                if(symbol) {
-                    const op = symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol) ? "cm" : "tmp";
-                    const dest = { op, stage: symbol.stage, stageId: symbol.stageId, id: symbol.polId};
-                    hint[key] = dest;
-                    hintSymbols.push(dest);
-                } else {
-                    hintSymbols.push(...expressions[hint[key].id].symbols);
-                }
-            } else if(!key.includes("reference")) {
-                hintField.push(key);
-                if(["cm", "challenge"].includes(hint[key].op)) {
-                    hintSymbols.push({op: hint[key].op, stage: hint[key].stage, stageId: hint[key].stageId, id: hint[key].id});
-                } else if(["public", "subproofValue", "const"].includes(hint[key].op)) {
-                    hintSymbols.push({op: hint[key].op, stage: hint[key].stage, id: hint[key].id});
-                }
-            } else {
-                if(!hint.dest) hint.dest = []; 
-                const hintDest = { op: hint[key].op, stage: hint[key].stage };
-                if(["cm", "challenge"].includes(hintDest.op)) {
-                    hintDest.id = hint[key].id;
-                    hintDest.stageId = hint[key].stageId;
-                } else if(["public", "subproofValue"].includes(hintDest.op)) {
-                    hintDest.id = hint[key].id;
-                }
-                hint.dest.push(hintDest);
-                delete hint[key];
-            }
+
+        const hintFields = [];
+
+        const fields = Object.keys(hint);
+    
+        for(let j = 0; j < fields.length; ++j) {
+            const field = fields[j];
+            if(field === "name") continue;
+            if(hint[field].op === "exp") {
+                const symbol = symbols.find(s => s.expId === hint[field].id);
+                if(!symbol) throw new Error("Something went wrong!");
+                const op = symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol) ? "cm" : "tmp";
+                const id = symbol.polId;
+                hintFields.push({name: field, op, id});
+            } else if(["cm", "challenge", "public"].includes(hint[field].op)) {
+                hintFields.push({name: field, op: hint[field].op, id: hint[field].id});
+            } else if(["public", "subproofValue", "const"].includes(hint[field].op)) {
+                hintFields.push({name: field, op: hint[field].op, id: hint[field].id});
+            } else if(hint[field].op === "number") {
+                hintFields.push({name: field, op: "number", value: hint[field].value});
+            } else throw new Error("Invalid hint op: " + hint[field].op);
         }
 
-        hint.fields = hintField;
 
-        const uniqueSymbolsSet = new Set();
-
-        hintSymbols.forEach((symbol) => { uniqueSymbolsSet.add(JSON.stringify(symbol)); });
-          
-        hint.symbols = Array.from(uniqueSymbolsSet).map((symbol) => JSON.parse(symbol))
-            .sort((a, b) => a.stage !== b.stage ? a.stage - b.stage : a.op !== b.op ? b.op.localeCompare(a.op) : a.stageId - b.stageId);
+        res.hints[i] = {
+            name: hint.name,
+            fields: hintFields,
+        }
     }
 }

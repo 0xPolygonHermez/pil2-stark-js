@@ -32,3 +32,7 @@ subproof Fibonacci(2**6) {
     (gsum - 'gsum * (1 - L1)) * ((((L1'2*out + (1 - L1'2)*a') * std_alpha + a * a + b * b) * std_alpha) + 1 + std_beta) + 1 === 0;
     L1' * (gsum - gsum_fibonacci) === 0;
 }
+
+// {name, symbols, fields, srcs, dsts} fields {name, operand, id, value} fitxer json extra per srcs i dst
+
+// {name, fields} fields {name, operand, id, value, symbols}
