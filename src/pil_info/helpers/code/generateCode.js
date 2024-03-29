@@ -118,6 +118,7 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
         const ctx = {
             calculated: {},
             symbolsUsed: [],
+            symbolsCalculated: [],
             tmpUsed: 0,
             code: [],
             dom: "n",
@@ -270,6 +271,7 @@ module.exports.generateFRICode = function generateFRICode(res, symbols, expressi
     const ctxExt = {
         calculated: {},
         symbolsUsed: [],
+        symbolsCalculated: [],
         tmpUsed: 0,
         code: [],
         dom: "ext",
