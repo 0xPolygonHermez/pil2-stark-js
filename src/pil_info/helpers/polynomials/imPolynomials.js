@@ -1,7 +1,7 @@
 
 const ExpressionOps = require("../../expressionops");
 
-const { getExpDim } = require("../helpers");
+const { getExpDim, addInfoExpressions } = require("../helpers");
 
 module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark, imPolsLastStage = true) {
     const E = new ExpressionOps();
@@ -50,6 +50,10 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
                 E.cm(res.nCommitments-1, 0, stageIm, dim),
             ]
         };
+        expressions.push(e);
+        addInfoExpressions(symbols, expressions, e, stark);
+        constraints.push({ e: expressions.length - 1, boundary: "everyRow", filename: `ImPol.${expId}`, stage: expressions[expId].stage });
+        
         if(stark && multipleBoundaries) e = E.mul(E.zi(res.boundaries.findIndex(b => b.name === "everyRow")), e);
         expressions[res.cExpId] = E.add(E.mul(vc, expressions[res.cExpId]), e);
     }

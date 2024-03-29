@@ -1,4 +1,3 @@
-const ExpressionOps = require("../../expressionops");
 const { pilCodeGen, buildCode } = require("./codegen");
 
 module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
@@ -114,10 +113,8 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
 }
 
 module.exports.generateConstraintsDebugCode = function generateConstraintsDebugCode(res, symbols, constraints, expressions, stark) {
-    const E = new ExpressionOps();
-
-    // for(let stage = 1; stage <= res.numChallenges.length + 1; ++stage) {
-    for(let stage = 1; stage < res.numChallenges.length + 1; ++stage) {
+    res.constraints = [];
+    for(let j = 0; j < constraints.length; ++j) {
         const ctx = {
             calculated: {},
             symbolsUsed: [],
@@ -129,57 +126,26 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
             stark,
         };
 
-        let stageConstraints;
-        if(stage < res.numChallenges.length + 1) {
-            stageConstraints = constraints.filter(c => c.stage === stage);
-        } else {
-            const imPols = symbols.filter(s => s.imPol);
-            stageConstraints = [];
-            for(let j = 0; j < imPols.length; ++j) {
-                const im = imPols[j];
-                const expression = {
-                    op: "sub",
-                    values: [
-                        expressions[im.expId],
-                        E.cm(im.polId, 0, im.stage, im.dim),
-                    ],
-                    symbols: [{op: "cm", stage: im.stage, stageId: im.stageId, id: im.polId}, ...expressions[im.expId].symbols],
-                    dim: im.dim,
-                }
-                expressions.push(expression);
-                stageConstraints.push({
-                    e: expressions.length - 1,
-                    filename: im.name,
-                })
-            }
+        const e = expressions[constraints[j].e];
+        for(let k = 0; k < e.symbols.length; k++) {
+            const symbolUsed = e.symbols[k];
+            if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                ctx.symbolsUsed.push(symbolUsed);
+            };
         }
-        res.constraints[`stage${stage}`] = [];
-        for(let j = 0; j < stageConstraints.length; ++j) {
-            const e = expressions[stageConstraints[j].e];
-            for(let k = 0; k < e.symbols.length; k++) {
-                const symbolUsed = e.symbols[k];
-                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                    ctx.symbolsUsed.push(symbolUsed);
-                };
-            }
 
-            pilCodeGen(ctx, symbols, expressions, stageConstraints[j].e, 0, true);
-            const constraint = buildCode(ctx, expressions);
-            if(stage === res.numChallenges.length + 1) {
-                constraint.boundary = "everyRow";
-                constraint.fileName = stageConstraints[j].name;
-                constraint.line = "";
-            } else {
-                constraint.boundary = stageConstraints[j].boundary;
-                constraint.line = stageConstraints[j].line;
-                constraint.filename = stageConstraints[j].fileName;
-                if(stageConstraints[j].boundary === "everyFrame") {
-                    constraint.offsetMin = stageConstraints[j].offsetMin;
-                    constraint.offsetMax = stageConstraints[j].offsetMax;
-                }
-            }
-            res.constraints[`stage${stage}`][j] = constraint;
+        pilCodeGen(ctx, symbols, expressions, constraints[j].e, 0, true);
+        const constraint = buildCode(ctx, expressions);
+        constraint.boundary = constraints[j].boundary;
+        constraint.line = constraints[j].line;
+        constraint.filename = constraints[j].fileName;
+        constraint.stage = constraints[j].stage;
+        if(constraints[j].boundary === "everyFrame") {
+            constraint.offsetMin = constraints[j].offsetMin;
+            constraint.offsetMax = constraints[j].offsetMax;
         }
+        res.constraints[j] = constraint;
+        
     }
 }
 

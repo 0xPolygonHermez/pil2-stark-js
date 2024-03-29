@@ -42,6 +42,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "        if(nextStrides[i] < minStride) minStride = nextStrides[i];",
         "        if(nextStrides[i] > maxStride) maxStride = nextStrides[i];",
         "    }",
+        "    std::vector<bool> validConstraint(domainSize, true);"
     ];
 
     
@@ -143,10 +144,11 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "        Goldilocks3::Element_avx tmp3_;",
         "        // Goldilocks3::Element_avx tmp3_0;",
         "        Goldilocks3::Element_avx tmp3_1;",
-        "        // __m256i tmp1_0;",
         "        __m256i tmp1_1;",
         "        __m256i bufferT_[nOpenings*nCols];\n",
     ]); 
+
+    if(!operationsUsed) parserCPP.push(        "        __m256i tmp1_0;");
 
     parserCPP.push(...[
         "        Goldilocks::Element bufferT[nOpenings*nrowsBatch];\n",
@@ -188,16 +190,16 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         const op = operations[i];
         
         
-        const operationCase = [`            case ${i}: {`];
+        const operationCase = [`        case ${i}: {`];
         
         if(!op.isGroupOps) {
             let operationDescription;
             if(op.op === "mul") {
-                operationDescription = `                    // MULTIPLICATION WITH DEST: ${op.dest_type} - SRC0: ${op.src0_type} - SRC1: ${op.src1_type}`;
+                operationDescription = `                // MULTIPLICATION WITH DEST: ${op.dest_type} - SRC0: ${op.src0_type} - SRC1: ${op.src1_type}`;
             } else if(op.src1_type) {
-                operationDescription = `                    // OPERATION WITH DEST: ${op.dest_type} - SRC0: ${op.src0_type} - SRC1: ${op.src1_type}`;
+                operationDescription = `                // OPERATION WITH DEST: ${op.dest_type} - SRC0: ${op.src0_type} - SRC1: ${op.src1_type}`;
             } else {
-                operationDescription = `                    // COPY ${op.src0_type} to ${op.dest_type}`;
+                operationDescription = `                // COPY ${op.src0_type} to ${op.dest_type}`;
             }
             operationCase.push(operationDescription);
         }
@@ -209,17 +211,17 @@ module.exports.generateParser = function generateParser(operations, operationsUs
                 operationCase.push(writeOperation(opr));
                 let numberArgs = numberOfArgs(opr.dest_type) + numberOfArgs(opr.src0_type);
                 if(opr.src1_type && opr.dest_type !== "q") numberArgs += numberOfArgs(opr.src1_type) + 1;
-                operationCase.push(`                    i_args += ${numberArgs};`);
+                operationCase.push(`                i_args += ${numberArgs};`);
             }
         } else {
             operationCase.push(writeOperation(op));
             let numberArgs = numberOfArgs(op.dest_type) + numberOfArgs(op.src0_type);
             if(op.src1_type && op.dest_type !== "q") numberArgs += numberOfArgs(op.src1_type) + 1;
-            operationCase.push(`                    i_args += ${numberArgs};`);
+            operationCase.push(`                i_args += ${numberArgs};`);
         }
 
         operationCase.push(...[
-            "                    break;",
+            "                break;",
             "            }",
         ])
         parserCPP.push(operationCase.join("\n"));
@@ -240,10 +242,9 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "            if(parserParams.destDim == 1) {",
         "                Goldilocks::Element res[4];",
         "                Goldilocks::store_avx(res, tmp1[parserParams.destId]);",
-        "                for(uint64_t i = 0; i < 4; ++i) {",
-        "                    if(!Goldilocks::isZero(res[i])) {",
-        `                        std::cout << "Result is not zero!" << std::endl;`,
-        "                        break;",
+        "                for(uint64_t j = 0; j < 4; ++j) {",
+        "                    if(!Goldilocks::isZero(res[j])) {",
+        "                        validConstraint[i + j] = false;",
         "                    }",
         "                }",
         "            } else if(parserParams.destDim == 3) {",
@@ -251,10 +252,9 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "                Goldilocks::store_avx(&res[0], tmp3[parserParams.destId][0]);",
         "                Goldilocks::store_avx(&res[4], tmp3[parserParams.destId][1]);",
         "                Goldilocks::store_avx(&res[8], tmp3[parserParams.destId][2]);",
-        "                for(uint64_t i = 0; i < 12; ++i) {",
-        "                    if(!Goldilocks::isZero(res[i])) {",
-        `                        std::cout << "Result is not zero!" << std::endl;`,
-        "                        break;",
+        "                for(uint64_t j = 0; j < 12; ++j) {",
+        "                    if(!Goldilocks::isZero(res[j])) {",
+        "                        validConstraint[i + j%4] = false;",
         "                    }",
         "                }",
         "            } ",
@@ -265,7 +265,32 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         `        if (i_args != parserParams.nArgs) std::cout << " " << i_args << " - " << parserParams.nArgs << std::endl;`,
         "        assert(i_args == parserParams.nArgs);",
         "    }"
-        ]);
+    ]);
+
+    parserCPP.push(...[
+        "    if(parserParams.destDim != 0) {",
+        "        bool isValidConstraint = true;",
+        "        uint64_t nInvalidRows = 0;",
+        "        uint64_t maxInvalidRowsDisplay = 100;",
+        "        for(uint64_t i = 0; i < domainSize; ++i) {",
+        "            if(!validConstraint[i]) {",
+        "                isValidConstraint = false;",
+        "                if(nInvalidRows < maxInvalidRowsDisplay) {",
+        "                    cout << \"Constraint check failed at \" << i << endl;",
+        "                    nInvalidRows++;",
+        "                } else {",
+        "                    cout << \"There are more than \" << maxInvalidRowsDisplay << \" invalid rows\" << endl;",
+        "                    break;",
+        "                }",
+        "            }",
+        "        }",
+        "        if(isValidConstraint) {",
+        "            TimerLog(CONSTRAINT_CHECKS_PASSED);",
+        "        } else {",
+        "            TimerLog(CONSTRAINT_CHECKS_FAILED);",
+        "        }",
+        "    }"
+    ]);
 
     parserCPP.push("}");
        
@@ -277,19 +302,19 @@ module.exports.generateParser = function generateParser(operations, operationsUs
     function writeOperation(operation) {
         if(operation.dest_type === "q") {
             const qOperation = [
-                "                    Goldilocks::Element tmp_inv[3];",
-                "                    Goldilocks::Element ti0[4];",
-                "                    Goldilocks::Element ti1[4];",
-                "                    Goldilocks::Element ti2[4];",
-                `                    Goldilocks::store_avx(ti0, tmp3[args[i_args]][0]);`,
-                `                    Goldilocks::store_avx(ti1, tmp3[args[i_args]][1]);`,
-                `                    Goldilocks::store_avx(ti2, tmp3[args[i_args]][2]);`,
-                "                    for (uint64_t j = 0; j < AVX_SIZE_; ++j) {",
-                "                        tmp_inv[0] = ti0[j];",
-                "                        tmp_inv[1] = ti1[j];",
-                "                        tmp_inv[2] = ti2[j];",
-                "                        Goldilocks3::mul((Goldilocks3::Element &)(params.q_2ns[(i + j) * 3]), params.zi[i + j][0],(Goldilocks3::Element &)tmp_inv);",
-                "                    }",
+                "                Goldilocks::Element tmp_inv[3];",
+                "                Goldilocks::Element ti0[4];",
+                "                Goldilocks::Element ti1[4];",
+                "                Goldilocks::Element ti2[4];",
+                `                Goldilocks::store_avx(ti0, tmp3[args[i_args]][0]);`,
+                `                Goldilocks::store_avx(ti1, tmp3[args[i_args]][1]);`,
+                `                Goldilocks::store_avx(ti2, tmp3[args[i_args]][2]);`,
+                "                for (uint64_t j = 0; j < AVX_SIZE_; ++j) {",
+                "                    tmp_inv[0] = ti0[j];",
+                "                    tmp_inv[1] = ti1[j];",
+                "                    tmp_inv[2] = ti2[j];",
+                "                    Goldilocks3::mul((Goldilocks3::Element &)(params.q_2ns[(i + j) * 3]), params.zi[i + j][0],(Goldilocks3::Element &)tmp_inv);",
+                "                }",
             ].join("\n");
             return qOperation;
         }
@@ -334,28 +359,28 @@ module.exports.generateParser = function generateParser(operations, operationsUs
 
         if(operation.dest_type === "commit1" || operation.dest_type === "commit3") {
             operationStoreAvx.push(...[
-                `                    if(needModule) {`,
-                `                        uint64_t stepOffset = offsetsSteps[args[i_args + ${c_args}]] + args[i_args + ${c_args + 1}];`,
-                `                        uint64_t nextStrideOffset = i + nextStrides[args[i_args + ${c_args + 2}]];`,
-                `                        offsetsDest[0] = stepOffset + (nextStrideOffset % domainSize) * nColsSteps[args[i_args + ${c_args}]];`,
-                `                        offsetsDest[1] = stepOffset + ((nextStrideOffset + 1) % domainSize) * nColsSteps[args[i_args + ${c_args}]];`,
-                `                        offsetsDest[2] = stepOffset + ((nextStrideOffset + 2) % domainSize) * nColsSteps[args[i_args + ${c_args}]];`,
-                `                        offsetsDest[3] = stepOffset + ((nextStrideOffset + 3) % domainSize) * nColsSteps[args[i_args + ${c_args}]];`,
+                `                if(needModule) {`,
+                `                    uint64_t stepOffset = offsetsSteps[args[i_args + ${c_args}]] + args[i_args + ${c_args + 1}];`,
+                `                    uint64_t nextStrideOffset = i + nextStrides[args[i_args + ${c_args + 2}]];`,
+                `                    offsetsDest[0] = stepOffset + (nextStrideOffset % domainSize) * nColsSteps[args[i_args + ${c_args}]];`,
+                `                    offsetsDest[1] = stepOffset + ((nextStrideOffset + 1) % domainSize) * nColsSteps[args[i_args + ${c_args}]];`,
+                `                    offsetsDest[2] = stepOffset + ((nextStrideOffset + 2) % domainSize) * nColsSteps[args[i_args + ${c_args}]];`,
+                `                    offsetsDest[3] = stepOffset + ((nextStrideOffset + 3) % domainSize) * nColsSteps[args[i_args + ${c_args}]];`,
             ]);
             if(operation.dest_type === "commit1") {
-                operationStoreAvx.push(`                        Goldilocks::store_avx(&params.pols[0], offsetsDest, ${typeDest});`);
+                operationStoreAvx.push(`                    Goldilocks::store_avx(&params.pols[0], offsetsDest, ${typeDest});`);
             } else {
-                operationStoreAvx.push(`                        Goldilocks3::store_avx(&params.pols[0], offsetsDest, &${typeDest}, nOpenings);`);
+                operationStoreAvx.push(`                    Goldilocks3::store_avx(&params.pols[0], offsetsDest, &${typeDest}, nOpenings);`);
             }
-            operationStoreAvx.push(`                    } else {`);
+            operationStoreAvx.push(`                } else {`);
             if(operation.dest_type === "commit1") {
-                operationStoreAvx.push(`                        Goldilocks::store_avx(&params.pols[offsetsSteps[args[i_args + ${c_args}]] + args[i_args + ${c_args + 1}] + (i + nextStrides[args[i_args + ${c_args + 2}]]) * nColsSteps[args[i_args + ${c_args}]]], nColsSteps[args[i_args + ${c_args}]], ${typeDest});`);
+                operationStoreAvx.push(`                    Goldilocks::store_avx(&params.pols[offsetsSteps[args[i_args + ${c_args}]] + args[i_args + ${c_args + 1}] + (i + nextStrides[args[i_args + ${c_args + 2}]]) * nColsSteps[args[i_args + ${c_args}]]], nColsSteps[args[i_args + ${c_args}]], ${typeDest});`);
             } else {
-                operationStoreAvx.push(`                        Goldilocks3::store_avx(&params.pols[offsetsSteps[args[i_args + ${c_args}]] + args[i_args + ${c_args + 1}] + (i + nextStrides[args[i_args + ${c_args + 2}]]) * nColsSteps[args[i_args + ${c_args}]]], nColsSteps[args[i_args + ${c_args}]], &${typeDest}, nOpenings);`);
+                operationStoreAvx.push(`                    Goldilocks3::store_avx(&params.pols[offsetsSteps[args[i_args + ${c_args}]] + args[i_args + ${c_args + 1}] + (i + nextStrides[args[i_args + ${c_args + 2}]]) * nColsSteps[args[i_args + ${c_args}]]], nColsSteps[args[i_args + ${c_args}]], &${typeDest}, nOpenings);`);
             }
-            operationStoreAvx.push(`                    }`);
+            operationStoreAvx.push(`                }`);
         } else if(operation.dest_type === "f") {
-            operationStoreAvx.push(`                    Goldilocks3::store_avx(&params.f_2ns[i*3], uint64_t(3), tmp3_);`,)
+            operationStoreAvx.push(`                Goldilocks3::store_avx(&params.f_2ns[i*3], uint64_t(3), tmp3_);`,)
         }
 
 
@@ -369,10 +394,10 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         const operationCall = [];
 
         if ("x" === operation.src0_type){
-            operationCall.push(`                    Goldilocks::load_avx(tmp1_0, ${typeSrc0}, x.offset());`);
+            operationCall.push(`                Goldilocks::load_avx(tmp1_0, ${typeSrc0}, x.offset());`);
             typeSrc0 = "tmp1_0";
         } else if(["xDivXSubXi"].includes(operation.src0_type)) {
-            operationCall.push(`                    Goldilocks3::load_avx(tmp3_0, ${typeSrc0}, params.${operation.src0_type}.offset());`);
+            operationCall.push(`                Goldilocks3::load_avx(tmp3_0, ${typeSrc0}, params.${operation.src0_type}.offset());`);
             typeSrc0 = "tmp3_0";
         } 
 
@@ -380,10 +405,10 @@ module.exports.generateParser = function generateParser(operations, operationsUs
             typeSrc1 = writeType(operation.src1_type);
 
             if ("x" === operation.src1_type){
-                operationCall.push(`                    Goldilocks::load_avx(tmp1_1, ${typeSrc1}, x.offset());`);
+                operationCall.push(`                Goldilocks::load_avx(tmp1_1, ${typeSrc1}, x.offset());`);
                 typeSrc1 = "tmp1_1";
             } else if(["xDivXSubXi"].includes(operation.src1_type)) {
-                operationCall.push(`                    Goldilocks3::load_avx(tmp3_1, ${typeSrc1}, params.${operation.src1_type}.offset());`);
+                operationCall.push(`                Goldilocks3::load_avx(tmp3_1, ${typeSrc1}, params.${operation.src1_type}.offset());`);
                 typeSrc1 = "tmp3_1";
             }
 
@@ -435,7 +460,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
 
         name = name.substring(0, name.lastIndexOf(", ")) + ");";
 
-        operationCall.push(`                    ${name}`);
+        operationCall.push(`                ${name}`);
         operationCall.push(...operationStoreAvx);
 
         return operationCall.join("\n").replace(/i_args \+ 0/g, "i_args");
@@ -580,8 +605,9 @@ module.exports.getOperation = function getOperation(r) {
         _op.dest_type = r.dest.type;
     }
     
+    let src = [...r.src];
     if(r.op !== "copy") {
-        r.src.sort((a, b) => {
+        src.sort((a, b) => {
             let opA =  ["cm", "tmpExp"].includes(a.type) ? operationsMap[`commit${a.dim}`] : a.type === "tmp" ? operationsMap[`tmp${a.dim}`] : operationsMap[a.type];
             let opB = ["cm", "tmpExp"].includes(b.type) ? operationsMap[`commit${b.dim}`] : b.type === "tmp" ? operationsMap[`tmp${b.dim}`] : operationsMap[b.type];
             let swap = a.dim !== b.dim ? b.dim - a.dim : opA - opB;
@@ -590,17 +616,19 @@ module.exports.getOperation = function getOperation(r) {
         });
     }
 
-    for(let i = 0; i < r.src.length; i++) {
-        if(["cm", "tmpExp"].includes(r.src[i].type)) {
-            _op[`src${i}_type`] = `commit${r.src[i].dim}`;
-        } else if(r.src[i].type === "const") {
+    for(let i = 0; i < src.length; i++) {
+        if(["cm", "tmpExp"].includes(src[i].type)) {
+            _op[`src${i}_type`] = `commit${src[i].dim}`;
+        } else if(src[i].type === "const") {
             _op[[`src${i}_type`]] = "commit1";
-        } else if(r.src[i].type === "tmp") {
-            _op[`src${i}_type`] =  `tmp${r.src[i].dim}`;
+        } else if(src[i].type === "tmp") {
+            _op[`src${i}_type`] =  `tmp${src[i].dim}`;
         } else {
-            _op[`src${i}_type`] = r.src[i].type;
+            _op[`src${i}_type`] = src[i].type;
         }
     }
 
+    _op.src = src;
+    
     return _op;
 }

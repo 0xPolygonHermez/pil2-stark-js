@@ -26,6 +26,24 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
     const cHelpersBin = await createBinFile(cHelpersFilename, "chps", 1, CHELPERS_NSECTIONS, 1 << 22, 1 << 24);    
         
     console.log(`··· Writing Section ${CHELPERS_STAGES_SECTION}. CHelpers stages section`);
+    await writeStagesInfoSection(cHelpersBin, stagesInfo);
+
+    console.log(`··· Writing Section ${CHELPERS_EXPRESSIONS_SECTION}. CHelpers expressions section`);
+    await writeExpressionsSection(cHelpersBin, expressionsInfo);
+
+    console.log(`··· Writing Section ${CHELPERS_CONSTRAINTS_DEBUG_SECTION}. CHelpers constraints debug section`);
+    await writeConstraintsSection(cHelpersBin, constraintsInfo);
+
+    console.log(`··· Writing Section ${CHELPERS_HINTS_SECTION}. Hints section`);
+    await writeHintsSection(cHelpersBin, hintsInfo);
+
+    console.log("> Writing the chelpers file finished");
+    console.log("---------------------------------------------");
+
+    await cHelpersBin.close();
+}
+
+async function writeStagesInfoSection(cHelpersBin, stagesInfo) {
     await startWriteSection(cHelpersBin, CHELPERS_STAGES_SECTION);
 
     const ops = [];
@@ -198,8 +216,9 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
     await cHelpersBin.write(buffSubproofValuesIds);
 
     await endWriteSection(cHelpersBin);
+}
 
-    console.log(`··· Writing Section ${CHELPERS_EXPRESSIONS_SECTION}. CHelpers expressions section`);
+async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
     await startWriteSection(cHelpersBin, CHELPERS_EXPRESSIONS_SECTION);
 
     const opsExpressions = [];
@@ -373,8 +392,9 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
     await cHelpersBin.write(buffSubproofValuesIdsExpressions);
 
     await endWriteSection(cHelpersBin);
+}
 
-    console.log(`··· Writing Section ${CHELPERS_CONSTRAINTS_DEBUG_SECTION}. CHelpers constraints debug section`);
+async function writeConstraintsSection(cHelpersBin, constraintsInfo) {
     await startWriteSection(cHelpersBin, CHELPERS_CONSTRAINTS_DEBUG_SECTION);
 
     const opsDebug = [];
@@ -550,8 +570,9 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
     await cHelpersBin.write(buffSubproofValuesIdsDebug);
 
     await endWriteSection(cHelpersBin);
+}
 
-    console.log(`··· Writing Section ${CHELPERS_HINTS_SECTION}. Hints section`);
+async function writeHintsSection(cHelpersBin, hintsInfo) {
     await startWriteSection(cHelpersBin, CHELPERS_HINTS_SECTION);
 
     const nHints = hintsInfo.length;
@@ -574,10 +595,5 @@ exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expres
         }
     }
 
-    console.log("> Writing the chelpers file finished");
-    console.log("---------------------------------------------");
-
     await endWriteSection(cHelpersBin);
-
-    await cHelpersBin.close();
 }

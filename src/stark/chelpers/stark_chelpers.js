@@ -68,20 +68,16 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     }
 
     // Get parser args for each constraint
-    for(let s = 1; s <= nStages + 1; ++s) {
-        const stage = `stage${s}`;
-        const constraintsStage = starkInfo.constraints[stage] || [];
-        for(let j = 0; j < constraintsStage.length; ++j) {
-            const constraintCode = constraintsStage[j];
-            const constraintInfo = getParserArgsCode(`constraint${s}_${j}`, constraintCode, "n", true);
-            constraintInfo.stage = s;
-            constraintsInfo.push(constraintInfo);
+    for(let j = 0; j < starkInfo.constraints.length; ++j) {
+        const constraintCode = starkInfo.constraints[j];
+        const constraintInfo = getParserArgsCode(`constraint${j}`, constraintCode, "n", true);
+        constraintInfo.stage = constraintCode.stage;
+        constraintsInfo.push(constraintInfo);
 
-            if(genericBinFile) {
-                const constraintInfoGeneric = getParserArgsCodeGeneric(`constraint${s}_${j}`, constraintCode, "n", true);
-                constraintInfoGeneric.stage = s;
-                constraintsInfoGeneric.push(constraintInfoGeneric);
-            }
+        if(genericBinFile) {
+            const constraintInfoGeneric = getParserArgsCodeGeneric(`constraint${j}`, constraintCode, "n", true);
+            constraintInfoGeneric.stage = constraintCode.stage;
+            constraintsInfoGeneric.push(constraintInfoGeneric);
         }
     }
 
@@ -118,27 +114,27 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     const operationsPatterns = operationsWithPatterns.filter(op => op.isGroupOps);
     console.log("Number of patterns used: " + operationsPatterns.length);
     for(let i = 0; i < operationsPatterns.length; ++i) {
-        console.log("case " + operationsPatterns[i].opIndex + " ->    " + operationsPatterns[i].ops.join(", "));
+    console.log("case " + operationsPatterns[i].opIndex + " ->    " + operationsPatterns[i].ops.join(", "));
     }
     
     // Set case to consecutive numbers
     for(let i = 0; i < stagesInfo.length; ++i) {
-        stagesInfo[i].ops = stagesInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
+    stagesInfo[i].ops = stagesInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
     }
 
     for(let i = 0; i < expressionsInfo.length; ++i) {
-        expressionsInfo[i].ops = expressionsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
+    expressionsInfo[i].ops = expressionsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
     }
 
     for(let i = 0; i < constraintsInfo.length; ++i) {
-        constraintsInfo[i].ops = constraintsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
+    constraintsInfo[i].ops = constraintsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
     }
 
     cHelpers = cHelpers.replace(/case (\d+):/g, (match, caseNumber) => {
-        caseNumber = parseInt(caseNumber, 10);
-        const newIndex = totalSubsetOperationsUsed.findIndex(o => o === caseNumber);
-        if(newIndex === -1) throw new Error("Invalid operation!");
-        return `case ${newIndex}:`;
+    caseNumber = parseInt(caseNumber, 10);
+    const newIndex = totalSubsetOperationsUsed.findIndex(o => o === caseNumber);
+    if(newIndex === -1) throw new Error("Invalid operation!");
+    return `case ${newIndex}:`;
     });
 
     const baseDir = path.dirname(cHelpersFile);
@@ -165,7 +161,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
         opsUsed.push(...patternOps);
 
         for(let j = 0; j < opsUsed.length; ++j) {
-            if(!totalSubsetOperationsUsed.includes(opsUsed[j])) totalSubsetOperationsUsed.push(opsUsed[j]);
+        if(!totalSubsetOperationsUsed.includes(opsUsed[j])) totalSubsetOperationsUsed.push(opsUsed[j]);
         }
 
         console.log("--------------------------------");
