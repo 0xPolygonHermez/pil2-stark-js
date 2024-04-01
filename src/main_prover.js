@@ -17,13 +17,14 @@ const { createHash } = require("crypto");
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_prover.js -m commit.bin -c <const.bin> -t <consttree.bin> -p <pil.json> [-P <pilconfig.json>] -s <starkinfo.json> -o <proof.json> -b <public.json> -v <challenges.json> [--vadcop]")
+    .usage("node main_prover.js -m commit.bin -c <const.bin> -t <consttree.bin> -p <pil.json> [-P <pilconfig.json>] -s <starkinfo.json> -e <expressionsinfo.json> -o <proof.json> -b <public.json> -v <challenges.json> [--vadcop]")
     .alias("m", "commit")
     .alias("c", "const")
     .alias("t", "consttree")
     .alias("p", "pil")
     .alias("P", "pilconfig")
     .alias("s", "starkinfo")
+    .alias("e", "expressionsinfo")
     .alias("i", "input")
     .alias("o", "proof")
     .alias("z", "zkin")
@@ -41,6 +42,7 @@ async function run() {
     const pilFile = typeof(argv.pil) === "string" ?  argv.pil.trim() : "mycircuit.pil";
     const pilConfig = typeof(argv.pilconfig) === "string" ? JSON.parse(fs.readFileSync(argv.pilconfig.trim())) : {};
     const starkInfoFile = typeof(argv.starkinfo) === "string" ?  argv.starkinfo.trim() : "mycircuit.starkinfo.json";
+    const expressionsInfoFile = typeof(argv.expressionsinfo) === "string" ?  argv.expressionsinfo.trim() : "mycircuit.expressionsinfo.json";
     const inputFile = typeof(argv.input) === "string" ? argv.input.trim() : "mycircuit.input.json";
     const proofFile = typeof(argv.proof) === "string" ?  argv.proof.trim() : "mycircuit.proof.json";
     const zkinFile = typeof(argv.zkin) === "string" ?  argv.zkin.trim() : "mycircuit.proof.zkin.json";
@@ -48,6 +50,7 @@ async function run() {
 
     const pil = await compile(F, pilFile, null, pilConfig);
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
+    const expressionsInfo = JSON.parse(await fs.promises.readFile(expressionsInfoFile, "utf8"));
 
     const inputs = typeof(argv.input) === "string" ? JSONbig.parse(await fs.promises.readFile(inputFile, "utf8")) : {};
     
@@ -80,7 +83,7 @@ async function run() {
 
     const constTree = await MH.readFromFile(constTreeFile);
 
-    const resP = await proofGen(cmPols, starkInfo, inputs, constTree, constPols, null, options)
+    const resP = await proofGen(cmPols, starkInfo, expressionsInfo, inputs, constTree, constPols, null, options)
 
     await fs.promises.writeFile(proofFile, JSONbig.stringify(resP.proof, null, 1), "utf8");
 

@@ -20,6 +20,7 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
     res.cmPolsMap = [];
     res.constPolsMap = [];
     res.challengesMap = [];
+    res.subproofValuesMap = [];
 
     res.mapSectionsN = {
         "const": 0,
@@ -66,8 +67,6 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
         }
     }
     
-    res.hints = hints;
-
     res.boundaries = [{ name: "everyRow" }];
 
     res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
@@ -76,5 +75,5 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
         generateConstraintPolynomial(res, expressions, symbols, constraints, stark);
     }
     
-    return {res, expressions, constraints, symbols}
+    return {res, expressions, constraints, symbols, hints}
 }

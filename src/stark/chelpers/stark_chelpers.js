@@ -5,17 +5,17 @@ const { writeCHelpersFile } = require("./binFile.js");
 const path = require("path");
 const fs = require("fs");
 
-module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersFile, className = "", binFile, genericBinFile) {
+module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressionsInfo, cHelpersFile, className = "", binFile, genericBinFile) {
 
     if(className === "") className = "Stark";
     className = className[0].toUpperCase() + className.slice(1) + "Steps";
     
     const stagesInfo = [];
-    const expressionsInfo = [];
+    const expsInfo = [];
     const constraintsInfo = [];
 
     const stagesInfoGeneric = [];
-    const expressionsInfoGeneric = [];
+    const expsInfoGeneric = [];
     const constraintsInfoGeneric = [];
 
     const nStages = starkInfo.nStages;
@@ -38,38 +38,38 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     // Get parser args for each stage
     for(let i = 0; i < nStages; ++i) {
         let stage = i + 1;
-        const stageInfo = getParserArgsCode(`step${stage}`, starkInfo.code[`stage${stage}`], "n", debug);
+        const stageInfo = getParserArgsCode(`step${stage}`, expressionsInfo.code[`stage${stage}`], "n", debug);
         stageInfo.stage = stage;
         stagesInfo.push(stageInfo);
 
         if(genericBinFile) {
-            const stageInfoGeneric = getParserArgsCodeGeneric(`step${stage}`, starkInfo.code[`stage${stage}`], "n", debug);
+            const stageInfoGeneric = getParserArgsCodeGeneric(`step${stage}`, expressionsInfo.code[`stage${stage}`], "n", debug);
             stageInfoGeneric.stage = stage;
             stagesInfoGeneric.push(stageInfoGeneric);
         }
     }
 
-    const stageQInfo = getParserArgsCode(`step${nStages + 1}`, starkInfo.code.qCode, "ext");
+    const stageQInfo = getParserArgsCode(`step${nStages + 1}`, expressionsInfo.code.qCode, "ext");
     stageQInfo.stage = nStages + 1;
     stagesInfo.push(stageQInfo);
 
-    const stageFriInfo = getParserArgsCode(`step${nStages + 2}`, starkInfo.code.fri, "ext");
+    const stageFriInfo = getParserArgsCode(`step${nStages + 2}`, expressionsInfo.code.fri, "ext");
     stageFriInfo.stage = nStages + 2;
     stagesInfo.push(stageFriInfo);
 
     if(genericBinFile) {
-        const stageQInfoGeneric = getParserArgsCodeGeneric(`step${nStages + 1}`, starkInfo.code.qCode, "ext");
+        const stageQInfoGeneric = getParserArgsCodeGeneric(`step${nStages + 1}`, expressionsInfo.code.qCode, "ext");
         stageQInfoGeneric.stage = nStages + 1;
         stagesInfoGeneric.push(stageQInfoGeneric);
 
-        const stageFriInfoGeneric = getParserArgsCodeGeneric(`step${nStages + 2}`, starkInfo.code.fri, "ext");
+        const stageFriInfoGeneric = getParserArgsCodeGeneric(`step${nStages + 2}`, expressionsInfo.code.fri, "ext");
         stageFriInfoGeneric.stage = nStages + 2;
         stagesInfoGeneric.push(stageFriInfoGeneric);
     }
 
     // Get parser args for each constraint
-    for(let j = 0; j < starkInfo.constraints.length; ++j) {
-        const constraintCode = starkInfo.constraints[j];
+    for(let j = 0; j < expressionsInfo.constraints.length; ++j) {
+        const constraintCode = expressionsInfo.constraints[j];
         const constraintInfo = getParserArgsCode(`constraint${j}`, constraintCode, "n", true);
         constraintInfo.stage = constraintCode.stage;
         constraintsInfo.push(constraintInfo);
@@ -83,18 +83,18 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
 
 
     // Get parser args for each expression
-    for(let i = 0; i < starkInfo.expressionsCode.length; ++i) {
-        const expCode = starkInfo.expressionsCode[i];
+    for(let i = 0; i < expressionsInfo.expressionsCode.length; ++i) {
+        const expCode = expressionsInfo.expressionsCode[i];
         const expInfo = getParserArgsCode(`exp${expCode.expId}`,expCode.code, "n");
         expInfo.expId = expCode.expId;
         expInfo.stage = expCode.stage;
-        expressionsInfo.push(expInfo);
+        expsInfo.push(expInfo);
 
         if(genericBinFile) {
             const expInfoGeneric = getParserArgsCodeGeneric(`exp${expCode.expId}`,expCode.code, "n");
             expInfoGeneric.expId = expCode.expId;
             expInfoGeneric.stage = expCode.stage;
-            expressionsInfoGeneric.push(expInfoGeneric);
+            expsInfoGeneric.push(expInfoGeneric);
         }
     }
 
@@ -119,15 +119,15 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     
     // Set case to consecutive numbers
     for(let i = 0; i < stagesInfo.length; ++i) {
-    stagesInfo[i].ops = stagesInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
+        stagesInfo[i].ops = stagesInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
     }
 
-    for(let i = 0; i < expressionsInfo.length; ++i) {
-    expressionsInfo[i].ops = expressionsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
+    for(let i = 0; i < expsInfo.length; ++i) {
+        expsInfo[i].ops = expsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
     }
 
     for(let i = 0; i < constraintsInfo.length; ++i) {
-    constraintsInfo[i].ops = constraintsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
+        constraintsInfo[i].ops = constraintsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
     }
 
     cHelpers = cHelpers.replace(/case (\d+):/g, (match, caseNumber) => {
@@ -144,10 +144,10 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     
     await fs.promises.writeFile(cHelpersFile, cHelpers, "utf8");
     
-    await writeCHelpersFile(binFile, stagesInfo, expressionsInfo, constraintsInfo, starkInfo.hints);
+    await writeCHelpersFile(binFile, stagesInfo, expsInfo, constraintsInfo, expressionsInfo.hintsInfo);
 
     if(genericBinFile) {
-        await writeCHelpersFile(genericBinFile, stagesInfoGeneric, expressionsInfoGeneric, constraintsInfoGeneric, starkInfo.hints);
+        await writeCHelpersFile(genericBinFile, stagesInfoGeneric, expsInfoGeneric, constraintsInfoGeneric, expressionsInfo.hintsInfo);
     }
 
     return;

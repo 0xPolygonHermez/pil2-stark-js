@@ -128,10 +128,10 @@ function addSymbol(exp, symbols, stark) {
             symbols.push({ type: "witness", polId: exp.id, stageId: exp.stageId, stage: exp.stage, dim, name, airId: exp.airId, subproofId: exp.subproofId});
         }
     } else if(exp.op === "subproofValue") {
-        const subProofValueSymbol = symbols.find(s => s.type === "subproofvalue" && s.id === exp.id && s.airId === exp.airId && s.subproofId === exp.subproofId);
+        const subProofValueSymbol = symbols.find(s => s.type === "subproofValue" && s.id === exp.id && s.airId === exp.airId && s.subproofId === exp.subproofId);
         if(!subProofValueSymbol) {
             const name = "subproofvalue_" + exp.id;
-            symbols.push({type: "subproofvalue", dim: 1, id: exp.id, name, airId: exp.airId, subproofId: exp.subproofId });
+            symbols.push({type: "subproofValue", dim: 1, id: exp.id, name, airId: exp.airId, subproofId: exp.subproofId });
         }
     }
     return;
@@ -214,7 +214,7 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
         } else if(s.type === piloutTypes.SUBPROOF_VALUE) {
             return {
                 name: s.name,
-                type: "subproofvalue",
+                type: "subproofValue",
                 id: s.id,
                 subproofId: s.subproofId,
                 dim: stark ? 3 : 1,

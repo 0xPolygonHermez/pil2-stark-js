@@ -1,4 +1,4 @@
-module.exports = function map(res, symbols, stark, debug) {  
+module.exports = function map(res, symbols, stark) {  
     mapSymbols(res, symbols);
 
     if(stark) {
@@ -18,10 +18,6 @@ module.exports = function map(res, symbols, stark, debug) {
     
     
     setStageInfoSymbols(res, symbols);
-
-    addHintsInfo(res, symbols);
-
-    setSymbolsStage(res, symbols);
 }
 
 function mapSymbols(res, symbols) {
@@ -66,48 +62,6 @@ function addPol(res, stage, symbol) {
     if(symbol.imPol) ref[pos].imPol = symbol.imPol;
 }
 
-function setSymbolsStage(res, symbols) {
-    res.symbolsStage = [];
-    for(let i = 0; i < res.nStages + 1; ++i) {
-        res.symbolsStage[i] = symbols.filter(s => s.stage === i).map(s => {
-            if(s.type === "challenge") {
-                return {
-                    op: "challenge",
-                    stage: s.stage,
-                    stageId: s.stageId,
-                    id: s.id,
-                }
-            } else if(s.type === "witness" || (s.type === "tmpPol" && s.imPol)) {
-                return {
-                    op: "cm",
-                    stage: s.stage,
-                    stageId: s.stageId,
-                    id: s.polId,
-                }
-            } else if(s.type === "tmpPol" && !s.imPol) {
-                return {
-                    op: "tmp",
-                    stage: s.stage,
-                    stageId: s.stageId,
-                    id: s.polId,
-                }
-            } else if(s.type === "fixed") {
-                return {
-                    op: "const",
-                    stage: s.stage,
-                    id: s.stageId,
-                }
-            } else if(["public", "subproofValue", "challenge"].includes(s.type)) {
-                return {
-                    op: s.type,
-                    stage: s.stage,
-                    id: s.id,
-                }
-            }
-        })
-    }
-}
-
 function setStageInfoSymbols(res, symbols) {
     const qStage = res.nStages + 1;
     for(let i = 0; i < symbols.length; ++i) {
@@ -133,41 +87,6 @@ function setStageInfoSymbols(res, symbols) {
             symbol.stageId = prevPolsStage.length;
             res.cmPolsMap[symbol.polId].stagePos = symbol.stagePos;
             res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
-        }
-    }
-}
-
-
-function addHintsInfo(res, symbols) {
-    for(let i = 0; i < res.hints.length; ++i) {
-        const hint = res.hints[i];
-
-        const hintFields = [];
-
-        const fields = Object.keys(hint);
-    
-        for(let j = 0; j < fields.length; ++j) {
-            const field = fields[j];
-            if(field === "name") continue;
-            if(hint[field].op === "exp") {
-                const symbol = symbols.find(s => s.expId === hint[field].id);
-                if(!symbol) throw new Error("Something went wrong!");
-                const op = symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol) ? "cm" : "tmp";
-                const id = symbol.polId;
-                hintFields.push({name: field, op, id});
-            } else if(["cm", "challenge", "public"].includes(hint[field].op)) {
-                hintFields.push({name: field, op: hint[field].op, id: hint[field].id});
-            } else if(["public", "subproofValue", "const"].includes(hint[field].op)) {
-                hintFields.push({name: field, op: hint[field].op, id: hint[field].id});
-            } else if(hint[field].op === "number") {
-                hintFields.push({name: field, op: "number", value: hint[field].value});
-            } else throw new Error("Invalid hint op: " + hint[field].op);
-        }
-
-
-        res.hints[i] = {
-            name: hint.name,
-            fields: hintFields,
         }
     }
 }

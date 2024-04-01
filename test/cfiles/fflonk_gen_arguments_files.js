@@ -92,7 +92,7 @@ describe("generating files for arguments", async function () {
         }
 
         // Create & save fflonkInfo
-        const fflonkInfo = pilInfo(F, pil, false);
+        const {pilInfo: fflonkInfo} = pilInfo(F, pil, false);
         
         const fflonkInfoFilename =  path.join(__dirname, "../../", "tmp", `${outputFilename}.fflonkinfo.json`);
         await fs.promises.writeFile(fflonkInfoFilename, JSON.stringify(fflonkInfo, null, 1), "utf8");

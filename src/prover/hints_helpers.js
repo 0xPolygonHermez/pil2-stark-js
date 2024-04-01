@@ -4,8 +4,9 @@ const { isSymbolCalculated, setSymbolCalculated } = require("./symbols_helpers")
 
 module.exports.applyHints = async function applyHints(stage, ctx, options) {
 
-    for(let i = 0; i < ctx.pilInfo.hints.length; i++) {
-        const hint = ctx.pilInfo.hints[i];
+    const hints = ctx.expressionsInfo.hintsInfo;
+    for(let i = 0; i < hints.length; i++) {
+        const hint = hints[i];
 
         if(isHintResolved(ctx, hint, options)) {
             if(options?.logger) options.logger.debug(`Hint ${i} already resolved`);
@@ -31,7 +32,7 @@ function getHintField(ctx, hint, field, dest = false) {
 }
 
 function canResolveHint(ctx, hint) {
-    if(hint.name === "subproofvalue" || hint.name === "public") {
+    if(hint.name === "subproofValue" || hint.name === "public") {
         const expression = hint.fields.find(f => f.name === "expression");
         if(["cm", "tmp"].includes(expression.op) && !isSymbolCalculated(ctx, expression)) return false;
     } else if (hint.name === "gsum" || hint.name === "gprod") {
@@ -44,13 +45,13 @@ function canResolveHint(ctx, hint) {
         const t = hint.fields.find(f => f.name === "t");
         if((["cm", "tmp"].includes(f.op) && !isSymbolCalculated(ctx, f)) 
         || (["cm", "tmp"].includes(t.op) && !isSymbolCalculated(ctx, t))) return false;
-    } else throw new Error("Unknown hint type" + hint.name);
+    } else throw new Error("Unknown hint type " + hint.name);
 
     return true;
 }
 
 function isHintResolved(ctx, hint) {
-    if(hint.name === "subproofvalue") {
+    if(hint.name === "subproofValue") {
         const subAirValue = getHintField(ctx, hint, "reference");
         return isSymbolCalculated(ctx, subAirValue);
     } else if(hint.name === "public") {
@@ -66,7 +67,7 @@ function isHintResolved(ctx, hint) {
         const h1 = getHintField(ctx, hint, "referenceH1", true);
         const h2 = getHintField(ctx, hint, "referenceH2", true);
         return isSymbolCalculated(ctx, h1) && isSymbolCalculated(ctx, h2);
-    } else throw new Error("Unknown hint type" + hint.name);
+    } else throw new Error("Unknown hint type " + hint.name);
 }
 
 
@@ -74,7 +75,7 @@ function isHintResolved(ctx, hint) {
 async function resolveHint(ctx, hint, options) {
     if(options?.logger) options.logger.debug(`Calculating hint ${hint.name} with fields: ${hint.fields.map(f => f.name).join(", ")}`);
 
-    if(hint.name === "subproofvalue") {
+    if(hint.name === "subproofValue") {
         const polinomial = getHintField(ctx, hint, "expression");
         const position = getHintField(ctx, hint, "row_index");
         const value = polinomial[position];

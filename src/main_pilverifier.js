@@ -63,8 +63,8 @@ async function run() {
     const splitLinearHash = false;
 
     const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
-    const starkInfo = pilInfo(F, pil, true, pil2, {}, {debug: true});
-    await starkGen(cmPols, constPols, {}, starkInfo, {}, optionsPilVerify);
+    const {pilInfo: starkInfo, expressionsInfo} = pilInfo(F, pil, true, pil2, {}, {debug: true});
+    await starkGen(cmPols, constPols, {}, starkInfo, expressionsInfo, {}, optionsPilVerify);
 }
 
 run().then(()=> {

@@ -29,7 +29,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     res.aggregationTypes = aggregationTypes;
     res.nSubAirValues = pilout.aggregationTypes 
         ? aggregationTypes.length 
-        : symbols.filter(s => s.type === "subproofvalue" && s.subproofId === res.subproofId).length;
+        : symbols.filter(s => s.type === "subproofValue" && s.subproofId === res.subproofId).length;
     if(pilout.numChallenges) {
         res.nStages = pilout.numChallenges.length;
     } else {

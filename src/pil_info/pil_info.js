@@ -12,6 +12,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
 
     const expressions = infoPil.expressions;
     const constraints = infoPil.constraints;
+    const hints = infoPil.hints;
     const symbols = infoPil.symbols;
     const res = infoPil.res;
     
@@ -39,8 +40,8 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
 
     map(res, symbols, stark, options.debug);       
 
-    generatePilCode(res, symbols, constraints, newExpressions, options.debug, stark);
-
+    const expressionsInfo = generatePilCode(res, symbols, constraints, newExpressions, hints, options.debug, stark);
+    
     delete res.nCommitments;
     delete res.cExpId;
     delete res.friExpId;
@@ -72,6 +73,6 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
         console.log("------------------------------------------------------------")
     }
     
-    return res;
+    return {pilInfo: res, expressionsInfo};
 
 }

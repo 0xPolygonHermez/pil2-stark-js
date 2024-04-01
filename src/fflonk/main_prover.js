@@ -17,6 +17,7 @@ const argv = require("yargs")
     .alias("p", "pil")
     .alias("P", "pilconfig")
     .alias("f", "fflonkinfo")
+    .alias("e", "expressionsinfo")
     .alias("z", "zkey")
     .alias("o", "proof")
     .alias("b", "public")
@@ -29,6 +30,7 @@ async function run() {
     const pilFile = typeof(argv.pil) === "string" ?  argv.pil.trim() : "mycircuit.pil";
     const pilConfig = typeof(argv.pilconfig) === "string" ? JSON.parse(fs.readFileSync(argv.pilconfig.trim())) : {};
     const fflonkInfoFile = typeof(argv.fflonkinfo) === "string" ?  argv.fflonkinfo.trim() : "mycircuit.fflonkInfo.json";
+    const expressionsInfoFile = typeof(argv.expressionsinfo) === "string" ?  argv.expressionsinfo.trim() : "mycircuit.expressionsinfo.json";
     const zkeyFile = typeof(argv.zkey) === "string" ?  argv.zkey.trim() : "mycircuit.zkey";
     const proofFile = typeof(argv.proof) === "string" ?  argv.proof.trim() : "mycircuit.proof.json";
     const publicFile = typeof(argv.public) === "string" ?  argv.public.trim() : "mycircuit.public.json";
@@ -51,7 +53,7 @@ async function run() {
     await cmPols.loadFromFileFr(commitFile, zkey.curve.Fr);
 
 
-    const resP = await fflonkProve(zkey, cmPols, fflonkInfo, ptauFile, options);
+    const resP = await fflonkProve(zkey, cmPols, fflonkInfo, expressionsInfo, ptauFile, options);
     
     await fs.promises.writeFile(proofFile, JSONbig.stringify(resP.proof, null, 1), "utf8");
 

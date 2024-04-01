@@ -28,6 +28,7 @@ async function run() {
     const res = infoPil.res;
     const symbols = infoPil.symbols;
     const constraints = infoPil.constraints;
+    const hints = infoPil.hints;
     const expressions = imPols.newExpressions;
     const qDeg = imPols.qDeg;
     const imExps = imPols.imExps;

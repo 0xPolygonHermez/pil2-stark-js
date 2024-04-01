@@ -13,9 +13,9 @@ const _ = require("json-bigint");
 const { interpolate, ifft, fft } = require("../helpers/fft/fft_p.js");
 const {BigBuffer} = require("pilcom");
 const { callCalculateExps, getPolRef, getPol } = require("../prover/prover_helpers.js");
-const { setConstantsPolynomialsCalculated, setSymbolCalculated } = require("../prover/symbols_helpers.js");
+const { setSymbolCalculated } = require("../prover/symbols_helpers.js");
 
-module.exports.initProverStark = async function initProverStark(pilInfo, constPols, constTree, options = {}) {
+module.exports.initProverStark = async function initProverStark(pilInfo, expressionsInfo, constPols, constTree, options = {}) {
     const ctx = {};
 
     const logger = options.logger;
@@ -33,6 +33,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     ctx.constTree = constTree;
 
     ctx.pilInfo = pilInfo;
+    ctx.expressionsInfo = expressionsInfo;
     ctx.nBits = ctx.pilInfo.pilPower;
     
     ctx.N = 1 << ctx.pilInfo.pilPower;
@@ -139,7 +140,9 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     // Read const coefs
     constPols.writeToBigBuffer(ctx.const_n);
 
-    setConstantsPolynomialsCalculated(ctx, options);
+    for(let i = 0; i < ctx.pilInfo.nConstants; i++) {
+       setSymbolCalculated(ctx, {op: "const", stage: 0, id: i}, options);
+    }
 
     if(!options.debug) {
         ctx.const_ext = constTree.elements;
@@ -339,7 +342,7 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
         }
     }
 
-    await callCalculateExps("fri", ctx.pilInfo.code[`fri`], "ext", ctx, options.parallelExec, options.useThreads, false);
+    await callCalculateExps("fri", ctx.expressionsInfo.code[`fri`], "ext", ctx, options.parallelExec, options.useThreads, false);
 
     ctx.friPol[0] = new Array(ctx.extN);
     for (let i=0; i<ctx.extN; i++) {

@@ -26,21 +26,21 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
 
         const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
 
-        const starkInfo = pilInfo(F, pil, true, pil2, {}, {debug: debug});
-        const pilVerification = await starkGen(cmPols, constPols, {}, starkInfo, inputs, optionsPilVerify);
+        const {pilInfo: starkInfo, expressionsInfo} = pilInfo(F, pil, true, pil2, {}, {debug: debug});
+        const pilVerification = await starkGen(cmPols, constPols, {}, starkInfo, expressionsInfo, inputs, optionsPilVerify);
         assert(pilVerification==true);
     }
 
     const setup = await starkSetup(constPols, pil, starkStruct, {...options, debug: false});
 
-    const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, inputs, {...options, debug: false});
+    const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, setup.expressionsInfo, inputs, {...options, debug: false});
 
-    const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, { challenges: resP.challenges, challengesFRISteps: resP.challengesFRISteps }, setup.starkInfo, {...options, debug: false});
+    const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, { challenges: resP.challenges, challengesFRISteps: resP.challengesFRISteps }, setup.starkInfo, setup.expressionsInfo, {...options, debug: false});
 
     assert(resV==true);
 
     if(!skip) {
-        const verifier = await pil2circom(setup.constRoot, setup.starkInfo);
+        const verifier = await pil2circom(setup.constRoot, setup.starkInfo, setup.expressionsInfo);
 
         const fileName = await tmp.tmpName();
         await fs.promises.writeFile(fileName, verifier, "utf8");

@@ -179,29 +179,18 @@ function fixCommitPol(r, ctx, symbols) {
         r.type = "cm";
         r.id = symbol.polId;
         r.dim = symbol.dim;
-        if(ctx.verifierEvaluations) fixEval(r, ctx, symbols);
+        if(ctx.verifierEvaluations) fixEval(r, ctx);
     }
 }
 
-function fixEval(r, ctx, symbols) {
+function fixEval(r, ctx) {
     const prime = r.prime || 0;
-    let evalIndex = ctx.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === prime && e.airId === ctx.airId && e.subproofId === ctx.subproofId);
+    let evalIndex = ctx.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === prime);
     if (evalIndex == -1) {  
-        const symbol = r.type === "const" 
-            ? symbols.find(s => s.polId === r.id && s.type === "fixed" && s.airId === ctx.airId && s.subproofId === ctx.subproofId)
-            : symbols.find(s => s.polId === r.id && s.type !== "fixed" && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
-        const name = symbol.name;
-        const stage = symbol.stage;
-        const dim = symbol.dim;
         const rf = {
             type: r.type,
-            name,
             id: r.id,
             prime,
-            stage,
-            dim,
-            airId: ctx.airId,
-            subproofId: ctx.subproofId,
         };
         ctx.evMap.push(rf);
         evalIndex = ctx.evMap.length - 1;

@@ -5,7 +5,7 @@ const { assert } = require("chai");
 const buildPoseidonGL = require("../helpers/hash/poseidon/poseidon");
 const { calculateTranscript, calculateFRIQueries } = require("./calculateTranscriptVerify");
 
-module.exports = async function starkVerify(proof, publics, constRoot, challenges, starkInfo, options = {}) {
+module.exports = async function starkVerify(proof, publics, constRoot, challenges, starkInfo, expressionsInfo, options = {}) {
     const logger = options.logger;
 
     const starkStruct = starkInfo.starkStruct;
@@ -73,7 +73,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         ctx.challengesFRISteps = challenges.challengesFRISteps;
         if(logger) {
             for(let i=0; i < starkInfo.nStages; i++) {
-                for(let j = 0; j < fflonkInfo.challengesMap.filter(c => c.stageNum === i + 1).length; ++j) {
+                for(let j = 0; j < starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length; ++j) {
                     logger.debug("··· challenges[" + i + "][" + j + "]: " + F.toString(ctx.challenges[i][j]));
                 }
             }
@@ -138,7 +138,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         }   
     }
 
-    const res=module.exports.executeCode(F, ctx, starkInfo.code.qVerifier.code);
+    const res=module.exports.executeCode(F, ctx, expressionsInfo.code.qVerifier.code);
 
     let xAcc = 1n;
     let q = 0n;
@@ -215,7 +215,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
             ctxQry.xDivXSubXi[i] = F.div(x, F.sub(x, F.mul(ctxQry.challenges[evalsStage][0], w)));
         }
 
-        const vals = [module.exports.executeCode(F, ctxQry, starkInfo.code.queryVerifier.code)];
+        const vals = [module.exports.executeCode(F, ctxQry, expressionsInfo.code.queryVerifier.code)];
 
         return vals;
     }

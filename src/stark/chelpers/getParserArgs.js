@@ -63,7 +63,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
     const cmPolsIds = symbolsUsed.filter(s => s.op === "cm" || s.op === "tmp").map(s => s.id).sort();
     const challengeIds = symbolsUsed.filter(s => s.op === "challenge").map(s => s.id).sort();
     const publicsIds = symbolsUsed.filter(s => s.op === "public").map(s => s.id).sort();
-    const subproofValuesIds = symbolsUsed.filter(s => s.op === "subproofvalue").map(s => s.id).sort();
+    const subproofValuesIds = symbolsUsed.filter(s => s.op === "subproofValue").map(s => s.id).sort();
 
     const cmPolsCalculatedIds = symbolsCalculated.map(s => s.id).sort();
 

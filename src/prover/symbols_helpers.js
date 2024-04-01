@@ -1,49 +1,37 @@
 const { callCalculateExps } = require("./prover_helpers");
 
-module.exports.checkSymbolsCalculated = function checkSymbolsCalculated(ctx, stage, options) {
-    const symbolsStage = ctx.pilInfo.symbolsStage[stage];
-    let publicsToBeCalculated = 0;
-    let subproofValuesToBeCalculated = 0;
-    let commitsToBeCalculated = 0;
-    let tmpPolsToBeCalculated = 0;
-    let symbolsCalculated = 0;
+module.exports.isStageCalculated = function isStageCalculated(ctx, stage, options) {
+    
     let symbolsToBeCalculated = 0;
-    for(let i = 0; i < symbolsStage.length; ++i) {
-        if(!module.exports.isSymbolCalculated(ctx, symbolsStage[i])) {
-            if(symbolsStage[i].op === "cm") {
-                commitsToBeCalculated++;
-}
-            if(symbolsStage[i].op === "tmp") {
-                tmpPolsToBeCalculated++;
-            }
-            if(symbolsStage[i].op === "public") publicsToBeCalculated++;
-            if(symbolsStage[i].op === "subproofvalue") subproofValuesToBeCalculated++;
-            symbolsToBeCalculated++;
-        } else {
-            symbolsCalculated++;
-        };
+    
+    for(let i = 0; i < ctx.pilInfo.cmPolsMap.length; ++i) {
+        if(ctx.pilInfo.cmPolsMap[i].stageNum !== stage) continue;
+        if(!module.exports.isSymbolCalculated(ctx, {op: "cm", id: i})) symbolsToBeCalculated++;
     }
-    let nCommits = symbolsStage.filter(s => s.op === "cm").length;
-    let nTmpPols = symbolsStage.filter(s => s.op === "tmp").length;
-    let nPublics = symbolsStage.filter(s => s.op === "public").length;
-    let nSubproofValues = symbolsStage.filter(s => s.op === "subproofvalue").length;
-    if(options.logger && nCommits > 0) options.logger.debug(`There are ${commitsToBeCalculated} out of ${nCommits} committed polynomials to be calculated in stage ${stage}`);
-    if(options.logger && nTmpPols > 0) options.logger.debug(`There are ${tmpPolsToBeCalculated} out of ${nTmpPols} temporal polynomials to be calculated in stage ${stage}`);
-    if(options.logger && nPublics > 0) options.logger.debug(`There are ${publicsToBeCalculated} out of ${nPublics} public values to be calculated in stage ${stage}`);
-    if(options.logger && nSubproofValues > 0) options.logger.debug(`There are ${subproofValuesToBeCalculated} out of ${nSubproofValues} subproof values to be calculated in stage ${stage}`);
-    return { totalSymbolsStage: symbolsStage.length, symbolsCalculated, symbolsToBeCalculated, tmpPolsToBeCalculated, commitsToBeCalculated, publicsToBeCalculated, subproofValuesToBeCalculated};
-}
 
-module.exports.setConstantsPolynomialsCalculated = function setConstantsPolynomialsCalculated(ctx, options) {
-    for(let i = 0; i < ctx.pilInfo.nConstants; ++i) {
-        module.exports.setSymbolCalculated(ctx, {op: "const", stage: 0, id: i}, options);
+    for(let i = 0; i < ctx.pilInfo.challengesMap.length; ++i) {
+        if(ctx.pilInfo.challengesMap[i].stageNum !== stage) continue;
+        if(!module.exports.isSymbolCalculated(ctx, {op: "challenge", id: i})) symbolsToBeCalculated++;
     }
-}
 
-module.exports.setStage1PolynomialsCalculated = function setStage1PolynomialsCalculated(ctx, options) {
-    for(let i = 0; i < ctx.pilInfo.nCols["cm1"]; ++i) {
-        module.exports.setSymbolCalculated(ctx, {op: "cm", stage: 1, stageId: i, id: i}, options);
+    if(stage == 1) {
+        for(let i = 0; i < ctx.pilInfo.constPolsMap.length; ++i) {
+            if(!module.exports.isSymbolCalculated(ctx, {op: "const", id: i})) symbolsToBeCalculated++;
+        }
+
+        for(let i = 0; i < ctx.pilInfo.nPublics; ++i) {
+            if(!module.exports.isSymbolCalculated(ctx, {op: "public", id: i})) symbolsToBeCalculated++;
+        }
     }
+
+    if(stage === ctx.pilInfo.nStages) {
+        for(let i = 0; i < ctx.pilInfo.nSubAirValues; ++i) {
+            if(!module.exports.isSymbolCalculated(ctx, {op: "subproofValue", id: i})) symbolsToBeCalculated++;
+        }
+    }
+
+
+    return symbolsToBeCalculated;
 }
 
 module.exports.isSymbolCalculated = function isSymbolCalculated(ctx, symbol) {
@@ -61,7 +49,7 @@ module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, opti
 }
 
 module.exports.tryCalculateExps = async function tryCalculateExps(ctx, stage, dom, options) {
-    const expressionsStage = ctx.pilInfo.expressionsCode.filter(e => e.stage === stage);
+    const expressionsStage = ctx.expressionsInfo.expressionsCode.filter(e => e.stage === stage);
     for(let i = 0; i < expressionsStage.length; ++i) {
         if(module.exports.isSymbolCalculated(ctx, expressionsStage[i].dest)) continue;
         const symbols = expressionsStage[i].symbols;

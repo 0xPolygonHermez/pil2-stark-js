@@ -59,10 +59,10 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         expressionsCode.push(expInfo);
     }
 
-    res.expressionsCode = expressionsCode;
+    return expressionsCode;
 }
 
-module.exports.generateStagesCode = function generateStagesCode(res, symbols, expressions, stark) {
+module.exports.generateStagesCode = function generateStagesCode(res, expressionsInfo, symbols, expressions, stark) {
     const ctx = {
         calculated: {},
         symbolsCalculated: [],
@@ -106,12 +106,12 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
                 pilCodeGen(ctx, symbols, expressions, j, 0);
             }
         }
-        res.code[`stage${stage}`] =  buildCode(ctx, expressions);
+        expressionsInfo.code[`stage${stage}`] =  buildCode(ctx, expressions);
     }
 }
 
 module.exports.generateConstraintsDebugCode = function generateConstraintsDebugCode(res, symbols, constraints, expressions, stark) {
-    res.constraints = [];
+    const constraintsCode = [];
     for(let j = 0; j < constraints.length; ++j) {
         const ctx = {
             calculated: {},
@@ -143,13 +143,13 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
             constraint.offsetMin = constraints[j].offsetMin;
             constraint.offsetMax = constraints[j].offsetMax;
         }
-        res.constraints[j] = constraint;
-        
+        constraintsCode[j] = constraint;
     }
+    return constraintsCode;
 }
 
 
-module.exports.generateConstraintPolynomialCode = function generateConstraintPolynomialCode(res, symbols, constraints, expressions, stark) {
+module.exports.generateConstraintPolynomialCode = function generateConstraintPolynomialCode(res, expressionsInfo, symbols, constraints, expressions, stark) {
     const ctxExt = {
         calculated: {},
         symbolsCalculated: [],
@@ -209,11 +209,11 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
             src: [code[code.length-1].dest],
         });
     }
-    res.code.qCode = buildCode(ctxExt, expressions);
-    res.code.qCode.code[res.code.qCode.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
+    expressionsInfo.code.qCode = buildCode(ctxExt, expressions);
+    expressionsInfo.code.qCode.code[expressionsInfo.code.qCode.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
 }
 
-module.exports.generateConstraintPolynomialVerifierCode = function generateConstraintPolynomialVerifierCode(res, symbols, expressions, stark) {       
+module.exports.generateConstraintPolynomialVerifierCode = function generateConstraintPolynomialVerifierCode(res, expressionsInfo, symbols, expressions, stark) {       
     let addMul = stark ? false : true;
 
     let ctx = {
@@ -240,7 +240,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
     }
 
     pilCodeGen(ctx, symbols, expressions, res.cExpId, 0);
-    res.code.qVerifier = buildCode(ctx, expressions);
+    expressionsInfo.code.qVerifier = buildCode(ctx, expressions);
 
     res.evMap = ctx.evMap;
 
@@ -248,7 +248,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 
     if (stark) {
         for (let i = 0; i < res.qDeg; i++) {
-            const rf = { type: "cm", id: res.qs[i], name: "Q" + i, prime: 0, dim: res.qDim, stage: qStage, airId: res.airId, subproofId: res.subproofId };
+            const rf = { type: "cm", id: res.qs[i], prime: 0 };
             res.evMap.push(rf);
         }
     } else {
@@ -267,7 +267,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 }
 
 
-module.exports.generateFRICode = function generateFRICode(res, symbols, expressions) {
+module.exports.generateFRICode = function generateFRICode(res, expressionsInfo, symbols, expressions) {
     const ctxExt = {
         calculated: {},
         symbolsUsed: [],
@@ -291,13 +291,13 @@ module.exports.generateFRICode = function generateFRICode(res, symbols, expressi
     } 
 
     pilCodeGen(ctxExt, symbols, expressions, friExpId, 0);
-    res.code.fri = buildCode(ctxExt, expressions);
-    res.code.fri.code[res.code.fri.code.length-1].dest = { type: "f", id: 0, dim: 3 };
+    expressionsInfo.code.fri = buildCode(ctxExt, expressions);
+    expressionsInfo.code.fri.code[expressionsInfo.code.fri.code.length-1].dest = { type: "f", id: 0, dim: 3 };
 
     let addMul = false;
 
     ctxExt.verifierQuery = true;
     ctxExt.addMul = addMul;
     pilCodeGen(ctxExt, symbols, expressions, friExpId, 0);
-    res.code.queryVerifier = buildCode(ctxExt, expressions);
+    expressionsInfo.code.queryVerifier = buildCode(ctxExt, expressions);
 }

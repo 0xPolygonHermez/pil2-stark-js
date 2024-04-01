@@ -2,9 +2,9 @@ const { initProverFflonk, extendAndCommit, computeQFflonk, computeOpeningsFflonk
 const { initProverStark, extendAndMerkelize, computeQStark, computeEvalsStark, computeFRIStark, genProofStark, setChallengesStark, computeFRIFolding, computeFRIQueries, calculateHashStark, addTranscriptStark, getChallengeStark, getPermutationsStark } = require("../stark/stark_gen_helpers");
 const { applyHints } = require("./hints_helpers");
 const { callCalculateExps } = require("./prover_helpers");
-const { setStage1PolynomialsCalculated, setSymbolCalculated, tryCalculateExps, checkSymbolsCalculated } = require("./symbols_helpers");
+const { setSymbolCalculated, tryCalculateExps, isStageCalculated } = require("./symbols_helpers");
 
-module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, constPols, zkey, options) {
+module.exports = async function proofGen(cmPols, pilInfo, expressionsInfo, inputs, constTree, constPols, zkey, options) {
     const logger = options.logger;
 
     let stark;
@@ -16,7 +16,7 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
         throw new Error("Invalid parameters");
     }
 
-    let ctx = await initProver(pilInfo, constTree, constPols, zkey, stark, options);
+    let ctx = await initProver(pilInfo, expressionsInfo, constTree, constPols, zkey, stark, options);
     
     if(ctx.prover === "stark") {
         // Read committed polynomials
@@ -26,7 +26,9 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
         await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1);
     }
 
-    setStage1PolynomialsCalculated(ctx, options);
+    for(let i = 0; i < ctx.pilInfo.mapSectionsN.cm1; i++) {
+        setSymbolCalculated(ctx, {op: "cm", id: i}, options);
+    }
     
     addPublics(ctx, inputs, options);
 
@@ -127,11 +129,11 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
     return proof;
 }
 
-async function initProver(pilInfo, constTree, constPols, zkey, stark, options) {
+async function initProver(pilInfo, expressionsInfo, constTree, constPols, zkey, stark, options) {
     if(stark) {
-        return await initProverStark(pilInfo, constPols, constTree, options);
+        return await initProverStark(pilInfo, expressionsInfo, constPols, constTree, options);
     } else {
-        return await initProverFflonk(pilInfo, zkey, options)
+        return await initProverFflonk(pilInfo, expressionsInfo, zkey, options)
     }
 }
 
@@ -199,10 +201,10 @@ async function computeStage(stage, ctx, options) {
     const dom = stage === qStage ? "ext" : "n";
 
     const step = stage === qStage ? "qCode" : `stage${stage}`;
-    const symbolsCalculatedStep = ctx.pilInfo.code[step].symbolsCalculated;
+    const symbolsCalculatedStep = ctx.expressionsInfo.code[step].symbolsCalculated;
 
     if (logger) logger.debug("Calculating expressions...");
-    await callCalculateExps(step, ctx.pilInfo.code[step], dom, ctx, options.parallelExec, options.useThreads);
+    await callCalculateExps(step, ctx.expressionsInfo.code[step], dom, ctx, options.parallelExec, options.useThreads);
     if (logger) logger.debug("Expressions calculated.");
 
     for(let i = 0; i < symbolsCalculatedStep.length; i++) {
@@ -211,24 +213,24 @@ async function computeStage(stage, ctx, options) {
     }
 
     if(stage !== qStage) {
-        let symbolsStageInfo = checkSymbolsCalculated(ctx, stage, options);
-        while(symbolsStageInfo.symbolsToBeCalculated > 0) {
+        let symbolsToBeCalculated = isStageCalculated(ctx, stage, options);
+        while(symbolsToBeCalculated > 0) {
             await tryCalculateExps(ctx, stage, dom, options); 
 
             await applyHints(stage, ctx, options);
             
-            let symbolsStageInfoUpdated = checkSymbolsCalculated(ctx, stage, options);
-            if(symbolsStageInfoUpdated.symbolsToBeCalculated === symbolsStageInfo.symbolsToBeCalculated) {
+            let symbolsToBeCalculatedUpdated = isStageCalculated(ctx, stage, options);
+            if(symbolsToBeCalculatedUpdated === symbolsToBeCalculated) {
                 throw new Error(`Something went wrong when calculating symbols for stage ${stage}`);
             }
-            symbolsStageInfo = symbolsStageInfoUpdated;
+            symbolsToBeCalculated = symbolsToBeCalculatedUpdated;
         };
 
         if (logger) logger.debug(`> STAGE ${stage} DONE`);
     }
     
     if(options.debug) {
-        const constraintsStage = ctx.pilInfo.constraints.filter(c => c.stage === stage);
+        const constraintsStage = ctx.expressionsInfo.constraints.filter(c => c.stage === stage);
         for(let i = 0; i <  constraintsStage.length; i++) {
             const constraint = constraintsStage[i];
             if(logger) logger.debug(` Checking constraint ${i + 1}/${constraintsStage.length}: line ${constraint.line} `);
