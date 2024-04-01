@@ -36,9 +36,9 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
         transcript.put(commitsHash);
     }
 
-    for(let i=0; i < starkInfo.numChallenges.length; i++) {
+    for(let i=0; i < starkInfo.nStages; i++) {
         const stage = i + 1;
-        const nChallengesStage = starkInfo.numChallenges[i];
+        const nChallengesStage = starkInfo.challengesMap.filter(c => c.stageNum === stage).length;
         challenges[stage - 1] = [];
         for(let j = 0; j < nChallengesStage; ++j) {
             challenges[stage - 1][j] = transcript.getField();
@@ -47,13 +47,13 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
         transcript.put(proof["root" + stage]);
     }
     
-    let qStep = starkInfo.numChallenges.length;
+    let qStep = starkInfo.nStages;
     challenges[qStep] = [];
     challenges[qStep][0] = transcript.getField();
     if (logger) logger.debug("··· challenges[" + qStep + "][0]: " + F.toString(challenges[qStep][0]));
     transcript.put(proof[`root${qStep + 1}`]);
     
-    let evalsStage = starkInfo.numChallenges.length + 1;
+    let evalsStage = starkInfo.nStages + 1;
     challenges[evalsStage] = [];
     challenges[evalsStage][0] = transcript.getField();
     if (logger) logger.debug("··· challenges[" + evalsStage + "][0]: " + F.toString(challenges[evalsStage][0]));
@@ -67,7 +67,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
         transcript.put(commitsHash);
     }
 
-    let friStage = starkInfo.numChallenges.length + 2;
+    let friStage = starkInfo.nStages + 2;
     challenges[friStage] = [];
     challenges[friStage][0] = transcript.getField();
     if (logger) logger.debug("··· challenges[" + friStage + "][0]: " + F.toString(challenges[friStage][0]));

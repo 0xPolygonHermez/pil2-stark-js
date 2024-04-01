@@ -20,10 +20,10 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
     
     if(ctx.prover === "stark") {
         // Read committed polynomials
-        cmPols.writeToBigBuffer(ctx.cm1_n, ctx.pilInfo.mapSectionsN.cm1_n);
+        cmPols.writeToBigBuffer(ctx.cm1_n, ctx.pilInfo.mapSectionsN.cm1);
     } else {
         // Read committed polynomials
-        await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1_n);
+        await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1);
     }
 
     setStage1PolynomialsCalculated(ctx, options);
@@ -32,14 +32,14 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
 
     let challenge;
     
-    const qStage = ctx.pilInfo.numChallenges.length + 1;
+    const qStage = ctx.pilInfo.nStages + 1;
 
     if(options.debug) ctx.errors = [];
 
     for(let i = 1; i <= qStage; i++) {
         const stage = i;
         if(stage === qStage && options.debug) continue;
-        if(stage === qStage || ctx.pilInfo.numChallenges[i - 1] > 0) {
+        if(ctx.pilInfo.challengesMap.filter(c => c.stageNum === stage).length > 0) {
             setChallenges(stage, ctx, ctx.transcript, challenge, options);
         }
         await computeStage(stage, ctx, options);
@@ -58,7 +58,7 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
 
             addTranscript(ctx.transcript, commits, stark);
 
-            if(stage >= ctx.pilInfo.numChallenges.length || ctx.pilInfo.mapSectionsN[`cm${stage + 1}_n`] > 0) {
+            if(stage >= ctx.pilInfo.nStages || ctx.pilInfo.mapSectionsN[`cm${stage + 1}`] > 0) {
                 challenge = getChallenge(ctx.transcript, stark);
             }
 
@@ -81,7 +81,7 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
     };
 
     if(ctx.prover === "stark") {
-        const evalsStage = ctx.pilInfo.numChallenges.length + 2;
+        const evalsStage = ctx.pilInfo.nStages + 2;
         setChallengesStark(evalsStage, ctx, ctx.transcript, challenge, options);
 
         // STAGE 5. Compute Evaluations
@@ -91,7 +91,7 @@ module.exports = async function proofGen(cmPols, pilInfo, inputs, constTree, con
 
         challenge = getChallengeStark(ctx.transcript);
 
-        const friStage = ctx.pilInfo.numChallenges.length + 3;
+        const friStage = ctx.pilInfo.nStages + 3;
         setChallengesStark(friStage, ctx, ctx.transcript, challenge, options);
 
         // STAGE 6. Compute FRI
@@ -195,7 +195,7 @@ async function computeStage(stage, ctx, options) {
 
     if (logger) logger.debug(`> STAGE ${stage}`);
 
-    const qStage = ctx.pilInfo.numChallenges.length + 1;
+    const qStage = ctx.pilInfo.nStages + 1;
     const dom = stage === qStage ? "ext" : "n";
 
     const step = stage === qStage ? "qCode" : `stage${stage}`;
@@ -228,10 +228,10 @@ async function computeStage(stage, ctx, options) {
     }
     
     if(options.debug) {
-        const nConstraintsStage = ctx.pilInfo.constraints[`stage${stage}`].length;
-        for(let i = 0; i < nConstraintsStage; i++) {
-            const constraint = ctx.pilInfo.constraints[`stage${stage}`][i];
-            if(logger) logger.debug(` Checking constraint ${i + 1}/${nConstraintsStage}: line ${constraint.line} `);
+        const constraintsStage = ctx.pilInfo.constraints.filter(c => c.stage === stage);
+        for(let i = 0; i <  constraintsStage.length; i++) {
+            const constraint = constraintsStage[i];
+            if(logger) logger.debug(` Checking constraint ${i + 1}/${constraintsStage.length}: line ${constraint.line} `);
             await callCalculateExps(`stage${stage}`, constraint, dom, ctx, options.parallelExec, options.useThreads, true);
         }
     }

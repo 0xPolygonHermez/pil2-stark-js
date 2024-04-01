@@ -6,8 +6,6 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
 
     const pilLibs = [];
 
-    res.numChallenges = [0];
-
     pil.nCm2 = 0;
     pil.nCm3 = 0;
 
@@ -54,12 +52,4 @@ function calculateChallenges(res, symbols, challenges) {
         const id = symbolsChallenges.filter(c => c.stage < ch.stage || (c.stage === ch.stage && c.stageId < ch.stageId)).length;
         ch.id = id;
     }
-
-    const numChallenges = challenges.map(c => c.stage - 1).reduce((acc, s) => {
-        if(!acc[s]) acc[s] = 0;
-        acc[s]++;
-        return acc;
-    },[0]);
-    res.numChallenges = [...Array(Math.max(res.numChallenges.length, numChallenges.length))]
-        .map((_, i) => Math.max(res.numChallenges[i] || 0, numChallenges[i] || 0));
 }

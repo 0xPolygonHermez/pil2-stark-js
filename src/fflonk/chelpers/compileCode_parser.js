@@ -1217,7 +1217,7 @@ module.exports = function compileCode_parser(fflonkInfo, nBits, functionName, co
             .filter((pol, index) => pol.stage === p.stage && index < polId)
             .reduce((acc, pol) => acc + pol.dim, 0);
         let stage = extend ? p.stage + "_n" : p.stage + "_ext";
-        let size = fflonkInfo.mapSectionsN[stage];
+        let size = fflonkInfo.mapSectionsN[p.stage];
         if (p.dim == 1) {
             if (prime) {
                 range_pols_1.add(size);
@@ -1317,8 +1317,7 @@ module.exports = function compileCode_parser(fflonkInfo, nBits, functionName, co
         let offset = starkInfo.cmPolsMap
             .filter((pol, index) => pol.stage === p.stage && index < polId)
             .reduce((acc, pol) => acc + pol.dim, 0);
-        let stage = extend ? p.stage + "_n" : p.stage + "_ext";
-        let size = fflonkInfo.mapSectionsN[stage];
+        let size = fflonkInfo.mapSectionsN[p.stage];
         if (p.dim == 1) {
             if (prime) {
                 args.push(Number(offset));

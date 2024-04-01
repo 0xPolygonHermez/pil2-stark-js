@@ -214,7 +214,7 @@ function evalMap(ctx, polId, prime, dom, val) {
     }
     let index = prime ? `((i + ${next})%${N})` : "i";
     let stage = p.stage;
-    let size = ctx.pilInfo.mapSectionsN[stage];
+    let size = ctx.pilInfo.mapSectionsN[stage.split("_")[0]];
     let pos = `${offset} + ${index} * ${size}`;
     if(val) {
         if (p.dim == 1) {
@@ -290,7 +290,7 @@ module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
         buffer: ctx[stage],
         deg,
         offset,
-        size: ctx.pilInfo.mapSectionsN[stage],
+        size: ctx.pilInfo.mapSectionsN[p.stage],
         dim: p.dim
     };
     return polRef;
@@ -342,17 +342,17 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
 
     if(execPart !== "global") {
         const execStages = [];
-        for(let i = 0; i < ctx.pilInfo.numChallenges.length; ++i) {
+        for(let i = 0; i < ctx.pilInfo.nStages; ++i) {
             const stage = 1 + i;
             execStages.push(`stage${stage}`);
         }
 
-        const qStage = ctx.pilInfo.numChallenges.length + 1;
+        const qStage = ctx.pilInfo.nStages + 1;
 
         if (execStages.includes(execPart)) {
             execInfo.inputSections.push({ name: "const_n" });
             execInfo.inputSections.push({ name: "x_n" });
-            for(let j = 0; j < ctx.pilInfo.numChallenges.length; j++) {
+            for(let j = 0; j < ctx.pilInfo.nStages; j++) {
                 const stage = j + 1;
                 execInfo.inputSections.push({ name: `cm${stage}_n` });
                 execInfo.outputSections.push({ name: `cm${stage}_n` });
@@ -362,7 +362,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             dom = "n";
         } else if (execPart === "qCode") {
             execInfo.inputSections.push({ name: "const_ext" });
-            for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+            for(let i = 0; i < ctx.pilInfo.nStages; i++) {
                 const stage = i + 1;
                 execInfo.inputSections.push({ name: `cm${stage}_ext` });
             }
@@ -374,7 +374,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             dom = "ext";
         } else if (execPart == "fri") {
             execInfo.inputSections.push({ name: "const_ext" });
-            for(let i = 0; i < ctx.pilInfo.numChallenges.length + 1; i++) {
+            for(let i = 0; i < ctx.pilInfo.nStages + 1; i++) {
                 const stage = i + 1;
                 execInfo.inputSections.push({ name: `cm${stage}_ext` });
             }
@@ -546,7 +546,7 @@ function ctxProxy(ctx) {
     createProxy("const_n", stark);
     createProxy("const_ext", stark);
     createProxy("const_coefs", stark);
-    for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+    for(let i = 0; i < ctx.pilInfo.nStages; i++) {
         createProxy(`cm${i + 1}_n`, stark);
         createProxy(`cm${i + 1}_ext`, stark);
         if(!stark) createProxy(`cm${i + 1}_coefs`, stark);
@@ -558,7 +558,7 @@ function ctxProxy(ctx) {
     createProxy("q_ext", stark);
 
     if(stark) {
-        createProxy(`cm${ctx.pilInfo.numChallenges.length + 1}_ext`, stark);
+        createProxy(`cm${ctx.pilInfo.nStages + 1}_ext`, stark);
 
         createProxy("Zi_ext", stark);
 

@@ -54,7 +54,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         ctx.calculatedSymbols.subproofValue = new Array(ctx.pilInfo.nSubAirValues).fill(false);
     }
 
-    const nChallenges = ctx.pilInfo.numChallenges.reduce((a, b) => a + b, 0) + 4;
+    const nChallenges = ctx.pilInfo.challengesMap.length;
     ctx.calculatedSymbols.challenge = new Array(nChallenges).fill(false);
     
     ctx.calculatedSymbols.cm = new Array(ctx.pilInfo.cmPolsMap.length).fill(false);
@@ -71,7 +71,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         ctx.extendBits = ctx.nBitsExt - ctx.nBits;
     }
 
-    const qStage = ctx.pilInfo.numChallenges.length + 1;
+    const qStage = ctx.pilInfo.nStages + 1;
 
     if (logger && !options.debug) {
         logger.debug("-----------------------------");
@@ -84,7 +84,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
         logger.debug(`  Domain size ext: ${ctx.extN} (2^${ctx.nBitsExt})`);
         logger.debug(`  Const  pols:   ${ctx.pilInfo.nConstants}`);
         logger.debug(`  Stage 1 pols:   ${ctx.pilInfo.nCols["cm1"]}`);
-        for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
+        for(let i = 0; i < ctx.pilInfo.nStages - 1; i++) {
             const stage = i + 2;
             logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.nCols["cm" + stage]}`);
         }
@@ -122,11 +122,11 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
     }
 
     ctx.const_n = new BigBuffer(ctx.pilInfo.nConstants*ctx.N);
-    for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+    for(let i = 0; i < ctx.pilInfo.nStages; i++) {
         const stage = i + 1;
-        ctx[`cm${stage}_n`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}_n`]*ctx.N);
+        ctx[`cm${stage}_n`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.N);
     }
-    ctx.tmpExp_n = new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp_n*ctx.N);
+    ctx.tmpExp_n = new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp*ctx.N);
     ctx.x_n = new BigBuffer(ctx.N);
 
     // Build x_n
@@ -143,11 +143,11 @@ module.exports.initProverStark = async function initProverStark(pilInfo, constPo
 
     if(!options.debug) {
         ctx.const_ext = constTree.elements;
-        for(let i = 0; i < ctx.pilInfo.numChallenges.length; i++) {
+        for(let i = 0; i < ctx.pilInfo.nStages; i++) {
             const stage = i + 1;
-            ctx[`cm${stage}_ext`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}_n`]*ctx.extN);
+            ctx[`cm${stage}_ext`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.extN);
         }
-        ctx["cm" + qStage + "_ext"] = new BigBuffer(ctx.pilInfo.mapSectionsN["cm" + qStage + "_n"]*ctx.extN);
+        ctx["cm" + qStage + "_ext"] = new BigBuffer(ctx.pilInfo.mapSectionsN["cm" + qStage]*ctx.extN);
         ctx.q_ext = new BigBuffer(ctx.pilInfo.qDim*ctx.extN);
         ctx.f_ext = new BigBuffer(3*ctx.extN);
         ctx.x_ext = new BigBuffer(ctx.extN);
@@ -189,7 +189,7 @@ module.exports.computeQStark = async function computeQStark(ctx, options) {
     
     if (logger) logger.debug("Compute Trace Quotient Polynomials");
 
-    const qStage = ctx.pilInfo.numChallenges.length + 1;
+    const qStage = ctx.pilInfo.nStages + 1;
     const qq1 = new BigBuffer(ctx.pilInfo.qDim*ctx.extN);
     const qq2 = new BigBuffer(ctx.pilInfo.qDim*ctx.pilInfo.qDeg*ctx.extN);
     
@@ -212,7 +212,7 @@ module.exports.computeQStark = async function computeQStark(ctx, options) {
 
     if (logger) logger.debug("··· Merkelizing Q polynomial tree");
 
-    const nPolsQ = ctx.pilInfo.mapSectionsN["cm" + qStage + "_n"] || 0;
+    const nPolsQ = ctx.pilInfo.mapSectionsN["cm" + qStage] || 0;
     ctx.trees[qStage] = await ctx.MH.merkelize(ctx["cm" + qStage + "_ext"], nPolsQ, ctx.extN);
     const root = ctx.MH.root(ctx.trees[qStage]);
     if (options.logger && !options.debug) {
@@ -229,7 +229,7 @@ module.exports.computeQStark = async function computeQStark(ctx, options) {
 module.exports.computeEvalsStark = async function computeEvalsStark(ctx, options) {
     if (options.logger) options.logger.debug("Compute Evals");
 
-    let evalsStage = ctx.pilInfo.numChallenges.length + 1;
+    let evalsStage = ctx.pilInfo.nStages + 1;
     let xiChallenge = ctx.challenges[evalsStage][0];
 
     let LEv = [];
@@ -301,7 +301,7 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
     ctx.friTrees = [];
 
     const s0_trees = [];
-    for(let i = 0; i < ctx.pilInfo.numChallenges.length + 1; ++i) s0_trees.push(ctx.trees[i + 1]);
+    for(let i = 0; i < ctx.pilInfo.nStages + 1; ++i) s0_trees.push(ctx.trees[i + 1]);
     s0_trees.push(ctx.constTree);
     ctx.friTrees[0] = s0_trees;
     ctx.friProof[0] = {};
@@ -315,7 +315,7 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
         }
         if(opening < 0) w = ctx.F.div(1n, w);
 
-        let evalsStage = ctx.pilInfo.numChallenges.length + 1;
+        let evalsStage = ctx.pilInfo.nStages + 1;
         let xiChallenge = ctx.challenges[evalsStage][0];
 
         let xi = ctx.F.mul(xiChallenge, w);
@@ -387,7 +387,7 @@ module.exports.genProofStark = async function genProof(ctx, options) {
         fri: ctx.friProof
     };
 
-    for(let i = 0; i < ctx.pilInfo.numChallenges.length + 1; ++i) {
+    for(let i = 0; i < ctx.pilInfo.nStages + 1; ++i) {
         const stage = i + 1;
         proof["root" + stage] = ctx.MH.root(ctx.trees[stage]);
     }
@@ -410,7 +410,7 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
     const buffFrom = ctx["cm" + stage + "_n"];
     const buffTo = ctx["cm" + stage + "_ext"];
 
-    const nPols = ctx.pilInfo.mapSectionsN["cm" + stage + "_n"] || 0;
+    const nPols = ctx.pilInfo.mapSectionsN["cm" + stage] || 0;
     
     if (logger) logger.debug("··· Interpolating " + stage);
     await interpolate(buffFrom, nPols, ctx.nBits, buffTo, ctx.nBitsExt);
@@ -433,17 +433,9 @@ module.exports.extendAndMerkelize = async function  extendAndMerkelize(stage, ct
 module.exports.setChallengesStark = function setChallengesStark(stage, ctx, transcript, challenge, options) {
     let nChallengesStage;
 
-    let qStage = ctx.pilInfo.numChallenges.length + 1;
-    let evalsStage = ctx.pilInfo.numChallenges.length + 2;
-    let friStage = ctx.pilInfo.numChallenges.length + 3;
+    let qStage = ctx.pilInfo.nStages + 1;
 
-    if([qStage, evalsStage].includes(stage)) {
-        nChallengesStage = 1;
-    } else if(stage === friStage) {
-        nChallengesStage = 2;
-    } else {
-        nChallengesStage = ctx.pilInfo.numChallenges[stage - 1];
-    }
+    nChallengesStage = ctx.pilInfo.challengesMap.filter(c => c.stageNum === stage).length;
 
     ctx.challenges[stage - 1] = [];
     for (let i=0; i<nChallengesStage; i++) {
@@ -456,9 +448,10 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, tran
     }
 
     if(stage < qStage) {
-        const challengeIndex = ctx.pilInfo.numChallenges.filter((s, i) => i < stage - 1).reduce((a, b) => a + b, 0);
-        for(let i = 0; i < ctx.challenges[stage - 1].length; ++i) {
-            setSymbolCalculated(ctx, { op: "challenge", stage, stageId: i, id: challengeIndex + i}, options);
+        for(let i = 0; i < ctx.pilInfo.challengesMap.length; i++) {
+            if(ctx.pilInfo.challengesMap[i].stageNum === stage) {
+                setSymbolCalculated(ctx, { op: "challenge", stage, id: i}, options);
+            }
         }
     }
     

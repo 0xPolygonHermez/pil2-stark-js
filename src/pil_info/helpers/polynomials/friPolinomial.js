@@ -6,16 +6,22 @@ const { getExpDim } = require("../helpers");
 module.exports.generateFRIPolynomial = function generateFRIPolynomial(res, symbols, expressions) {
     const E = new ExpressionOps();
 
-    const stage = res.numChallenges.length + 3;
+    const stage = res.nStages + 3;
 
     const vf1_id = symbols.filter(s => s.type === "challenge" && s.stage < stage).length;
     const vf2_id = vf1_id + 1;
-    symbols.push({type: "challenge", name: "std_vf1", stage, dim: 3, stageId: 0, id: vf1_id});
-    symbols.push({type: "challenge", name: "std_vf2", stage, dim: 3, stageId: 1, id: vf2_id});
+    
+    const vf1_symbol = {type: "challenge", name: "std_vf1", stage, dim: 3, stageId: 0, id: vf1_id};
+    const vf2_symbol = {type: "challenge", name: "std_vf2", stage, dim: 3, stageId: 1, id: vf2_id};
+
+    symbols.push(vf1_symbol);
+    symbols.push(vf2_symbol);
+
+    res.challengesMap[vf1_symbol.id] = {name: vf1_symbol.name, stageNum: vf1_symbol.stage, dim: vf1_symbol.dim, stageId: vf1_symbol.stageId};
+    res.challengesMap[vf2_symbol.id] = {name: vf2_symbol.name, stageNum: vf2_symbol.stage, dim: vf2_symbol.dim, stageId: vf2_symbol.stageId};
 
     const vf1 = E.challenge("std_vf1", stage, 3, 0, vf1_id);
     const vf2 = E.challenge("std_vf2", stage, 3, 1, vf2_id);
-
 
     let friExp = null;
     for (let i=0; i<res.nCommitments; i++) {

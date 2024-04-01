@@ -38,7 +38,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     assert(nBits+extendBits == starkStruct.steps[0].nBits, "First step must be just one");
 
-    const qStage = starkInfo.numChallenges.length + 1;
+    const qStage = starkInfo.nStages + 1;
 
     if (logger) {
         logger.debug("-----------------------------");
@@ -49,7 +49,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         logger.debug(`  VerificationType: ${starkStruct.verificationHashType}`);
         logger.debug(`  Domain size: ${N} (2^${nBits})`);
         logger.debug(`  Const  pols:   ${starkInfo.nConstants}`);
-        for(let i = 0; i < starkInfo.numChallenges.length; i++) {
+        for(let i = 0; i < starkInfo.nStages; i++) {
             const stage = i + 1;
             logger.debug(`  Stage ${stage} pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == "cm" + stage).length}`);
         }
@@ -72,18 +72,18 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         ctx.challenges = challenges.challenges;
         ctx.challengesFRISteps = challenges.challengesFRISteps;
         if(logger) {
-            for(let i=0; i < starkInfo.numChallenges.length; i++) {
-                for(let j = 0; j < starkInfo.numChallenges[i]; ++j) {
+            for(let i=0; i < starkInfo.nStages; i++) {
+                for(let j = 0; j < fflonkInfo.challengesMap.filter(c => c.stageNum === i + 1).length; ++j) {
                     logger.debug("··· challenges[" + i + "][" + j + "]: " + F.toString(ctx.challenges[i][j]));
                 }
             }
-            let qStage = starkInfo.numChallenges.length;
+            let qStage = starkInfo.nStages;
             logger.debug("··· challenges[" + qStage + "][0]: " + F.toString(ctx.challenges[qStage][0]));
     
-            let evalsStage = starkInfo.numChallenges.length + 1;
+            let evalsStage = starkInfo.nStages + 1;
             logger.debug("··· challenges[" + evalsStage + "][0]: " + F.toString(ctx.challenges[evalsStage][0]));
     
-            let friStage = starkInfo.numChallenges.length + 2;
+            let friStage = starkInfo.nStages + 2;
             logger.debug("··· challenges[" + friStage + "][0]: " + F.toString(ctx.challenges[friStage][0]));
             logger.debug("··· challenges[" + friStage + "][1]: " + F.toString(ctx.challenges[friStage][1]));
             for (let step=0; step<starkInfo.starkStruct.steps.length; step++) {
@@ -97,7 +97,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     if (logger) logger.debug("Verifying evaluations");
 
-    let evalsStage = ctx.starkInfo.numChallenges.length + 1;
+    let evalsStage = ctx.starkInfo.nStages + 1;
     const xi = ctx.challenges[evalsStage][0];
 
     const xN = F.exp(xi, N);
@@ -165,7 +165,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
         let res;
         
-        for(let i = 0; i < starkInfo.numChallenges.length; ++i) {
+        for(let i = 0; i < starkInfo.nStages; ++i) {
             const stage = i + 1;
             let res = MH.verifyGroupProof(proof[`root${stage}`], query[i][1], idx, query[i][0]);
             if (!res) {
@@ -174,25 +174,25 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
             }
         }
         
-        res = MH.verifyGroupProof(proof[`root${qStage}`], query[starkInfo.numChallenges.length][1], idx, query[starkInfo.numChallenges.length][0]);
+        res = MH.verifyGroupProof(proof[`root${qStage}`], query[starkInfo.nStages][1], idx, query[starkInfo.nStages][0]);
         if (!res) {
             if(logger) logger.warn(`Invalid root${qStage}`);
             return false;
         }
 
-        res = MH.verifyGroupProof(constRoot, query[starkInfo.numChallenges.length + 1][1], idx, query[starkInfo.numChallenges.length + 1][0]);
+        res = MH.verifyGroupProof(constRoot, query[starkInfo.nStages + 1][1], idx, query[starkInfo.nStages + 1][0]);
         if (!res) {
             if(logger) logger.warn(`Invalid constRoot`);
             return false;
         }
         
         const ctxQry = {};
-        for(let i = 0; i < starkInfo.numChallenges.length; ++i) {
+        for(let i = 0; i < starkInfo.nStages; ++i) {
             const stage = i + 1;
             ctxQry[`tree${stage}`] = query[i][0];
         }
-        ctxQry[`tree${qStage}`] = query[starkInfo.numChallenges.length][0];
-        ctxQry.consts = query[starkInfo.numChallenges.length + 1][0];
+        ctxQry[`tree${qStage}`] = query[starkInfo.nStages][0];
+        ctxQry.consts = query[starkInfo.nStages + 1][0];
         ctxQry.evals = ctx.evals;
         ctxQry.publics = ctx.publics;
         ctxQry.challenges = ctx.challenges;
@@ -261,7 +261,7 @@ module.exports.executeCode = function executeCode(F, ctx, code, global) {
             case "subproofValue": return global ? ctx.subAirValues[r.subproofId][r.id] : ctx.subAirValues[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
             case "x": {
-                let evalsStage = ctx.starkInfo.numChallenges.length + 1;
+                let evalsStage = ctx.starkInfo.nStages + 1;
                 return ctx.challenges[evalsStage][0];
             }
             case "Zi": {

@@ -32,7 +32,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, challenge
     const domainSize = ctx.N;
     const power = vk.power;
 
-    const nPolsQ = vk.f.filter(fi => fi.stages[0].stage === fflonkInfo.numChallenges.length + 1).map(fi => fi.pols).flat(Infinity);
+    const nPolsQ = vk.f.filter(fi => fi.stages[0].stage === fflonkInfo.nStages + 1).map(fi => fi.pols).flat(Infinity);
 
     if (logger) {
         logger.debug("------------------------------");
@@ -40,10 +40,10 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, challenge
         logger.debug(`  Curve:         ${curve.name}`);
         logger.debug(`  Domain size:   ${domainSize} (2^${power})`);
         logger.debug(`  Const  pols:   ${fflonkInfo.nConstants}`);
-        logger.debug(`  Stage 1 pols:   ${fflonkInfo.mapSectionsN.cm1_n}`);
-        for(let i = 0; i < fflonkInfo.numChallenges.length - 1; i++) {
+        logger.debug(`  Stage 1 pols:   ${fflonkInfo.mapSectionsN.cm1}`);
+        for(let i = 0; i < fflonkInfo.nStages - 1; i++) {
             const stage = i + 2;
-            logger.debug(`  Stage ${stage} pols:   ${fflonkInfo.mapSectionsN[`cm${stage}_n`]}`);
+            logger.debug(`  Stage ${stage} pols:   ${fflonkInfo.mapSectionsN[`cm${stage}`]}`);
         }
         logger.debug(`  Stage Q pols:   ${nPolsQ.length}`);
         logger.debug("------------------------------");
@@ -146,9 +146,9 @@ async function calculateTranscript(ctx, vk, options) {
     }
    
 
-    for(let i=0; i < ctx.fflonkInfo.numChallenges.length; i++) {
+    for(let i=0; i < ctx.fflonkInfo.nStages; i++) {
         const stage = i + 1;
-        const nChallengesStage = ctx.fflonkInfo.numChallenges[i];
+        const nChallengesStage = ctx.fflonkInfo.challengesMap.filter(c => c.stageNum === stage).length;
         ctx.challenges[stage - 1] = [];
         for(let j = 0; j < nChallengesStage; ++j) {
             ctx.challenges[stage - 1][j] = transcript.getChallenge();
@@ -174,7 +174,7 @@ async function calculateTranscript(ctx, vk, options) {
 
     }
 
-    let qStage = ctx.fflonkInfo.numChallenges.length;
+    let qStage = ctx.fflonkInfo.nStages;
     ctx.challenges[qStage] = [];
     ctx.challenges[qStage][0] = transcript.getChallenge();
     if (logger) logger.debug("··· challenges[" + qStage + "][0]: " + ctx.curve.Fr.toString(ctx.challenges[qStage][0]));
@@ -182,7 +182,7 @@ async function calculateTranscript(ctx, vk, options) {
     transcript.addScalar(ctx.challenges[qStage][0]);
 
     const stageQCommitPols = vk.f
-        .filter(fi => fi.stages[0].stage === ctx.fflonkInfo.numChallenges.length + 1)
+        .filter(fi => fi.stages[0].stage === ctx.fflonkInfo.nStages + 1)
         .map(fi => ctx.proof.polynomials[`f${fi.index}`]);
     
     if(!options.hashCommits) {

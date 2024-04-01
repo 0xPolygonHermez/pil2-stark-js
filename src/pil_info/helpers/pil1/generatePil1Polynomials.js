@@ -9,6 +9,8 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
     res.nPublics = pil.publics.length;
     res.nConstants = pil.nConstants;
 
+    res.nStages = 3;
+
     const symbols = [];
 
     const hints = [];

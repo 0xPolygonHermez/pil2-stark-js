@@ -31,9 +31,10 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
         ? aggregationTypes.length 
         : symbols.filter(s => s.type === "subproofvalue" && s.subproofId === res.subproofId).length;
     if(pilout.numChallenges) {
-        res.numChallenges = pilout.numChallenges;
+        res.nStages = pilout.numChallenges.length;
     } else {
-        res.numChallenges = new Array(Math.max(...symbols.map(s => s.stage || 0))).fill(0);
+        const numChallenges = new Array(Math.max(...symbols.map(s => s.stage || 0))).fill(0);
+        res.nStages = numChallenges.length;
     }
     
     const airHints = pilout.hints?.filter(h => h.airId === res.airId && h.subproofId === res.subproofId) || [];

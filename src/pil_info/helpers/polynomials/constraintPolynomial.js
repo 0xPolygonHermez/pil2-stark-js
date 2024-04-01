@@ -6,7 +6,7 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
     const E = new ExpressionOps();
 
     const dim = stark ? 3 : 1;
-    const stage = res.numChallenges.length + 1;
+    const stage = res.nStages + 1;
 
     const vc_id = symbols.filter(s => s.type === "challenge" && s.stage < stage).length;
     symbols.push({type: "challenge", name: "std_vc", stage: stage, dim: 3, stageId: 0, id: vc_id})

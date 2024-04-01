@@ -10,10 +10,9 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     console.log("Q degree: " + qDeg);
     
     res.qDeg = qDeg;
-    res.nConstraints = constraints.length + imExps.length;
 
     const dim = stark ? 3 : 1;
-    const stage = res.numChallenges.length + 1;
+    const stage = res.nStages + 1;
 
     const vc_id = symbols.filter(s => s.type === "challenge" && s.stage < stage).length;
 
@@ -25,7 +24,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
-        const stageIm = imPolsLastStage ? res.numChallenges.length : expressions[expId].stage;
+        const stageIm = imPolsLastStage ? res.nStages : expressions[expId].stage;
                 
         const dim = getExpDim(expressions, expId, stark);
                 
@@ -67,7 +66,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
         res.qs = [];
         for (let i=0; i<res.qDeg; i++) {
             res.qs[i] = res.nCommitments++;
-            symbols.push({ type: "witness", name: `Q${i}`, polId: res.qs[i], stage: res.numChallenges.length + 1, dim: res.qDim, airId: res.airId, subproofId: res.subproofId });
+            symbols.push({ type: "witness", name: `Q${i}`, polId: res.qs[i], stage, dim: res.qDim, airId: res.airId, subproofId: res.subproofId });
             E.cm(res.qs[i], 0, stage, res.qDim);
         }
     }

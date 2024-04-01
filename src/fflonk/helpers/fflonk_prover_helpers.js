@@ -63,7 +63,7 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
         logger.debug(`  ExtendBits: ${ctx.extendBits}`);
         logger.debug(`  Const  pols:   ${ctx.pilInfo.nConstants}`);
         logger.debug(`  Stage 1 pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1").length}`);
-        for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
+        for(let i = 0; i < ctx.pilInfo.nStages - 1; i++) {
             const stage = i + 2;
             logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm" + stage).length}`);
         }
@@ -74,20 +74,20 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
 
     // Reserve big buffers for the polynomial evaluations
     ctx.const_n = new BigBuffer(ctx.pilInfo.nConstants * ctx.N * ctx.F.n8); // Constant polynomials
-    ctx.cm1_n = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1_n * ctx.N * ctx.F.n8);
-    for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
+    ctx.cm1_n = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.N * ctx.F.n8);
+    for(let i = 0; i < ctx.pilInfo.nStages - 1; i++) {
         const stage = i + 2;
-        ctx[`cm${stage}_n`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}_n`] * ctx.N * ctx.F.n8);
+        ctx[`cm${stage}_n`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.N * ctx.F.n8);
     }    
-    ctx.tmpExp_n = new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp_n * ctx.N * ctx.F.n8); // Expression polynomials
+    ctx.tmpExp_n = new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp * ctx.N * ctx.F.n8); // Expression polynomials
     ctx.x_n = new BigBuffer(ctx.N * ctx.F.n8); // Omegas de field extension
 
     // Reserve big buffers for the polynomial coefficients
     ctx.const_coefs = new BigBuffer(ctx.pilInfo.nConstants * ctx.N * ctx.F.n8); // Constant polynomials
-    ctx.cm1_coefs = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1_n * ctx.NCoefs * ctx.F.n8);
-    for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
+    ctx.cm1_coefs = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.NCoefs * ctx.F.n8);
+    for(let i = 0; i < ctx.pilInfo.nStages - 1; i++) {
         const stage = i + 2;
-        ctx[`cm${stage}_coefs`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}_n`] * ctx.NCoefs * ctx.F.n8);
+        ctx[`cm${stage}_coefs`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.NCoefs * ctx.F.n8);
     }  
 
     ctx.const_n.set(ctx.zkey.constPolsEvals);
@@ -98,10 +98,10 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, zkey,
     if(!options.debug) {
         // Reserve big buffers for the polynomial evaluations in the extended
         ctx.const_ext = new BigBuffer(ctx.pilInfo.nConstants * ctx.extN * ctx.F.n8);
-        ctx.cm1_ext = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1_n * ctx.extN * ctx.F.n8);
-        for(let i = 0; i < ctx.pilInfo.numChallenges.length - 1; i++) {
+        ctx.cm1_ext = new BigBuffer(ctx.pilInfo.mapSectionsN.cm1 * ctx.extN * ctx.F.n8);
+        for(let i = 0; i < ctx.pilInfo.nStages - 1; i++) {
             const stage = i + 2;
-            ctx[`cm${stage}_ext`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}_n`] * ctx.extN * ctx.F.n8);
+            ctx[`cm${stage}_ext`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`] * ctx.extN * ctx.F.n8);
         }
         ctx.q_ext = new BigBuffer(ctx.extN * ctx.F.n8);
         ctx.x_ext = new BigBuffer(ctx.extN * ctx.F.n8); // Omegas a l'extès
@@ -179,7 +179,7 @@ module.exports.computeQFflonk = async function computeQ(ctx, options) {
         ctx.nonCommittedPols.push("Q");
     }
 
-    const qStage = ctx.pilInfo.numChallenges.length + 1;
+    const qStage = ctx.pilInfo.nStages + 1;
 
     let commitsStageQ = await commit(qStage, ctx.zkey, ctx, ctx.zkey.pTau, ctx.curve, { multiExp: true, logger });
     commitsStageQ.forEach((com) => ctx.committedPols[`${com.index}`] = { commit: com.commit, pol: com.pol });
@@ -250,9 +250,9 @@ module.exports.genProofFflonk = async function genProof(ctx, logger) {
 }
 
 module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, transcript, challenge, options) {
-    let qStage = ctx.pilInfo.numChallenges.length + 1;
+    let qStage = ctx.pilInfo.nStages + 1;
 
-    let nChallengesStage = qStage === stage ? 1 : ctx.pilInfo.numChallenges[stage - 1];
+    let nChallengesStage = ctx.pilInfo.challengesMap.filter(c => c.stageNum === stage).length;
  
     ctx.challenges[stage - 1] = [];
     for (let i=0; i<nChallengesStage; i++) {
@@ -306,7 +306,7 @@ module.exports.extendAndCommit = async function extendAndCommit(stage, ctx, opti
     const buffCoefs = ctx["cm" + stage + "_coefs"];
     const buffTo = ctx["cm" + stage + "_ext"];
 
-    const nPols = ctx.pilInfo.mapSectionsN[`cm${stage}_n`];
+    const nPols = ctx.pilInfo.mapSectionsN[`cm${stage}`];
 
     await ifft(buffFrom, nPols, ctx.nBits, buffCoefs, ctx.F);
 

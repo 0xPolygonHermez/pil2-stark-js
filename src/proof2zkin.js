@@ -3,7 +3,7 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
 
     const friSteps = starkInfo.starkStruct.steps;
     const nQueries = starkInfo.starkStruct.nQueries;
-    const nStages = starkInfo.numChallenges.length;
+    const nStages = starkInfo.nStages;
     const nSubAirValues = starkInfo.nSubAirValues;
 
     const qStage = nStages + 1;
@@ -77,7 +77,7 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
 
     const friSteps = starkInfo.starkStruct.steps;
     const nQueries = starkInfo.starkStruct.nQueries;
-    const nStages = starkInfo.numChallenges.length;
+    const nStages = starkInfo.nStages;
     const nSubAirValues = starkInfo.nSubAirValues;
     const nEvals = starkInfo.evMap.length;
 
@@ -126,20 +126,20 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
         }
 
         zkin.s0_vals1[i] = [];
-        for(let j = 0; j < starkInfo.mapSectionsN.cm1_n; j++) {
+        for(let j = 0; j < starkInfo.mapSectionsN.cm1; j++) {
             zkin.s0_vals1[i][j] = "0";
         }
 
         for(let s = 0; s < nStages - 1; ++s) {
             const stage = s + 2;
             zkin[`s0_vals${stage}`][i] = [];
-            for(let j = 0; j < starkInfo.mapSectionsN[`cm${stage}_n`]; j++) {
+            for(let j = 0; j < starkInfo.mapSectionsN[`cm${stage}`]; j++) {
                 zkin[`s0_vals${stage}`][i][j] = "0";
             }
         }
 
         zkin[`s0_vals${qStage}`][i] = [];
-        for(let j = 0; j < starkInfo.mapSectionsN[`cm${qStage}_n`]; j++) {
+        for(let j = 0; j < starkInfo.mapSectionsN[`cm${qStage}`]; j++) {
             zkin[`s0_vals${qStage}`][i][j] = "0";
         }
 
@@ -197,22 +197,22 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
 }
 
 module.exports.challenges2zkin = function challenges2zkin(challenges, starkInfo, zkin) {
-    for(let i=0; i < starkInfo.numChallenges.length; i++) {
-        if(starkInfo.numChallenges[i] === 0) continue;
+    for(let i=0; i < starkInfo.nStages; i++) {
+        if(starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length === 0) continue;
         zkin[`challengesStage${i+1}`] = [];
-        for(let j = 0; j < starkInfo.numChallenges[i]; ++j) {
+        for(let j = 0; j < starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length; ++j) {
             zkin[`challengesStage${i+1}`][j] = challenges.challenges[i][j];
         }       
     }
     
-    let qStage = starkInfo.numChallenges.length;     
-    let evalsStage = starkInfo.numChallenges.length + 1; 
-    let friStage = starkInfo.numChallenges.length + 2;
+    let qStage = starkInfo.nStages + 1;     
+    let evalsStage = starkInfo.nStages + 2; 
+    let friStage = starkInfo.nStages + 3;
 
 
-    zkin.challengeQ = challenges.challenges[qStage];
-    zkin.challengeXi = challenges.challenges[evalsStage];
-    zkin.challengesFRI = challenges.challenges[friStage];
+    zkin.challengeQ = challenges.challenges[qStage - 1];
+    zkin.challengeXi = challenges.challenges[evalsStage - 1];
+    zkin.challengesFRI = challenges.challenges[friStage - 1];
 
     zkin.challengesFRISteps = challenges.challengesFRISteps;
 

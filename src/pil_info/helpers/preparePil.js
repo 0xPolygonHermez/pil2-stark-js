@@ -19,17 +19,13 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
 
     res.cmPolsMap = [];
     res.constPolsMap = [];
+    res.challengesMap = [];
 
     res.mapSectionsN = {
-        "const_n": 0,
-        "const_ext": 0,
-        "tmpExp_n": 0,
+        "const": 0,
+        "tmpExp": 0,
     };
-
-    res.pil2 = true;
     
-    res.nCm1 = pil.nCommitments;
-
     let expressions, symbols, constraints, publicsNames;
 
     for(let i = 0; i < pil.expressions.length; ++i) {
@@ -42,9 +38,8 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
         ({expressions, symbols, hints, constraints, publicsNames} = generatePil1Polynomials(F, res, pil, stark));   
     }
 
-    for(let s = 1; s <= res.numChallenges.length; s++) {
-        res.mapSectionsN["cm" + s + "_n"] = 0;
-        res.mapSectionsN["cm" + s + "_ext"] = 0;
+    for(let s = 1; s <= res.nStages; s++) {
+        res.mapSectionsN["cm" + s] = 0;
     }
 
     if(stark && !options.debug) {
@@ -80,6 +75,6 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
     if(!options.debug) {
         generateConstraintPolynomial(res, expressions, symbols, constraints, stark);
     }
-
+    
     return {res, expressions, constraints, symbols}
 }

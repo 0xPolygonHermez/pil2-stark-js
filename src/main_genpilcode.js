@@ -48,6 +48,10 @@ async function run() {
 
     const starkInfo = generatePilCode(res, symbols, constraints, expressions, debug, stark);
 
+    delete starkInfo.nCommitments;
+    delete starkInfo.cExpId;
+    delete starkInfo.friExpId;
+
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
 
     console.log("files Generated Correctly");

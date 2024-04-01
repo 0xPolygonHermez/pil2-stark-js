@@ -18,7 +18,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
     const expressionsInfoGeneric = [];
     const constraintsInfoGeneric = [];
 
-    const nStages = starkInfo.numChallenges.length;
+    const nStages = starkInfo.nStages;
 
     const cHelpersStepsHpp = [
         `#include "chelpers_steps.hpp"\n\n`,
@@ -26,7 +26,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, cHelpersF
         "public:",
         "    void calculateExpressions(StarkInfo &starkInfo, StepsParams &params, ParserArgs &parserArgs, ParserParams &parserParams) {",
         `        uint32_t nrowsBatch = 4;`,
-        `        bool domainExtended = parserParams.stage > starkInfo.numChallenges.size() ? true : false;`,
+        `        bool domainExtended = parserParams.stage > starkInfo.nStages ? true : false;`,
     ];
 
     let operations = getAllOperations();

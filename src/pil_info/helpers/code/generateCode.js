@@ -75,9 +75,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, symbols, ex
         stark,
     };
 
-    const nStages = res.numChallenges.length;
-
-    for(let stage = 1; stage <= nStages; ++stage) {
+    for(let stage = 1; stage <= res.nStages; ++stage) {
         for(let j = 0; j < expressions.length; ++j) {
             if(expressions[j].stage === stage) {
                 let symbolDest = symbols.find(s => s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId);
@@ -246,9 +244,11 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 
     res.evMap = ctx.evMap;
 
+    let qStage = res.nStages + 1;
+
     if (stark) {
         for (let i = 0; i < res.qDeg; i++) {
-            const rf = { type: "cm", id: res.qs[i], name: "Q" + i, prime: 0, dim: res.qDim, stage: res.numChallenges.length + 1, airId: res.airId, subproofId: res.subproofId };
+            const rf = { type: "cm", id: res.qs[i], name: "Q" + i, prime: 0, dim: res.qDim, stage: qStage, airId: res.airId, subproofId: res.subproofId };
             res.evMap.push(rf);
         }
     } else {
