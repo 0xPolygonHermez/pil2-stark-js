@@ -916,7 +916,7 @@ signal input s0_vals<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkInfo.map
 
 <% for(let i = 0; i < starkInfo.nStages; ++i) { -%>
 <%  const stage = i + 1; -%>
-<%  if(starkInfo.mapSectionsN[`cm${stage}_n`] > 0) { -%> 
+<%  if(starkInfo.mapSectionsN[`cm${stage}`] > 0) { -%> 
     signal {maxNum} s0_vals<%- stage %>GL[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${stage}`] %>];
 <% } -%>
 <% } -%>
@@ -1052,11 +1052,11 @@ signal input s0_vals<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkInfo.map
     
 <% for(let i = 0; i < starkInfo.nStages; ++i) { -%>
 <%  const stage = i + 1; -%>
-<%  if(starkInfo.mapSectionsN[`cm${stage}_n`] > 0) { -%> 
-    signal {maxNum} s0_vals<%- stage %>_p[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${stage}_n`] %>][1];
+<%  if(starkInfo.mapSectionsN[`cm${stage}`] > 0) { -%> 
+    signal {maxNum} s0_vals<%- stage %>_p[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${stage}`] %>][1];
 <% } -%>
 <% } -%> 
-    signal {maxNum} s0_vals<%- qStage %>_p[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${qStage}_n`] %>][1];
+    signal {maxNum} s0_vals<%- qStage %>_p[<%- starkStruct.nQueries %>][<%- starkInfo.mapSectionsN[`cm${qStage}`] %>][1];
     signal {maxNum} s0_valsC_p[<%- starkStruct.nQueries %>][<%- starkInfo.nConstants %>][1];
 <% for (let s=1; s<starkStruct.steps.length; s++) {   -%>
     signal {maxNum} s<%- s %>_vals_p[<%- starkStruct.nQueries %>][<%- (1 << (starkStruct.steps[s-1].nBits - starkStruct.steps[s].nBits)) %>][3]; 

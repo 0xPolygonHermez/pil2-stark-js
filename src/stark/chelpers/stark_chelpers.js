@@ -38,31 +38,31 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     // Get parser args for each stage
     for(let i = 0; i < nStages; ++i) {
         let stage = i + 1;
-        const stageInfo = getParserArgsCode(`step${stage}`, expressionsInfo.code[`stage${stage}`], "n", debug);
+        const stageInfo = getParserArgsCode(expressionsInfo.code[`stage${stage}`], "n", debug);
         stageInfo.stage = stage;
         stagesInfo.push(stageInfo);
 
         if(genericBinFile) {
-            const stageInfoGeneric = getParserArgsCodeGeneric(`step${stage}`, expressionsInfo.code[`stage${stage}`], "n", debug);
+            const stageInfoGeneric = getParserArgsCodeGeneric(expressionsInfo.code[`stage${stage}`], "n", debug);
             stageInfoGeneric.stage = stage;
             stagesInfoGeneric.push(stageInfoGeneric);
         }
     }
 
-    const stageQInfo = getParserArgsCode(`step${nStages + 1}`, expressionsInfo.code.qCode, "ext");
+    const stageQInfo = getParserArgsCode(expressionsInfo.code.qCode, "ext");
     stageQInfo.stage = nStages + 1;
     stagesInfo.push(stageQInfo);
 
-    const stageFriInfo = getParserArgsCode(`step${nStages + 2}`, expressionsInfo.code.fri, "ext");
+    const stageFriInfo = getParserArgsCode(expressionsInfo.code.fri, "ext");
     stageFriInfo.stage = nStages + 2;
     stagesInfo.push(stageFriInfo);
 
     if(genericBinFile) {
-        const stageQInfoGeneric = getParserArgsCodeGeneric(`step${nStages + 1}`, expressionsInfo.code.qCode, "ext");
+        const stageQInfoGeneric = getParserArgsCodeGeneric(expressionsInfo.code.qCode, "ext");
         stageQInfoGeneric.stage = nStages + 1;
         stagesInfoGeneric.push(stageQInfoGeneric);
 
-        const stageFriInfoGeneric = getParserArgsCodeGeneric(`step${nStages + 2}`, expressionsInfo.code.fri, "ext");
+        const stageFriInfoGeneric = getParserArgsCodeGeneric(expressionsInfo.code.fri, "ext");
         stageFriInfoGeneric.stage = nStages + 2;
         stagesInfoGeneric.push(stageFriInfoGeneric);
     }
@@ -70,12 +70,12 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     // Get parser args for each constraint
     for(let j = 0; j < expressionsInfo.constraints.length; ++j) {
         const constraintCode = expressionsInfo.constraints[j];
-        const constraintInfo = getParserArgsCode(`constraint${j}`, constraintCode, "n", true);
+        const constraintInfo = getParserArgsCode(constraintCode, "n", true);
         constraintInfo.stage = constraintCode.stage;
         constraintsInfo.push(constraintInfo);
 
         if(genericBinFile) {
-            const constraintInfoGeneric = getParserArgsCodeGeneric(`constraint${j}`, constraintCode, "n", true);
+            const constraintInfoGeneric = getParserArgsCodeGeneric(constraintCode, "n", true);
             constraintInfoGeneric.stage = constraintCode.stage;
             constraintsInfoGeneric.push(constraintInfoGeneric);
         }
@@ -85,13 +85,13 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     // Get parser args for each expression
     for(let i = 0; i < expressionsInfo.expressionsCode.length; ++i) {
         const expCode = expressionsInfo.expressionsCode[i];
-        const expInfo = getParserArgsCode(`exp${expCode.expId}`,expCode.code, "n");
+        const expInfo = getParserArgsCode(expCode.code, "n");
         expInfo.expId = expCode.expId;
         expInfo.stage = expCode.stage;
         expsInfo.push(expInfo);
 
         if(genericBinFile) {
-            const expInfoGeneric = getParserArgsCodeGeneric(`exp${expCode.expId}`,expCode.code, "n");
+            const expInfoGeneric = getParserArgsCodeGeneric(expCode.code, "n");
             expInfoGeneric.expId = expCode.expId;
             expInfoGeneric.stage = expCode.stage;
             expsInfoGeneric.push(expInfoGeneric);
@@ -152,9 +152,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
 
     return;
 
-    function getParserArgsCode(name, code, dom, debug = false) {
-        console.log(`Getting parser args for ${name}`);
-
+    function getParserArgsCode(code, dom, debug = false) {
         const {expsInfo, opsUsed} = getParserArgs(starkInfo, operationsWithPatterns, code, dom, debug);
 
         const patternOps = findPatterns(expsInfo.ops, operationsWithPatterns);
@@ -169,7 +167,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
         return expsInfo;
     }
 
-    function getParserArgsCodeGeneric(name, code, dom, debug = false) {
+    function getParserArgsCodeGeneric(code, dom, debug = false) {
         const {expsInfo} = getParserArgs(starkInfo, operations, code, dom, debug);
         return expsInfo;
     }
