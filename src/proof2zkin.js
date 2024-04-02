@@ -33,7 +33,9 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
 
     for(let i = 0; i < nStages - 1; ++i) {
         const stage = i + 2;
-        zkin[`s0_vals${stage}`] = [];
+        if(starkInfo.mapSectionsN[`cm${stage}`] > 0) {
+            zkin[`s0_vals${stage}`] = [];
+        }
     }
     zkin[`s0_vals${qStage}`] = [];
 
@@ -41,7 +43,9 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
     zkin.s0_siblings1 = [];
     for(let i = 0; i < nStages - 1; ++i) {
         const stage = i + 2;
-        zkin[`s0_siblings${stage}`] = [];
+        if(starkInfo.mapSectionsN[`cm${stage}`] > 0) {
+            zkin[`s0_siblings${stage}`] = [];
+        }
     }
     zkin[`s0_siblings${qStage}`] = [];
 
@@ -52,8 +56,10 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
         zkin.s0_siblings1[i] = query[0][1];
 
         for(let stage = 1; stage <= nStages; ++stage) {
-            zkin[`s0_vals${stage}`][i] = query[stage - 1][0];
-            zkin[`s0_siblings${stage}`][i] = query[stage - 1][1];
+            if(starkInfo.mapSectionsN[`cm${stage}`] > 0) {
+                zkin[`s0_vals${stage}`][i] = query[stage - 1][0];
+                zkin[`s0_siblings${stage}`][i] = query[stage - 1][1];
+            }
         }
 
         zkin[`s0_vals${qStage}`][i] = query[nStages][0];
@@ -93,8 +99,11 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
 
     for(let i = 0; i < nStages - 1; ++i) {
         const stage = i + 2;
-        zkin[`s0_vals${stage}`] = [];
-        zkin[`s0_siblings${stage}`] = [];
+        if(starkInfo.mapSectionsN[`cm${stage}`] > 0) {
+            zkin[`s0_vals${stage}`] = [];
+            zkin[`s0_siblings${stage}`] = [];
+        }
+        
     }
 
     zkin[`s0_vals${qStage}`] = [];
@@ -115,7 +124,7 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
     zkin.root1 = ["0", "0", "0", "0"];
     for(let i = 0; i < nStages - 1; ++i) {
         const stage = i + 2;
-        zkin[`root${stage}`] = ["0", "0", "0", "0"];
+        zkin[`root${stage}`] = ["0", "0", "0", "0"];    
     }
     zkin[`root${qStage}`] = ["0", "0", "0", "0"];
 

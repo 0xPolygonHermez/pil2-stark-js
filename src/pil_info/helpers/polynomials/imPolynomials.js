@@ -3,7 +3,7 @@ const ExpressionOps = require("../../expressionops");
 
 const { getExpDim, addInfoExpressions } = require("../helpers");
 
-module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark, imPolsLastStage = true) {
+module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark) {
     const E = new ExpressionOps();
 
     console.log("Number of intermediate expressions: " + imExps.length);
@@ -24,7 +24,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
-        const stageIm = imPolsLastStage ? res.nStages : expressions[expId].stage;
+        const stageIm = res.imPolsStages ? expressions[expId].stage : res.nStages;
                 
         const dim = getExpDim(expressions, expId, stark);
                 

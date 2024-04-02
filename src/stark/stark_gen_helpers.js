@@ -442,13 +442,13 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, tran
 
     ctx.challenges[stage - 1] = [];
     for (let i=0; i<nChallengesStage; i++) {
-        if(i > 0) {
+        if(i > 0 || !challenge) {
             ctx.challenges[stage - 1][i] = transcript.getField();
         } else {
             ctx.challenges[stage - 1][0] = challenge;
         }
         if (options.logger && !options.debug) options.logger.debug("··· challenges[" + (stage - 1) + "][" + i + "]: " + ctx.F.toString(ctx.challenges[stage - 1][i]));
-    }
+            }
 
     if(stage < qStage) {
         for(let i = 0; i < ctx.pilInfo.challengesMap.length; i++) {

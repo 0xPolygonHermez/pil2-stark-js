@@ -60,7 +60,7 @@ module.exports = async function proofGen(cmPols, pilInfo, expressionsInfo, input
 
             addTranscript(ctx.transcript, commits, stark);
 
-            if(stage >= ctx.pilInfo.nStages || ctx.pilInfo.mapSectionsN[`cm${stage + 1}`] > 0) {
+            if(ctx.pilInfo.challengesMap.filter(c => c.stageNum === stage).length > 0) {
                 challenge = getChallenge(ctx.transcript, stark);
             }
 

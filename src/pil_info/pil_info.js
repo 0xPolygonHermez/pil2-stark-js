@@ -7,9 +7,7 @@ const map = require("./map");
 module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct, options = {}) {
 
     const infoPil = preparePil(F, pil, starkStruct, stark, pil2, options);
-
-    const imPolsLastStage = options.imPolsLastStage || true;
-
+    
     const expressions = infoPil.expressions;
     const constraints = infoPil.constraints;
     const hints = infoPil.hints;
@@ -25,7 +23,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
             maxDeg = Math.pow(2,3) + 1;
         }
         const imInfo = calculateIntermediatePolynomials(expressions, res.cExpId, maxDeg, res.qDim);
-        addIntermediatePolynomials(res, expressions, constraints, symbols, imInfo.imExps, imInfo.qDeg, stark, imPolsLastStage);
+        addIntermediatePolynomials(res, expressions, constraints, symbols, imInfo.imExps, imInfo.qDeg, stark);
         newExpressions = imInfo.newExpressions;
     } else {
         newExpressions = expressions;
@@ -42,10 +40,6 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
 
     const expressionsInfo = generatePilCode(res, symbols, constraints, newExpressions, hints, options.debug, stark);
     
-    delete res.nCommitments;
-    delete res.cExpId;
-    delete res.friExpId;
-
     res.nCols = {}; 
     if(stark) {
         console.log("--------------------- POLINOMIALS INFO ---------------------")
@@ -57,7 +51,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
             let nCols = res.cmPolsMap.filter(p => p.stage == stageName).length;
             res.nCols[stageName] = nCols;
             let nColsBaseField = res.mapSectionsN[stageName];
-            if(i === res.nStages + 1 || (i < res.nStages && imPolsLastStage)) {
+            if(i === res.nStages + 1 || (i < res.nStages && !res.imPolsStages)) {
                 console.log(`Columns stage ${stage}: ${nCols} -> Columns in the basefield: ${nColsBaseField}`);
             } else {
                 console.log(`Columns stage ${stage}: ${nCols} (${res.cmPolsMap.filter(p => p.stage == stageName && p.imPol).length} intermediate columns) -> Columns in the basefield: ${nColsBaseField}`);
@@ -72,6 +66,11 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
         if(!options.debug) console.log(`Number of evaluations: ${res.evMap.length}`)
         console.log("------------------------------------------------------------")
     }
+    
+    delete res.nCommitments;
+    delete res.cExpId;
+    delete res.friExpId;
+    delete res.imPolsStages;
     
     return {pilInfo: res, expressionsInfo};
 

@@ -17,7 +17,7 @@ const { createHash } = require("crypto");
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_prover.js -m commit.bin -c <const.bin> -t <consttree.bin> -p <pil.json> [-P <pilconfig.json>] -s <starkinfo.json> -e <expressionsinfo.json> -o <proof.json> -b <public.json> -v <challenges.json> [--vadcop]")
+    .usage("node main_prover.js -m commit.bin -c <const.bin> -t <consttree.bin> -p <pil.json> [-P <pilconfig.json>] -s <starkinfo.json> -e <expressionsinfo.json> -o <proof.json> -b <public.json> -v <challenges.json>")
     .alias("m", "commit")
     .alias("c", "const")
     .alias("t", "consttree")

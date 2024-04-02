@@ -20,6 +20,7 @@ const argv = require("yargs")
     .alias("c", "custom")
     .alias("v", "vadcop")
     .alias("h", "hashcommits")
+    .alias("m", "impolsstages")
     .string("subproofId")
     .string("airId")
     .string("arity")
@@ -71,6 +72,9 @@ async function run() {
     
     options.isVadcop = argv.vadcop || false;
     options.hashCommits = argv.hashcommits || false;
+    options.imPolsStages = argv.impolsstages || false;
+
+    console.log(options);
 
     const {pilInfo: starkInfo, expressionsInfo} = pilInfo(F, pil, true, pil2, starkStruct, options);
 

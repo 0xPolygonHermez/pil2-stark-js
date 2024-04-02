@@ -162,8 +162,6 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
         if(!totalSubsetOperationsUsed.includes(opsUsed[j])) totalSubsetOperationsUsed.push(opsUsed[j]);
         }
 
-        console.log("--------------------------------");
-
         return expsInfo;
     }
 

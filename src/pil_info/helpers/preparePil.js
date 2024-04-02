@@ -16,6 +16,7 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
 
     res.isVadcop = options.vadcop || false;
     res.hashCommits = options.hashCommits || false;
+    res.imPolsStages = options.imPolsStages || false;
 
     res.cmPolsMap = [];
     res.constPolsMap = [];

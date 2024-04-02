@@ -7,18 +7,15 @@ const map = require("./pil_info/map");
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_genpilcode.js -f <infopil.json> -m <impols.json> -i <starkinfo.json>")
+    .usage("node main_genpilcode.js -f <infopil.json> -m <impols.json> -s <starkinfo.json>")
     .alias("f", "infopil")
     .alias("m", "impols")
-    .alias("i", "starkinfo")
-    .string("impolslaststage")
+    .alias("s", "starkinfo")
     .argv;
 
 async function run() {
     const infoPilFile = typeof(argv.infopil) === "string" ?  argv.infopil.trim() : "mycircuit.infopil.json";
     const imPolsFile = typeof(argv.impols) === "string" ?  argv.impols.trim() : "mycircuit.impols.json";
-
-    const imPolsLastStage = argv.impolslaststage === "false" ? false : true;
 
     const starkInfoFile = typeof(argv.starkinfo) === "string" ?  argv.starkinfo.trim() : "mycircuit.starkinfo.json";
 
@@ -36,7 +33,7 @@ async function run() {
     const stark = true;
     const debug = false;
 
-    addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark, imPolsLastStage);
+    addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark);
     
     for(let i = 0; i < expressions.length; i++) {
         if(expressions[i].keep && !expressions[i].imPol) {
@@ -47,7 +44,7 @@ async function run() {
 
     map(res, symbols, stark, debug);     
 
-    const starkInfo = generatePilCode(res, symbols, constraints, expressions, debug, stark);
+    const starkInfo = generatePilCode(res, symbols, constraints, expressions, hints, debug, stark);
 
     delete starkInfo.nCommitments;
     delete starkInfo.cExpId;
