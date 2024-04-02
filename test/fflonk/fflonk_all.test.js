@@ -67,7 +67,7 @@ describe("Fflonk All sm", async function () {
         await smPermutation.execute(N, cmPols.Permutation);
         await smConnection.execute(N, cmPols.Connection);
 
-        await generateFflonkProof(constPols, cmPols, pil, {}, {F, logger, extraMuls: 2, maxQDegree: 3, debug: true, hashCommits: true});
+        await generateFflonkProof(constPols, cmPols, pil, {}, {F, logger, extraMuls: 2, maxQDegree: 3, debug: true});
     });
 
 });

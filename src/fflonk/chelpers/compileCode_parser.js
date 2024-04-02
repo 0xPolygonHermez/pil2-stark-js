@@ -1145,15 +1145,6 @@ module.exports = function compileCode_parser(fflonkInfo, nBits, functionName, co
                     throw new Error("Invalid dom");
                 }
             }
-            case "q": {
-                if (dom == "n") {
-                    throw new Error("Accessing q in domain n");
-                } else if (dom == "ext") {
-                    return evalMap(fflonkInfo.qs[r.id], r.prime)
-                } else {
-                    throw new Error("Invalid dom");
-                }
-            }
             case "number": {
                 ++refnum;
                 body.push(`     AltBn128::FrElement v${vIndex};`);

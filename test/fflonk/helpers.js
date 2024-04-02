@@ -11,10 +11,8 @@ const { readPilFflonkZkeyFile } = require("../../src/fflonk/zkey/zkey_pilfflonk.
 
 module.exports.generateFflonkProof = async function generateFflonkProof(constPols, cmPols, pil, inputs, options) {
     const logger = options.logger;
-    const debug = options.debug;
     const extraMuls = options.extraMuls || 0;
     const maxQDegree = options.maxQDegree;
-    const hashCommits = options.hashCommits;
     const pil2 = options.pil2 || false;
     const F = options.F;
 
@@ -29,9 +27,9 @@ module.exports.generateFflonkProof = async function generateFflonkProof(constPol
 
     const vk = await fflonkVerificationKey(zkey, {logger});
 
-    const {proof, publics} = await fflonkProve(zkey, cmPols, fflonkInfo, expressionsInfo, inputs, {logger, hashCommits});
+    const {proof, publics} = await fflonkProve(zkey, cmPols, fflonkInfo, expressionsInfo, inputs, {logger});
 
-    const isValid = await fflonkVerify(vk, publics, proof, [], fflonkInfo, {logger, hashCommits});
+    const isValid = await fflonkVerify(vk, publics, proof, [], fflonkInfo, {logger});
 
     assert(isValid);
 }

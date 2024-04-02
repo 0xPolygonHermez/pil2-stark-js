@@ -66,17 +66,14 @@ async function run() {
     
     let options = {
         logger, 
-        vadcop: starkInfo.isVadcop || false, 
-        hashCommits: starkInfo.hashCommits || false,
     };
     
     let MH;
     if (starkInfo.starkStruct.verificationHashType == "GL") {
-        console.log(`hashCommits: ${starkInfo.hashCommits}, vadcop: ${starkInfo.isVadcop}`);
         MH = await buildMerkleHashGL();
     } else if (starkInfo.starkStruct.verificationHashType == "BN128") {
-        console.log(`Arity: ${starkInfo.merkleTreeArity}, Custom: ${starkInfo.merkleTreeCustom}, hashCommits: ${starkInfo.hashCommits}, vadcop: ${starkInfo.isVadcop}`);
-        MH = await buildMerkleHashBN128(starkInfo.merkleTreeArity, starkInfo.merkleTreeCustom);
+        console.log(`Arity: ${starkInfo.starkStruct.merkleTreeArity}, Custom: ${starkInfo.starkStruct.merkleTreeCustom}`);
+        MH = await buildMerkleHashBN128(starkInfo.starkStruct.merkleTreeArity, starkInfo.starkStruct.merkleTreeCustom);
     } else {
         throw new Error("Invalid Hash Type: "+ starkInfo.starkStruct.verificationHashType);
     }
@@ -90,12 +87,8 @@ async function run() {
     const zkIn = proof2zkin(resP.proof, starkInfo);
     zkIn.publics = resP.publics;
 
-    if(starkInfo.isVadcop) {
-        zkIn.challenges = resP.challenges;
-        zkIn.challengesFRISteps = resP.challengesFRISteps;
-
+    if(argv.vadcopchallenges) {
         const challengesFile = typeof(argv.vadcopchallenges) === "string" ?  argv.vadcopchallenges.trim() : "mycircuit.challenges.json";
-
         await fs.promises.writeFile(challengesFile, JSONbig.stringify({challenges: resP.challenges, challengesFRISteps: resP.challengesFRISteps}, null, 1), "utf8");
     }
 

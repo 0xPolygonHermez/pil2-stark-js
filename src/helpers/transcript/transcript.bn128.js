@@ -10,6 +10,13 @@ class Transcript {
         this.out3 = [];
     }
 
+    getState() {
+        if(this.pending.length > 0) {
+            this.updateState();
+        }
+        return this.state;
+    }
+
     getField() {
         return [
             this.getFields1(),

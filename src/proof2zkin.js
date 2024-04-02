@@ -205,7 +205,7 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
     return zkin;   
 }
 
-module.exports.challenges2zkin = function challenges2zkin(challenges, starkInfo, zkin) {
+module.exports.challenges2zkinCircom = function challenges2zkinCircom(challenges, starkInfo, zkin) {
     for(let i=0; i < starkInfo.nStages; i++) {
         if(starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length === 0) continue;
         zkin[`challengesStage${i+1}`] = [];
@@ -228,9 +228,8 @@ module.exports.challenges2zkin = function challenges2zkin(challenges, starkInfo,
     return zkin;
 }
 
-module.exports.challenges2zkinVadcop = function challenges2zkinVadcop(challenges, zkin) {
+module.exports.challenges2zkin = function challenges2zkin(challenges, zkin) {
     zkin.challenges = [];
-    console.log(challenges);
     for(let i=0; i < challenges.challenges.length; i++) {
         for(let j = 0; j < challenges.challenges[i].length; ++j) {
             zkin.challenges.push(challenges.challenges[i][j]);

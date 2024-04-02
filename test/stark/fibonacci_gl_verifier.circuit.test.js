@@ -5,7 +5,7 @@ const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig
 const proof2zkin = require("../../src/proof2zkin").proof2zkin;
 const F3g = require("../../src/helpers/f3g");
 const { calculateTranscript } = require("../../src/stark/calculateTranscriptVerify");
-const { challenges2zkin } = require("../../src/proof2zkin");
+const { challenges2zkinCircom } = require("../../src/proof2zkin");
 
 const wasm_tester = require("circom_tester").wasm;
 
@@ -57,7 +57,7 @@ describe("Stark Verification Circuit Test", function () {
 
     });
 
-    it("Should test circom circuit by setting vadcop true and not calculating transcript", async () => {
+    it("Should test circom circuit by setting input challenges true and not calculating transcript", async () => {
 
         const circomFile = path.join(__dirname, "../../", "tmp", "fibonacci.verifier.circom");
         const verKeyFile = path.join(__dirname, "../../","tmp", "fibonacci.verkey.json");
@@ -79,11 +79,9 @@ describe("Stark Verification Circuit Test", function () {
         const publics = JSONbig.parse(await fs.promises.readFile(publicsFile, "utf8"));
         const proof= JSONbig.parse( await fs.promises.readFile(proofFile, "utf8") );
 
-    
         const challenges = await calculateTranscript(F, starkInfo, proof, publics, constRoot, {});
 
-        starkInfo.isVadcop = true;
-        const circuitSrc = await pil2circom(constRoot, starkInfo, expressionsInfo);
+        const circuitSrc = await pil2circom(constRoot, starkInfo, expressionsInfo, { inputChallenges: true });
 
         await fs.promises.writeFile(circomFile, circuitSrc, "utf8");
 
@@ -92,7 +90,7 @@ describe("Stark Verification Circuit Test", function () {
         console.log("End compiling...");
 
         const input = proof2zkin(proof, starkInfo);
-        challenges2zkin(challenges, starkInfo, input);
+        challenges2zkinCircom(challenges, starkInfo, input);
         
         input.publics = publics;
 

@@ -20,8 +20,8 @@ module.exports.buildConstTree = async function buildConstTree(starkInfo, pil, co
     if (starkStruct.verificationHashType == "GL") {
         MH = await buildMerkleHashGL(starkStruct.splitLinearHash);
     } else if (starkStruct.verificationHashType == "BN128") {
-        console.log(`Merkle tree Arity: ${starkInfo.merkleTreeArity}, Merkle tree custom: ${starkInfo.merkleTreeCustom}`);
-        MH = await buildMerkleHashBN128(starkInfo.merkleTreeArity, starkInfo.merkleTreeCustom);
+        console.log(`Merkle tree Arity: ${starkInfo.starkStruct.merkleTreeArity}, Merkle tree custom: ${starkInfo.starkStruct.merkleTreeCustom}`);
+        MH = await buildMerkleHashBN128(starkInfo.starkStruct.merkleTreeArity, starkInfo.starkStruct.merkleTreeCustom);
     } else {
         throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
     }

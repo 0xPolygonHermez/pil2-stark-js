@@ -38,9 +38,9 @@ async function run() {
     
 
     if(starkInfo.starkStruct.verificationHashType === "BN128") {
-        options.arity = starkInfo.merkleTreeArity || 16;
-        options.custom = starkInfo.merkleTreeCustom || false;
-        options.transcriptArity = options.custom ? starkInfo.merkleTreeArity : 16;
+        options.arity = starkInfo.starkStruct.merkleTreeArity || 16;
+        options.custom = starkInfo.starkStruct.merkleTreeCustom || false;
+        options.transcriptArity = options.custom ? starkInfo.starkStruct.merkleTreeArity : 16;
     }
 
     const verifier = await pil2circom(constRoot, starkInfo, expressionsInfo, options);

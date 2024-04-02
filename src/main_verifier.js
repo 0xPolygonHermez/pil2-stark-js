@@ -37,8 +37,8 @@ async function run() {
     
     let options = {logger};
     if (starkInfo.starkStruct.verificationHashType === "BN128") {
-        options.arity = starkInfo.merkleTreeArity || 16;
-        options.custom = starkInfo.merkleTreeCustom || false;
+        options.arity = starkInfo.starkStruct.merkleTreeArity || 16;
+        options.custom = starkInfo.starkStruct.merkleTreeCustom || false;
         console.log(`Arity: ${options.arity}, Custom: ${options.custom}`);
 
     } 

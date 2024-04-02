@@ -42,13 +42,15 @@ async function run() {
         }    
     }
 
-    map(res, symbols, stark, debug);     
+    map(res, symbols);     
 
     const starkInfo = generatePilCode(res, symbols, constraints, expressions, hints, debug, stark);
 
     delete starkInfo.nCommitments;
     delete starkInfo.cExpId;
     delete starkInfo.friExpId;
+    delete res.imPolsStages;
+    delete starkInfo.pilPower;
 
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
 

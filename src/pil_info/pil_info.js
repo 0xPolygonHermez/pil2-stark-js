@@ -36,11 +36,11 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
         }    
     }
 
-    map(res, symbols, stark, options.debug);       
+    map(res, symbols);       
 
     const expressionsInfo = generatePilCode(res, symbols, constraints, newExpressions, hints, options.debug, stark);
     
-    res.nCols = {}; 
+    let nCols = {}; 
     if(stark) {
         console.log("--------------------- POLINOMIALS INFO ---------------------")
         let nColumnsBaseField = 0;
@@ -48,19 +48,19 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
         for(let i = 1; i <= res.nStages + 1; ++i) {
             let stage = i;
             let stageName = "cm" + stage;
-            let nCols = res.cmPolsMap.filter(p => p.stage == stageName).length;
-            res.nCols[stageName] = nCols;
+            let nColsStage = res.cmPolsMap.filter(p => p.stage == stageName).length;
+            nCols[stageName] = nColsStage;
             let nColsBaseField = res.mapSectionsN[stageName];
             if(i === res.nStages + 1 || (i < res.nStages && !res.imPolsStages)) {
-                console.log(`Columns stage ${stage}: ${nCols} -> Columns in the basefield: ${nColsBaseField}`);
+                console.log(`Columns stage ${stage}: ${nColsStage} -> Columns in the basefield: ${nColsBaseField}`);
             } else {
-                console.log(`Columns stage ${stage}: ${nCols} (${res.cmPolsMap.filter(p => p.stage == stageName && p.imPol).length} intermediate columns) -> Columns in the basefield: ${nColsBaseField}`);
+                console.log(`Columns stage ${stage}: ${nColsStage} (${res.cmPolsMap.filter(p => p.stage == stageName && p.imPol).length} intermediate columns) -> Columns in the basefield: ${nColsBaseField}`);
             }
-            nColumns += nCols;
+            nColumns += nColsStage;
             nColumnsBaseField += nColsBaseField;
         }
         
-        res.nCols["tmpExp"] = res.cmPolsMap.filter(p => p.stage == "tmpExp").length;
+        nCols["tmpExp"] = res.cmPolsMap.filter(p => p.stage == "tmpExp").length;
         console.log(`Total Columns: ${nColumns} -> Total Columns in the basefield: ${nColumnsBaseField}`);
         console.log(`Total Constraints: ${constraints.length}`)
         if(!options.debug) console.log(`Number of evaluations: ${res.evMap.length}`)
@@ -71,7 +71,8 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
     delete res.cExpId;
     delete res.friExpId;
     delete res.imPolsStages;
-    
+    delete res.pilPower;
+
     return {pilInfo: res, expressionsInfo};
 
 }

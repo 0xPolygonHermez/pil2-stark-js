@@ -194,7 +194,7 @@ module.exports.computeQFflonk = async function computeQ(ctx, options) {
     const stageCommits = [];
     commitsStageQ.forEach((com) => stageCommits.push({value: com.commit, commit: true}));
 
-    if(options.hashCommits) {
+    if(ctx.pilInfo.hashCommits) {
         const hash = await module.exports.calculateHashFflonk(ctx, stageCommits);
         commitsTranscript.push({ value: hash });
     } else {
@@ -345,7 +345,7 @@ module.exports.extendAndCommit = async function extendAndCommit(stage, ctx, opti
     const stageCommits = [];
     commits.forEach((com) => stageCommits.push({value: com.commit, commit: true}));
 
-    if(options.hashCommits) {
+    if(ctx.pilInfo.hashCommits) {
         const hash = await module.exports.calculateHashFflonk(ctx, stageCommits);
         commitsTranscript.push({ value: hash });
     } else {

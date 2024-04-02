@@ -12,7 +12,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
         const poseidonGL = await buildPoseidonGL();
         transcript = new Transcript(poseidonGL);
     } else if (starkInfo.starkStruct.verificationHashType == "BN128") {
-        transcriptArity = starkInfo.merkleTreeCustom ? starkInfo.merkleTreeArity : 16;
+        transcriptArity = starkInfo.starkStruct.merkleTreeCustom ? starkInfo.starkStruct.merkleTreeArity : 16;
         const poseidonBN128 = await buildPoseidonBN128();
         transcript = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
@@ -27,7 +27,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
     };
 
     transcript.put(constRoot);
-    if(!starkInfo.hashCommits) {
+    if(!starkInfo.starkStruct.hashCommits) {
         for (let i=0; i<publics.length; i++) {
             transcript.put(publics[i]);
         }
@@ -58,7 +58,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
     challenges[evalsStage][0] = transcript.getField();
     if (logger) logger.debug("··· challenges[" + evalsStage + "][0]: " + F.toString(challenges[evalsStage][0]));
     
-    if(!starkInfo.hashCommits) {
+    if(!starkInfo.starkStruct.hashCommits) {
         for (let i=0; i<proof.evals.length; i++) {
             transcript.put(proof.evals[i]);
         }
@@ -84,7 +84,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
         if (step < starkInfo.starkStruct.steps.length - 1) {
             transcript.put(proof.fri[step+1].root);
         } else {
-            if(!starkInfo.hashCommits) {
+            if(!starkInfo.starkStruct.hashCommits) {
                 for (let i=0; i<proof.fri[proof.fri.length-1].length; i++) {
                     transcript.put(proof.fri[proof.fri.length-1][i]);
                 }
@@ -110,7 +110,7 @@ module.exports.calculateFRIQueries = async function calculateFRIQueries(starkInf
         transcriptFRIQuery = new Transcript(poseidonGL);
     } else if (starkInfo.starkStruct.verificationHashType == "BN128") {
         const poseidonBN128 = await buildPoseidonBN128();
-        let transcriptArity = starkInfo.merkleTreeCustom ? starkInfo.merkleTreeArity : 16;
+        let transcriptArity = starkInfo.starkStruct.merkleTreeCustom ? starkInfo.starkStruct.merkleTreeArity : 16;
         transcriptFRIQuery = new TranscriptBN128(poseidonBN128, transcriptArity);
     } else {
         throw new Error("Invalid Hash Type: "+ starkInfo.starkStruct.verificationHashType == "GL");

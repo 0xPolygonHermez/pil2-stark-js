@@ -8,6 +8,13 @@ class Transcript {
         this.out = [];
     }
 
+    getState() {
+        if(this.pending.length > 0) {
+            this.updateState();
+        }
+        return this.state;
+    }
+
     getField() {
         return [this.getFields1(), this.getFields1(), this.getFields1()];
     }

@@ -244,11 +244,10 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 
     res.evMap = ctx.evMap;
 
-    let qStage = res.nStages + 1;
-
     if (stark) {
+        let qIndex = res.cmPolsMap.findIndex(p => p.stageNum === res.nStages + 1 && p.stageId === 0);
         for (let i = 0; i < res.qDeg; i++) {
-            const rf = { type: "cm", id: res.qs[i], prime: 0 };
+            const rf = { type: "cm", id: qIndex + i, prime: 0 };
             res.evMap.push(rf);
         }
     } else {

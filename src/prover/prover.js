@@ -18,15 +18,16 @@ module.exports = async function proofGen(cmPols, pilInfo, expressionsInfo, input
 
     let ctx = await initProver(pilInfo, expressionsInfo, constTree, constPols, zkey, stark, options);
     
+    let nCm1 = ctx.pilInfo.cmPolsMap.filter(c => c.stage === "cm1").length;
     if(ctx.prover === "stark") {
         // Read committed polynomials
-        cmPols.writeToBigBuffer(ctx.cm1_n, ctx.pilInfo.mapSectionsN.cm1);
+        cmPols.writeToBigBuffer(ctx.cm1_n, nCm1);
     } else {
         // Read committed polynomials
-        await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, ctx.pilInfo.mapSectionsN.cm1);
+        await cmPols.writeToBigBufferFr(ctx.cm1_n, ctx.F, nCm1);
     }
 
-    for(let i = 0; i < ctx.pilInfo.mapSectionsN.cm1; i++) {
+    for(let i = 0; i < nCm1; i++) {
         setSymbolCalculated(ctx, {op: "cm", id: i}, options);
     }
     

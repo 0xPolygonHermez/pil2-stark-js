@@ -23,5 +23,5 @@ module.exports.exportPilFflonkVerifier = require("./src/fflonk/solidity/exportPi
 module.exports.readPilFflonkZkeyFile = require("./src/fflonk/zkey/zkey_pilfflonk.js").readPilFflonkZkeyFile;
 
 module.exports.proof2zkin = require("./src/proof2zkin.js").proof2zkin;
+module.exports.challenges2zkinCircom = require("./src/proof2zkin.js").challenges2zkinCircom;
 module.exports.challenges2zkin = require("./src/proof2zkin.js").challenges2zkin;
-module.exports.challenges2zkinVadcop = require("./src/proof2zkin.js").challenges2zkinVadcop;

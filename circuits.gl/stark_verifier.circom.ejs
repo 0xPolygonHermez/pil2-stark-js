@@ -39,6 +39,12 @@ class Transcript {
         this.code.push(`${v} <== [${this.getFields1()}, ${this.getFields1()}, ${this.getFields1()}];`);    
     }
 
+    getState() {
+        if(this.pending.length > 0) {
+            this.updateState();
+        }
+        return this.state;
+    }
     updateState()  {
         let signalName = "transcriptHash";
         if(this.name) signalName += "_" + this.name;
@@ -266,7 +272,7 @@ template <%- calculateFriQueriesName %>() {
 <% if(subproofId !== undefined) { -%>
 <%      transcriptName += subproofId; -%>
 <% } -%>
-<% if (!starkInfo.isVadcop) { -%>
+<% if (!options.inputChallenges) { -%>
 
 /* 
     Calculate the transcript
@@ -297,7 +303,7 @@ template <%- transcriptName %>() {
     signal output challengesFRISteps[<%- starkStruct.steps.length + 1 %>][3];
     signal output {binary} queriesFRI[<%- starkStruct.nQueries %>][<%- starkStruct.steps[0].nBits %>];
 
-<%  if(starkInfo.hashCommits) { -%> 
+<%  if(starkInfo.starkStruct.hashCommits) { -%> 
     signal publicsHash[3];
     signal evalsHash[3];
     signal lastPolFRIHash[3];
@@ -305,7 +311,7 @@ template <%- transcriptName %>() {
 
 <%   const transcript = new Transcript(); -%>
 <%   transcript.put("rootC", 4  ); -%>
-<%   if(!starkInfo.hashCommits) { -%>
+<%   if(!starkInfo.starkStruct.hashCommits) { -%>
 <%         transcript.put("publics", starkInfo.nPublics); -%>
 <%   } else { -%>
 <%-      transcript.getCode(); %>
@@ -328,7 +334,7 @@ template <%- transcriptName %>() {
     transcript.put(`root${qStage}`, 4);
 
     transcript.getField("challengeXi", 3); -%>
-<%   if(!starkInfo.hashCommits) { -%>
+<%   if(!starkInfo.starkStruct.hashCommits) { -%>
 <%      for (let i=0; i<starkInfo.evMap.length; i++) {
             transcript.put(`evals[${i}]`, 3);
         } -%>
@@ -350,7 +356,7 @@ template <%- transcriptName %>() {
 <%      if (si < starkStruct.steps.length-1) { -%>
 <%          transcript.put(`s${si+1}_root`, 4); -%>
 <%        } else { -%>
-<%          if(!starkInfo.hashCommits) { -%>
+<%          if(!starkInfo.starkStruct.hashCommits) { -%>
 <%              for (let j=0; j< 1<<starkStruct.steps[starkStruct.steps.length-1].nBits; j++ ) {
                     transcript.put(`finalPol[${j}]`, 3);
                 } -%>
@@ -507,7 +513,8 @@ template parallel <%- verifyEvaluationsName %>() {
     // Note: Each Qi has degree < n. qDeg determines the number of polynomials of degree < n needed to define Q
     // Calculate Q(X) = Q1(X) + X^n*Q2(X) + X^(2n)*Q3(X) + ..... X^((qDeg-1)n)*Q(X) evaluated at z 
     for (var i=0; i< <%- starkInfo.qDeg %>; i++) {
-<%      const evId = starkInfo.evMap.findIndex(e => e.type === "cm" && e.id === starkInfo.qs[0]); -%>
+<%      let qIndex = starkInfo.cmPolsMap.findIndex(p => p.stageNum === qStage && p.stageId === 0); -%>
+<%      const evId = starkInfo.evMap.findIndex(e => e.type === "cm" && e.id === qIndex); -%>
         if (i==0) {
             xAcc[0] <== [1, 0, 0];
             qAcc[0] <== evals[<%- evId %>+i];
@@ -703,7 +710,7 @@ template <%- verifierName %>() {
 <% /* Depending on the STARK being verified, the rootC will be hardcoded or passed as an input */%>
     signal input rootC[4]; // Merkle tree root of the evaluations of constant polynomials
 <% } else { -%>
-<%      if (starkInfo.isVadcop) { -%>
+<%      if (options.inputChallenges) { -%>
     signal output rootC[4] <== [<%- constRoot.join(',') %> ]; // Merkle tree root of the evaluations of constant polynomials
 <%      } else { -%>
     signal rootC[4] <== [<%- constRoot.join(',') %> ]; // Merkle tree root of the evaluations of constant polynomials
@@ -761,7 +768,7 @@ template <%- verifierName %>() {
     enabled <== 1;
 <% } -%>
 
-<% if (!starkInfo.isVadcop) { -%>
+<% if (!options.inputChallenges) { -%>
 <%  let challengeNames = []; -%>
 <%  for(let i = 0; i < starkInfo.nStages; ++i) { -%>
 <%  if(starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length === 0) continue; -%>

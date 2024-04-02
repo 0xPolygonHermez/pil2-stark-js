@@ -27,7 +27,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
     if (starkStruct.verificationHashType == "GL") {
         MH = await buildMerkleHashGL(starkStruct.splitLinearHash);
     } else if (starkStruct.verificationHashType == "BN128") {
-        MH = await buildMerkleHashBN128(starkInfo.merkleTreeArity, starkInfo.merkleTreeCustom);
+        MH = await buildMerkleHashBN128(starkInfo.starkStruct.merkleTreeArity, starkInfo.starkStruct.merkleTreeCustom);
     } else {
         throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
     }
@@ -47,6 +47,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         logger.debug(`  Number queries: ${starkStruct.nQueries}`);
         logger.debug(`  Number Stark steps: ${starkStruct.steps.length}`);
         logger.debug(`  VerificationType: ${starkStruct.verificationHashType}`);
+        logger.debug(`  Hash Commits: ${starkInfo.starkStruct.hashCommits || false}`);
         logger.debug(`  Domain size: ${N} (2^${nBits})`);
         logger.debug(`  Const  pols:   ${starkInfo.nConstants}`);
         for(let i = 0; i < starkInfo.nStages; i++) {
@@ -57,12 +58,10 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         logger.debug("-----------------------------");
         logger.debug(" PIL-STARK VERIFY OPTIONS");
         logger.debug(`  Debug mode: ${options.debug}`);
-        logger.debug(`  Hash Commits: ${starkInfo.hashCommits || false}`);
-        logger.debug(`  Vadcop: ${starkInfo.isVadcop || false}`);
         logger.debug("-----------------------------");
     }
 
-    if(!starkInfo.isVadcop) {
+    if(!challenges) {
         ctx.challenges = [];
         if (logger) logger.debug("Calculating transcript");
         const challenges = await calculateTranscript(F, starkInfo, proof, publics, constRoot, options);
@@ -142,8 +141,9 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     let xAcc = 1n;
     let q = 0n;
+    let qIndex = starkInfo.cmPolsMap.findIndex(p => p.stageNum === qStage && p.stageId === 0);
     for (let i=0; i<starkInfo.qDeg; i++) {
-        const evId = starkInfo.evMap.findIndex(e => e.type === "cm" && e.id === starkInfo.qs[i]);
+        const evId = starkInfo.evMap.findIndex(e => e.type === "cm" && e.id === qIndex + i);
         q = F.add(q, F.mul(xAcc, ctx.evals[evId]));
         xAcc = F.mul(xAcc, xN);
     }

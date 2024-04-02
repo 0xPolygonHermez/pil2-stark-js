@@ -1,29 +1,12 @@
-module.exports = function map(res, symbols, stark) {  
+module.exports = function map(res, symbols) {  
     mapSymbols(res, symbols);
-
-    if(stark) {
-        const qStage = res.nStages + 1;
-        res.mapSectionsN[`cm${qStage}`] = 0;
-        for (let i=0; i<res.qDeg; i++) {
-            const symbol = {
-                stage: qStage,
-                dim: res.qDim,
-                name: `Q${i}`,
-                polId: res.qs[i],
-                stageId: i,
-            }
-            addPol(res, `cm${qStage}`, symbol);
-        }
-    }
-    
-    
     setStageInfoSymbols(res, symbols);
 }
 
 function mapSymbols(res, symbols) {
     let nCommits = res.nCommitments;
     for(let i = 0; i < symbols.length; ++i) {
-        let symbol = symbols[i];
+    let symbol = symbols[i];
         if(["witness", "fixed", "tmpPol"].includes(symbol.type)) {
             let stage;
             if(symbol.type === "fixed") {

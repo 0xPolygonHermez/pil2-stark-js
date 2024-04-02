@@ -189,16 +189,6 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 }
                 break;
             }
-            case "q": {
-                if (dom == "n") {
-                    throw new Error("Accessing q in domain n");
-                } else if (dom == "ext") {
-                    evalMap_(starkInfo.qs[r.id], r.prime)
-                } else {
-                    throw new Error("Invalid dom");
-                }
-                break;
-            }
             case "number": {
                 let num = BigInt(r.value);
                 if(num < 0n) num += BigInt(0xFFFFFFFF00000001n);

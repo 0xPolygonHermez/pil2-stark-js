@@ -63,11 +63,10 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     res.qDim = cExpDim;
 
     if(stark) {
-        res.qs = [];
         for (let i=0; i<res.qDeg; i++) {
-            res.qs[i] = res.nCommitments++;
-            symbols.push({ type: "witness", name: `Q${i}`, polId: res.qs[i], stage, dim: res.qDim, airId: res.airId, subproofId: res.subproofId });
-            E.cm(res.qs[i], 0, stage, res.qDim);
+            const index = res.nCommitments++;
+            symbols.push({ type: "witness", name: `Q${i}`, polId: index, stage, dim: res.qDim, airId: res.airId, subproofId: res.subproofId });
+            E.cm(index, 0, stage, res.qDim);
         }
     }
 }

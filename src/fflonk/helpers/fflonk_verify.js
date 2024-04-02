@@ -49,7 +49,7 @@ module.exports = async function fflonkVerify(vk, publicSignals, proof, challenge
         logger.debug("------------------------------");
     }
 
-    if(!options.vadcop) {
+    if(!challenges) {
         ctx.challenges = [];
         if (logger) logger.debug("Calculating transcript");
         await calculateTranscript(ctx, vk, options);
@@ -117,7 +117,7 @@ async function calculateTranscript(ctx, vk, options) {
 
     const cnstCommitPols = Object.keys(vk).filter(k => k.match(/^f\d/));
 
-    if(!options.hashCommits) {
+    if(!ctx.fflonkInfo.hashCommits) {
         for(let i = 0; i < cnstCommitPols.length; ++i) {
             transcript.addPolCommitment(vk[cnstCommitPols[i]]);
         }
@@ -158,7 +158,7 @@ async function calculateTranscript(ctx, vk, options) {
         }
 
         const stageCommitPols = vk.f.filter(fi => fi.stages[0].stage === stage).map(fi => ctx.proof.polynomials[`f${fi.index}`]);
-        if(!options.hashCommits) {
+        if(!ctx.fflonkInfo.hashCommits) {
             for(let i = 0; i < stageCommitPols.length; i++) {
                 transcript.addPolCommitment(stageCommitPols[i]);
             }
@@ -185,7 +185,7 @@ async function calculateTranscript(ctx, vk, options) {
         .filter(fi => fi.stages[0].stage === ctx.fflonkInfo.nStages + 1)
         .map(fi => ctx.proof.polynomials[`f${fi.index}`]);
     
-    if(!options.hashCommits) {
+    if(!ctx.fflonkInfo.hashCommits) {
         for(let i = 0; i < stageQCommitPols.length; i++) {
             transcript.addPolCommitment(stageQCommitPols[i]);
         }

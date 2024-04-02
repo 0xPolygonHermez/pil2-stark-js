@@ -14,13 +14,9 @@ const argv = require("yargs")
     .alias("s", "starkstruct")
     .alias("f", "infopil")
     .alias("v", "pil2")
-    .alias("v", "vadcop")
-    .alias("h", "hashcommits")
-    .alias("c", "custom")
     .alias("m", "impolsstages")
     .string("subproofId")
     .string("airId")
-    .string("arity")
     
     .argv;
 
@@ -48,12 +44,10 @@ async function run() {
     const options = { debug: false };
 
     if(starkStruct.verificationHashType === "BN128") {
-        options.arity = Number(argv.arity) || 16;
-        options.custom = argv.custom || false;
+        options.arity = starkStruct.merkleTreeArity || 16;
+        options.custom = starkStruct.merkleTreeCustom || false;
     }
     
-    options.isVadcop = argv.vadcop || false;
-    options.hashCommits = argv.hashcommits || false;
     options.imPolsStages = argv.impolsstages || false;
 
     const infoPil = preparePil(F, pil, starkStruct, true, pil2, options);

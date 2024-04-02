@@ -10,20 +10,16 @@ const path = require('path');
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_genstarkinfo.js -p <pil.json> [-P <pilconfig.json] -s <starkstruct.json> -i <starkinfo.json> [--vadcop <boolean>] [--hashCommits <boolean>] [--arity <number>] [--custom <boolean>] [--pil2] [--subproofId <number>] [--airId <number>]")
+    .usage("node main_genstarkinfo.js -p <pil.json> [-P <pilconfig.json] -s <starkstruct.json> -i <starkinfo.json> [--pil2] [--subproofId <number>] [--airId <number>]")
     .alias("p", "pil")
     .alias("P", "pilconfig")
     .alias("s", "starkstruct")
     .alias("i", "starkinfo")
     .alias("e", "expressionsinfo")
     .alias("n", "pil2")
-    .alias("c", "custom")
-    .alias("v", "vadcop")
-    .alias("h", "hashcommits")
     .alias("m", "impolsstages")
     .string("subproofId")
     .string("airId")
-    .string("arity")
     .argv;
 
 async function run() {
@@ -66,12 +62,10 @@ async function run() {
 
     const options = {};
     if(starkStruct.verificationHashType === "BN128") {
-        options.arity = Number(argv.arity) || 16;
-        options.custom = argv.custom || false;
+        options.arity = starkStruct.merkleTreeArity || 16;
+        options.custom = starkStruct.merkleTreeCustom || false;
     }
     
-    options.isVadcop = argv.vadcop || false;
-    options.hashCommits = argv.hashcommits || false;
     options.imPolsStages = argv.impolsstages || false;
 
     console.log(options);

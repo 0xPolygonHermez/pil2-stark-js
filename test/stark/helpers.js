@@ -5,7 +5,7 @@ const starkGen = require("../../src/stark/stark_gen.js");
 const starkVerify = require("../../src/stark/stark_verify.js");
 
 const pil2circom = require("../../src/pil2circom");
-const { proof2zkin, challenges2zkin } = require("../../src/proof2zkin");
+const { proof2zkin, challenges2zkinCircom } = require("../../src/proof2zkin");
 const wasm_tester = require("circom_tester/wasm/tester");
 const tmp = require('tmp-promise');
 const fs = require("fs");
@@ -49,9 +49,9 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
 
         let input = proof2zkin(resP.proof, setup.starkInfo);
 
-        if(setup.starkInfo.isVadcop) {
+        if(options.inputChallenges) {
             const challenges = await calculateTranscript(F, setup.starkInfo, resP.proof, resP.publics, setup.constRoot, {logger});
-            input = challenges2zkin(challenges, setup.starkInfo, input);
+            input = challenges2zkinCircom(challenges, setup.starkInfo, input);
         }
 
         input.publics = resP.publics;
