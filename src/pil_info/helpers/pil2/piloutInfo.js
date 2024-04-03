@@ -40,9 +40,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     const airHints = pilout.hints?.filter(h => h.airId === res.airId && h.subproofId === res.subproofId) || [];
     const hints = formatHints(pilout, airHints, symbols, expressions, stark, saveSymbols);
 
-    const publicsNames = symbols.filter(s => s.type === "public").map(s => s.name);
-
-    return {expressions, hints, constraints, symbols, publicsNames};
+    return {expressions, hints, constraints, symbols};
 }
 
 module.exports.getFixedPolsPil2 = function getFixedPolsPil2(pil, cnstPols, F) {        

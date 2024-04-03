@@ -19,6 +19,7 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
     const F = options.F;
     const pil2 = options.pil2;
     const skip = options.skip || false;
+    const hashCommits = options.hashCommits || false;
     
     if(debug) {
         const verificationHashType = "GL";
@@ -31,7 +32,7 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
         assert(pilVerification==true);
     }
 
-    const setup = await starkSetup(constPols, pil, starkStruct, {...options, debug: false});
+    const setup = await starkSetup(constPols, pil, {...starkStruct, hashCommits}, {...options, debug: false});
 
     const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, setup.expressionsInfo, inputs, {...options, debug: false});
 
@@ -42,7 +43,8 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
     if(!skip) {
         const verifier = await pil2circom(setup.constRoot, setup.starkInfo, setup.expressionsInfo);
 
-        const fileName = await tmp.tmpName();
+        // const fileName = await tmp.tmpName();
+        const fileName = "tmp/all.test.verifier.circom";
         await fs.promises.writeFile(fileName, verifier, "utf8");
 
         const circuit = await wasm_tester(fileName, {O:1, prime: "goldilocks", include: "circuits.gl", verbose: true});

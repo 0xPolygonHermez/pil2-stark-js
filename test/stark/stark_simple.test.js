@@ -43,9 +43,11 @@ async function runTest(pilFile) {
     } else if (pilFile === "simple6.pil") {
         pil.polIdentities[0].boundary = "lastRow";
     }
+
+    let inputs = pilFile === "simple2p.pil" ? [cmPolsSimple.b[N - 1], cmPolsSimple.b[N - 2]] : [];
     
     const skipVerifierCircom = pilFile === "simple1.pil" ? true : false;
-    await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil2: false, skip: skipVerifierCircom, debug: true});
+    await generateStarkProof(constPols, cmPols, pil, starkStruct, inputs, {logger, F, pil2: false, skip: skipVerifierCircom, debug: true});
 }
 
 describe("simple sm", async function () {

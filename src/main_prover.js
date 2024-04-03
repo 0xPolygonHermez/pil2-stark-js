@@ -1,9 +1,14 @@
 const fs = require("fs");
+const path = require("path");
 const version = require("../package").version;
 
+const protobuf = require('protobufjs');
+
 const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
+const { compile: compilePil2 } = require("pilcom2");
+
 const proofGen = require("./prover/prover.js");
-const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true, storeAsString: true });
+const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 const { proof2zkin } = require("./proof2zkin");
 const buildMerkleHashGL = require("./helpers/hash/merklehash/merklehash_p.js");
 const buildMerkleHashBN128 = require("./helpers/hash/merklehash/merklehash_bn128_p.js");
@@ -12,6 +17,7 @@ const Logger = require('logplease');
 
 const F3g = require("./helpers/f3g.js");
 const { createHash } = require("crypto");
+const { newConstantPolsArrayPil2, newCommitPolsArrayPil2 } = require("pilcom/src/polsarray");
 
 
 
@@ -40,7 +46,6 @@ async function run() {
     const constFile = typeof(argv.const) === "string" ?  argv.const.trim() : "mycircuit.const";
     const constTreeFile = typeof(argv.consttree) === "string" ?  argv.consttree.trim() : "mycircuit.consttree";
     const pilFile = typeof(argv.pil) === "string" ?  argv.pil.trim() : "mycircuit.pil";
-    const pilConfig = typeof(argv.pilconfig) === "string" ? JSON.parse(fs.readFileSync(argv.pilconfig.trim())) : {};
     const starkInfoFile = typeof(argv.starkinfo) === "string" ?  argv.starkinfo.trim() : "mycircuit.starkinfo.json";
     const expressionsInfoFile = typeof(argv.expressionsinfo) === "string" ?  argv.expressionsinfo.trim() : "mycircuit.expressionsinfo.json";
     const inputFile = typeof(argv.input) === "string" ? argv.input.trim() : "mycircuit.input.json";
@@ -48,16 +53,41 @@ async function run() {
     const zkinFile = typeof(argv.zkin) === "string" ?  argv.zkin.trim() : "mycircuit.proof.zkin.json";
     const publicFile = typeof(argv.public) === "string" ?  argv.public.trim() : "mycircuit.public.json";
 
-    const pil = await compile(F, pilFile, null, pilConfig);
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
     const expressionsInfo = JSON.parse(await fs.promises.readFile(expressionsInfoFile, "utf8"));
+    const inputs = JSONbig.parse(await fs.promises.readFile(inputFile, "utf8"));
 
-    const inputs = typeof(argv.input) === "string" ? JSONbig.parse(await fs.promises.readFile(inputFile, "utf8")) : {};
-    
-    const constPols =  newConstantPolsArray(pil, F);
+    let cmPols;
+    let constPols;
+
+    if(starkInfo.pil2) {
+        const tmpPath = path.resolve(__dirname, '../tmp');
+        if(!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath);
+        let pilConfig = { piloutDir: tmpPath};
+        await compilePil2(F, pilFile, null, pilConfig);
+        
+        const piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
+        const pilOutProtoPath = path.resolve(__dirname, '../node_modules/pilcom2/src/pilout.proto');
+        const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
+        let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
+        
+        const pil = pilout.subproofs[0].airs[0];
+        pil.symbols = pilout.symbols;
+        pil.numChallenges = pilout.numChallenges;
+        pil.hints = pilout.hints;
+        pil.airId = 0;
+        pil.subproofId = 0;
+
+        constPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
+        cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
+    } else {
+        const pil = await compile(F, pilFile, null);
+
+        constPols = newConstantPolsArray(pil, F);
+        cmPols =  newCommitPolsArray(pil, F);
+    }
+   
     await constPols.loadFromFile(constFile);
-
-    const cmPols =  newCommitPolsArray(pil, F);
     await cmPols.loadFromFile(commitFile);
 
     const logger = Logger.create("pil-stark", {showTimestamp: false});

@@ -1,7 +1,7 @@
-module.exports.execute = async function (N, pols, F) {
+module.exports.execute = async function (N, pols, inputs, F) {
 
-    pols.b[0] = 1n;
-    pols.a[0] = 2n;
+    pols.b[0] = BigInt(inputs[0]);
+    pols.a[0] = BigInt(inputs[1]);
 
     for (let i=1; i<N; i++) {
         pols.b[i] =pols.a[i-1];

@@ -56,9 +56,9 @@ describe("test fibonacci pil2 sm", async function () {
         getFixedPolsPil2(pil, cnstPols, F);
 
         const cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
-        await smFibonacci.execute(pil.numRows, cmPols.Fibonacci, F);
+        await smFibonacci.execute(pil.numRows, cmPols.Fibonacci, [1, 2], F);
 
-        const inputs = { in1: 1n, in2: 2n, mod: 5n };
-        await generateStarkProof(cnstPols, cmPols, pil, starkStruct, inputs, {logger, F, pil2: true, debug: true});
+        const publics = [cmPols.Fibonacci.b[0], cmPols.Fibonacci.a[0], cmPols.Fibonacci.a[pil.numRows - 1], 5n]; 
+        await generateStarkProof(cnstPols, cmPols, pil, starkStruct, publics, {logger, F, pil2: true, debug: true});
     });
 });

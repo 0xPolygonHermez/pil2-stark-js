@@ -41,7 +41,7 @@ describe("test connection sm", async function () {
 
         await smConnection.execute(N, cmPols.Connection);
 
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil2: false, debug: true});
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, [], {logger, F, pil2: false, debug: true});
     });
 
 });

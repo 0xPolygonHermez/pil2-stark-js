@@ -7,17 +7,21 @@ const smSimple = require("./sm_simple.js");
 const F3g = require("../../../src/helpers/f3g");
 const { F1Field, getCurveFromName } = require("ffjavascript");
 const { newCommitPolsArray, compile } = require("pilcom");
+const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_exec_simple.js -o <simple.commit.bin>")
+    .usage("node main_exec_simple.js -o <simple.commit.bin> -p <simple.publics.json>")
     .alias("o", "output")
+    .alias("p", "publics")
+    .string("curve")
     .argv;
 
 async function run() {
 
     const outputFile = typeof(argv.output) === "string" ?  argv.output.trim() : "simple.commit";
+    const publicsFile = typeof(argv.publics) === "string" ?  argv.publics.trim() : "simple.publics.json";
 
     if(argv.curve && !["gl", "bn128"].includes(argv.curve)) throw new Error("Curve not supported");
     
@@ -44,6 +48,14 @@ async function run() {
         await cmPols.saveToFileFr(outputFile, Fr);
     }
 
+    if(argv.simple.toString().includes("2p")) {
+        const publics = [];
+        publics.push(cmPols.Simple.b[N - 1]);
+        publics.push(cmPols.Simple.b[N - 2]);
+
+        await fs.promises.writeFile(publicsFile, JSONbig.stringify(publics, null, 1), "utf8");
+
+    }
     console.log("file Generated Correctly");
 }
 

@@ -62,7 +62,13 @@ async function runTest(pilFile) {
             await smSimple.execute(pil.numRows, cmPols.Simple, F);
         }
         
-        await generateStarkProof(cnstPols, cmPols, pil, starkStruct, {}, {logger, F, pil2: true, debug: true});
+        const publics = []; 
+        if(pilFile === "simple4.pil") {
+            publics.push(cmPols.Simple.b[1]);
+            publics.push(cmPols.Simple.a[pil.numRows - 1] * cmPols.Simple.a[pil.numRows - 1] * cmPols.Simple.a[pil.numRows - 1]);
+        }
+        
+        await generateStarkProof(cnstPols, cmPols, pil, starkStruct, publics, {logger, F, pil2: true, debug: true});
 }
 
 describe("simple sm", async function () {

@@ -1,13 +1,18 @@
 const fs = require("fs");
+const path = require("path");
 const version = require("../package").version;
 
+const protobuf = require('protobufjs');
+
 const { compile, newConstantPolsArray, newCommitPolsArray } = require("pilcom");
+const { compile: compilePil2 } = require("pilcom2");
 
 const { F1Field, getCurveFromName } = require("ffjavascript");
 const { pilInfo, starkGen } = require("..");
 const F3g = require("./helpers/f3g");
-
+const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 const Logger = require('logplease');
+const { newConstantPolsArrayPil2, newCommitPolsArrayPil2 } = require("pilcom/src/polsarray");
 
 const argv = require("yargs")
     .version(version)
@@ -16,7 +21,9 @@ const argv = require("yargs")
     .alias("m", "commit")
     .alias("c", "constant")
     .alias("P", "config")
+    .alias("i", "input")
     .alias("v", "verbose")
+    .alias("l", "pil2")
     .string("curve")
     .argv;
 
@@ -32,14 +39,42 @@ async function run() {
     const pilFile = typeof(argv.pil) === "string" ?  argv.pil.trim() : "main.pil.json";
     const constantFile = typeof(argv.constant) === "string" ?  argv.constant.trim() : "constant.bin";
     const commitFile = typeof(argv.commit) === "string" ?  argv.commit.trim() : "commit.bin";
+    const inputsFile = typeof(argv.input) === "string" ? argv.input.trim() : [];
 
     const config = typeof(argv.config) === "string" ? JSON.parse(fs.readFileSync(argv.config.trim())) : {};
 
-    const pil = await compile(F, pilFile, null, config);
+    const pil2 = argv.pil2 || false;
 
-    const constPols = newConstantPolsArray(pil, F);
-    const cmPols =  newCommitPolsArray(pil, F);
+    let constPols;
+    let cmPols;
+    let pil;
+    if(pil2) {
+        const tmpPath = path.resolve(__dirname, '../tmp');
+        if(!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath);
+        let pilConfig = { piloutDir: tmpPath};
+        await compilePil2(F, pilFile, null, pilConfig);
+        
+        const piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
+        const pilOutProtoPath = path.resolve(__dirname, '../node_modules/pilcom2/src/pilout.proto');
+        const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
+        let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
+        
+        pil = pilout.subproofs[0].airs[0];
+        pil.symbols = pilout.symbols;
+        pil.numChallenges = pilout.numChallenges;
+        pil.hints = pilout.hints;
+        pil.airId = 0;
+        pil.subproofId = 0;
 
+        constPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
+        cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
+    } else {
+        pil = await compile(F, pilFile, null, config);
+
+        constPols = newConstantPolsArray(pil, F);
+        cmPols =  newCommitPolsArray(pil, F);
+    }
+    
     let Fr;
     if(curveName !== "gl"){
         const curve = await getCurveFromName("bn128");
@@ -52,19 +87,19 @@ async function run() {
     if(curveName !== "gl") {
         await constPols.loadFromFileFr(constantFile, Fr);
         await cmPols.loadFromFileFr(commitFile, Fr);
-    } else {	
+    } else {
         await constPols.loadFromFile(constantFile);
         await cmPols.loadFromFile(commitFile);
     }
 
-    const pil2 = false;
-
     const verificationHashType = curveName.toUpperCase();
     const splitLinearHash = false;
 
+    const inputs = JSONbig.parse(await fs.promises.readFile(inputsFile, "utf8"));
+
     const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
     const {pilInfo: starkInfo, expressionsInfo} = pilInfo(F, pil, true, pil2, {}, {debug: true});
-    await starkGen(cmPols, constPols, {}, starkInfo, expressionsInfo, {}, optionsPilVerify);
+    await starkGen(cmPols, constPols, {}, starkInfo, expressionsInfo, inputs, optionsPilVerify);
 }
 
 run().then(()=> {

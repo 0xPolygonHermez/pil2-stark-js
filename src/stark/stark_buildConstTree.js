@@ -3,7 +3,7 @@ const buildMerkleHashGL = require("../helpers/hash/merklehash/merklehash_p.js");
 const buildMerkleHashBN128 = require("../helpers/hash/merklehash/merklehash_bn128_p.js");
 const {interpolate} = require("../helpers/fft/fft_p");
 
-module.exports.buildConstTree = async function buildConstTree(starkInfo, pil, constPols) {
+module.exports.buildConstTree = async function buildConstTree(starkInfo, constPols) {
 
     const starkStruct = starkInfo.starkStruct;
     const nBits = starkStruct.nBits;
@@ -12,9 +12,9 @@ module.exports.buildConstTree = async function buildConstTree(starkInfo, pil, co
 
     const constBuff  = constPols.writeToBuff();
 
-    const constPolsArrayE = new BigBuffer(extN*pil.nConstants);
+    const constPolsArrayE = new BigBuffer(extN*starkInfo.nConstants);
 
-    await interpolate(constBuff, pil.nConstants, nBits, constPolsArrayE, nBitsExt );
+    await interpolate(constBuff, starkInfo.nConstants, nBits, constPolsArrayE, nBitsExt );
 
     let MH;
     if (starkStruct.verificationHashType == "GL") {
@@ -28,7 +28,7 @@ module.exports.buildConstTree = async function buildConstTree(starkInfo, pil, co
 
 
     console.log("Start merkelizing..");
-    const constTree = await MH.merkelize(constPolsArrayE, pil.nConstants, extN);
+    const constTree = await MH.merkelize(constPolsArrayE, starkInfo.nConstants, extN);
 
     const constRoot = MH.root(constTree);
 

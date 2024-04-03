@@ -1,0 +1,515 @@
+{
+  name: 'myFirstPil',
+  baseField: <Buffer ff ff ff ff 00 00 00 01>,
+  blowupFactor: 3,
+  subproofs: [
+    {
+      name: 'Fibonacci',
+      aggregable: false,
+      airs: [
+        {
+          name: 'Fibonacci',
+          numRows: 64,
+          fixedCols: [
+            {
+              values: [
+                <Buffer 01>, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >,   <Buffer >, <Buffer >, <Buffer >
+              ]
+            },
+            {
+              values: [
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer >,
+                <Buffer >, <Buffer >, <Buffer >, <Buffer 01>
+              ]
+            }
+          ],
+          constraints: [
+            {
+              everyRow: {
+                expressionIdx: { idx: 2 },
+                debugLine: "INFO 0: 0 2 fibonacci.pil:18 (Fibonacci.b'-Fibonacci.a)*(1-Fibonacci.L1')"
+              }
+            },
+            {
+              everyRow: {
+                expressionIdx: { idx: 4 },
+                debugLine: 'INFO 1: 1 4 fibonacci.pil:20 Fibonacci.L1*(Fibonacci.b-in1)'
+              }
+            },
+            {
+              everyRow: {
+                expressionIdx: { idx: 6 },
+                debugLine: 'INFO 2: 2 6 fibonacci.pil:21 Fibonacci.L1*(Fibonacci.a-in2)'
+              }
+            },
+            {
+              everyRow: {
+                expressionIdx: { idx: 8 },
+                debugLine: 'INFO 3: 3 8 fibonacci.pil:22 Fibonacci.LLAST*(Fibonacci.a-out)'
+              }
+            },
+            {
+              everyRow: {
+                expressionIdx: { idx: 37 },
+                debugLine: "INFO 4: 5 37 fibonacci.pil:30 ((Fibonacci.gsum-('Fibonacci.gsum*(1-Fibonacci.L1)))*((((((((Fibonacci.L1'-2*out)+((1-Fibonacci.L1'-2)*Fibonacci.a'))*std_alpha)+(Fibonacci.a*Fibonacci.a))+(Fibonacci.b*Fibonacci.b))*std_alpha)+1)+std_beta))+1"
+              }
+            },
+            {
+              everyRow: {
+                expressionIdx: { idx: 39 },
+                debugLine: "INFO 5: 6 39 fibonacci.pil:31 Fibonacci.L1'*(Fibonacci.gsum-gsum_fibonacci)"
+              }
+            }
+          ],
+          stageWidths: [ 2, 1 ],
+          expressions: [
+            {
+              sub: {
+                lhs: { witnessCol: { colIdx: 1, rowOffset: 1, stage: 1 } },
+                rhs: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 1 } }
+              }
+            },
+            {
+              sub: {
+                lhs: { constant: { value: <Buffer 01> } },
+                rhs: { fixedCol: { idx: 0, rowOffset: 1, colIdx: 0 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { expression: { idx: 0 } },
+                rhs: { expression: { idx: 1 } }
+              }
+            },
+            {
+              sub: {
+                lhs: { witnessCol: { colIdx: 1, rowOffset: 0, stage: 1 } },
+                rhs: { publicValue: { idx: 0 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { fixedCol: { idx: 0, rowOffset: 0, colIdx: 0 } },
+                rhs: { expression: { idx: 3 } }
+              }
+            },
+            {
+              sub: {
+                lhs: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 1 } },
+                rhs: { publicValue: { idx: 1 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { fixedCol: { idx: 0, rowOffset: 0, colIdx: 0 } },
+                rhs: { expression: { idx: 5 } }
+              }
+            },
+            {
+              sub: {
+                lhs: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 1 } },
+                rhs: { publicValue: { idx: 2 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { fixedCol: { idx: 1, rowOffset: 0, colIdx: 1 } },
+                rhs: { expression: { idx: 7 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { fixedCol: { idx: 0, rowOffset: 2, colIdx: 0 } },
+                rhs: { publicValue: { idx: 2 } }
+              }
+            },
+            {
+              sub: {
+                lhs: { constant: { value: <Buffer 01> } },
+                rhs: { fixedCol: { idx: 0, rowOffset: 2, colIdx: 0 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { expression: { idx: 10 } },
+                rhs: { witnessCol: { colIdx: 0, rowOffset: 1, stage: 1 } }
+              }
+            },
+            {
+              add: {
+                lhs: { expression: { idx: 9 } },
+                rhs: { expression: { idx: 11 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { expression: { idx: 12 } },
+                rhs: { challenge: { stage: 2, idx: 0 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 1 } },
+                rhs: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 1 } }
+              }
+            },
+            {
+              add: {
+                lhs: { expression: { idx: 13 } },
+                rhs: { expression: { idx: 14 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { witnessCol: { colIdx: 1, rowOffset: 0, stage: 1 } },
+                rhs: { witnessCol: { colIdx: 1, rowOffset: 0, stage: 1 } }
+              }
+            },
+            {
+              add: {
+                lhs: { expression: { idx: 15 } },
+                rhs: { expression: { idx: 16 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { expression: { idx: 17 } },
+                rhs: { challenge: { stage: 2, idx: 0 } }
+              }
+            },
+            {
+              add: {
+                lhs: { expression: { idx: 18 } },
+                rhs: { constant: { value: <Buffer 01> } }
+              }
+            },
+            {
+              add: {
+                lhs: { expression: { idx: 19 } },
+                rhs: { challenge: { stage: 2, idx: 1 } }
+              }
+            },
+            {
+              sub: {
+                lhs: { constant: { value: <Buffer 01> } },
+                rhs: { fixedCol: { idx: 0, rowOffset: 0, colIdx: 0 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { witnessCol: { colIdx: 0, rowOffset: -1, stage: 2 } },
+                rhs: { expression: { idx: 21 } }
+              }
+            },
+            {
+              sub: {
+                lhs: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 2 } },
+                rhs: { expression: { idx: 22 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { fixedCol: { idx: 0, rowOffset: 2, colIdx: 0 } },
+                rhs: { publicValue: { idx: 2 } }
+              }
+            },
+            {
+              sub: {
+                lhs: { constant: { value: <Buffer 01> } },
+                rhs: { fixedCol: { idx: 0, rowOffset: 2, colIdx: 0 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { expression: { idx: 25 } },
+                rhs: { witnessCol: { colIdx: 0, rowOffset: 1, stage: 1 } }
+              }
+            },
+            {
+              add: {
+                lhs: { expression: { idx: 24 } },
+                rhs: { expression: { idx: 26 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { expression: { idx: 27 } },
+                rhs: { challenge: { stage: 2, idx: 0 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 1 } },
+                rhs: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 1 } }
+              }
+            },
+            {
+              add: {
+                lhs: { expression: { idx: 28 } },
+                rhs: { expression: { idx: 29 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { witnessCol: { colIdx: 1, rowOffset: 0, stage: 1 } },
+                rhs: { witnessCol: { colIdx: 1, rowOffset: 0, stage: 1 } }
+              }
+            },
+            {
+              add: {
+                lhs: { expression: { idx: 30 } },
+                rhs: { expression: { idx: 31 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { expression: { idx: 32 } },
+                rhs: { challenge: { stage: 2, idx: 0 } }
+              }
+            },
+            {
+              add: {
+                lhs: { expression: { idx: 33 } },
+                rhs: { constant: { value: <Buffer 01> } }
+              }
+            },
+            {
+              add: {
+                lhs: { expression: { idx: 34 } },
+                rhs: { challenge: { stage: 2, idx: 1 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { expression: { idx: 23 } },
+                rhs: { expression: { idx: 35 } }
+              }
+            },
+            {
+              add: {
+                lhs: { expression: { idx: 36 } },
+                rhs: { constant: { value: <Buffer 01> } }
+              }
+            },
+            {
+              sub: {
+                lhs: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 2 } },
+                rhs: { subproofValue: { idx: 0, subproofId: 0 } }
+              }
+            },
+            {
+              mul: {
+                lhs: { fixedCol: { idx: 0, rowOffset: 1, colIdx: 0 } },
+                rhs: { expression: { idx: 38 } }
+              }
+            }
+          ]
+        }
+      ],
+      subproofvalues: [ { aggType: 0 } ]
+    }
+  ],
+  numChallenges: [ 0, 2 ],
+  numProofValues: 0,
+  numPublicValues: 4,
+  publicTables: [],
+  expressions: [],
+  constraints: [],
+  hints: [
+    {
+      name: 'gsum',
+      subproofId: 0,
+      airId: 0,
+      hintFields: [
+        {
+          hintFieldArray: {
+            hintFields: [
+              {
+                operand: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 2 } },
+                name: 'reference'
+              },
+              {
+                operand: { constant: { value: <Buffer 05> } },
+                name: 'numerator'
+              },
+              {
+                operand: { expression: { idx: 20 } },
+                name: 'denominator'
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      name: 'subproofValue',
+      subproofId: 0,
+      airId: 0,
+      hintFields: [
+        {
+          hintFieldArray: {
+            hintFields: [
+              {
+                operand: { subproofValue: { idx: 0, subproofId: 0 } },
+                name: 'reference'
+              },
+              {
+                operand: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 2 } },
+                name: 'expression'
+              },
+              {
+                operand: { constant: { value: <Buffer 3f> } },
+                name: 'row_index'
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  symbols: [
+    {
+      name: 'Fibonacci.a',
+      dim: 0,
+      lengths: [],
+      debugLine: '',
+      airId: 0,
+      subproofId: 0,
+      type: 3,
+      id: 0,
+      stage: 1
+    },
+    {
+      name: 'Fibonacci.b',
+      dim: 0,
+      lengths: [],
+      debugLine: '',
+      airId: 0,
+      subproofId: 0,
+      type: 3,
+      id: 1,
+      stage: 1
+    },
+    {
+      name: 'Fibonacci.gsum',
+      dim: 0,
+      lengths: [],
+      debugLine: '',
+      airId: 0,
+      subproofId: 0,
+      type: 3,
+      id: 0,
+      stage: 2
+    },
+    {
+      name: 'Fibonacci.L1',
+      dim: 0,
+      lengths: [],
+      debugLine: '',
+      airId: 0,
+      subproofId: 0,
+      type: 1,
+      id: 0,
+      stage: 0
+    },
+    {
+      name: 'Fibonacci.LLAST',
+      dim: 0,
+      lengths: [],
+      debugLine: '',
+      airId: 0,
+      subproofId: 0,
+      type: 1,
+      id: 1,
+      stage: 0
+    },
+    {
+      name: 'in1',
+      dim: 0,
+      lengths: [],
+      debugLine: 'fibonacci.pil:1',
+      type: 6,
+      id: 0
+    },
+    {
+      name: 'in2',
+      dim: 0,
+      lengths: [],
+      debugLine: 'fibonacci.pil:2',
+      type: 6,
+      id: 1
+    },
+    {
+      name: 'out',
+      dim: 0,
+      lengths: [],
+      debugLine: 'fibonacci.pil:3',
+      type: 6,
+      id: 2
+    },
+    {
+      name: 'mod',
+      dim: 0,
+      lengths: [],
+      debugLine: 'fibonacci.pil:4',
+      type: 6,
+      id: 3
+    },
+    {
+      name: 'std_alpha',
+      dim: 0,
+      lengths: [],
+      debugLine: 'fibonacci.pil:6',
+      type: 8,
+      id: 0,
+      stage: 2
+    },
+    {
+      name: 'std_beta',
+      dim: 0,
+      lengths: [],
+      debugLine: 'fibonacci.pil:7',
+      type: 8,
+      id: 1,
+      stage: 2
+    },
+    {
+      name: 'gsum_fibonacci',
+      dim: 0,
+      lengths: [],
+      debugLine: 'fibonacci.pil:13',
+      type: 5,
+      id: 0,
+      subproofId: 0
+    }
+  ]
+}

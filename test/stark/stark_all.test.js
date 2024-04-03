@@ -41,10 +41,10 @@ describe("test All sm", async function () {
         await smPermutation.execute(N, cmPols.Permutation);
         await smConnection.execute(N, cmPols.Connection);
 
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil2: false, debug: true});
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, [1n, 2n, cmPols.Fibonacci.l1[N - 1]], {logger, F, pil2: false, debug: true});
     });
 
-    it("Testing all with hashCommits set to true", async () => {
+    it.only("Testing all with hashCommits set to true", async () => {
         const logger = Logger.create("pil-stark", {showTimestamp: false});
         Logger.setLogLevel("DEBUG");
 
@@ -67,8 +67,7 @@ describe("test All sm", async function () {
         await smPermutation.execute(N, cmPols.Permutation);
         await smConnection.execute(N, cmPols.Connection);
 
-        starkStruct.hashCommits = true;
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, {}, {logger, F, pil2: false, debug: true});
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, [1n, 2n, cmPols.Fibonacci.l1[N - 1]], {logger, F, pil2: false, debug: true, hashCommits: true});
     });
 
 });

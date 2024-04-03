@@ -14,22 +14,23 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
     res.cmPolsMap = [];
     res.constPolsMap = [];
     res.challengesMap = [];
+    res.pil2 = pil2;
 
     res.mapSectionsN = {
         "const": 0,
         "tmpExp": 0,
     };
     
-    let expressions, symbols, constraints, publicsNames;
+    let expressions, symbols, constraints;
 
     for(let i = 0; i < pil.expressions.length; ++i) {
         pil.expressions[i].stage = 1;
     }
     
     if(pil2) {
-        ({expressions, symbols, hints, constraints, publicsNames} = getPiloutInfo(res, pil, stark));
+        ({expressions, symbols, hints, constraints} = getPiloutInfo(res, pil, stark));
     } else {
-        ({expressions, symbols, hints, constraints, publicsNames} = generatePil1Polynomials(F, res, pil, stark));   
+        ({expressions, symbols, hints, constraints} = generatePil1Polynomials(F, res, pil, stark));   
     }
 
     for(let s = 1; s <= res.nStages + 1; s++) {
@@ -50,9 +51,6 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
             res.starkStruct = { nBits: res.pilPower };
         }
     }
-
-
-    res.publicsNames = publicsNames;
 
     for(let i = 0; i < constraints.length; ++i) {
         addInfoExpressions(symbols, expressions, expressions[constraints[i].e], stark);

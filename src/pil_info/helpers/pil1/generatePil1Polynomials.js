@@ -45,22 +45,6 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
     const expressions = [...pil.expressions];
     const constraints = [...pil.polIdentities];
 
-    for(let i = 0; i < pil.publics.length; ++i) {
-        const public = pil.publics[i];
-        const op = public.polType === "cmP" ? "cm" : "exp";
-        if(op === "exp") expressions[public.polId].keep = true;
-        const expr = { op, stageId: public.polId, id: public.polId, stage: 1, dim: 1, rowOffset: 0};
-        const hint = {
-            name: "public",
-            reference: { op: "public", id: i, stage: 1 },
-            row_index: { op: 'number', value: pil.publics[i].idx },
-            expression: expr,
-        }
-        hints.push(hint);
-    }
-
-    const publicsNames = pil.publics.map(p => p.name);
-
     for(let i = 0; i < constraints.length; i++) {
         if(!constraints[i].boundary) {
             constraints[i].boundary = "everyRow";
@@ -71,5 +55,5 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
         symbols.push({ type: "public", stage: 1, id: i });
     }
 
-    return { publicsNames, symbols, hints, expressions, constraints };
+    return { symbols, hints, expressions, constraints };
 }

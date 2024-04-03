@@ -68,8 +68,6 @@ async function run() {
     
     options.imPolsStages = argv.impolsstages || false;
 
-    console.log(options);
-
     const {pilInfo: starkInfo, expressionsInfo} = pilInfo(F, pil, true, pil2, starkStruct, options);
 
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");

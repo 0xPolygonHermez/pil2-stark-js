@@ -140,11 +140,8 @@ async function initProver(pilInfo, expressionsInfo, constTree, constPols, zkey, 
 
 function addPublics(ctx, inputs, options) {
     for (let i=0; i<ctx.pilInfo.nPublics; i++) {
-        const name = ctx.pilInfo.publicsNames[i];
-        if(inputs[name]) {
-            ctx.publics[i] = inputs[name];
-            setSymbolCalculated(ctx, {op: "public", stage: 1, id: i}, options);
-        }
+        ctx.publics[i] = inputs[i];
+        setSymbolCalculated(ctx, {op: "public", stage: 1, id: i}, options);
     }
 }
 
@@ -152,7 +149,7 @@ async function addPublicsTranscript(ctx, stark, options) {
     // Transcript publics
     if(!options.debug) {
         let publicsCommits = [];
-        if(ctx.pilInfo.hashCommits) {
+        if(ctx.pilInfo.starkStruct.hashCommits) {
             if(!stark) {
                 const commitsStage0 = ctx.zkey.f.filter(f => f.stages[0].stage === 0).map(f => `f${f.index}_0`);
                 const constInputs = [];
@@ -175,7 +172,6 @@ async function addPublicsTranscript(ctx, stark, options) {
                 publicsCommits.push(publicsRoot); 
             }
             
-
         } else {
             if(stark) {
                 publicsCommits.push(ctx.MH.root(ctx.constTree));

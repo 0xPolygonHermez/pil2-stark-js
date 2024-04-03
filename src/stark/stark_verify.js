@@ -56,9 +56,6 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         }
         logger.debug(`  Stage ${qStage} pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == `cm${qStage}`).length}`);
         logger.debug("-----------------------------");
-        logger.debug(" PIL-STARK VERIFY OPTIONS");
-        logger.debug(`  Debug mode: ${options.debug}`);
-        logger.debug("-----------------------------");
     }
 
     if(!challenges) {
