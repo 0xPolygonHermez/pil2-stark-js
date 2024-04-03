@@ -165,7 +165,11 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
 
                 args.push(0);
                 args.push(r.id);
-                args.push(r.prime);
+
+                const primeIndex = starkInfo.openingPoints.findIndex(p => p === r.prime);
+                if(primeIndex == -1) throw new Error("Something went wrong");
+
+                args.push(primeIndex);
                 
                 break;
             }
@@ -221,9 +225,12 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         let p = starkInfo.cmPolsMap[polId];
 
         const stage = p.stage === "tmpExp" ? starkInfo.nStages + 1 : p.stageNum;
-    
+        
+        const primeIndex = starkInfo.openingPoints.findIndex(p => p === prime);
+        if(primeIndex == -1) throw new Error("Something went wrong");
+
         args.push(Number(stage));
         args.push(Number(p.stagePos));
-        args.push(Number(prime));
+        args.push(Number(primeIndex));
     }
 }
