@@ -75,6 +75,8 @@ module.exports.generateStagesCode = function generateStagesCode(res, expressions
         stark,
     };
 
+    expressionsInfo.stagesCode = [];
+
     for(let stage = 1; stage <= res.nStages; ++stage) {
         for(let j = 0; j < expressions.length; ++j) {
             if(expressions[j].stage === stage) {
@@ -106,7 +108,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, expressions
                 pilCodeGen(ctx, symbols, expressions, j, 0);
             }
         }
-        expressionsInfo.code[`stage${stage}`] =  buildCode(ctx, expressions);
+        expressionsInfo.stagesCode.push(buildCode(ctx, expressions));
     }
 }
 
@@ -209,11 +211,12 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
             src: [code[code.length-1].dest],
         });
     }
-    expressionsInfo.code.qCode = buildCode(ctxExt, expressions);
-    expressionsInfo.code.qCode.code[expressionsInfo.code.qCode.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
+    const qCode = buildCode(ctxExt, expressions);
+    qCode.code[qCode.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
+    expressionsInfo.stagesCode.push(qCode);
 }
 
-module.exports.generateConstraintPolynomialVerifierCode = function generateConstraintPolynomialVerifierCode(res, expressionsInfo, symbols, expressions, stark) {       
+module.exports.generateConstraintPolynomialVerifierCode = function generateConstraintPolynomialVerifierCode(res, verifierInfo, symbols, expressions, stark) {       
     let addMul = stark ? false : true;
 
     let ctx = {
@@ -240,7 +243,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
     }
 
     pilCodeGen(ctx, symbols, expressions, res.cExpId, 0);
-    expressionsInfo.code.qVerifier = buildCode(ctx, expressions);
+    verifierInfo.qVerifier = buildCode(ctx, expressions);
 
     res.evMap = ctx.evMap;
 
@@ -266,7 +269,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 }
 
 
-module.exports.generateFRICode = function generateFRICode(res, expressionsInfo, symbols, expressions) {
+module.exports.generateFRICode = function generateFRICode(res, expressionsInfo, verifierInfo, symbols, expressions) {
     const ctxExt = {
         calculated: {},
         symbolsUsed: [],
@@ -290,13 +293,14 @@ module.exports.generateFRICode = function generateFRICode(res, expressionsInfo, 
     } 
 
     pilCodeGen(ctxExt, symbols, expressions, friExpId, 0);
-    expressionsInfo.code.fri = buildCode(ctxExt, expressions);
-    expressionsInfo.code.fri.code[expressionsInfo.code.fri.code.length-1].dest = { type: "f", id: 0, dim: 3 };
-
+    const friCode = buildCode(ctxExt, expressions);
+    friCode.code[friCode.code.length-1].dest = { type: "f", id: 0, dim: 3 };
+    expressionsInfo.stagesCode.push(friCode);
+    
     let addMul = false;
 
     ctxExt.verifierQuery = true;
     ctxExt.addMul = addMul;
     pilCodeGen(ctxExt, symbols, expressions, friExpId, 0);
-    expressionsInfo.code.queryVerifier = buildCode(ctxExt, expressions);
+    verifierInfo.queryVerifier = buildCode(ctxExt, expressions);
 }

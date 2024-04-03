@@ -10,6 +10,8 @@ const argv = require("yargs")
     .usage("node main_genpilcode.js -f <infopil.json> -m <impols.json> -s <starkinfo.json>")
     .alias("f", "infopil")
     .alias("m", "impols")
+    .alias("e", "expressionsinfo")
+    .alias("v", "verifierinfo")
     .alias("s", "starkinfo")
     .argv;
 
@@ -18,6 +20,8 @@ async function run() {
     const imPolsFile = typeof(argv.impols) === "string" ?  argv.impols.trim() : "mycircuit.impols.json";
 
     const starkInfoFile = typeof(argv.starkinfo) === "string" ?  argv.starkinfo.trim() : "mycircuit.starkinfo.json";
+    const expressionsInfoFile = typeof(argv.expressionsinfo) === "string" ?  argv.expressionsinfo.trim() : "mycircuit.expressionsinfo.json";
+    const verifierInfoFile = typeof(argv.verifierinfo) === "string" ?  argv.verifierinfo.trim() : "mycircuit.verifierInfo.json";
 
     const infoPil = JSON.parse(await fs.promises.readFile(infoPilFile, "utf8"));
     const imPols = JSON.parse(await fs.promises.readFile(imPolsFile, "utf8"));
@@ -44,16 +48,20 @@ async function run() {
 
     map(res, symbols);     
 
-    const starkInfo = generatePilCode(res, symbols, constraints, expressions, hints, debug, stark);
+    const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, expressions, hints, debug, stark);
 
-    delete starkInfo.nCommitments;
-    delete starkInfo.cExpId;
-    delete starkInfo.friExpId;
+    delete res.nCommitments;
+    delete res.cExpId;
+    delete res.friExpId;
     delete res.imPolsStages;
-    delete starkInfo.pilPower;
+    delete res.pilPower;
 
-    await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
+    await fs.promises.writeFile(starkInfoFile, JSON.stringify(res, null, 1), "utf8");
 
+    await fs.promises.writeFile(expressionsInfoFile, JSON.stringify(expressionsInfo, null, 1), "utf8");
+
+    await fs.promises.writeFile(verifierInfoFile, JSON.stringify(verifierInfo, null, 1), "utf8");
+    
     console.log("files Generated Correctly");
 }
 

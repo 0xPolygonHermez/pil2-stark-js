@@ -36,12 +36,12 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
 
     const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, setup.expressionsInfo, inputs, {...options, debug: false});
 
-    const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, { challenges: resP.challenges, challengesFRISteps: resP.challengesFRISteps }, setup.starkInfo, setup.expressionsInfo, {...options, debug: false});
+    const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, { challenges: resP.challenges, challengesFRISteps: resP.challengesFRISteps }, setup.starkInfo, setup.verifierInfo, {...options, debug: false});
 
     assert(resV==true);
 
     if(!skip) {
-        const verifier = await pil2circom(setup.constRoot, setup.starkInfo, setup.expressionsInfo);
+        const verifier = await pil2circom(setup.constRoot, setup.starkInfo, setup.verifierInfo);
 
         // const fileName = await tmp.tmpName();
         const fileName = "tmp/all.test.verifier.circom";

@@ -296,6 +296,8 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
 
     if (logger) logger.debug("Compute FRI");
 
+    const stage = ctx.pilInfo.nStages + 2;
+
     ctx.friPol = [];
     ctx.friProof = [];
     ctx.friTrees = [];
@@ -339,7 +341,7 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
         }
     }
 
-    await callCalculateExps("fri", ctx.expressionsInfo.code[`fri`], "ext", ctx, options.parallelExec, options.useThreads, false);
+    await callCalculateExps(stage, ctx.expressionsInfo.stagesCode[stage - 1], "ext", ctx, options.parallelExec, options.useThreads, false);
 
     ctx.friPol[0] = new Array(ctx.extN);
     for (let i=0; i<ctx.extN; i++) {

@@ -16,6 +16,7 @@ const argv = require("yargs")
     .alias("s", "starkstruct")
     .alias("i", "starkinfo")
     .alias("e", "expressionsinfo")
+    .alias("v", "verifierinfo")
     .alias("n", "pil2")
     .alias("m", "impolsstages")
     .string("subproofId")
@@ -31,6 +32,7 @@ async function run() {
     const starkStructFile = typeof(argv.starkstruct) === "string" ?  argv.starkstruct.trim() : "mycircuit.stark_struct.json";
     const starkInfoFile = typeof(argv.starkinfo) === "string" ?  argv.starkinfo.trim() : "mycircuit.starkinfo.json";
     const expressionsInfoFile = typeof(argv.expressionsinfo) === "string" ?  argv.expressionsinfo.trim() : "mycircuit.expressionsinfo.json";
+    const verifierInfoFile = typeof(argv.verifierinfo) === "string" ?  argv.verifierinfo.trim() : "mycircuit.verifierInfo.json";
 
     const pil2 = argv.pil2 || false;
 
@@ -68,11 +70,13 @@ async function run() {
     
     options.imPolsStages = argv.impolsstages || false;
 
-    const {pilInfo: starkInfo, expressionsInfo} = pilInfo(F, pil, true, pil2, starkStruct, options);
+    const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = pilInfo(F, pil, true, pil2, starkStruct, options);
 
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
     
     await fs.promises.writeFile(expressionsInfoFile, JSON.stringify(expressionsInfo, null, 1), "utf8");
+
+    await fs.promises.writeFile(verifierInfoFile, JSON.stringify(verifierInfo, null, 1), "utf8");
 
     console.log("files Generated Correctly");
 }

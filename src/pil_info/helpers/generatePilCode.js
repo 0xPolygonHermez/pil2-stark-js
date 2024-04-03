@@ -5,9 +5,9 @@ const { addInfoExpressionsSymbols } = require("./helpers");
 
 module.exports.generatePilCode = function generatePilCode(res, symbols, constraints, expressions, hints, debug, stark) {
     
-    const expressionsInfo = {
-        code: {},
-    }
+    const expressionsInfo = {};
+
+    const verifierInfo = {};
 
     for(let i = 0; i < expressions.length; i++) {
         addInfoExpressionsSymbols(symbols, expressions, expressions[i], stark);
@@ -19,12 +19,12 @@ module.exports.generatePilCode = function generatePilCode(res, symbols, constrai
 
     if(!debug) {
         generateConstraintPolynomialCode(res, expressionsInfo, symbols, constraints, expressions, stark);
-        generateConstraintPolynomialVerifierCode(res, expressionsInfo, symbols, expressions, stark);
+        generateConstraintPolynomialVerifierCode(res, verifierInfo, symbols, expressions, stark);
 
         if(stark) {
             generateFRIPolynomial(res, symbols, expressions);
             addInfoExpressionsSymbols(symbols, expressions, expressions[res.friExpId], stark);
-            generateFRICode(res, expressionsInfo, symbols, expressions);
+            generateFRICode(res, expressionsInfo, verifierInfo, symbols, expressions);
            
         } 
     }
@@ -33,7 +33,7 @@ module.exports.generatePilCode = function generatePilCode(res, symbols, constrai
 
     expressionsInfo.hintsInfo = addHintsInfo(res, symbols, hints);
 
-    return expressionsInfo;
+    return {expressionsInfo, verifierInfo};
 }
 
 

@@ -22,7 +22,7 @@ describe("Stark Verification Circuit Test", function () {
         const circomFile = path.join(__dirname, "../../", "tmp", "fibonacci.verifier.circom");
         const verKeyFile = path.join(__dirname, "../../","tmp", "fibonacci.verkey.json");
         const starkInfoFile = path.join(__dirname, "../../","tmp", "fibonacci.starkinfo.json");
-        const expressionsInfoFile = path.join(__dirname, "../../","tmp", "fibonacci.expressionsinfo.json");
+        const verifierInfoFile = path.join(__dirname, "../../","tmp", "fibonacci.verifierinfo.json");
         const proofFile = path.join(__dirname, "../../", "tmp", "fibonacci.proof.json");
         const publicsFile = path.join(__dirname, "../../", "tmp", "fibonacci.public.json")
         const zkInputFile = path.join(__dirname, "../../", "tmp", "fibonacci.zkinput.json")
@@ -34,10 +34,10 @@ describe("Stark Verification Circuit Test", function () {
             constRoot[i] = BigInt(verKey.constRoot[i]);
         }
         const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
-        const expressionsInfo = JSON.parse(await fs.promises.readFile(expressionsInfoFile, "utf8"));
+        const verifierInfo = JSON.parse(await fs.promises.readFile(verifierInfoFile, "utf8"));
         const publics = JSONbig.parse(await fs.promises.readFile(publicsFile, "utf8"));
 
-        const circuitSrc = await pil2circom(constRoot, starkInfo, expressionsInfo);
+        const circuitSrc = await pil2circom(constRoot, starkInfo, verifierInfo);
 
         await fs.promises.writeFile(circomFile, circuitSrc, "utf8");
 
@@ -62,7 +62,7 @@ describe("Stark Verification Circuit Test", function () {
         const circomFile = path.join(__dirname, "../../", "tmp", "fibonacci.verifier.circom");
         const verKeyFile = path.join(__dirname, "../../","tmp", "fibonacci.verkey.json");
         const starkInfoFile = path.join(__dirname, "../../","tmp", "fibonacci.starkinfo.json");
-        const expressionsInfoFile = path.join(__dirname, "../../","tmp", "fibonacci.expressionsinfo.json");
+        const verifierInfoFile = path.join(__dirname, "../../","tmp", "fibonacci.verifierinfo.json");
         const proofFile = path.join(__dirname, "../../", "tmp", "fibonacci.proof.json");
         const publicsFile = path.join(__dirname, "../../", "tmp", "fibonacci.public.json")
         const zkInputFile = path.join(__dirname, "../../", "tmp", "fibonacci.zkinput.json")
@@ -75,13 +75,13 @@ describe("Stark Verification Circuit Test", function () {
             constRoot[i] = BigInt(verKey.constRoot[i]);
         }
         const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
-        const expressionsInfo = JSON.parse(await fs.promises.readFile(expressionsInfoFile, "utf8"));
+        const verifierInfo = JSON.parse(await fs.promises.readFile(verifierInfoFile, "utf8"));
         const publics = JSONbig.parse(await fs.promises.readFile(publicsFile, "utf8"));
         const proof= JSONbig.parse( await fs.promises.readFile(proofFile, "utf8") );
 
         const challenges = await calculateTranscript(F, starkInfo, proof, publics, constRoot, {});
 
-        const circuitSrc = await pil2circom(constRoot, starkInfo, expressionsInfo, { inputChallenges: true });
+        const circuitSrc = await pil2circom(constRoot, starkInfo, verifierInfo, { inputChallenges: true });
 
         await fs.promises.writeFile(circomFile, circuitSrc, "utf8");
 

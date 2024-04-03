@@ -36,35 +36,17 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
 
     let debug = false;
     // Get parser args for each stage
-    for(let i = 0; i < nStages; ++i) {
+    for(let i = 0; i < nStages + 2; ++i) {
         let stage = i + 1;
-        const stageInfo = getParserArgsCode(expressionsInfo.code[`stage${stage}`], "n", debug);
+        const stageInfo = getParserArgsCode(expressionsInfo.stagesCode[i], "n", debug);
         stageInfo.stage = stage;
         stagesInfo.push(stageInfo);
 
         if(genericBinFile) {
-            const stageInfoGeneric = getParserArgsCodeGeneric(expressionsInfo.code[`stage${stage}`], "n", debug);
+            const stageInfoGeneric = getParserArgsCodeGeneric(expressionsInfo.stagesCode[i], "n", debug);
             stageInfoGeneric.stage = stage;
             stagesInfoGeneric.push(stageInfoGeneric);
         }
-    }
-
-    const stageQInfo = getParserArgsCode(expressionsInfo.code.qCode, "ext");
-    stageQInfo.stage = nStages + 1;
-    stagesInfo.push(stageQInfo);
-
-    const stageFriInfo = getParserArgsCode(expressionsInfo.code.fri, "ext");
-    stageFriInfo.stage = nStages + 2;
-    stagesInfo.push(stageFriInfo);
-
-    if(genericBinFile) {
-        const stageQInfoGeneric = getParserArgsCodeGeneric(expressionsInfo.code.qCode, "ext");
-        stageQInfoGeneric.stage = nStages + 1;
-        stagesInfoGeneric.push(stageQInfoGeneric);
-
-        const stageFriInfoGeneric = getParserArgsCodeGeneric(expressionsInfo.code.fri, "ext");
-        stageFriInfoGeneric.stage = nStages + 2;
-        stagesInfoGeneric.push(stageFriInfoGeneric);
     }
 
     // Get parser args for each constraint

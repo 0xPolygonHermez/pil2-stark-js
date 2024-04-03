@@ -6,9 +6,9 @@ const { fflonkgen_execute } = require("./fflonk_prover_worker");
 const maxNperThread = 1<<18;
 const minNperThread = 1<<12;
 
-module.exports.callCalculateExps = async function callCalculateExps(step, code, dom, ctx, parallelExec, useThreads, debug, global = false) {
+module.exports.callCalculateExps = async function callCalculateExps(stage, code, dom, ctx, parallelExec, useThreads, debug, global = false) {
     if (parallelExec) {
-        await module.exports.calculateExpsParallel(ctx, step, code, useThreads, debug);
+        await module.exports.calculateExpsParallel(ctx, stage, code, useThreads, debug);
     } else {
         module.exports.calculateExps(ctx, code, dom, debug, false, global);
     }
@@ -330,7 +330,7 @@ module.exports.getPol = function getPol(ctx, idPol, dom) {
 }
 
 
-module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx, execPart, code, useThreads, debug) {
+module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx, stageCode, code, useThreads, debug, isGlobal = false) {
 
     const pool = workerpool.pool(__dirname + '/prover_worker.js');
 
@@ -340,16 +340,14 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         outputSections: []
     };
 
-    if(execPart !== "global") {
+    if(!isGlobal) {
         const execStages = [];
         for(let i = 0; i < ctx.pilInfo.nStages; ++i) {
             const stage = 1 + i;
             execStages.push(`stage${stage}`);
         }
 
-        const qStage = ctx.pilInfo.nStages + 1;
-
-        if (execStages.includes(execPart)) {
+        if (stageCode <= ctx.pilInfo.nStages) {
             execInfo.inputSections.push({ name: "const_n" });
             execInfo.inputSections.push({ name: "x_n" });
             for(let j = 0; j < ctx.pilInfo.nStages; j++) {
@@ -360,7 +358,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             execInfo.inputSections.push({ name: "tmpExp_n" });
             execInfo.outputSections.push({ name: "tmpExp_n" });
             dom = "n";
-        } else if (execPart === "qCode") {
+        } else if (stageCode === ctx.pilInfo.nStages + 1) {
             execInfo.inputSections.push({ name: "const_ext" });
             for(let i = 0; i < ctx.pilInfo.nStages; i++) {
                 const stage = i + 1;
@@ -372,7 +370,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
                 execInfo.inputSections.push({ name: "Zi_ext" });
             }
             dom = "ext";
-        } else if (execPart == "fri") {
+        } else if (stageCode == ctx.pilInfo.nStages + 2) {
             execInfo.inputSections.push({ name: "const_ext" });
             for(let i = 0; i < ctx.pilInfo.nStages + 1; i++) {
                 const stage = i + 1;
@@ -382,7 +380,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             execInfo.outputSections.push({ name: "f_ext" });
             dom = "ext";
         } else {
-            throw new Error("Exec type not defined " + execPart);
+            throw new Error("Stage not defined " + stageCode);
         }
     }
 
@@ -466,9 +464,9 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             }
     
             if (useThreads) {
-                promises.push(pool.exec("starkgen_execute", [ctxIn, true, cEveryRow, curN, execInfo, execPart, first, last, debug]));
+                promises.push(pool.exec("starkgen_execute", [ctxIn, true, cEveryRow, curN, execInfo, stageCode, first, last, debug]));
             } else {
-                res.push(await starkgen_execute(ctxIn, true, cEveryRow, curN, execInfo, execPart, first, last, debug));
+                res.push(await starkgen_execute(ctxIn, true, cEveryRow, curN, execInfo, stageCode, first, last, debug));
             }
         }
         if (useThreads) {
@@ -508,9 +506,9 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             }
     
             if (useThreads) {
-                promises.push(pool.exec("fflonkgen_execute", [ctxIn, false, cEveryRow, curN, execInfo, execPart, first, last, debug]));
+                promises.push(pool.exec("fflonkgen_execute", [ctxIn, false, cEveryRow, curN, execInfo, stageCode, first, last, debug]));
             } else {
-                res.push(await fflonkgen_execute(ctxIn, false, cEveryRow, curN, execInfo, execPart, first, last, debug));
+                res.push(await fflonkgen_execute(ctxIn, false, cEveryRow, curN, execInfo, stageCode, first, last, debug));
             }
         }
         if (useThreads) {

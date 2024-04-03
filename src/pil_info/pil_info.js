@@ -38,7 +38,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
 
     map(res, symbols);       
 
-    const expressionsInfo = generatePilCode(res, symbols, constraints, newExpressions, hints, options.debug, stark);
+    const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, newExpressions, hints, options.debug, stark);
     
     let nCols = {}; 
     if(stark) {
@@ -73,6 +73,6 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
     delete res.imPolsStages;
     delete res.pilPower;
 
-    return {pilInfo: res, expressionsInfo};
+    return {pilInfo: res, expressionsInfo, verifierInfo};
 
 }

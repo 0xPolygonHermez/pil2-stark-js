@@ -6,20 +6,20 @@ const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_pil2circom.js -o <verifier.circom> -v <verification_key.json> -s <starkinfo.json> -e <expressionsinfo.json> [--skipMain] [--enableInput] [--verkeyInput]")
+    .usage("node main_pil2circom.js -o <verifier.circom> -v <verification_key.json> -s <starkinfo.json> -i <verifierinfo.json> [--skipMain] [--enableInput] [--verkeyInput]")
     .alias("s", "starkinfo")
-    .alias("e", "expressionsinfo")
+    .alias("i", "verifierinfo")
     .alias("v", "verkey")
     .alias("o", "output")
     .argv;
 
 async function run() {
     const starkInfoFile = typeof(argv.starkinfo) === "string" ?  argv.starkinfo.trim() : "starkinfo.json";
-    const expressionsInfoFile = typeof(argv.expressionsinfo) === "string" ? argv.expressionsinfo.trim() : "expressionsinfo.json";
+    const verifierInfoFile = typeof(argv.verifierinfo) === "string" ? argv.verifierinfo.trim() : "verifierinfo.json";
     const outputFile = typeof(argv.output) === "string" ?  argv.output.trim() : "mycircuit.verifier.circom";
 
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
-    const expressionsInfo = JSON.parse(await fs.promises.readFile(expressionsInfoFile, "utf8"));
+    const verifierInfo = JSON.parse(await fs.promises.readFile(verifierInfoFile, "utf8"));
     
     const options = {
         skipMain: argv.skipMain || false,
@@ -43,7 +43,7 @@ async function run() {
         options.transcriptArity = options.custom ? starkInfo.starkStruct.merkleTreeArity : 16;
     }
 
-    const verifier = await pil2circom(constRoot, starkInfo, expressionsInfo, options);
+    const verifier = await pil2circom(constRoot, starkInfo, verifierInfo, options);
 
     await fs.promises.writeFile(outputFile, verifier, "utf8");
 

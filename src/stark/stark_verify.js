@@ -5,7 +5,7 @@ const { assert } = require("chai");
 const buildPoseidonGL = require("../helpers/hash/poseidon/poseidon");
 const { calculateTranscript, calculateFRIQueries } = require("./calculateTranscriptVerify");
 
-module.exports = async function starkVerify(proof, publics, constRoot, challenges, starkInfo, expressionsInfo, options = {}) {
+module.exports = async function starkVerify(proof, publics, constRoot, challenges, starkInfo, verifierInfo, options = {}) {
     const logger = options.logger;
 
     const starkStruct = starkInfo.starkStruct;
@@ -134,7 +134,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         }   
     }
 
-    const res=module.exports.executeCode(F, ctx, expressionsInfo.code.qVerifier.code);
+    const res=module.exports.executeCode(F, ctx, verifierInfo.qVerifier.code);
 
     let xAcc = 1n;
     let q = 0n;
@@ -212,7 +212,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
             ctxQry.xDivXSubXi[i] = F.div(x, F.sub(x, F.mul(ctxQry.challenges[evalsStage][0], w)));
         }
 
-        const vals = [module.exports.executeCode(F, ctxQry, expressionsInfo.code.queryVerifier.code)];
+        const vals = [module.exports.executeCode(F, ctxQry, verifierInfo.queryVerifier.code)];
 
         return vals;
     }

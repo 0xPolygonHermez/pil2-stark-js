@@ -3,11 +3,11 @@ const workerpool = require('workerpool');
 const F3g = require("../helpers/f3g.js");
 
 
-async function starkgen_execute(ctx, cEveryRowSrc, n, execInfo, st_name, first, last, debug) {
+async function starkgen_execute(ctx, cEveryRowSrc, n, execInfo, stageCode, first, last, debug) {
 
     cEveryRow = new Function("ctx", "i", cEveryRowSrc);
 
-    console.log(`start exec ${st_name}...`);
+    console.log(`start exec stage ${stageCode}...`);
     ctx.F = new F3g();
     ctx.tmp = [];
 
@@ -38,7 +38,7 @@ async function starkgen_execute(ctx, cEveryRowSrc, n, execInfo, st_name, first, 
         ctxOut[si.name] = ctx[si.name];
     }
 
-    console.log(`end exec ${st_name}...`);
+    console.log(`end exec stage ${stageCode}...`);
     return ctxOut;
 }
 
