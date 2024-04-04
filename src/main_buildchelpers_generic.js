@@ -23,9 +23,6 @@ async function run() {
         `#include "steps.hpp"\n`,
         `class CHelpersSteps {`,
         "public:",
-        "    virtual void calculateExpressions(StarkInfo &starkInfo, StepsParams &params, ParserArgs &parserArgs, ParserParams &parserParams) {",
-        `        uint32_t nrowsBatch = 4;`,
-        `        bool domainExtended = parserParams.stage > starkInfo.nStages ? true : false;`,
     ];
       
 

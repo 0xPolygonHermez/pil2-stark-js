@@ -24,9 +24,6 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
         `#include "chelpers_steps.hpp"\n\n`,
         `class ${className} : public CHelpersSteps {`,
         "public:",
-        "    void calculateExpressions(StarkInfo &starkInfo, StepsParams &params, ParserArgs &parserArgs, ParserParams &parserParams) {",
-        `        uint32_t nrowsBatch = 4;`,
-        `        bool domainExtended = parserParams.stage > starkInfo.nStages ? true : false;`,
     ];
 
     let operations = getAllOperations();
