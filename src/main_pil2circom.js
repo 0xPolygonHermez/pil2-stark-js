@@ -36,13 +36,6 @@ async function run() {
         constRoot = verKey.constRoot;
     } 
     
-
-    if(starkInfo.starkStruct.verificationHashType === "BN128") {
-        options.arity = starkInfo.starkStruct.merkleTreeArity || 16;
-        options.custom = starkInfo.starkStruct.merkleTreeCustom || false;
-        options.transcriptArity = options.custom ? starkInfo.starkStruct.merkleTreeArity : 16;
-    }
-
     const verifier = await pil2circom(constRoot, starkInfo, verifierInfo, options);
 
     await fs.promises.writeFile(outputFile, verifier, "utf8");

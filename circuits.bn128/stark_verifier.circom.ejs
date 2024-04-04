@@ -26,7 +26,6 @@ include "bitify.circom";
 include "sha256/sha256.circom";
 <% } -%>
 
-<%  const transcriptArity = starkInfo.starkStruct.merkleTreeCustom ? starkInfo.starkStruct.merkleTreeArity : 16; -%>
 <%  const NFields = Math.floor(((starkStruct.nQueries *  starkStruct.steps[0].nBits) - 1)/253)+1; -%>
 <%
 class Transcript {

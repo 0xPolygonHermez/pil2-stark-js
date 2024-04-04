@@ -21,7 +21,10 @@ module.exports = async function pil2circom(constRoot, starkInfo, verifierInfo, o
         throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
     }
 
-
+    const arity = starkStruct.merkleTreeArity || 16;
+    const custom = starkStruct.merkleTreeCustom || false;
+    const transcriptArity = custom ? starkStruct.merkleTreeArity : 16;
+    
     const obj = {
         F,
         starkInfo,
@@ -29,9 +32,10 @@ module.exports = async function pil2circom(constRoot, starkInfo, verifierInfo, o
         starkStruct,
         constRoot,
         options,
-        arity: starkInfo.starkStruct.merkleTreeArity,
-        nBitsArity: starkInfo.starkStruct.merkleTreeArity ? log2(starkInfo.starkStruct.merkleTreeArity) : undefined,
-        custom: starkInfo.starkStruct.merkleTreeCustom,
+        arity,
+        nBitsArity: log2(arity),
+        transcriptArity,
+        custom,
     };
 
     return ejs.render(template ,  obj);
