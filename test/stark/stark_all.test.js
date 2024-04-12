@@ -44,7 +44,59 @@ describe("test All sm", async function () {
         await generateStarkProof(constPols, cmPols, pil, starkStruct, [1n, 2n, cmPols.Fibonacci.l1[N - 1]], {logger, F, pil2: false, debug: true});
     });
 
-    it.only("Testing all with hashCommits set to true", async () => {
+    it("Testing all with permutations and connections stage 2", async () => {
+        const logger = Logger.create("pil-stark", {showTimestamp: false});
+        Logger.setLogLevel("DEBUG");
+
+        const F = new F3g("0xFFFFFFFF00000001");
+        const pil = await compile(F, path.join(__dirname, "../state_machines/", "sm_all", "all_main.pil"));
+        const constPols =  newConstantPolsArray(pil, F);
+
+        const N = 2**(starkStruct.nBits);
+
+        await smGlobal.buildConstants(N, constPols.Global);
+        await smPlookup.buildConstants(N, constPols.Plookup);
+        await smFibonacci.buildConstants(N, constPols.Fibonacci);
+        await smPermutation.buildConstants(N, constPols.Permutation);
+        await smConnection.buildConstants(N, constPols.Connection, F);
+
+        const cmPols = newCommitPolsArray(pil, F);
+
+        await smPlookup.execute(N, cmPols.Plookup);
+        await smFibonacci.execute(N, cmPols.Fibonacci, [1,2], F);
+        await smPermutation.execute(N, cmPols.Permutation);
+        await smConnection.execute(N, cmPols.Connection);
+
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, [1n, 2n, cmPols.Fibonacci.l1[N - 1]], {logger, F, pil2: false, debug: true, firstPossibleStage: true});
+    });
+
+    it("Testing all with imPolynomials in each stage", async () => {
+        const logger = Logger.create("pil-stark", {showTimestamp: false});
+        Logger.setLogLevel("DEBUG");
+
+        const F = new F3g("0xFFFFFFFF00000001");
+        const pil = await compile(F, path.join(__dirname, "../state_machines/", "sm_all", "all_main.pil"));
+        const constPols =  newConstantPolsArray(pil, F);
+
+        const N = 2**(starkStruct.nBits);
+
+        await smGlobal.buildConstants(N, constPols.Global);
+        await smPlookup.buildConstants(N, constPols.Plookup);
+        await smFibonacci.buildConstants(N, constPols.Fibonacci);
+        await smPermutation.buildConstants(N, constPols.Permutation);
+        await smConnection.buildConstants(N, constPols.Connection, F);
+
+        const cmPols = newCommitPolsArray(pil, F);
+
+        await smPlookup.execute(N, cmPols.Plookup);
+        await smFibonacci.execute(N, cmPols.Fibonacci, [1,2], F);
+        await smPermutation.execute(N, cmPols.Permutation);
+        await smConnection.execute(N, cmPols.Connection);
+
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, [1n, 2n, cmPols.Fibonacci.l1[N - 1]], {logger, F, pil2: false, debug: true, firstPossibleStage: true, imPolsStages: true});
+    });
+
+    it("Testing all with hashCommits set to true", async () => {
         const logger = Logger.create("pil-stark", {showTimestamp: false});
         Logger.setLogLevel("DEBUG");
 

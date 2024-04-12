@@ -15,6 +15,7 @@ const argv = require("yargs")
     .alias("f", "infopil")
     .alias("v", "pil2")
     .alias("m", "impolsstages")
+    .alias("t", "firstpossiblestage")
     .string("subproofId")
     .string("airId")
     
@@ -49,6 +50,7 @@ async function run() {
     }
     
     options.imPolsStages = argv.impolsstages || false;
+    options.firstPossibleStage = argv.firstpossiblestage || false;
 
     const infoPil = preparePil(F, pil, starkStruct, true, pil2, options);
 

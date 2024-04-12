@@ -1,31 +1,31 @@
 const ExpressionOps = require("../../../expressionops");
 const { getExpDim } = require("../../helpers");
 
-module.exports.initChallengesPermutation = function initChallengesPermutation(stark) {
-    const stage = 3;
+module.exports.initChallengesPermutation = function initChallengesPermutation(stark, firstPossibleStage) {
+    const stage = firstPossibleStage ? 2 : 3;
     const dim = stark ? 3 : 1;
 
-    const alpha = {name: "std_alpha", stage: stage - 1, dim, stageId: 0};
-    const beta = {name: "std_beta", stage: stage - 1, dim, stageId: 1};
-    const gamma = {name: "std_gamma", stage, dim, stageId: 0};
+    const alpha = {name: "std_alpha", stage: stage, dim, stageId: 0};
+    const beta = {name: "std_beta", stage: stage, dim, stageId: 1};
+    const gamma = {name: "std_gamma", stage: stage, dim, stageId: 2};
 
     return [alpha, beta, gamma];
 }
 
-module.exports.grandProductPermutation = function grandProductPermutation(pil, symbols, hints, stark) {
+module.exports.grandProductPermutation = function grandProductPermutation(pil, symbols, hints, stark, firstPossibleStage) {
     const E = new ExpressionOps();
 
-    const stage = 3;
+    const stage = firstPossibleStage ? 2 : 3;
     const dim = stark ? 3 : 1;
 
-    let alphaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_alpha");
-    const alpha = E.challenge("std_alpha", alphaSymbol.stage, alphaSymbol.dim, alphaSymbol.stageId, alphaSymbol.id);
+    let alphaSymbol = symbols.find(s => s.type === "challenge" && stage === s.stage && s.stageId === 0);
+    const alpha = E.challenge(alphaSymbol.name, alphaSymbol.stage, alphaSymbol.dim, alphaSymbol.stageId, alphaSymbol.id);
 
-    let betaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_beta");
-    const beta = E.challenge("std_beta", betaSymbol.stage, betaSymbol.symbol, betaSymbol.stageId, betaSymbol.id);
+    let betaSymbol = symbols.find(s => s.type === "challenge" && stage === s.stage && s.stageId === 1);
+    const beta = E.challenge(betaSymbol.name, betaSymbol.stage, betaSymbol.symbol, betaSymbol.stageId, betaSymbol.id);
 
-    let gammaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_gamma");
-    const gamma = E.challenge("std_gamma", gammaSymbol.stage, gammaSymbol.dim, gammaSymbol.stageId, gammaSymbol.id);
+    let gammaSymbol = symbols.find(s => s.type === "challenge" && stage === s.stage && s.stageId === 2);
+    const gamma = E.challenge(gammaSymbol.name, gammaSymbol.stage, gammaSymbol.dim, gammaSymbol.stageId, gammaSymbol.id);
     
 
     for (let i=0; i<pil.permutationIdentities.length; i++) {

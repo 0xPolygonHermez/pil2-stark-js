@@ -4,8 +4,8 @@ const { getExpDim } = require("../../helpers");
 
 const getKs = require("pilcom").getKs;
 
-module.exports.initChallengesConnection = function initChallengesConnection(stark) {
-    const stage = 3;
+module.exports.initChallengesConnection = function initChallengesConnection(stark, firstPossibleStage) {
+    const stage = firstPossibleStage ? 2 : 3;
     const dim = stark ? 3 : 1;
 
     const gamma = {name: "std_gamma", stage, dim, stageId: 0};
@@ -14,17 +14,17 @@ module.exports.initChallengesConnection = function initChallengesConnection(star
     return [gamma, delta];
 }
 
-module.exports.grandProductConnection = function grandProductConnection(pil, symbols, hints, stark, F) {
+module.exports.grandProductConnection = function grandProductConnection(pil, symbols, hints, stark, firstPossibleStage, F) {
     const E = new ExpressionOps();
 
-    const stage = 3;
+    const stage = firstPossibleStage ? 2 : 3;
     const dim = stark ? 3 : 1;
 
-    let gammaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_gamma");
-    const gamma = E.challenge("std_gamma", gammaSymbol.stage, gammaSymbol.dim, gammaSymbol.stageId, gammaSymbol.id);
+    let gammaSymbol = symbols.find(s => s.type === "challenge" && s.stage === stage && s.stageId === 0);
+    const gamma = E.challenge(gammaSymbol.name, gammaSymbol.stage, gammaSymbol.dim, gammaSymbol.stageId, gammaSymbol.id);
 
-    let deltaSymbol = symbols.find(s => s.type === "challenge" && s.name === "std_delta");
-    const delta = E.challenge("std_delta", deltaSymbol.stage, deltaSymbol.dim, deltaSymbol.stageId, deltaSymbol.id);
+    let deltaSymbol = symbols.find(s => s.type === "challenge" && s.stage === stage && s.stageId === 1);
+    const delta = E.challenge(deltaSymbol.name, deltaSymbol.stage, deltaSymbol.dim, deltaSymbol.stageId, deltaSymbol.id);
 
     for (let i=0; i<pil.connectionIdentities.length; i++) {
         const ci = pil.connectionIdentities[i];

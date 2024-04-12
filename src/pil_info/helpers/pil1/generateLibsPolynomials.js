@@ -2,7 +2,7 @@ const { grandProductConnection, initChallengesConnection } = require("./pil1_lib
 const { grandProductPermutation, initChallengesPermutation } = require("./pil1_libs/grandProductPermutation.js");
 const { grandProductPlookup, initChallengesPlookup } = require("./pil1_libs/grandProductPlookup.js");
 
-module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, stark) {
+module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, stark, firstPossibleStage = false) {
 
     const pilLibs = [];
 
@@ -19,17 +19,17 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
 
     if(pil.permutationIdentities.length > 0) {
         pilLibs.push({
-            lib: function() { grandProductPermutation(pil, symbols, hints, stark)},
+            lib: function() { grandProductPermutation(pil, symbols, hints, stark, firstPossibleStage)},
         });
-        const challenges = initChallengesPermutation(stark);
+        const challenges = initChallengesPermutation(stark, firstPossibleStage);
         calculateChallenges(res, symbols, challenges);
     }
 
     if(pil.connectionIdentities.length > 0) {
         pilLibs.push({
-            lib: function() { grandProductConnection(pil, symbols, hints, stark, F)},
+            lib: function() { grandProductConnection(pil, symbols, hints, stark, firstPossibleStage, F)},
         });
-        const challenges = initChallengesConnection(stark);
+        const challenges = initChallengesConnection(stark, firstPossibleStage);
         calculateChallenges(res, symbols, challenges);
 
     }
