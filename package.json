@@ -100,6 +100,7 @@
     "fibonacci_pil2_gencircom": "NODE_OPTIONS=--max-old-space-size=32000 node src/main_pil2circom.js -p test/state_machines/pil2/sm_fibonacci/fibonacci.pil -s tmp/fibonacci.pil2.starkinfo.json -i tmp/fibonacci.pil2.verifierinfo.json -v tmp/fibonacci.pil2.verkey.json -o tmp/fibonacci.pil2.verifier.circom",
     "fibonacci_pil2_compileverifier": "circom -l circuits.gl --O1 --prime goldilocks --inspect --r1cs --sym --wasm --verbose tmp/fibonacci.pil2.verifier.circom -o tmp",
     "fibonacci_pil2_starkVerifier": "mocha test/stark/fibonacci_pil2_gl_verifier.circuit.test",
+    "fibonacci_pil2_generate_files": "NODE_OPTIONS=--max-old-space-size=32000 node node test/state_machines/pil2/sm_fibv/generate_files.js -s test/state_machines/pil2/sm_fibv/data/fibv.starkstruct.json -p test/state_machines/pil2/sm_fibv/data/fibv.pilout",
     "verifier_compile": "circom -l circuits.gl --O1 --prime goldilocks --r1cs --wasm --verbose test/compressor/verifier.circom -o test/compressor",
     "verifier_C18_setup": "NODE_OPTIONS=--max-old-space-size=32000 node src/compressor/main_compressor_setup.js -r test/compressor/verifier.r1cs -p tmp/test.c18.pil -c tmp/test.c18.const -e tmp/test.c18.exec --cols=18",
     "verifier_C18_exec": "NODE_OPTIONS=--max-old-space-size=32000 node src/compressor/main_compressor_exec.js -i test/compressor/verifier.proof.zkin.json -w test/compressor/verifier_js/verifier.wasm -p tmp/test.c18.pil -e tmp/test.c18.exec -m tmp/test.c18.commit",

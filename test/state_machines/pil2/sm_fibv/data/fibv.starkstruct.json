@@ -1,0 +1,26 @@
+{
+    "Module": {
+        "nBits": 4,
+        "nBitsExt": 5,
+        "nQueries": 8,
+        "hashCommits": true,
+        "verificationHashType": "GL",
+        "steps": [{ "nBits": 5 }, { "nBits": 3 }, { "nBits": 2 }]
+    },
+    "Fibonacci_2": {
+        "nBits": 2,
+        "nBitsExt": 4,
+        "nQueries": 8,
+        "hashCommits": true,
+        "verificationHashType": "GL",
+        "steps": [{ "nBits": 4 }, { "nBits": 3 }, { "nBits": 2 }]
+    },
+    "Fibonacci_4": {
+        "nBits": 4,
+        "nBitsExt": 5,
+        "nQueries": 8,
+        "hashCommits": true,
+        "verificationHashType": "GL",
+        "steps": [{ "nBits": 5 }, { "nBits": 3 }, { "nBits": 2 }]
+    }
+}
