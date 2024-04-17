@@ -35,9 +35,11 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     // Get parser args for each stage
     for(let i = 0; i < nStages + 2; ++i) {
         let stage = i + 1;
-        const stageInfo = getParserArgsCode(expressionsInfo.stagesCode[i], "n", debug);
-        stageInfo.stage = stage;
-        stagesInfo.push(stageInfo);
+        if(binFile) {
+            const stageInfo = getParserArgsCode(expressionsInfo.stagesCode[i], "n", debug);
+            stageInfo.stage = stage;
+            stagesInfo.push(stageInfo);
+        }
 
         if(genericBinFile) {
             const stageInfoGeneric = getParserArgsCodeGeneric(expressionsInfo.stagesCode[i], "n", debug);
@@ -49,9 +51,11 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     // Get parser args for each constraint
     for(let j = 0; j < expressionsInfo.constraints.length; ++j) {
         const constraintCode = expressionsInfo.constraints[j];
-        const constraintInfo = getParserArgsCode(constraintCode, "n", true);
-        constraintInfo.stage = constraintCode.stage;
-        constraintsInfo.push(constraintInfo);
+        if(binFile) {
+            const constraintInfo = getParserArgsCode(constraintCode, "n", true);
+            constraintInfo.stage = constraintCode.stage;
+            constraintsInfo.push(constraintInfo);
+        }
 
         if(genericBinFile) {
             const constraintInfoGeneric = getParserArgsCodeGeneric(constraintCode, "n", true);
@@ -64,10 +68,12 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     // Get parser args for each expression
     for(let i = 0; i < expressionsInfo.expressionsCode.length; ++i) {
         const expCode = expressionsInfo.expressionsCode[i];
-        const expInfo = getParserArgsCode(expCode.code, "n");
-        expInfo.expId = expCode.expId;
-        expInfo.stage = expCode.stage;
-        expsInfo.push(expInfo);
+        if(binFile) {
+            const expInfo = getParserArgsCode(expCode.code, "n");
+            expInfo.expId = expCode.expId;
+            expInfo.stage = expCode.stage;
+            expsInfo.push(expInfo);
+        }
 
         if(genericBinFile) {
             const expInfoGeneric = getParserArgsCodeGeneric(expCode.code, "n");
@@ -115,15 +121,16 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     if(newIndex === -1) throw new Error("Invalid operation!");
     return `case ${newIndex}:`;
     });
-
-    const baseDir = path.dirname(cHelpersFile);
-    if (!fs.existsSync(baseDir)) {
-        fs.mkdirSync(baseDir, { recursive: true });
+ 
+    if(binFile) {
+        const baseDir = path.dirname(cHelpersFile);
+        if (!fs.existsSync(baseDir)) {
+            fs.mkdirSync(baseDir, { recursive: true });
+        }
+        await fs.promises.writeFile(cHelpersFile, cHelpers, "utf8");
+        
+        await writeCHelpersFile(binFile, stagesInfo, expsInfo, constraintsInfo, expressionsInfo.hintsInfo);
     }
-    
-    await fs.promises.writeFile(cHelpersFile, cHelpers, "utf8");
-    
-    await writeCHelpersFile(binFile, stagesInfo, expsInfo, constraintsInfo, expressionsInfo.hintsInfo);
 
     if(genericBinFile) {
         await writeCHelpersFile(genericBinFile, stagesInfoGeneric, expsInfoGeneric, constraintsInfoGeneric, expressionsInfo.hintsInfo);

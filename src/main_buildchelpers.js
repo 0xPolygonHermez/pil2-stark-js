@@ -19,9 +19,13 @@ async function run() {
     const starkInfoFile = typeof (argv.starkinfo) === "string" ? argv.starkinfo.trim() : "mycircuit.starkinfo.json";
     const expressionsInfoFile = typeof (argv.expressionsinfo) === "string" ? argv.expressionsinfo.trim() : "mycircuit.expressionsinfo.json";
     const cHelpersFile = typeof (argv.chelpers) === "string" ? argv.chelpers.trim() : "mycircuit.chelpers";
-    const binFile = typeof (argv.binfile) === "string" ? argv.binfile.trim() : "mycircuit.chelpers.bin";
+    const binFile = typeof (argv.binfile) === "string" ? argv.binfile.trim() : undefined;
     const genericBinFile = typeof (argv.genericbinfile) === "string" ? argv.genericbinfile.trim() : undefined;
 
+    if(!binFile && !genericBinFile) {
+        throw new Error("You must provide either a binfile or a genericbinfile");
+    }
+    
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
     const expressionsInfo = JSON.parse(await fs.promises.readFile(expressionsInfoFile, "utf8"));
 
