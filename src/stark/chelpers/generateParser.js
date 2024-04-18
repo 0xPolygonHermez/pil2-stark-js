@@ -22,7 +22,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
     let functionType = !operationsUsed ? "virtual void" : "void";
     
     const parserCPP = [
-        `${functionType} storePolinomial(Goldilocks::Element *pols, __m256i *bufferT, uint64_t* mapBufferT, uint64_t* nColsSteps, uint64_t *offsetsSteps, uint64_t *buffTOffsetsSteps, uint64_t *nextStrides, uint64_t nOpenings, uint64_t domainSize, bool domainExtended, uint64_t nStages, bool needModule, uint64_t row, uint64_t stage, uint64_t stagePos, uint64_t openingPointIndex, uint64_t dim) {`,
+        `${functionType} storePolinomial(Goldilocks::Element *pols, __m256i *bufferT, uint64_t* nColsSteps, uint64_t *offsetsSteps, uint64_t *buffTOffsetsSteps, uint64_t *nextStrides, uint64_t nOpenings, uint64_t domainSize, bool domainExtended, uint64_t nStages, bool needModule, uint64_t row, uint64_t stage, uint64_t stagePos, uint64_t openingPointIndex, uint64_t dim) {`,
         "    bool isTmpPol = !domainExtended && nStages + 1 == stage;",
         "    if(needModule) {",
         "        uint64_t offsetsDest[4];",
@@ -41,22 +41,22 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "            offsetsDest[3] = stepOffset + ((nextStrideOffset + 3) % domainSize) * nColsSteps[stage];",
         "        }",
         "        if(dim == 1) {",
-        "            Goldilocks::store_avx(&pols[0], offsetsDest, bufferT[mapBufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex]]);",
+        "            Goldilocks::store_avx(&pols[0], offsetsDest, bufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex]);",
         "        } else {",
-        "            Goldilocks3::store_avx(&pols[0], offsetsDest, &bufferT[mapBufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex]], nOpenings);",
+        "            Goldilocks3::store_avx(&pols[0], offsetsDest, &bufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex], nOpenings);",
         "        }",
         "    } else {",
         "        if(dim == 1) {",
         "            if(isTmpPol) {",
-        "                Goldilocks::store_avx(&pols[offsetsSteps[stage] + stagePos * domainSize + (row + nextStrides[openingPointIndex])], uint64_t(1), bufferT[mapBufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex]]);",
+        "                Goldilocks::store_avx(&pols[offsetsSteps[stage] + stagePos * domainSize + (row + nextStrides[openingPointIndex])], uint64_t(1), bufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex]);",
         "            } else {",
-        "                Goldilocks::store_avx(&pols[offsetsSteps[stage] + stagePos + (row + nextStrides[openingPointIndex]) * nColsSteps[stage]], nColsSteps[stage], bufferT[mapBufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex]]);",
+        "                Goldilocks::store_avx(&pols[offsetsSteps[stage] + stagePos + (row + nextStrides[openingPointIndex]) * nColsSteps[stage]], nColsSteps[stage], bufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex]);",
         "            }",
         "        } else {",
         "            if(isTmpPol) {",
-        "                Goldilocks3::store_avx(&pols[offsetsSteps[stage] + stagePos * domainSize + (row + nextStrides[openingPointIndex]) * FIELD_EXTENSION], uint64_t(FIELD_EXTENSION), &bufferT[mapBufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex]], nOpenings);",
+        "                Goldilocks3::store_avx(&pols[offsetsSteps[stage] + stagePos * domainSize + (row + nextStrides[openingPointIndex]) * FIELD_EXTENSION], uint64_t(FIELD_EXTENSION), &bufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex], nOpenings);",
         "            } else {",
-        "                Goldilocks3::store_avx(&pols[offsetsSteps[stage] + stagePos + (row + nextStrides[openingPointIndex]) * nColsSteps[stage]], nColsSteps[stage], &bufferT[mapBufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex]], nOpenings);",
+        "                Goldilocks3::store_avx(&pols[offsetsSteps[stage] + stagePos + (row + nextStrides[openingPointIndex]) * nColsSteps[stage]], nColsSteps[stage], &bufferT[buffTOffsetsSteps[stage] + nOpenings * stagePos + openingPointIndex], nOpenings);",
         "            }",
         "        }",
         "    }",
@@ -76,7 +76,6 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "    uint16_t *args = &parserArgs.args[parserParams.argsOffset]; \n",
         "    uint64_t* numbers = &parserArgs.numbers[parserParams.numbersOffset];\n",
         "    uint16_t* cmPolsUsed = &parserArgs.cmPolsIds[parserParams.cmPolsOffset];\n",
-        "    uint16_t* cmPolsCalculated = &parserArgs.cmPolsCalculatedIds[parserParams.cmPolsCalculatedOffset];\n",
         "    uint16_t* constPolsUsed = &parserArgs.constPolsIds[parserParams.constPolsOffset];\n",
         "    __m256i numbers_[parserParams.nNumbers];\n",
         "    uint64_t nStages = starkInfo.nStages;",
@@ -176,52 +175,6 @@ module.exports.generateParser = function generateParser(operations, operationsUs
     ]);
 
     parserCPP.push(...[
-        "    uint64_t nPols = parserParams.nConstPolsUsed * nOpenings;\n",
-        "    for(uint64_t k = 0; k < parserParams.nCmPolsUsed; ++k) {",
-        "        uint64_t polId = cmPolsUsed[k];",
-        "        PolMap polInfo = starkInfo.cmPolsMap[polId];",
-        "        nPols += polInfo.dim * nOpenings;",
-        "    }\n",
-        "    for(uint64_t k = 0; k < parserParams.nCmPolsCalculated; ++k) {",
-        "        uint64_t polId = cmPolsCalculated[k];",
-        "        if(std::find(cmPolsUsed, cmPolsUsed + parserParams.nCmPolsUsed, polId) != cmPolsUsed + parserParams.nCmPolsUsed) continue;",
-        "        PolMap polInfo = starkInfo.cmPolsMap[polId];",
-        "        nPols += polInfo.dim * nOpenings;",
-        "    }\n",
-        "    uint64_t mapBufferT_[nPols];",
-        "    uint64_t kk = 0;\n",
-        "    for(uint64_t k = 0; k < parserParams.nConstPolsUsed; ++k) {",
-        "        uint64_t id = constPolsUsed[k];",
-        "        for(uint64_t o = 0; o < nOpenings; ++o) {",
-        "            mapBufferT_[nOpenings * id + o] = kk++;",
-        "        }",
-        "    }\n",
-        "    for(uint64_t k = 0; k < parserParams.nCmPolsUsed; ++k) {",
-        "        uint64_t polId = cmPolsUsed[k];",
-        "        PolMap polInfo = starkInfo.cmPolsMap[polId];",
-        `        uint64_t stage = polInfo.stage == string("tmpExp") ? nStages + 1 : polInfo.stageNum;`,
-        "        uint64_t stagePos = polInfo.stagePos;",
-        "        for(uint64_t d = 0; d < polInfo.dim; ++d) {",
-        "            for(uint64_t o = 0; o < nOpenings; ++o) {",
-        "                mapBufferT_[nOpenings * nColsStepsAccumulated[stage] + nOpenings * (stagePos + d) + o] = kk++;",
-        "            }",
-        "        }",
-        "    }\n",
-        "    for(uint64_t k = 0; k < parserParams.nCmPolsCalculated; ++k) {",
-        "        uint64_t polId = cmPolsCalculated[k];",
-        "        if(std::find(cmPolsUsed, cmPolsUsed + parserParams.nCmPolsUsed, polId) != cmPolsUsed + parserParams.nCmPolsUsed) continue;",
-        "        PolMap polInfo = starkInfo.cmPolsMap[polId];",
-        `        uint64_t stage = polInfo.stage == string("tmpExp") ? nStages + 1 : polInfo.stageNum;`,
-        "        uint64_t stagePos = polInfo.stagePos;",
-        "        for(uint64_t d = 0; d < polInfo.dim; ++d) {",
-        "            for(uint64_t o = 0; o < nOpenings; ++o) {",
-        "                mapBufferT_[nOpenings * nColsStepsAccumulated[stage] + nOpenings * (stagePos + d) + o] = kk++;",
-        "            }",
-        "        }",
-        "    }\n",
-    ]);
-
-    parserCPP.push(...[
         `#pragma omp parallel for`,
         `    for (uint64_t i = 0; i < domainSize; i+= nrowsBatch) {`,
         "        bool const needModule = ((static_cast<int64_t>(i + nrowsBatch) + extend*starkInfo.openingPoints[nOpenings - 1]) >= static_cast<int64_t>(domainSize)) || ((static_cast<int64_t>(i) + extend*starkInfo.openingPoints[0]) < 0);",
@@ -232,7 +185,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "        // Goldilocks3::Element_avx tmp3_0;",
         "        Goldilocks3::Element_avx tmp3_1;",
         "        __m256i tmp1_1;",
-        "        __m256i bufferT_[nPols];\n",
+        "        __m256i bufferT_[nOpenings*nCols];\n",
     ]); 
 
     if(!operationsUsed) parserCPP.push(        "        __m256i tmp1_0;");
@@ -246,7 +199,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "                    uint64_t l = (i + j + nextStrides[o]) % domainSize;",
         "                    bufferT[nrowsBatch*o + j] = ((Goldilocks::Element *)constPols->address())[l * nColsSteps[0] + id];",
         "                }",
-        "                Goldilocks::load_avx(bufferT_[mapBufferT_[nOpenings * id + o]], &bufferT[nrowsBatch*o]);",
+        "                Goldilocks::load_avx(bufferT_[nOpenings * id + o], &bufferT[nrowsBatch*o]);",
         "            }",
         "        }\n",
         "        for(uint64_t k = 0; k < parserParams.nCmPolsUsed; ++k) {",
@@ -266,7 +219,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "                            bufferT[nrowsBatch*o + j] = params.pols[offsetsSteps[stage] + l * nColsSteps[stage] + stagePos + d];",
         "                        }",
         "                    }",
-        "                    Goldilocks::load_avx(bufferT_[mapBufferT_[nOpenings * nColsStepsAccumulated[stage] + nOpenings * (stagePos + d) + o]], &bufferT[nrowsBatch*o]);",
+        "                    Goldilocks::load_avx(bufferT_[nOpenings * nColsStepsAccumulated[stage] + nOpenings * (stagePos + d) + o], &bufferT[nrowsBatch*o]);",
         "                }",
         "            }",  
         "        }",   
@@ -451,7 +404,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         let operationStoreAvx;
 
         if(operation.dest_type === "commit1" || operation.dest_type === "commit3") {
-            operationStoreAvx = `                storePolinomial(params.pols, bufferT_, mapBufferT_, nColsSteps, offsetsSteps, buffTOffsetsSteps_, nextStrides, nOpenings, domainSize, domainExtended, nStages, needModule, i, args[i_args + ${c_args}], args[i_args + ${c_args + 1}], args[i_args + ${c_args + 2}], ${operation.dest_type === "commit1" ? 1 : "FIELD_EXTENSION"});`;
+            operationStoreAvx = `                storePolinomial(params.pols, bufferT_, nColsSteps, offsetsSteps, buffTOffsetsSteps_, nextStrides, nOpenings, domainSize, domainExtended, nStages, needModule, i, args[i_args + ${c_args}], args[i_args + ${c_args + 1}], args[i_args + ${c_args + 2}], ${operation.dest_type === "commit1" ? 1 : "FIELD_EXTENSION"});`;
         } else if(operation.dest_type === "f") {
             operationStoreAvx = `                Goldilocks3::store_avx(&params.f_2ns[i*FIELD_EXTENSION], uint64_t(FIELD_EXTENSION), tmp3_);`;
         }
@@ -552,7 +505,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
             case "commit1":
             case "commit3":
             case "const":
-                return `bufferT_[mapBufferT_[buffTOffsetsSteps_[args[i_args + ${c_args}]] + nOpenings * args[i_args + ${c_args + 1}] + args[i_args + ${c_args + 2}]]]`;
+                return `bufferT_[buffTOffsetsSteps_[args[i_args + ${c_args}]] + nOpenings * args[i_args + ${c_args + 1}] + args[i_args + ${c_args + 2}]]`;
             case "challenge":
                 return `challenges[args[i_args + ${c_args}]]`;
             case "eval":

@@ -1,6 +1,8 @@
 module.exports = function map(res, symbols) {  
     mapSymbols(res, symbols);
     setStageInfoSymbols(res, symbols);
+
+    res.nCommitmentsStage1 = res.cmPolsMap.filter(p => p.stage === "cm1" && !p.imPol).length;
 }
 
 function mapSymbols(res, symbols) {
