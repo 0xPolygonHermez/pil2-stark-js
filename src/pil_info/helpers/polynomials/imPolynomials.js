@@ -50,7 +50,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
             ]
         };
         expressions.push(e);
-        addInfoExpressions(symbols, expressions, e, stark);
+        addInfoExpressions(expressions, e, stark);
         constraints.push({ e: expressions.length - 1, boundary: "everyRow", filename: `ImPol.${expId}`, stage: expressions[expId].stage });
         
         if(stark && multipleBoundaries) e = E.mul(E.zi(res.boundaries.findIndex(b => b.name === "everyRow")), e);

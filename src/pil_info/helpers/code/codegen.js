@@ -1,45 +1,74 @@
-function pilCodeGen(ctx, symbols, expressions, expId, prime, debug) {
+function pilCodeGen(ctx, symbols, expressions, expId, prime, evMap) {
     if (ctx.calculated[expId] && ctx.calculated[expId][prime]) return;
 
-    calculateDeps(ctx, symbols, expressions, expressions[expId], prime, expId, debug);
+    calculateDeps(ctx, symbols, expressions, expressions[expId], prime, expId, evMap);
 
     let e = expressions[expId];
     if (ctx.addMul) e = findAddMul(e);
     
-    const codeCtx = {
-        expId: expId,
-        tmpUsed: ctx.tmpUsed,
-        calculated: ctx.calculated,
-        dom: ctx.dom,
-        stark: ctx.stark,
-        verifierEvaluations: ctx.verifierEvaluations,
-        verifierQuery: ctx.verifierQuery,
-        evMap: ctx.evMap,
-        airId: ctx.airId,
-        subproofId: ctx.subproofId,
-        code: []
-    }
-
-    const retRef = evalExp(codeCtx, symbols, expressions, e, prime);
-
-    const r = { type: "exp", prime, id: expId, dim: e.dim };
-    
-    if (retRef.type === "tmp") {
-        fixCommitPol(r, codeCtx, symbols);
-        codeCtx.code[codeCtx.code.length-1].dest = r;
-        codeCtx.tmpUsed--;
+    if(evMap) {
+        calculateEvMap(ctx, symbols, expressions, e, prime);
     } else {
-        fixCommitPol(r, codeCtx, symbols);
-        codeCtx.code.push({ op: "copy", dest: r, src: [ retRef ] })
-    }
-
-    ctx.code.push(...codeCtx.code);
+        const codeCtx = {
+            expId: expId,
+            tmpUsed: ctx.tmpUsed,
+            calculated: ctx.calculated,
+            dom: ctx.dom,
+            stark: ctx.stark,
+            verifierEvaluations: ctx.verifierEvaluations,
+            verifierQuery: ctx.verifierQuery,
+            evMap: ctx.evMap,
+            airId: ctx.airId,
+            subproofId: ctx.subproofId,
+            openingPoints: ctx.openingPoints,
+            code: []
+        }
     
-    if(!ctx.calculated[expId]) ctx.calculated[expId] = {};
-    ctx.calculated[expId][prime] = true;
+        const retRef = evalExp(codeCtx, symbols, expressions, e, prime);
+    
+        const r = { type: "exp", prime, id: expId, dim: e.dim };
+        
+        if (retRef.type === "tmp") {
+            fixCommitPol(r, codeCtx, symbols);
+            codeCtx.code[codeCtx.code.length-1].dest = r;
+            codeCtx.tmpUsed--;
+        } else {
+            fixCommitPol(r, codeCtx, symbols);
+            codeCtx.code.push({ op: "copy", dest: r, src: [ retRef ] })
+        }
+    
+        ctx.code.push(...codeCtx.code);
+        
+        if(!ctx.calculated[expId]) ctx.calculated[expId] = {};
+        ctx.calculated[expId][prime] = true;
+    
+        if (codeCtx.tmpUsed > ctx.tmpUsed) ctx.tmpUsed = codeCtx.tmpUsed;
+    }
+}
 
-    if (codeCtx.tmpUsed > ctx.tmpUsed) ctx.tmpUsed = codeCtx.tmpUsed;
-    ctx.evMap = codeCtx.evMap;
+function calculateEvMap(ctx, symbols, expressions, exp, prime) {
+    prime = prime || 0;
+    if (["add", "sub", "mul", "muladd"].includes(exp.op)) {
+        const values = [];
+        for(let i = 0; i < exp.values.length; ++i) {
+            values[i] = calculateEvMap(ctx, symbols, expressions, exp.values[i], prime);
+        }
+    } else if (["cm", "const"].includes(exp.op) || (exp.op === "exp" && ["cm", "const"].includes(expressions[exp.id].op))) {
+        const expr = exp.op === "exp" ? expressions[exp.id] : exp;
+        let p = expr.rowOffset || prime; 
+        const r = { type: expr.op, id: expr.id, prime: p, dim: expr.dim }
+        calculateEval(r, ctx.evMap, ctx.openingPoints);
+    } else if (exp.op === "exp") {
+        let p = exp.rowOffset || prime; 
+        const r = { type: exp.op, expId: exp.id, id: exp.id, prime: p, dim: exp.dim };
+        const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
+        if(symbol && symbol.imPol) {
+            r.type = "cm";
+            r.id = symbol.polId;
+            r.dim = symbol.dim;
+            calculateEval(r, ctx.evMap, ctx.openingPoints);
+        }
+    }
 }
 
 function evalExp(ctx, symbols, expressions, exp, prime) {
@@ -95,12 +124,12 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
 }
 
 
-function calculateDeps(ctx, symbols, expressions, exp, prime, expId, debug) {
+function calculateDeps(ctx, symbols, expressions, exp, prime, expId, evMap) {
     if (exp.op == "exp") {
         let p = exp.rowOffset || prime;
-        pilCodeGen(ctx, symbols, expressions, exp.id, p, debug);
+        pilCodeGen(ctx, symbols, expressions, exp.id, p, evMap);
     } else if (["add", "sub", "mul", "muladd"].includes(exp.op)) {
-        exp.values.map(v => calculateDeps(ctx, symbols, expressions, v, prime, expId, debug));
+        exp.values.map(v => calculateDeps(ctx, symbols, expressions, v, prime, expId, evMap));
     }
 }
 
@@ -183,18 +212,27 @@ function fixCommitPol(r, ctx, symbols) {
     }
 }
 
-function fixEval(r, ctx) {
+function calculateEval(r, evMap, openingPoints) {
     const prime = r.prime || 0;
-    let evalIndex = ctx.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.prime === prime);
+    let openingPos = openingPoints.findIndex(p => p === prime);
+    let evalIndex = evMap.findIndex(e => e.type === r.type && e.id === r.id && e.openingPos === openingPos);
     if (evalIndex == -1) {  
         const rf = {
             type: r.type,
             id: r.id,
             prime,
+            openingPos,
         };
-        ctx.evMap.push(rf);
-        evalIndex = ctx.evMap.length - 1;
+        evMap.push(rf);
+        evalIndex = evMap.length - 1;
     }
+    return evalIndex;
+}
+
+function fixEval(r, ctx) {
+    const prime = r.prime || 0;
+    let openingPos = ctx.openingPoints.findIndex(p => p === prime);
+    let evalIndex = ctx.evMap.findIndex(e => e.type === r.type && e.id === r.id && e.openingPos === openingPos);
     delete r.prime;
     r.id = evalIndex;
     r.type = "eval";

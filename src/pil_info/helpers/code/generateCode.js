@@ -135,7 +135,7 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
             };
         }
 
-        pilCodeGen(ctx, symbols, expressions, constraints[j].e, 0, true);
+        pilCodeGen(ctx, symbols, expressions, constraints[j].e, 0);
         const constraint = buildCode(ctx, expressions);
         constraint.boundary = constraints[j].boundary;
         constraint.line = constraints[j].line;
@@ -227,6 +227,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
         dom: "n",
         airId: res.airId,
         subproofId: res.subproofId,
+        openingPoints: res.openingPoints,
         stark,
         addMul,
         verifierEvaluations: true,
@@ -242,18 +243,29 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
         }
     }
 
+    pilCodeGen(ctx, symbols, expressions, res.cExpId, 0, true);
+    let qIndex = res.cmPolsMap.findIndex(p => p.stageNum === res.nStages + 1 && p.stageId === 0);
+    let openingPos = res.openingPoints.findIndex(p => p === 0);
+    for (let i = 0; i < res.qDeg; i++) {
+        const rf = { type: "cm", id: qIndex + i, prime: 0, openingPos };
+        ctx.evMap.push(rf);
+    }
+    ctx.evMap.sort((a, b) => {
+        if(a.type !== b.type) {
+            return a.type === "cm" ? 1 : -1;
+        } else if(a.id !== b.id) {
+            return a.id - b.id;
+        } else {
+            return a.prime - b.prime;
+        }
+    })
+
     pilCodeGen(ctx, symbols, expressions, res.cExpId, 0);
     verifierInfo.qVerifier = buildCode(ctx, expressions);
 
     res.evMap = ctx.evMap;
 
-    if (stark) {
-        let qIndex = res.cmPolsMap.findIndex(p => p.stageNum === res.nStages + 1 && p.stageId === 0);
-        for (let i = 0; i < res.qDeg; i++) {
-            const rf = { type: "cm", id: qIndex + i, prime: 0 };
-            res.evMap.push(rf);
-        }
-    } else {
+    if (!stark) {
         let nOpenings = {};
         for(let i = 0; i < res.evMap.length; ++i) {
             if(res.evMap[i].type === "const") continue;
@@ -279,6 +291,7 @@ module.exports.generateFRICode = function generateFRICode(res, expressionsInfo, 
         dom: "ext",
         airId: res.airId,
         subproofId: res.subproofId,
+        openingPoints: res.openingPoints,
         stark: true,
     };
 

@@ -53,13 +53,13 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
     }
 
     for(let i = 0; i < constraints.length; ++i) {
-        addInfoExpressions(symbols, expressions, expressions[constraints[i].e], stark);
+        addInfoExpressions(expressions, expressions[constraints[i].e], stark);
         constraints[i].stage = expressions[constraints[i].e].stage;
     }
 
     for(let i = 0; i < expressions.length; ++i) {
         if(expressions[i].symbols === undefined) {
-            addInfoExpressions(symbols, expressions, expressions[i], stark)
+            addInfoExpressions(expressions, expressions[i], stark)
         }
     }
     

@@ -20,7 +20,7 @@ module.exports.getExpDim = function getExpDim(expressions, expId, stark) {
     }
 }
 
-module.exports.addInfoExpressions = function addInfoExpressions(symbols, expressions, exp, stark) {
+module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp, stark) {
     if("expDeg" in exp) return;
 
     if("next" in exp) {
@@ -29,7 +29,7 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
     }
 
     if (exp.op == "exp") {
-        addInfoExpressions(symbols, expressions, expressions[exp.id], stark);
+        addInfoExpressions(expressions, expressions[exp.id], stark);
         exp.expDeg = expressions[exp.id].expDeg;
         exp.rowsOffsets = expressions[exp.id].rowsOffsets;
         if(!exp.dim) exp.dim = expressions[exp.id].dim;
@@ -75,8 +75,8 @@ module.exports.addInfoExpressions = function addInfoExpressions(symbols, express
             exp.op = "mul";
             rhsValue.value = "1";
         }
-        addInfoExpressions(symbols, expressions, lhsValue, stark);
-        addInfoExpressions(symbols, expressions, rhsValue, stark);
+        addInfoExpressions(expressions, lhsValue, stark);
+        addInfoExpressions(expressions, rhsValue, stark);
 
         const lhsDeg = lhsValue.expDeg;
         const rhsDeg = rhsValue.expDeg;
@@ -123,7 +123,7 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
             exp.symbols = [{op: "cm", stage: exp.stage, stageId: exp.stageId, id: exp.id}];
         } else {
             exp.symbols = [{op: exp.op, stage: exp.stage, id: exp.id}];
-        }
+        }        
     } else if(["add", "sub", "mul", "neg"].includes(exp.op)) {
         const lhsValue = exp.values[0];
         const rhsValue = exp.values[1];

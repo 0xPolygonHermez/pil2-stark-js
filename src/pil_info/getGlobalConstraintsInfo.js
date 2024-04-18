@@ -21,7 +21,7 @@ module.exports.getGlobalConstraintsInfo = function getGlobalConstraintsInfo(pilo
     }
 
     for(let i = 0; i < constraints.length; ++i) {
-        addInfoExpressions(symbols, expressions, expressions[constraints[i].e], stark);
+        addInfoExpressions(expressions, expressions[constraints[i].e], stark);
     }
    
     const ctx = {
