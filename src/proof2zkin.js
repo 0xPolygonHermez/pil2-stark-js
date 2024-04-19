@@ -134,38 +134,29 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
             zkin.s0_valsC[i][j] = "0";
         }
 
-        zkin.s0_vals1[i] = [];
-        for(let j = 0; j < starkInfo.mapSectionsN.cm1; j++) {
-            zkin.s0_vals1[i][j] = "0";
-        }
-
-        for(let s = 0; s < nStages - 1; ++s) {
-            const stage = s + 2;
-            zkin[`s0_vals${stage}`][i] = [];
-            for(let j = 0; j < starkInfo.mapSectionsN[`cm${stage}`]; j++) {
-                zkin[`s0_vals${stage}`][i][j] = "0";
+        for(let s = 0; s < nStages + 1; ++s) {
+            const stage = s + 1;
+            if(starkInfo.mapSectionsN[`cm${stage}`] > 0) {
+                zkin[`s0_vals${stage}`][i] = [];
+                for(let j = 0; j < starkInfo.mapSectionsN[`cm${stage}`]; j++) {
+                    zkin[`s0_vals${stage}`][i][j] = "0";
+                }
             }
         }
 
-        zkin[`s0_vals${qStage}`][i] = [];
-        for(let j = 0; j < starkInfo.mapSectionsN[`cm${qStage}`]; j++) {
-            zkin[`s0_vals${qStage}`][i][j] = "0";
-        }
 
         zkin.s0_siblingsC[i] = [];
-        zkin.s0_siblings1[i] = [];
-        zkin[`s0_siblings${qStage}`][i] = [];
         for(let j = 0; j < friSteps[0].nBits; ++j) {
             zkin.s0_siblingsC[i][j] = ["0", "0", "0", "0"];
-            zkin.s0_siblings1[i][j] = ["0", "0", "0", "0"];
-            zkin[`s0_siblings${qStage}`][i][j] = ["0", "0", "0", "0"];
         }
 
-        for(let s = 0; s < nStages - 1; ++s) {
-            const stage = s + 2;
-            zkin[`s0_siblings${stage}`][i] = [];
-            for(let j = 0; j < friSteps[0].nBits; ++j) {
-                zkin[`s0_siblings${stage}`][i][j] = ["0", "0", "0", "0"];
+        for(let s = 0; s < nStages + 1; ++s) {
+            const stage = s + 1;
+            if(starkInfo.mapSectionsN[`cm${stage}`] > 0) {
+                zkin[`s0_siblings${stage}`][i] = [];
+                for(let j = 0; j < friSteps[0].nBits; ++j) {
+                    zkin[`s0_siblings${stage}`][i][j] = ["0", "0", "0", "0"];
+                }
             }
         }   
     }
