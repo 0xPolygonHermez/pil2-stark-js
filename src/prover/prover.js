@@ -230,7 +230,7 @@ async function computeStage(stage, ctx, options) {
         for(let i = 0; i <  constraintsStage.length; i++) {
             const constraint = constraintsStage[i];
             if(logger) logger.debug(` Checking constraint ${i + 1}/${constraintsStage.length}: line ${constraint.line} `);
-            await callCalculateExps(`stage${stage}`, constraint, dom, ctx, options.parallelExec, options.useThreads, true);
+            await callCalculateExps(stage, constraint, dom, ctx, options.parallelExec, options.useThreads, true);
         }
     }
 }

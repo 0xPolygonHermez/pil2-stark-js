@@ -62,7 +62,7 @@ module.exports.tryCalculateExps = async function tryCalculateExps(ctx, stage, do
         }
         if(symbolsMissing.length === 0) {
             if(options.logger) options.logger.debug(`Calculating expression ${expressionsStage[i].expId}`);
-            await callCalculateExps(`stage${stage}`, expressionsStage[i].code, dom, ctx, options.parallelExec, options.useThreads);
+            await callCalculateExps(stage, expressionsStage[i].code, dom, ctx, options.parallelExec, options.useThreads);
             module.exports.setSymbolCalculated(ctx, expressionsStage[i].dest, options);
             if(options.logger) options.logger.debug(`Expression ${expressionsStage[i].expId} calculated`);
         } else {

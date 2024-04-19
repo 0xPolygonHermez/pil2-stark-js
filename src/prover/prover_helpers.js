@@ -331,8 +331,11 @@ module.exports.getPol = function getPol(ctx, idPol, dom) {
 
 
 module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx, stageCode, code, useThreads, debug, isGlobal = false) {
+    const stark = ctx.prover === "stark" ? true : false;
 
-    const pool = workerpool.pool(__dirname + '/prover_worker.js');
+    const pool = stark 
+        ? workerpool.pool(__dirname + '/stark_prover_worker.js')
+        : workerpool.pool(__dirname + '/fflonk_prover_worker.js');
 
     let dom;
     let execInfo = {
@@ -410,6 +413,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     const cEveryRow = module.exports.compileCode(ctx, code.code, dom, debug);
 
     const N = dom === "n" ? ctx.N : ctx.extN;
+    const extend = dom === "n" ? 1 : 1 << ctx.extendBits;
 
     let first, last;
     if(debug) {
@@ -436,7 +440,6 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     if (nPerThread < minNperThread) nPerThread = minNperThread;
     const promises = [];
     let res = [];
-    const stark = ctx.prover === "stark" ? true : false;
     if(stark) {
         for (let i = 0; i < N; i += nPerThread) {
             const curN = Math.min(nPerThread, N - i);
@@ -444,7 +447,8 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
                 evals: ctx.evals,
                 publics: ctx.publics,
                 challenges: ctx.challenges,
-                subAirValues: ctx.subAirValues
+                subAirValues: ctx.subAirValues,
+                next: extend,
             };
             if(debug) {
                 ctxIn.filename = code.filename;
@@ -452,21 +456,17 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
             }
             for (let s = 0; s < execInfo.inputSections.length; s++) {
                 const si = execInfo.inputSections[s];
-                ctxIn[si.name] = new BigUint64Array(curN * si.width);
+                ctxIn[si.name] = new BigUint64Array((curN + extend) * si.width);
                 const s1 = ctx[si.name].slice(i * si.width, (i + curN) * si.width);
                 ctxIn[si.name].set(s1);
-            }
-    
-            for (let s=0; s<execInfo.outputSections.length; s++) {
-                const si = execInfo.outputSections[s];
-                const b = new BigUint64Array(res[i][si.name].buffer, res[i][si.name].byteOffset, res[i][si.name].length-si.width*next );
-                ctx[si.name].set(b , i*nPerThread*si.width);
+                const sNext = ctx[si.name].slice( ((i+curN)%N) *si.width, ((i+curN)%N) *si.width + si.width*extend);
+                ctxIn[si.name].set(sNext, curN * si.width);
             }
     
             if (useThreads) {
-                promises.push(pool.exec("starkgen_execute", [ctxIn, true, cEveryRow, curN, execInfo, stageCode, first, last, debug]));
+                promises.push(pool.exec("starkgen_execute", [ctxIn, cEveryRow, curN, execInfo, stageCode, first, last, debug]));
             } else {
-                res.push(await starkgen_execute(ctxIn, true, cEveryRow, curN, execInfo, stageCode, first, last, debug));
+                res.push(await starkgen_execute(ctxIn, cEveryRow, curN, execInfo, stageCode, first, last, debug));
             }
         }
         if (useThreads) {
@@ -475,14 +475,14 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
         for (let i = 0; i < res.length; i++) {
             for (let s = 0; s < execInfo.outputSections.length; s++) {
                 const si = execInfo.outputSections[s];
-                const b = new BigUint64Array(res[i][si.name].buffer, res[i][si.name].byteOffset, res[i][si.name].length);
+                const b = new BigUint64Array(res[i][si.name].buffer, res[i][si.name].byteOffset, res[i][si.name].length - si.width*extend );
                 ctx[si.name].set(b, i * nPerThread * si.width);
             }
         }
     } else {
         for (let i = 0; i < N; i += nPerThread) {
             const curN = Math.min(nPerThread, N - i);
-            const ctxIn = {
+            const ctxIn = { 
                 F: ctx.F,
                 evals: ctx.evals,
                 publics: ctx.publics,
@@ -498,13 +498,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
                 const s1 = si.width > 0 ? ctx[si.name].slice(i * si.width * ctx.F.n8, (i + curN) * si.width * ctx.F.n8) : ctx[si.name];
                 ctxIn[si.name].set(s1, 0);
             }
-    
-            for (let s=0; s<execInfo.outputSections.length; s++) {
-                const si = execInfo.outputSections[s];
-                const b = si.width > 0 ? res[i][si.name].slice(0, res[i][si.name].byteLength - si.width * next * ctx.Fr.n8) : res[i][si.name];
-                ctx[si.name].set(b, i * nPerThread * si.width * ctx.Fr.n8);
-            }
-    
+      
             if (useThreads) {
                 promises.push(pool.exec("fflonkgen_execute", [ctxIn, false, cEveryRow, curN, execInfo, stageCode, first, last, debug]));
             } else {
