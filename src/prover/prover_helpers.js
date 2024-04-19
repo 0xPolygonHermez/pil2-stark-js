@@ -22,7 +22,7 @@ module.exports.calculateExps = function calculateExps(ctx, code, dom, debug, ret
 
     const N = dom=="n" ? ctx.N : ctx.extN;
     
-    const pCtx = ctxProxy(ctx);
+    const pCtx = ctxProxy(ctx, global);
 
     const res = [];
     if(!debug) {
@@ -530,33 +530,35 @@ module.exports.printPol = function printPol(buffer, Fr) {
     console.log("---------------------------");
 }
 
-function ctxProxy(ctx) {
+function ctxProxy(ctx, global) {
     const pCtx = {};
     
     const stark = ctx.prover === "stark" ? true : false;
 
-    createProxy("const_n", stark);
-    createProxy("const_ext", stark);
-    createProxy("const_coefs", stark);
-    for(let i = 0; i < ctx.pilInfo.nStages; i++) {
-        createProxy(`cm${i + 1}_n`, stark);
-        createProxy(`cm${i + 1}_ext`, stark);
-        if(!stark) createProxy(`cm${i + 1}_coefs`, stark);
-    }
+    if(!global) {
+        createProxy("const_n", stark);
+        createProxy("const_ext", stark);
+        createProxy("const_coefs", stark);
+        for(let i = 0; i < ctx.pilInfo.nStages; i++) {
+            createProxy(`cm${i + 1}_n`, stark);
+            createProxy(`cm${i + 1}_ext`, stark);
+            if(!stark) createProxy(`cm${i + 1}_coefs`, stark);
+        }
 
-    createProxy("tmpExp_n", stark);
-    createProxy("x_n", stark);
-    createProxy("x_ext", stark);
-    createProxy("q_ext", stark);
+        createProxy("tmpExp_n", stark);
+        createProxy("x_n", stark);
+        createProxy("x_ext", stark);
+        createProxy("q_ext", stark);
 
-    if(stark) {
-        createProxy(`cm${ctx.pilInfo.nStages + 1}_ext`, stark);
+        if(stark) {
+            createProxy(`cm${ctx.pilInfo.nStages + 1}_ext`, stark);
 
-        createProxy("Zi_ext", stark);
+            createProxy("Zi_ext", stark);
 
-        createProxy("xDivXSubXi_ext", stark);
+            createProxy("xDivXSubXi_ext", stark);
 
-        createProxy("f_ext", stark);
+            createProxy("f_ext", stark);
+        }
     }
 
     pCtx.N = ctx.N;

@@ -10,6 +10,7 @@ async function starkgen_execute(ctx, cEveryRowSrc, n, execInfo, stageCode, first
     console.log(`start exec stage ${stageCode}...`);
     ctx.F = new F3g();
     ctx.tmp = [];
+    ctx.errors = [];
 
     for (let s=0; s<execInfo.outputSections.length; s++) {
         const si = execInfo.outputSections[s];
