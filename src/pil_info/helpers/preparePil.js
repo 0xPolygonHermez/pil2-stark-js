@@ -30,7 +30,7 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
     if(pil2) {
         ({expressions, symbols, hints, constraints} = getPiloutInfo(res, pil, stark));
     } else {
-        ({expressions, symbols, hints, constraints} = generatePil1Polynomials(F, res, pil, stark, options.firstPossibleStage));   
+        ({expressions, symbols, hints, constraints} = generatePil1Polynomials(F, res, pil, stark, options));   
     }
 
     for(let s = 1; s <= res.nStages + 1; s++) {

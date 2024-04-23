@@ -12,7 +12,7 @@ module.exports.initChallengesPermutation = function initChallengesPermutation(st
     return [alpha, beta, gamma];
 }
 
-module.exports.grandProductPermutation = function grandProductPermutation(pil, symbols, hints, stark, firstPossibleStage) {
+module.exports.grandProductPermutation = function grandProductPermutation(pil, symbols, hints, stark, subproofId, airId, firstPossibleStage) {
     const E = new ExpressionOps();
 
     const stage = firstPossibleStage ? 2 : 3;
@@ -127,6 +127,6 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
 
         hints.push(hint);
 
-        symbols.push({ type: "witness", name: `Permutation${i}.z`, polId: peCtx.zId, stage, dim: Math.max(numDim, denDim), airId: 0, subproofId: 0 });
+        symbols.push({ type: "witness", name: `Permutation${i}.z`, polId: peCtx.zId, stage, dim: Math.max(numDim, denDim), airId, subproofId});
     }
 }

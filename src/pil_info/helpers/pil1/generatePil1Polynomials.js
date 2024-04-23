@@ -2,21 +2,26 @@ const { log2 } = require("pilcom/src/utils");
 const ExpressionOps = require("../../expressionops");
 const generateLibsPolynomials = require("./generateLibsPolynomials");
 
-module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res, _pil, stark, firstPossibleStage = false) {
+module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res, _pil, stark, options = {}) {
     const E = new ExpressionOps();
     const pil = JSON.parse(JSON.stringify(_pil));    // Make a copy as we are going to destroy the original
 
+    res.subproofId = 0;
+    res.airId = 0;
+
+    if(options.subproofId) res.subproofId = options.subproofId;
+    if(options.airId) res.airId = options.airId;
+    
     res.nPublics = pil.publics.length;
     res.nConstants = pil.nConstants;
+
+    let firstPossibleStage = options.firstPossibleStage ? options.firstPossibleStage : false;
 
     res.nStages = firstPossibleStage && pil.plookupIdentities.length == 0 ? 2 : 3;
 
     const symbols = [];
 
     const hints = [];
-
-    res.subproofId = 0;
-    res.airId = 0;
 
     for (const polRef in pil.references) {
         const polInfo = pil.references[polRef];
@@ -28,11 +33,11 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
             for(let i = 0; i < polInfo.len; ++i) {
                 const namePol = name + i;
                 const polId = polInfo.id + i;
-                symbols.push({type, name: namePol, polId, stage, dim: 1, subproofId: 0, airId: 0 });
+                symbols.push({type, name: namePol, polId, stage, dim: 1, subproofId: res.subproofId, airId: res.airId });
                 if(type === "witness") E.cm(polId, 0, stage, 1);
             }
         } else {
-            symbols.push({type, name, polId: polInfo.id, stage, dim: 1, subproofId: 0, airId: 0 });
+            symbols.push({type, name, polId: polInfo.id, stage, dim: 1, subproofId: res.subproofId, airId: res.airId });
             if(type === "witness") E.cm(polInfo.id, 0, stage, 1);
         }
     }
