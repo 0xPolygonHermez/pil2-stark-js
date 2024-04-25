@@ -26,7 +26,6 @@ include "bitify.circom";
 include "sha256/sha256.circom";
 <% } -%>
 
-<%  const NFields = Math.floor(((starkStruct.nQueries *  starkStruct.steps[0].nBits) - 1)/253)+1; -%>
 <%
 class Transcript {
     constructor(name) {
@@ -109,11 +108,13 @@ class Transcript {
         }
     }
 
-    getPermutations(v, n, nBits) {
+    getPermutations(v, n, nBits, nBitsMax) {
+        if(nBitsMax === undefined) nBitsMax = nBits;
         let signalName = "transcriptHash";
         if(this.name) signalName += "_" + this.name;
-        const totalBits = n*nBits;
+        const totalBits = n*nBitsMax;
         const n2b = [];
+        const NFields = Math.floor(((starkStruct.nQueries *  nBitsMax) - 1)/253)+1;
         for (let i=0; i<NFields; i++) {
             const f = this.getFields253();
             n2b[i] = `transcriptN2b_${this.n2bCnt++}`;
@@ -127,20 +128,23 @@ class Transcript {
         this.code.push(`// From each transcript hash converted to bits, we assign those bits to queriesFRI[q] to define the query positions`)
         this.code.push(`var q = 0; // Query number `)
         this.code.push(`var b = 0; // Bit number `)
+        this.code.push(`var nonSignificantBits = ${nBitsMax} - ${nBits};`);
         for(let i = 0; i<NFields; i++) {
-            const nBits = i + 1 == NFields ? totalBits - 253*i : 253;
-            this.code.push(`for(var j = 0; j < ${nBits}; j++) {
-        ${v}[q][b] <== ${n2b[i]}[j];
+            const nBitsUsed = i + 1 == NFields ? totalBits - 253*i : 253;
+            this.code.push(`for(var j = 0; j < ${nBitsUsed}; j++) {
+        if(b >= nonSignificantBits) {
+            ${v}[q][b - nonSignificantBits] <== ${n2b[i]}[j];
+        }
         b++;
-        if(b == ${starkStruct.steps[0].nBits}) {
+        if(b == ${nBitsMax}) {
             b = 0; 
             q++;
         }
     }`);
-            if(nBits === 253) {
+            if(nBitsUsed === 253) {
                 this.code.push(`_ <== ${n2b[i]}[253]; // Unused last bit\n`);
             } else {
-                this.code.push(`for(var j = ${nBits}; j < 254; j++) {
+                this.code.push(`for(var j = ${nBitsUsed}; j < 254; j++) {
         _ <== ${n2b[i]}[j]; // Unused bits
     }`);
             }
@@ -319,7 +323,7 @@ template calculateFRIQueries() {
 <%  const transcriptQueries = new Transcript("friQueries"); -%>
 <%  transcriptQueries.put("challengeFRIQueries", 3); -%>
 
-<% transcriptQueries.getPermutations("queriesFRI", starkStruct.nQueries, starkStruct.steps[0].nBits, true); -%>
+<% transcriptQueries.getPermutations("queriesFRI", starkStruct.nQueries, starkStruct.steps[0].nBits, starkInfo.maxExtendedBits); -%>
 <%- transcriptQueries.getCode(); %>
 }
 

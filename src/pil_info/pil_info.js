@@ -39,7 +39,11 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
     map(res, symbols);       
 
     const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, newExpressions, hints, options.debug, stark);
-    
+
+    if(options.maxExtendedBits) {
+        res.maxExtendedBits = options.maxExtendedBits;
+    }
+
     let nCols = {}; 
     if(stark) {
         console.log("--------------------- POLINOMIALS INFO ---------------------")

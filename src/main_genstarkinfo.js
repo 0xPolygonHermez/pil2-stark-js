@@ -20,6 +20,7 @@ const argv = require("yargs")
     .alias("n", "pil2")
     .alias("m", "impolsstages")
     .alias("t", "firstpossiblestage")
+    .string("maxextendedbits")
     .string("subproofId")
     .string("airId")
     .argv;
@@ -71,6 +72,10 @@ async function run() {
     
     options.imPolsStages = argv.impolsstages || false;
     options.firstPossibleStage = argv.firstpossiblestage || false;
+
+    if(argv.maxextendedbits) {
+        options.maxExtendedBits = parseInt(argv.maxextendedbits);
+    }
 
     const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = pilInfo(F, pil, true, pil2, starkStruct, options);
 

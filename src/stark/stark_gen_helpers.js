@@ -506,7 +506,7 @@ module.exports.getPermutationsStark = async function getPermutationsStark(ctx, c
 
     transcript.put(challenge);
 
-    const friQueries = transcript.getPermutations(ctx.pilInfo.starkStruct.nQueries, ctx.pilInfo.starkStruct.steps[0].nBits);
+    const friQueries = transcript.getPermutations(ctx.pilInfo.starkStruct.nQueries, ctx.pilInfo.starkStruct.steps[0].nBits, ctx.pilInfo.maxExtendedBits);
     
     return friQueries;
 }

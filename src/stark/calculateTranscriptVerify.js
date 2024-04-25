@@ -118,7 +118,7 @@ module.exports.calculateFRIQueries = async function calculateFRIQueries(starkInf
 
     transcriptFRIQuery.put(challenge);
 
-    let friQueries = transcriptFRIQuery.getPermutations(starkInfo.starkStruct.nQueries, starkInfo.starkStruct.steps[0].nBits);
+    let friQueries = transcriptFRIQuery.getPermutations(starkInfo.starkStruct.nQueries, starkInfo.starkStruct.steps[0].nBits, starkInfo.maxExtendedBits);
     if (logger) logger.debug("··· FRI queries: [" + friQueries.join(",") + "]");
 
     return friQueries;

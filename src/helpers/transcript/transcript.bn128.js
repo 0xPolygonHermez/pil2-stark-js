@@ -76,10 +76,9 @@ class Transcript {
         }
     }
 
-    getPermutations(n, nBits) {
+    getPermutations(n, nBits, nBitsMax) {
         const res = [];
-        const F = this.F;
-        const totalBits = n*nBits;
+        const totalBits = n*nBitsMax;
         const NFields = Math.floor((totalBits - 1)/253)+1;
         const fields = [];
         for (let i=0; i<NFields; i++) {
@@ -89,6 +88,11 @@ class Transcript {
         let curBit =0n;
         for (let i=0; i<n; i++) {
             let a = 0;
+            curBit += BigInt(nBitsMax - nBits);
+            if(curBit >= 63n) {
+                curBit -= 63n;
+                curField ++;
+            }
             for (let j=0; j<nBits; j++) {
                 const bit = (fields[curField] >> curBit) & 1n;
                 if (bit) a = a + (1<<j);
