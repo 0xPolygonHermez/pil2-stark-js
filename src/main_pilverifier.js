@@ -24,6 +24,8 @@ const argv = require("yargs")
     .alias("i", "input")
     .alias("v", "verbose")
     .alias("l", "pil2")
+    .alias("s", "starkinfo")
+    .alias("e", "expressionsinfo")
     .string("curve")
     .argv;
 
@@ -40,6 +42,8 @@ async function run() {
     const constantFile = typeof(argv.constant) === "string" ?  argv.constant.trim() : "constant.bin";
     const commitFile = typeof(argv.commit) === "string" ?  argv.commit.trim() : "commit.bin";
     const inputsFile = typeof(argv.input) === "string" ? argv.input.trim() : [];
+    const starkInfoFile = typeof(argv.starkinfo) === "string" ?  argv.starkinfo.trim() : "mycircuit.starkinfo.json";
+    const expressionsInfoFile = typeof(argv.expressionsinfo) === "string" ?  argv.expressionsinfo.trim() : "mycircuit.expressionsinfo.json";
 
     const config = typeof(argv.config) === "string" ? JSON.parse(fs.readFileSync(argv.config.trim())) : {};
 
@@ -98,7 +102,10 @@ async function run() {
     const inputs = JSONbig.parse(await fs.promises.readFile(inputsFile, "utf8"));
 
     const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
-    const {pilInfo: starkInfo, expressionsInfo} = pilInfo(F, pil, true, pil2, {}, {debug: true});
+    
+    const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
+    const expressionsInfo = JSON.parse(await fs.promises.readFile(expressionsInfoFile, "utf8"));
+
     await starkGen(cmPols, constPols, {}, starkInfo, expressionsInfo, inputs, optionsPilVerify);
 }
 

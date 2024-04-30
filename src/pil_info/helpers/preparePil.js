@@ -67,9 +67,7 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
 
     res.openingPoints = [... new Set(constraints.reduce((acc, c) => { return acc.concat(expressions[c.e].rowsOffsets)}, [0]))].sort();
 
-    if(!options.debug) {
-        generateConstraintPolynomial(res, expressions, symbols, constraints, stark);
-    }
+    generateConstraintPolynomial(res, expressions, symbols, constraints, stark);
     
     return {res, expressions, constraints, symbols, hints}
 }

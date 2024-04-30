@@ -40,7 +40,7 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
         }
 
         exp.tmpExps = expressions[exp.id].tmpExps || [];
-        if(expressions[exp.id].keep) exp.tmpExps.push(exp.id);
+        if(expressions[exp.id].keep && !exp.tmpExps.includes(exp.id)) exp.tmpExps.push(exp.id);
     } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         exp.expDeg = 1;
         if(!exp.stage || exp.op === "const") exp.stage = exp.op === "cm" ? 1 : 0;

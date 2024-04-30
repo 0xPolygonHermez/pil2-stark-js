@@ -2,7 +2,7 @@ const fs = require("fs");
 const version = require("../package").version;
 
 const { generatePilCode } = require("./pil_info/helpers/generatePilCode");
-const { addIntermediatePolynomials } = require("./pil_info/helpers/polynomials/imPolynomials");
+const { addIntermediatePolynomials } = require("./pil_info/imPolsCalculation/imPolynomials");
 const map = require("./pil_info/map");
 
 const argv = require("yargs")
@@ -27,6 +27,7 @@ async function run() {
     const imPols = JSON.parse(await fs.promises.readFile(imPolsFile, "utf8"));
 
     const res = infoPil.res;
+    
     const symbols = infoPil.symbols;
     const constraints = infoPil.constraints;
     const hints = infoPil.hints;
