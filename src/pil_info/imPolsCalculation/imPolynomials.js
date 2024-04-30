@@ -27,7 +27,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
         
-        const imPolDeg = module.exports.calculateExpDeg(expressions, expressions[expId], imExps);
+        const imPolDeg = calculateExpDeg(expressions, expressions[expId], imExps);
         if(imPolDeg > qDeg + 1) {
             throw new Error(`Intermediate polynomial with id: ${expId} has a higher degree ${imPolDeg} than the maximum allowed degree ${qDeg + 1}`);
         }
