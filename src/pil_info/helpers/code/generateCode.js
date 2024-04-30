@@ -85,7 +85,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, expressions
                 let skip = false;
                 for(let k = 0; k < expressions[j].symbols.length; k++) {
                     const symbol = expressions[j].symbols[k];
-                    const imPol = res.cmPolsMap[symbol.id].imPol;
+                    const imPol = symbol.op === "cm" && res.cmPolsMap[symbol.id].imPol;
                     if(!imPol && (symbol.stage > stage || (stage != 1 && symbol.op === "cm" && symbol.stage === stage))) {
                         skip = true;
                         break; 
