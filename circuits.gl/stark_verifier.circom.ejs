@@ -618,7 +618,11 @@ template parallel <%- verifyQueryName %>(currStepBits, nextStepBits) {
     signal {binary} s0_keys_lowValues[nextStep];
     for(var i = 0; i < nextStep; i++) {
         s0_keys_lowValues[i] <== queriesFRI[i + nextStepBits];
-    } 
+    }
+
+    for(var i = 0; i < nextStepBits; i++) {
+        _ <== queriesFRI[i];
+    }
    
     signal lowValues[3] <== TreeSelector(nextStep, 3)(s1_vals, s0_keys_lowValues);
 

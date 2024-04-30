@@ -1,4 +1,4 @@
-const {calculateIntermediatePolynomials, addIntermediatePolynomials} = require("./helpers/polynomials/imPolynomials");
+const {calculateIntermediatePolynomials, addIntermediatePolynomials} = require("./imPolsCalculation/imPolynomials");
 
 const { preparePil } = require("./helpers/preparePil");
 const { generatePilCode } = require("./helpers/generatePilCode");
@@ -15,19 +15,15 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
     const res = infoPil.res;
     
     let newExpressions;
-    if(!options.debug) {
-        let maxDeg;
-        if(stark) {
-            maxDeg = (1 << (res.starkStruct.nBitsExt- res.starkStruct.nBits)) + 1;
-        } else {
-            maxDeg = Math.pow(2,3) + 1;
-        }
-        const imInfo = calculateIntermediatePolynomials(expressions, res.cExpId, maxDeg, res.qDim);
-        addIntermediatePolynomials(res, expressions, constraints, symbols, imInfo.imExps, imInfo.qDeg, stark);
-        newExpressions = imInfo.newExpressions;
+    let maxDeg;
+    if(stark) {
+        maxDeg = (1 << (res.starkStruct.nBitsExt- res.starkStruct.nBits)) + 1;
     } else {
-        newExpressions = expressions;
+        maxDeg = Math.pow(2,3) + 1;
     }
+    const imInfo = calculateIntermediatePolynomials(expressions, res.cExpId, maxDeg, res.qDim);
+    addIntermediatePolynomials(res, expressions, constraints, symbols, imInfo.imExps, imInfo.qDeg, stark);
+    newExpressions = imInfo.newExpressions;
     
     for(let i = 0; i < newExpressions.length; i++) {
         if(newExpressions[i].keep && !newExpressions[i].imPol) {

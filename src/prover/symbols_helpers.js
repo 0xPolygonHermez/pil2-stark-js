@@ -6,27 +6,37 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
     
     for(let i = 0; i < ctx.pilInfo.cmPolsMap.length; ++i) {
         if(ctx.pilInfo.cmPolsMap[i].stageNum !== stage) continue;
-        if(!module.exports.isSymbolCalculated(ctx, {op: "cm", id: i})) symbolsToBeCalculated++;
+        if(!module.exports.isSymbolCalculated(ctx, {op: "cm", id: i})) {
+            symbolsToBeCalculated++;
+        }
     }
 
     for(let i = 0; i < ctx.pilInfo.challengesMap.length; ++i) {
         if(ctx.pilInfo.challengesMap[i].stageNum !== stage) continue;
-        if(!module.exports.isSymbolCalculated(ctx, {op: "challenge", id: i})) symbolsToBeCalculated++;
+        if(!module.exports.isSymbolCalculated(ctx, {op: "challenge", id: i})) {
+            symbolsToBeCalculated++;
+        }
     }
 
     if(stage == 1) {
         for(let i = 0; i < ctx.pilInfo.constPolsMap.length; ++i) {
-            if(!module.exports.isSymbolCalculated(ctx, {op: "const", id: i})) symbolsToBeCalculated++;
+            if(!module.exports.isSymbolCalculated(ctx, {op: "const", id: i})) {
+                symbolsToBeCalculated++;
+            }
         }
 
         for(let i = 0; i < ctx.pilInfo.nPublics; ++i) {
-            if(!module.exports.isSymbolCalculated(ctx, {op: "public", id: i})) symbolsToBeCalculated++;
+            if(!module.exports.isSymbolCalculated(ctx, {op: "public", id: i})) {
+                symbolsToBeCalculated++;
+            }
         }
     }
 
     if(stage === ctx.pilInfo.nStages) {
         for(let i = 0; i < ctx.pilInfo.nSubAirValues; ++i) {
-            if(!module.exports.isSymbolCalculated(ctx, {op: "subproofValue", id: i})) symbolsToBeCalculated++;
+            if(!module.exports.isSymbolCalculated(ctx, {op: "subproofValue", id: i})) {
+                symbolsToBeCalculated++;
+            }
         }
     }
 

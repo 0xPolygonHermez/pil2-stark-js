@@ -12,6 +12,8 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
     
     const pil2 = options.pil2 || false;
     
+    const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = pilInfo(F, pil, true, pil2, starkStruct, options );
+
     const nConstants = pil2 ? pil.symbols.filter(s => s.type == 1).length : pil.nConstants;
     const nBits = starkStruct.nBits;
     const nBitsExt = starkStruct.nBitsExt;
@@ -32,9 +34,7 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
         throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
     }
 
-    const constTree = await MH.merkelize(constPolsArrayE, nConstants, extN);
-
-    const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = pilInfo(F, pil, true, pil2, starkStruct, options );
+    const constTree = await MH.merkelize(constPolsArrayE, nConstants, extN);    
     return {
         fixedPols: constPols,
         constTree,
