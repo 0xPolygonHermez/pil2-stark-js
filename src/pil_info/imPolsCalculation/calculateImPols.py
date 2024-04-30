@@ -212,11 +212,11 @@ while min_vars != 0 and possible_degree <= degree:
     smt_generation_pil_2.declare_minimize_keeps(number_intermediates, solver)
     new_used_variables = smt_generation_pil_2.get_minimal_expressions(number_intermediates, solver)
     
-    added_basefield_cols = calculate_added_cols(expressions, new_used_variables, possible_degree, q_dim)
+    added_basefield_cols = calculate_added_cols(expressions, new_used_variables, possible_degree - 1, q_dim)
     if min_value == -1 or added_basefield_cols < min_value:
         min_value = added_basefield_cols
         used_variables = new_used_variables
-        optimal_degree = possible_degree
+        optimal_degree = possible_degree - 1
     if len(new_used_variables) < min_vars:
         min_vars = len(new_used_variables)
     possible_degree = possible_degree + 1

@@ -18,12 +18,12 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
 
     const vc = E.challenge("std_vc", stage, dim, 0, vc_id);
     vc.expDeg = 0;
-
-    const polQDeg = module.exports.calculateExpDeg(expressions, expressions[res.cExpId], imExps || []);
-    if(polQDeg > qDeg + 1) {
-        throw new Error(`The polinomial Q has a higher degree ${polQDeg} than the maximum allowed degree ${qDeg + 1}`);
+        
+    const maxDegExpr = calculateExpDeg(expressions, expressions[res.cExpId], imExps);
+    if(maxDegExpr > qDeg + 1) {
+        throw new Error("The maximum degree of the constraint expression is higher than the maximum allowed degree");
     }
-
+    
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
         

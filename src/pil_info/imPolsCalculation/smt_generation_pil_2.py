@@ -46,7 +46,12 @@ def get_degrees_tree(tree, zero_expressions, one_expressions, prefix, n, solver)
         #solver.add(or_condition) #check if helps
         return Int(prefix)
     elif type(tree) == tuple:
-        return get_degrees_tree(tree[0], zero_expressions, one_expressions, prefix + '_' + str(0), n, solver) + get_degrees_tree(tree[1], zero_expressions, one_expressions, prefix + '_' + str(1), n, solver)
+        left_degree = get_degrees_tree(tree[0], zero_expressions, one_expressions, prefix + "_0", n, solver)
+        right_degree = get_degrees_tree(tree[1], zero_expressions, one_expressions, prefix + "_1", n, solver)
+        total_degree_var = Int(prefix + "_total_degree")
+        solver.add(total_degree_var <= n)  # Set an upper bound constraint on the total degree
+        solver.add(total_degree_var == left_degree + right_degree)  # Set the total degree of the tuple expression
+        return total_degree_var
     elif type(tree) == int:
         return tree
     else:
