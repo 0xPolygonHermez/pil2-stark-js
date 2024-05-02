@@ -111,7 +111,7 @@ def calculate_added_cols(expressions, used_variables, q_deg, q_dim):
     for v in used_variables:
         im_cols += expressions[v]["dim"]
     added_cols = q_cols + im_cols
-    print("maxDeg: " + str(q_deg) + ", nIm: " + str(len(used_variables)) + ", d: " + str(q_deg) + ", addedCols in the basefield: " + str(added_cols) + " (" + str(q_cols) + " + " + str(im_cols) + ")")
+    print("maxDeg: " + str(q_deg + 1) + ", nIm: " + str(len(used_variables)) + ", d: " + str(q_deg) + ", addedCols in the basefield: " + str(added_cols) + " (" + str(q_cols) + " + " + str(im_cols) + ")")
     return added_cols
 
 
@@ -246,7 +246,7 @@ filtered_expressions = []
 solution = {}
 solution["newExpressions"] = expressions
 solution["imExps"] = used_index
-solution["qDeg"] = optimal_degree - 1
+solution["qDeg"] = optimal_degree
 
 json_object = json.dumps(solution, indent = 1, sort_keys=True) 
 file = open(args.fileout, "w")
