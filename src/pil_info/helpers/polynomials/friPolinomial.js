@@ -24,15 +24,7 @@ module.exports.generateFRIPolynomial = function generateFRIPolynomial(res, symbo
     const vf2 = E.challenge("std_vf2", stage, 3, 1, vf2_id);
 
     let friExp = null;
-    for (let i=0; i<res.nCommitments; i++) {
-        const symbol = symbols.find(s => ["witness", "tmpPol"].includes(s.type) && s.polId === i && s.airId === res.airId && s.subproofId === s.subproofId);
-        if (friExp) {
-            friExp = E.add(E.mul(vf1, friExp), E.cm(i, 0, symbol.stage, symbol.dim));
-        } else {
-            friExp = E.cm(i, 0, symbol.stage, symbol.dim);
-        }
-    }
-    
+
     let friExps = {};
     for (let i=0; i<res.evMap.length; i++) {
         const ev = res.evMap[i];
