@@ -7,6 +7,7 @@ const argv = require("yargs")
     .version(version)
     .usage("node main_buildchelpers_generic.js -c <chelpers.cpp>")
     .alias("c", "chelpers")
+    .string("parserType")
     .argv;
 
 async function run() {
@@ -14,7 +15,14 @@ async function run() {
     
     let operations = getAllOperations();
     
-    const parser = generateParser(operations);
+    let parserType = "avx512";
+
+    if(argv.parserType) {
+        if(!["avx", "avx512","batch"].includes(argv.parserType)) throw new Error("Invalid parser type");
+        parserType = argv.parserType;
+    }
+
+    const parser = generateParser(operations, undefined, parserType);
 
     const cHelpersStepsHpp = [
         `#ifndef CHELPERS_STEPS_HPP`,
@@ -25,7 +33,6 @@ async function run() {
         "public:",
     ];
       
-
     cHelpersStepsHpp.push(parser);
     cHelpersStepsHpp.push("};\n");
     cHelpersStepsHpp.push("#endif")
