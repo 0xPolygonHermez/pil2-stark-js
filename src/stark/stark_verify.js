@@ -145,9 +145,6 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         xAcc = F.mul(xAcc, xN);
     }
 
-    if(starkInfo.boundaries.length === 1 && starkInfo.boundaries[0].name === "everyRow") {
-        q = F.mul(q, F.sub(xN, 1n));
-    } 
     if (!F.eq(res, q)) {
         if(logger) logger.warn("Invalid evaluations");
         return false;

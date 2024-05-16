@@ -33,7 +33,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
         const stageIm = res.imPolsStages ? expressions[expId].stage : res.nStages;
                 
         const dim = getExpDim(expressions, expId, stark);
-                
+          
         const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId && s.airId === res.airId && s.subproofId === res.subproofId);
         if(!symbol) {
             symbols.push({ type: "tmpPol", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage: stageIm, dim, imPol: true, airId: res.airId, subproofId: res.subproofId });
@@ -63,6 +63,8 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
         if(stark && multipleBoundaries) e = E.mul(E.zi(res.boundaries.findIndex(b => b.name === "everyRow")), e);
         expressions[res.cExpId] = E.add(E.mul(vc, expressions[res.cExpId]), e);
     }
+
+    if(stark && !multipleBoundaries) expressions[res.cExpId] = E.mul(expressions[res.cExpId], E.zi(res.boundaries.findIndex(b => b.name === "everyRow")));
 
     let cExpDim = getExpDim(expressions, res.cExpId, stark);
     expressions[res.cExpId].dim = cExpDim;

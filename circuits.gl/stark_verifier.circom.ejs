@@ -452,9 +452,7 @@ template parallel <%- verifyEvaluationsName %>() {
 
     // Store the vanishing polynomial Zh(x) = x^nBits - 1 evaluated at z
     signal Z[3] <== [zMul[<%- starkStruct.nBits - 1%>][0] - 1, zMul[<%- starkStruct.nBits - 1%>][1], zMul[<%- starkStruct.nBits - 1%>][2]];
-<% if(starkInfo.boundaries.length !== 1 || starkInfo.boundaries[0].name !== "everyRow") { -%>
     signal Zh[3] <== CInv()(Z);
-<% } -%>
 
 <%  if(starkInfo.boundaries.map(b => b.name).includes("firstRow")) { -%>
     signal Zfirst[3] <== CInv()([challengeXi[0] - 1, challengeXi[1], challengeXi[2]]);
@@ -524,19 +522,10 @@ template parallel <%- verifyEvaluationsName %>() {
         }
     }
 
-<% if(starkInfo.boundaries.length === 1 && starkInfo.boundaries[0].name === "everyRow") { -%>
-    signal QZ[3] <== CMul()(qAcc[<%- starkInfo.qDeg-1 %>], Z); // Stores the result of multiplying Q(X) per Zg(X)
-
-    // Final Verification. Check that Q(X)*Zh(X) = sum of linear combination of q_i, which is stored at <%- evalP %> 
-    enable * (<%- evalP %>[0] - QZ[0]) === 0;
-    enable * (<%- evalP %>[1] - QZ[1]) === 0;
-    enable * (<%- evalP %>[2] - QZ[2]) === 0;
-<% } else { -%> 
     // Final Verification. Check that Q(X)*Zh(X) = sum of linear combination of q_i, which is stored at <%- evalP %> 
     enable * (<%- evalP %>[0] - qAcc[<%- starkInfo.qDeg-1 %>][0]) === 0;
     enable * (<%- evalP %>[1] - qAcc[<%- starkInfo.qDeg-1 %>][1]) === 0;
     enable * (<%- evalP %>[2] - qAcc[<%- starkInfo.qDeg-1 %>][2]) === 0;
-<% } -%>
 }
 
 /*  Calculate FRI polinomial */

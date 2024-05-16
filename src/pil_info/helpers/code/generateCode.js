@@ -181,36 +181,7 @@ module.exports.generateConstraintPolynomialCode = function generateConstraintPol
         };
     } 
 
-    pilCodeGen(ctxExt, symbols, expressions, res.cExpId, 0);
-    if(stark) {
-        let multipleBoundaries = false;
-        if(constraints.filter(c => c.boundary !== "everyRow").length > 0) multipleBoundaries = true;
-        if(!multipleBoundaries) {
-            const code = ctxExt.code;
-            code.push({
-                op: "mul",
-                dest: {
-                    type: "q",
-                    id: 0,
-                    dim: res.qDim,
-                },
-                src: [
-                    code[code.length-1].dest,
-                    { type: "Zi", boundaryId: 0, dim: res.qDim }
-                ]
-            });
-        }
-    } else {
-        const code = ctxExt.code;
-        code.push({
-            op: "copy",
-            dest: {
-                type: "q",
-                id: 0
-            },
-            src: [code[code.length-1].dest],
-        });
-    }
+    pilCodeGen(ctxExt, symbols, expressions, res.cExpId, 0);  
     const qCode = buildCode(ctxExt, expressions);
     qCode.code[qCode.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
     expressionsInfo.stagesCode.push(qCode);
