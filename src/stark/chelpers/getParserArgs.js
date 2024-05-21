@@ -84,8 +84,10 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
 
     if(debug) {
         const destTmp = code_[code_.length - 1].dest;
-        if(destTmp.type !== "tmp") throw new Error("Something went wrong.");
-        if(destTmp.dim == 1) {
+        if(destTmp.type !== "tmp") {
+            expsInfo.destDim = destTmp.dim;
+            expsInfo.destId = 0;
+        } else if(destTmp.dim == 1) {
             expsInfo.destDim = 1;
             expsInfo.destId = ID1D[destTmp.id];
         } else if(destTmp.dim == 3) {
@@ -201,22 +203,17 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 args.push(numbers.indexOf(numString));
                 break;
             }
-            case "xDivXSubXi": {
-                args.push(r.id);
-                break;
-            }
+            case "xDivXSubXi":
             case "public":
             case "subproofValue":
             case "eval": 
-            {
+            case "challenge": {
                 args.push(r.id);
                 break;
             }
-            case "challenge":
-            {
-                args.push(r.id);
+            case "Zi": {
+                args.push(r.boundaryId);
                 break;
-            
             }
         }
     }

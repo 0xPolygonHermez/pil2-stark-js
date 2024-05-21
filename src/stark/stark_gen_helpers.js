@@ -170,9 +170,9 @@ module.exports.initProverStark = async function initProverStark(pilInfo, express
             if(boundary.name === "everyRow") {
                 buildZhInv(ctx.Zi_ext, i*ctx.extN, ctx.F, ctx.nBits, ctx.nBitsExt, true);    
             } else if (boundary.name === "firstRow") {
-                buildOneRowZerofierInv(ctx.Zi_ext, i*ctx.extN, ctx.F, ctx.nBits, ctx.nBitsExt, 0, true);
+                buildOneRowZerofierInv(ctx.Zi_ext, i*ctx.extN, ctx.F, ZhInv, ctx.nBits, ctx.nBitsExt, 0, true);
             } else if (boundary.name === "lastRow") {
-                buildOneRowZerofierInv(ctx.Zi_ext, i*ctx.extN, ctx.F, ctx.nBits, ctx.nBitsExt, ctx.N - 1, true);
+                buildOneRowZerofierInv(ctx.Zi_ext, i*ctx.extN, ctx.F, ZhInv, ctx.nBits, ctx.nBitsExt, ctx.N - 1, true);
             } else if (boundary.name === "everyFrame") {
                 buildFrameZerofierInv(ctx.Zi_ext, i*ctx.extN, ctx.F, ZhInv, ctx.nBits, ctx.nBitsExt, boundary, true);
             }

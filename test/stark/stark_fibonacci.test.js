@@ -17,11 +17,12 @@ describe("test fibonacci sm", async function () {
 
         const starkStruct = {
             nBits: 6,
-            nBitsExt: 8,
-            nQueries: 32,
+            nBitsExt: 9,
+            nQueries: 8,
             verificationHashType : "GL",
             steps: [
-                {nBits: 8},
+                {nBits: 9},
+                {nBits: 6},
                 {nBits: 3}
             ]
         };
@@ -72,19 +73,6 @@ describe("test fibonacci sm", async function () {
 
         const F = new F3g("0xFFFFFFFF00000001");
         const pil = await compile(F, path.join(__dirname, "../state_machines/", "sm_fibonacci", "fibonacci_main.pil"));
-
-        pil.polIdentities[0].boundary = "everyFrame";
-        pil.polIdentities[0].offsetMin = 0;
-        pil.polIdentities[0].offsetMax = 1;
-
-        pil.polIdentities[1].boundary = "everyFrame";
-        pil.polIdentities[1].offsetMin = 0;
-        pil.polIdentities[1].offsetMax = 1;
-
-        pil.polIdentities[2].boundary = "firstRow";
-        pil.polIdentities[3].boundary = "firstRow";
-        pil.polIdentities[4].boundary = "lastRow";
-
         
         const constPols =  newConstantPolsArray(pil, F);
         

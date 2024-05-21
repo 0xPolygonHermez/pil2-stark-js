@@ -54,7 +54,7 @@ module.exports.buildZhInv = function buildZhInv(buffTo, offset, F, nBits, nBitsE
     }
 }
 
-module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, offset, F, nBits, nBitsExt, rowIndex, stark) {
+module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, offset, F, buffZhInv, nBits, nBitsExt, rowIndex, stark) {
     let root = F.one;
     for(let i = 0; i < rowIndex; ++i) {
         root = F.mul(root, F.w[nBits]);
@@ -63,8 +63,8 @@ module.exports.buildOneRowZerofierInv = function buildOneRowZerofierInv(buffTo, 
     let s = F.shift;
     for (let i=0; i< (1 << nBitsExt); i++) {
         const x = stark ? F.mul(s, w) : w;
-        const zh = F.sub(x, root);
-
+        let zh = F.sub(x, root);
+        zh = F.mul(zh, buffZhInv.getElement(i));
         buffTo.setElement(i + offset,F.inv(zh));
         w = F.mul(w, F.w[nBitsExt]);
     }
@@ -91,7 +91,7 @@ module.exports.buildFrameZerofierInv = function buildFrameZerofierInv(buffTo, of
     let w = F.one;
     let s = F.shift;
     for (let i=0; i< (1 << nBitsExt); i++) {
-        let zi = buffZhInv.getElement(i);
+        let zi = F.one;
         const x = stark ? F.mul(s, w) : w;
         for(let j = 0; j < roots.length; ++j) {
             zi = F.mul(zi, F.sub(x, roots[j]));

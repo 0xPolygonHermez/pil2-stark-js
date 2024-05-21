@@ -519,6 +519,8 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo) {
         await cHelpersBin.writeULE32(constraintInfo.destDim);
         await cHelpersBin.writeULE32(constraintInfo.destId);
 
+        await cHelpersBin.writeULE32(constraintInfo.firstRow);
+        await cHelpersBin.writeULE32(constraintInfo.lastRow);
         await cHelpersBin.writeULE32(constraintInfo.nTemp1);
         await cHelpersBin.writeULE32(constraintInfo.nTemp3);
 

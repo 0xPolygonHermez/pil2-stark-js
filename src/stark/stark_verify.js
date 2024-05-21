@@ -98,10 +98,11 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     const xN = F.exp(xi, N);
     
-    ctx.Z = F.inv(F.sub(xN, 1n));
+    const zh = F.sub(xN, 1n);
+    ctx.Z = F.inv(zh);
     
     if(starkInfo.boundaries.map(b => b.name).includes("firstRow")) {
-        ctx.Z_fr = F.inv(F.sub(xi, 1n));
+        ctx.Z_fr = F.mul(zh, F.inv(F.sub(xi, 1n)));
     }
 
     if(starkInfo.boundaries.map(b => b.name).includes("lastRow")) {
@@ -109,13 +110,13 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         for(let i = 0; i < N - 1; ++i) {
             root = F.mul(root, F.w[nBits]);
         }
-        ctx.Z_lr = F.inv(F.sub(xi, root));
+        ctx.Z_lr = F.mul(zh,F.inv(F.sub(xi, root)));
     }
 
     if(starkInfo.boundaries.map(b => b.name).includes("everyFrame")) {
         const constraintFrames = starkInfo.boundaries.filter(b => b.name === "everyFrame");
         for(let i = 0; i < constraintFrames.length; ++i) {
-            ctx["Z_frame" + i] = ctx.Z;
+            ctx["Z_frame" + i] = F.one;
             const frame = constraintFrames[i];
             for(let j = 0; j < frame.offsetMin; ++j) {
                 let root = F.one;

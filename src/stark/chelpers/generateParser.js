@@ -70,14 +70,11 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "    int64_t extend = domainExtended ? (1 << extendBits) : 1;",
         "    Goldilocks::Element *x = domainExtended ? params.x_2ns : params.x_n;", 
         "    ConstantPolsStarks *constPols = domainExtended ? params.pConstPols2ns : params.pConstPols;",
-        "    Goldilocks3::Element_avx challenges[starkInfo.challengesMap.size()];",
-        "    Goldilocks3::Element_avx challenges_ops[starkInfo.challengesMap.size()];\n",
         "    uint8_t *ops = &parserArgs.ops[parserParams.opsOffset];\n",
         "    uint16_t *args = &parserArgs.args[parserParams.argsOffset]; \n",
         "    uint64_t* numbers = &parserArgs.numbers[parserParams.numbersOffset];\n",
         "    uint16_t* cmPolsUsed = &parserArgs.cmPolsIds[parserParams.cmPolsOffset];\n",
         "    uint16_t* constPolsUsed = &parserArgs.constPolsIds[parserParams.constPolsOffset];\n",
-        "    __m256i numbers_[parserParams.nNumbers];\n",
         "    uint64_t nStages = starkInfo.nStages;",
         "    uint64_t nOpenings = starkInfo.openingPoints.size();",
         "    uint64_t nextStrides[nOpenings];",
@@ -124,7 +121,8 @@ module.exports.generateParser = function generateParser(operations, operationsUs
     ]);
        
     parserCPP.push(...[
-        "#pragma omp parallel for",
+        "    Goldilocks3::Element_avx challenges[starkInfo.challengesMap.size()];",
+        "    Goldilocks3::Element_avx challenges_ops[starkInfo.challengesMap.size()];",
         "    for(uint64_t i = 0; i < starkInfo.challengesMap.size(); ++i) {",
         "        challenges[i][0] = _mm256_set1_epi64x(params.challenges[i * FIELD_EXTENSION].fe);",
         "        challenges[i][1] = _mm256_set1_epi64x(params.challenges[i * FIELD_EXTENSION + 1].fe);",
@@ -140,7 +138,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
     ]);
 
     parserCPP.push(...[
-        "#pragma omp parallel for",
+        "    __m256i numbers_[parserParams.nNumbers];",
         "    for(uint64_t i = 0; i < parserParams.nNumbers; ++i) {",
         "        numbers_[i] = _mm256_set1_epi64x(numbers[i]);",
         "    }\n",
@@ -148,7 +146,6 @@ module.exports.generateParser = function generateParser(operations, operationsUs
 
     parserCPP.push(...[
         "    __m256i publics[starkInfo.nPublics];",
-        "#pragma omp parallel for",
         "    for(uint64_t i = 0; i < starkInfo.nPublics; ++i) {",
         "        publics[i] = _mm256_set1_epi64x(params.publicInputs[i].fe);",
         "    }\n",
@@ -156,7 +153,6 @@ module.exports.generateParser = function generateParser(operations, operationsUs
 
     parserCPP.push(...[
         "    Goldilocks3::Element_avx subproofValues[starkInfo.nSubProofValues];",
-        "#pragma omp parallel for",
         "    for(uint64_t i = 0; i < starkInfo.nSubProofValues; ++i) {",
         "        subproofValues[i][0] = _mm256_set1_epi64x(params.subproofValues[i * FIELD_EXTENSION].fe);",
         "        subproofValues[i][1] = _mm256_set1_epi64x(params.subproofValues[i * FIELD_EXTENSION + 1].fe);",
@@ -166,7 +162,6 @@ module.exports.generateParser = function generateParser(operations, operationsUs
 
     parserCPP.push(...[
         "    Goldilocks3::Element_avx evals[starkInfo.evMap.size()];",
-        "#pragma omp parallel for",
         "    for(uint64_t i = 0; i < starkInfo.evMap.size(); ++i) {",
         "        evals[i][0] = _mm256_set1_epi64x(params.evals[i * FIELD_EXTENSION].fe);",
         "        evals[i][1] = _mm256_set1_epi64x(params.evals[i * FIELD_EXTENSION + 1].fe);",
@@ -257,12 +252,14 @@ module.exports.generateParser = function generateParser(operations, operationsUs
                 operationCase.push(writeOperation(opr));
                 let numberArgs = numberOfArgs(opr.dest_type) + numberOfArgs(opr.src0_type);
                 if(opr.src1_type && opr.dest_type !== "q") numberArgs += numberOfArgs(opr.src1_type) + 1;
+                if(opr.dest_type == "q") numberArgs++;
                 operationCase.push(`                i_args += ${numberArgs};`);
             }
         } else {
             operationCase.push(writeOperation(op));
             let numberArgs = numberOfArgs(op.dest_type) + numberOfArgs(op.src0_type);
             if(op.src1_type && op.dest_type !== "q") numberArgs += numberOfArgs(op.src1_type) + 1;
+            if(op.dest_type == "q") numberArgs++;
             operationCase.push(`                i_args += ${numberArgs};`);
         }
 
@@ -289,6 +286,8 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "                Goldilocks::Element res[4];",
         "                Goldilocks::store_avx(res, tmp1[parserParams.destId]);",
         "                for(uint64_t j = 0; j < 4; ++j) {",
+        "                    if(i + j < parserParams.firstRow) continue;",
+        "                    if(i + j >= parserParams.lastRow) break;",
         "                    if(!Goldilocks::isZero(res[j])) {",
         "                        validConstraint[i + j] = false;",
         "                    }",
@@ -298,9 +297,13 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "                Goldilocks::store_avx(&res[0], tmp3[parserParams.destId][0]);",
         "                Goldilocks::store_avx(&res[4], tmp3[parserParams.destId][1]);",
         "                Goldilocks::store_avx(&res[8], tmp3[parserParams.destId][2]);",
-        "                for(uint64_t j = 0; j < 12; ++j) {",
-        "                    if(!Goldilocks::isZero(res[j])) {",
-        "                        validConstraint[i + j%4] = false;",
+        "                for(uint64_t j = 0; j < 4; ++j) {",
+        "                    if(i + j < parserParams.firstRow) continue;",
+        "                    if(i + j >= parserParams.lastRow) break;",
+        "                    for(uint64_t k = 0; k < 3; ++k) {",
+        "                        if(!Goldilocks::isZero(res[3*j + k])) {",
+        "                            validConstraint[i + j] = false;",
+        "                        }",
         "                    }",
         "                }",
         "            } ",
@@ -377,7 +380,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         if(["tmp3", "commit3"].includes(operation.dest_type)) {
             if(operation.src1_type)  {
                 let dimType = "";
-                let dims1 = ["public", "x", "commit1", "tmp1", "const", "number"];
+                let dims1 = ["public", "x", "commit1", "tmp1", "const", "number", "Zi"];
                 let dims3 = ["commit3", "tmp3", "subproofValue", "challenge", "eval", "xDivXSubXi"];
                 if(dims1.includes(operation.src0_type)) dimType += "1";
                 if (dims3.includes(operation.src0_type)) dimType += "3";
@@ -433,7 +436,10 @@ module.exports.generateParser = function generateParser(operations, operationsUs
             if ("x" === operation.src1_type){
                 operationCall.push(`                Goldilocks::load_avx(tmp1_1, ${typeSrc1}, uint64_t(1));`);
                 typeSrc1 = "tmp1_1";
-            } else if(["xDivXSubXi"].includes(operation.src1_type)) {
+            } else if("Zi" === operation.src1_type) {
+                operationCall.push(`                Goldilocks::load_avx(tmp1_1, ${typeSrc1}, uint64_t(1));`);
+                typeSrc1 = "tmp1_1";
+            } else if("xDivXSubXi" === operation.src1_type) {
                 operationCall.push(`                Goldilocks3::load_avx(tmp3_1, ${typeSrc1}, uint64_t(FIELD_EXTENSION));`);
                 typeSrc1 = "tmp3_1";
             }
@@ -520,6 +526,8 @@ module.exports.generateParser = function generateParser(operations, operationsUs
                 return `&params.xDivXSubXi[(i + args[i_args + ${c_args}]*domainSize)*FIELD_EXTENSION]`;
             case "f":
                 return "&params.f_2ns[i*FIELD_EXTENSION]";
+            case "Zi": 
+                return `&params.zi[i + args[i_args + ${c_args}] * domainSize]`;
             default:
                 throw new Error("Invalid type: " + type);
         }
@@ -528,7 +536,6 @@ module.exports.generateParser = function generateParser(operations, operationsUs
     function numberOfArgs(type) {
         switch (type) {
             case "x":
-            case "Zi":
             case "q":
             case "f":
                 return 0; 
@@ -540,6 +547,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
             case "subproofValue":
             case "number":
             case "xDivXSubXi":
+            case "Zi":
                 return 1;
             case "const":
             case "commit1":
@@ -604,6 +612,13 @@ module.exports.getAllOperations = function getAllOperations() {
             }
         }
     }
+
+    // Step Q
+    possibleOps.push({ dest_type: "tmp1", src0_type: "tmp1", src1_type: "Zi"});
+    possibleOps.push({ dest_type: "tmp1", src0_type: "commit1", src1_type: "Zi"});
+    possibleOps.push({ dest_type: "tmp3", src0_type: "tmp3", src1_type: "Zi"});
+    possibleOps.push({ dest_type: "tmp3", src0_type: "commit3", src1_type: "Zi"});
+
 
     // Step FRI
     possibleOps.push({ dest_type: "tmp3", src0_type: "eval"});

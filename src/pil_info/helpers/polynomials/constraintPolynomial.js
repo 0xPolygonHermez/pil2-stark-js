@@ -1,4 +1,5 @@
 const ExpressionOps = require("../../expressionops");
+const { calculateExpDeg } = require("../../imPolsCalculation/imPolynomials");
 const { getExpDim } = require("../helpers");
 
 module.exports.generateConstraintPolynomial = function generateConstraintPolynomial(res, expressions, symbols, constraints, stark) {
@@ -17,30 +18,25 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
     
     res.cExpId = expressions.length;
 
-    let multipleBoundaries = false;
-    if(constraints.filter(c => c.boundary !== "everyRow").length > 0) multipleBoundaries = true;
     for (let i=0; i<constraints.length; i++) {
         const boundary = constraints[i].boundary;
         if(!["everyRow", "firstRow", "lastRow", "everyFrame"].includes(boundary)) throw new Error("Boundary " + boundary + " not supported");
-        let zi;
+        let e = E.exp(constraints[i].e, 0, stage);
         if(boundary === "everyFrame") {
             let boundaryId = res.boundaries.findIndex(b => b.name === "everyFrame" && b.offsetMin === constraints[i].offsetMin && b.offsetMax === constraints[i].offsetMax);
             if(boundaryId == -1) {
                 res.boundaries.push({name: "everyFrame", offsetMin: constraints[i].offsetMin, offsetMax: constraints[i].offsetMax})
                 boundaryId = res.boundaries.length - 1;
             }
-            zi = E.zi(boundaryId);
-        } else {
+            e = E.mul(e, E.zi(boundaryId));
+        } else if(boundary !== "everyRow") {
             let boundaryId = res.boundaries.findIndex(b => b.name === boundary);
             if(boundaryId == -1) {
                 res.boundaries.push({ name: boundary });
                 boundaryId = res.boundaries.length - 1;
             }
-            
-            zi = E.zi(boundaryId);
+            e = E.mul(e, E.zi(boundaryId));
         }
-        let e = E.exp(constraints[i].e, 0, stage);
-        if(stark && multipleBoundaries) e = E.mul(zi, e);
         if(expressions.length === res.cExpId) {
             expressions.push(e);
         } else {
@@ -52,4 +48,9 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
 
     const xi_id = symbols.filter(s => s.type === "challenge" && s.stage < stage + 1).length;
     symbols.push({type: "challenge", name: "std_xi", stage: stage + 1, dim: 3, stageId: 0, id: xi_id})
+
+    const initial_q_degree = calculateExpDeg(expressions, expressions[res.cExpId], []);
+
+    console.log(`The polynomial Q has a ${initial_q_degree} without intermediate polynomials`);
+
 }

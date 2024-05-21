@@ -18,14 +18,16 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
 
     const vc = E.challenge("std_vc", stage, dim, 0, vc_id);
     vc.expDeg = 0;
-    
-    let multipleBoundaries = false;
-    if(constraints.filter(c => c.boundary !== "everyRow").length > 0) multipleBoundaries = true;
-    
+
+    const polQDeg = module.exports.calculateExpDeg(expressions, expressions[res.cExpId], imExps || []);
+    if(polQDeg > qDeg + 1) {
+        throw new Error(`The polinomial Q has a higher degree ${polQDeg} than the maximum allowed degree ${qDeg + 1}`);
+    }
+
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
         
-        const imPolDeg = calculateExpDeg(expressions, expressions[expId], imExps);
+        const imPolDeg = module.exports.calculateExpDeg(expressions, expressions[expId], imExps);
         if(imPolDeg > qDeg + 1) {
             throw new Error(`Intermediate polynomial with id: ${expId} has a higher degree ${imPolDeg} than the maximum allowed degree ${qDeg + 1}`);
         }
@@ -60,11 +62,10 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
 
         constraints.push({ e: expressions.length - 1, boundary: "everyRow", filename: `ImPol.${expId}`, line: `ImPol.${expId}`, stage: expressions[expId].stage });
         
-        if(stark && multipleBoundaries) e = E.mul(E.zi(res.boundaries.findIndex(b => b.name === "everyRow")), e);
         expressions[res.cExpId] = E.add(E.mul(vc, expressions[res.cExpId]), e);
     }
 
-    if(stark && !multipleBoundaries) expressions[res.cExpId] = E.mul(expressions[res.cExpId], E.zi(res.boundaries.findIndex(b => b.name === "everyRow")));
+    expressions[res.cExpId] = E.mul(expressions[res.cExpId], E.zi(res.boundaries.findIndex(b => b.name === "everyRow")));
 
     let cExpDim = getExpDim(expressions, res.cExpId, stark);
     expressions[res.cExpId].dim = cExpDim;
@@ -194,13 +195,13 @@ function calculateImPols(expressions, _exp, maxDeg) {
     }
 }
 
-function calculateExpDeg(expressions, exp, imExps = []) {
+module.exports.calculateExpDeg = function calculateExpDeg(expressions, exp, imExps = []) {
     if (exp.op == "exp") {
         if (imExps.includes(exp.id)) return 1;
         return calculateExpDeg(expressions, expressions[exp.id], imExps);
-    } else if (["x", "const", "cm"].includes(exp.op)) {
+    } else if (["x", "const", "cm"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         return 1;
-    } else if (["number", "public", "challenge", "eval"].includes(exp.op)) {
+    } else if (["number", "public", "challenge", "eval"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
         return 0;
     } else if(exp.op === "neg") {
         return calculateExpDeg(expressions, exp.values[0], imExps);

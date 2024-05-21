@@ -48,18 +48,41 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
         }
     }
 
+    const N = 1 << (starkInfo.starkStruct.nBits);
+
     // Get parser args for each constraint
     for(let j = 0; j < expressionsInfo.constraints.length; ++j) {
         const constraintCode = expressionsInfo.constraints[j];
+        let firstRow;
+        let lastRow;
+
+        if(constraintCode.boundary === "everyRow") {
+            firstRow = 0;
+            lastRow = N;
+        } else if(constraintCode.boundary === "firstRow" || constraintCode.boundary === "finalProof") {
+            firstRow = 0;
+            lastRow = 1;
+        } else if(constraintCode.boundary === "lastRow") {
+            firstRow = N-1;
+            lastRow = N;
+        } else if(constraintCode.boundary === "everyFrame") {
+            firstRow = constraintCode.offsetMin;
+            lastRow = N - constraintCode.offsetMax;
+        } else throw new Error("Invalid boundary: " + constraintCode.boundary);
+
         if(binFile) {
             const constraintInfo = getParserArgsCode(constraintCode, "n", true);
             constraintInfo.stage = constraintCode.stage;
+            constraintInfo.firstRow = firstRow;
+            constraintInfo.lastRow = lastRow;
             constraintsInfo.push(constraintInfo);
         }
 
         if(genericBinFile) {
             const constraintInfoGeneric = getParserArgsCodeGeneric(constraintCode, "n", true);
             constraintInfoGeneric.stage = constraintCode.stage;
+            constraintInfoGeneric.firstRow = firstRow;
+            constraintInfoGeneric.lastRow = lastRow;
             constraintsInfoGeneric.push(constraintInfoGeneric);
         }
     }

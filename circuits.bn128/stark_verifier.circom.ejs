@@ -539,7 +539,8 @@ template parallel VerifyEvaluations() {
 
 <%  if(starkInfo.boundaries.map(b => b.name).includes("firstRow")) { -%>
     signal {maxNum} Zf[3] <== GLCSub()(challengeXi, oneGL);
-    signal {maxNum} Zfirst[3] <== GLCInv()(Zf);
+    signal {maxNum} zerofierFirstRow[3] <== GLCInv()(Zf);
+    signal {maxNum} Zfirst[3] <== GLCMul(zerofierFirstRow, Z);
 <%  } -%>
 
 <%  if(starkInfo.boundaries.map(b => b.name).includes("lastRow")) { -%>
@@ -553,7 +554,8 @@ template parallel VerifyEvaluations() {
     rootGL <== [<%- root %>,0,0];
 
     signal {maxNum} Zl[3] <== GLCSub(challengeXi, rootGL);
-    signal {maxNum} Zlast[3] <== GLCInv()(Zl);
+    signal {maxNum} zerofierLastRow[3] <== GLCInv()(Zl);
+    signal {maxNum} Zlast[3] <== GLCMul()(zerofierLastRow, Z);
 <%  } -%>
 
 <%  if(starkInfo.boundaries.map(b => b.name).includes("everyFrame")) { -%>
@@ -573,7 +575,7 @@ template parallel VerifyEvaluations() {
     root<%- i %>GL[<%- c %>] <== [<%- root %>,0,0];
     Zf<%- i %>[<%- c %>] <== GLCSub(challengeXi, root<%- i %>GL);
 <%          if(c === 0) { -%> 
-    Zframe<%- i %>[<%- c %>] <== GLCMul()(Zh, Zf<%- i %>[c]);
+    Zframe<%- i %>[<%- c %>] <== Zf<%- i %>[c];
 <%          } else { -%>
     Zframe<%- i %>[<%- c %>] <== GLCMul()(Zframe<%- i %>, Zf<%- i %>[c]);
 <%          } -%>
@@ -587,7 +589,7 @@ template parallel VerifyEvaluations() {
     root<%- i %>GL[<%- c %>] <== [<%- root %>,0,0];
     Zf<%- i %>[<%- c %>] <== GLCSub(challengeXi, root<%- i %>GL);
 <%          if(c === 0) { -%> 
-    Zframe<%- i %>[<%- c %>] <== GLCMul()(Zh, Zf<%- i %>[<%- c %>]);
+    Zframe<%- i %>[<%- c %>] <== Zf<%- i %>[<%- c %>];
 <%          } else { -%>
     Zframe<%- i %>[<%- c %>] <== GLCMul()(Zframe<%- i %>, Zf<%- i %>[<%- c %>]);
 <%          } -%>
