@@ -201,7 +201,7 @@ module.exports.calculateExpDeg = function calculateExpDeg(expressions, exp, imEx
         return calculateExpDeg(expressions, expressions[exp.id], imExps);
     } else if (["x", "const", "cm"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         return 1;
-    } else if (["number", "public", "challenge", "eval"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
+    } else if (["number", "public", "challenge", "eval", "subproofValue"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
         return 0;
     } else if(exp.op === "neg") {
         return calculateExpDeg(expressions, exp.values[0], imExps);
