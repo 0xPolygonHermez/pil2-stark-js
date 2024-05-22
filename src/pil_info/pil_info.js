@@ -27,6 +27,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
     
     for(let i = 0; i < newExpressions.length; i++) {
         if(newExpressions[i].keep && !newExpressions[i].imPol) {
+            if(newExpressions[i].stage === 0) newExpressions[i].stage = 1;
             const symbol = { type: "tmpPol", name: `tmpPol${i}`, expId: i, stage: newExpressions[i].stage, dim: newExpressions[i].dim, subproofId: res.subproofId, airId: res.airId };
             symbols.push(symbol);
         }    

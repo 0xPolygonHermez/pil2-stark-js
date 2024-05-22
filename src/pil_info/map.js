@@ -14,8 +14,8 @@ function mapSymbols(res, symbols) {
             if(symbol.type === "fixed") {
                 stage = "const";
                 symbol.stageId = symbol.polId;
-            } else if (symbol.type === "witness") {
-                if(!symbol.stage || symbol.stage === 0) throw new Error("Invalid witness stage");
+            } else {
+                if(isNaN(symbol.stage) || (symbol.type === "witness" && symbol.stage === 0)) throw new Error("Invalid witness stage");
                 stage = "cm" + symbol.stage;
             }
             
