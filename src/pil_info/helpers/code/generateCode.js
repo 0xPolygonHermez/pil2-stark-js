@@ -2,11 +2,12 @@ const { pilCodeGen, buildCode } = require("./codegen");
 
 module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
     const expressionsCode = [];
-
+    for(let i = 0; i < expressions.length; ++i) {
+        if(expressions[i].dim === 3) console.log(i);
+    }
     for(let j = 0; j < expressions.length; ++j) {
         const exp = expressions[j];
         if(j === res.cExpId || j === res.friExpId) continue;
-        if(!exp.keep && !exp.imPol) continue;
         const ctx = {
             calculated: {},
             symbolsCalculated: [],
@@ -31,13 +32,15 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         }
         
         let exprDest;
-        const symbolDest = symbols.find(s => s.expId === j);
-        if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
-            exprDest = { op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId};
-        } else {
-            exprDest = { op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId };
+        if(exp.keep || exp.imPol) {
+            const symbolDest = symbols.find(s => s.expId === j);
+            if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
+                exprDest = { op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId};
+            } else {
+                exprDest = { op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId };
+            }
+            ctx.symbolsCalculated.push(exprDest);
         }
-        ctx.symbolsCalculated.push(exprDest);
 
         for(let k = 0; k < exp.symbols.length; k++) {
             const symbolUsed = exp.symbols[k];
