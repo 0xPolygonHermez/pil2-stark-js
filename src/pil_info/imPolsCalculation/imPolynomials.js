@@ -20,7 +20,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     vc.expDeg = 0;
     
     console.log("Checking that constraint polynomial numerator expression has degree less than qDeg + 1");
-    const maxDegExpr = calculateExpDeg(expressions, expressions[res.cExpId], imExps);
+    const maxDegExpr = module.exports.calculateExpDeg(expressions, expressions[res.cExpId], imExps);
     if(maxDegExpr > qDeg + 1) {
         throw new Error(`The maximum degree of the constraint expression has a higher degree (${maxDegExpr}) than the maximum allowed degree (${qDeg + 1})`);
     }
@@ -29,7 +29,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
         
-        const imPolDeg = calculateExpDeg(expressions, expressions[expId], imExps);
+        const imPolDeg = module.exports.calculateExpDeg(expressions, expressions[expId], imExps);
         if(imPolDeg > qDeg + 1) {
             throw new Error(`Intermediate polynomial with id: ${expId} has a higher degree (${imPolDeg}) than the maximum allowed degree (${qDeg + 1})`);
         }

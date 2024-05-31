@@ -40,12 +40,15 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             ctx.symbolsCalculated.push(exprDest);
         }
 
-        for(let k = 0; k < exp.symbols.length; k++) {
-            const symbolUsed = exp.symbols[k];
-            if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                ctx.symbolsUsed.push(symbolUsed);
-            };
+        if(exp.symbols) {
+            for(let k = 0; k < exp.symbols.length; k++) {
+                const symbolUsed = exp.symbols[k];
+                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                    ctx.symbolsUsed.push(symbolUsed);
+                };
+            }
         }
+         
 
         pilCodeGen(ctx, symbols, expressions, j, 0);
         const code = buildCode(ctx);

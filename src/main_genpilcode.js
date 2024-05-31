@@ -57,6 +57,33 @@ async function run() {
     delete res.imPolsStages;
     delete res.pilPower;
 
+    let nCols = {}; 
+    if(stark) {
+        console.log("--------------------- POLINOMIALS INFO ---------------------")
+        let nColumnsBaseField = 0;
+        let nColumns = 0;
+        for(let i = 1; i <= res.nStages + 1; ++i) {
+            let stage = i;
+            let stageName = "cm" + stage;
+            let nColsStage = res.cmPolsMap.filter(p => p.stage == stageName).length;
+            nCols[stageName] = nColsStage;
+            let nColsBaseField = res.mapSectionsN[stageName];
+            if(i === res.nStages + 1 || (i < res.nStages && !res.imPolsStages)) {
+                console.log(`Columns stage ${stage}: ${nColsStage} -> Columns in the basefield: ${nColsBaseField}`);
+            } else {
+                console.log(`Columns stage ${stage}: ${nColsStage} (${res.cmPolsMap.filter(p => p.stage == stageName && p.imPol).length} intermediate columns) -> Columns in the basefield: ${nColsBaseField}`);
+            }
+            nColumns += nColsStage;
+            nColumnsBaseField += nColsBaseField;
+        }
+        
+        nCols["tmpExp"] = res.cmPolsMap.filter(p => p.stage == "tmpExp").length;
+        console.log(`Total Columns: ${nColumns} -> Total Columns in the basefield: ${nColumnsBaseField}`);
+        console.log(`Total Constraints: ${constraints.length}`)
+        console.log(`Number of evaluations: ${res.evMap.length}`)
+        console.log("------------------------------------------------------------")
+    }
+
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(res, null, 1), "utf8");
 
     await fs.promises.writeFile(expressionsInfoFile, JSON.stringify(expressionsInfo, null, 1), "utf8");
