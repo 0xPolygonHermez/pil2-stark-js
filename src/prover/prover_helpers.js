@@ -6,7 +6,7 @@ const { fflonkgen_execute } = require("./fflonk_prover_worker");
 const maxNperThread = 1<<18;
 const minNperThread = 1<<12;
 
-module.exports.calculateExpression = async function calculateExpression(ctx, expId, dom) {
+module.exports.calculateExpression = function calculateExpression(ctx, expId, dom = "n") {
     const expressionCode = ctx.expressionsInfo.expressionsCode.find(e => e.expId === expId);
     return module.exports.calculateExps(ctx, expressionCode.code, dom, false, true);
 }
