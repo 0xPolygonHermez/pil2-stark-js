@@ -115,26 +115,64 @@ def calculate_added_cols(expressions, used_variables, q_deg, q_dim):
     return added_cols
 
 
-def rebuild_expression(exp, expressions, used_expressions, new_map_expressions):
-    
+def rebuild_expression(exp, expressions, used_expressions, new_expression_list):
+    #revise because ids are not always in order!
     type_operation = {"add", "sub", "mul"}
     new_expression = {}
     if exp["op"] in type_operation:
         new_expression["op"] = exp["op"]
         new_values = []
         for e in exp["values"]:
-            new_values.append(rebuild_expression(e, expressions, used_expressions, new_map_expressions))
+            new_values.append(rebuild_expression(e, expressions, used_expressions, new_expression_list))
         new_expression["values"] = new_values
     elif exp["op"] == "exp":
         id_expr = int(exp["id"])
         if id_expr in used_expressions:
             new_expression = exp
         else:
-            new_expression = new_map_expressions[id_expr]
+            new_expression = new_expression_list[id_expr]
     else:
         new_expression = exp
     return new_expression 
 
+def rename_and_flat_expression(exp, names, invnames):
+    
+    new_expression = {}
+    if exp["op"] in {"add", "sub", "mul"}:
+        new_expression["op"] = exp["op"]
+        new_values = []
+        for v in exp["values"]:
+            new_values.append(rename_and_flat_expression(v, names, invnames))
+        if  exp["op"] in {"add", "mul"}:
+            flat_new_values = []
+            for v in new_values:
+                if  v["op"] == exp["op"]:
+                    flat_new_values += v["values"]
+                else:
+                    flat_new_values.append(v)
+            new_values = flat_new_values
+        new_expression["values"] = new_values
+    elif "id" in exp:
+        id_expr = exp["op"] +"_"+str(exp["id"])
+        if id_expr not in names:
+            names[id_expr] = exp
+            invnames[str(exp)] = id_expr
+#        else:
+#            if names[id_expr] != exp:
+#                print("Different:",names[id_expr],"   and   ",exp)             
+        new_expression["op"] = id_expr
+    else:
+        sexp = str(exp)
+        id_expr = ""
+        if sexp in invnames:
+            id_expr = invnames[sexp]
+        else:
+            id_expr = exp["op"] +"_"+str(len(names))
+            assert(id_expr not in names)
+            names[id_expr] = exp
+            invnames[sexp] = id_expr
+        new_expression["op"] = id_expr
+    return new_expression
 
 import sys
 sys.setrecursionlimit(10000)
@@ -198,44 +236,79 @@ min_value = -1
 optimal_degree = -1
 min_vars = len(expressions)
 possible_degree = 2
+#possible_degree = 8
 
 print("*** Considering degrees between 2 and " + str(degree) + " ***")
 print() 
 
 while min_vars != 0 and possible_degree <= degree:
+#while min_vars != 0 and possible_degree <= 8:
     # Try with degree possible_degree, declare smt problem and try to solve it
     print("--- Using degree " + str(possible_degree) + " ---")
     solver = Optimize()
     smt_generation_pil_2.declare_keep_variables(number_intermediates, possible_degree, solver)
+    #print(zero_expressions)
+    #print(one_expressions)
+    #print(trees)
     for (index, value) in trees.items():
-        smt_generation_pil_2.generate_expression_declaration(value, zero_expressions, one_expressions, index, possible_degree, solver)    
-    smt_generation_pil_2.declare_minimize_keeps(number_intermediates, solver)
+        smt_generation_pil_2.generate_expression_declaration(value, expressions, zero_expressions, one_expressions, index, possible_degree, solver)    
+    #smt_generation_pil_2.declare_minimize_keeps(number_intermediates, solver)
     new_used_variables = smt_generation_pil_2.get_minimal_expressions(number_intermediates, solver)
-    
+    print(new_used_variables)
     added_basefield_cols = calculate_added_cols(expressions, new_used_variables, possible_degree - 1, q_dim)
+#    print("n_expressions:", len(expressions))
+#    print("Used vars:", new_used_variables)
+#    new_map_expressions = {}
+#    i = 0
+#    for e in expressions:
+#        new_e = rebuild_expression(e, expressions, new_used_variables, new_map_expressions)
+#        new_map_expressions[i] = new_e
+#        if i in new_used_variables or i == len(expressions):
+#            print("expresion " + str(i))
+#            print(new_e)
+#        i = i + 1
+    dims = []
+    for v in new_used_variables:
+        dims.append(expressions[v]["dim"])
     if min_value == -1 or added_basefield_cols < min_value:
         min_value = added_basefield_cols
         used_variables = new_used_variables
+        var_dims = dims
         optimal_degree = possible_degree - 1
     if len(new_used_variables) < min_vars:
         min_vars = len(new_used_variables)
     possible_degree = possible_degree + 1
     print()
         
-        
 print("--> Choosing degree: " + str(optimal_degree))
 print("Variables that are kept:" + str(used_variables))
+print("Dimensions:",var_dims)
+print("AddedCols in the basefield:" ,min_value)
 
-#new_map_expressions = {}
+#revise because sometimes index i is used in a previous expressions
+#new_expressions = []
 #i = 0
 #for e in expressions:
-#    new_e = rebuild_expression(e, expressions, used_variables, new_map_expressions)
-#    new_map_expressions[i] = new_e
-#    print("expresion " + str(i))
-#    print(new_e)
+#    new_e = rebuild_expression(e, expressions, used_variables, new_expressions)
+#    new_expressions.append(new_e)
+#    #print("expresion " + str(i))
+#    #print(new_e)
 #    i = i + 1
-    
-result = {}
+#
+#names = {}
+#invnames = {}
+#
+#new_map_expressions = {}
+#i = 0
+#for e in new_expressions:
+#    new_e = rename_and_flat_expression(e, names, invnames)
+#    new_map_expressions[i] = new_e
+#    #if i in used_variables and "op" or i == len(expressions)-1:
+#        #print("expresion " + str(i))
+#        #print(new_e)
+#    i = i + 1
+# 
+#result = {}
 
 used_index = list(used_variables)
 used_index.sort()
@@ -252,7 +325,6 @@ json_object = json.dumps(solution, indent = 1, sort_keys=True)
 file = open(args.fileout, "w")
 file.write(json_object)
 file.close()
-
 
 
 

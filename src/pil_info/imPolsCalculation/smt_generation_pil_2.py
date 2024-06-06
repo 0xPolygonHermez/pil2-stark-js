@@ -22,26 +22,29 @@ def declare_keep_variables(number_intermediates, n, solver):
         solver.add(Int('d_exp_' + str(s)) >= 0)
         solver.add(Int('d_exp_' + str(s)) <= n)
         
-def generate_expression_declaration(tree, zero_expressions, one_expressions, position, n, solver):
+def generate_expression_declaration(tree, expressions, zero_expressions, one_expressions, position, n, solver):
     possible_degrees = get_degrees_tree(tree, zero_expressions, one_expressions, "aux_" + str(position), n, solver)
     if_keep =  Int('d_exp_' + str(position)) == 1
     if_not_keep = Int('d_exp_' + str(position)) == possible_degrees
     solver.add(If( Bool('k_exp_'+ str(position)), if_keep, if_not_keep))
-
-        
+    #solver.add_soft(Not(Bool('k_exp_'+ str(position))))
+    solver.add_soft(Not(Bool('k_exp_'+ str(position))),1,id = "degree")
+    if "dim" in expressions[position]:
+        solver.add_soft(Not(Bool('k_exp_'+ str(position))),expressions[position]["dim"], id = "dimension")    
+    else:
+        solver.add(Not(Bool('k_exp_'+ str(position))))
 
 def get_degrees_tree(tree, zero_expressions, one_expressions, prefix, n, solver):
     if type(tree) == list:
         solver.add(Int(prefix) <= n)
         
-        or_condition = "false"
+        or_condition = False
         
         i = 0
         for e in tree:
             new_degree = get_degrees_tree(e, zero_expressions, one_expressions, prefix + '_' + str(i), n, solver)
             solver.add(Int(prefix) >= new_degree)
-
-            or_condition = or_condition or (prefix == new_degree)
+            or_condition = Or(or_condition,(Int(prefix) <= new_degree))
             i = i + 1
         #solver.add(or_condition) #check if helps
         return Int(prefix)
@@ -65,15 +68,17 @@ def get_degrees_tree(tree, zero_expressions, one_expressions, prefix, n, solver)
 
 
 def get_minimal_expressions(number_intermediates, solver):
-    solver.minimize(Int('needed_variables'))
+    #solver.minimize(Int('needed_variables'))
+    #print(solver.sexpr())
+    #print(solver.check())
+    should_keep = set()
     if(solver.check() == sat): 
         m = solver.model()
-        print("Number of needed variables: " + str(m[z3.Int('needed_variables')]))
-        should_keep = set()
+#        print("Number of needed variables: " + str(m[z3.Int('needed_variables')]))
         for s in range(number_intermediates):
             if m[z3.Bool('k_exp_' + str(s))]:
                 should_keep.add(s)
-                
+        print("Number of needed variables: ",len(should_keep))
     return should_keep
     
     
