@@ -6,6 +6,16 @@ const { fflonkgen_execute } = require("./fflonk_prover_worker");
 const maxNperThread = 1<<18;
 const minNperThread = 1<<12;
 
+module.exports.calculateExpression = async function calculateExpression(ctx, expId, dom) {
+    const expressionCode = ctx.expressionsInfo.expressionsCode.find(e => e.expId === expId);
+    return module.exports.calculateExps(ctx, expressionCode.code, dom, false, true);
+}
+
+module.exports.calculateExpressionAtRow = function calculateExpressionAtRow(ctx, expId, row) {
+    const expressionCode = ctx.expressionsInfo.expressionsCode.find(e => e.expId === expId);
+    return module.exports.calculateExpAtPoint(ctx, expressionCode.code, row);
+}
+
 module.exports.callCalculateExps = async function callCalculateExps(stage, code, dom, ctx, parallelExec, useThreads, debug, global = false) {
     if (parallelExec) {
         await module.exports.calculateExpsParallel(ctx, stage, code, useThreads, debug);

@@ -59,7 +59,7 @@ module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, opti
 }
 
 module.exports.tryCalculateExps = async function tryCalculateExps(ctx, stage, dom, options) {
-    const expressionsStage = ctx.expressionsInfo.expressionsCode.filter(e => e.stage === stage);
+    const expressionsStage = ctx.expressionsInfo.expressionsCode.filter(e => e.stage === stage && e.dest);
     for(let i = 0; i < expressionsStage.length; ++i) {
         if(module.exports.isSymbolCalculated(ctx, expressionsStage[i].dest)) continue;
         const symbols = expressionsStage[i].symbols;
