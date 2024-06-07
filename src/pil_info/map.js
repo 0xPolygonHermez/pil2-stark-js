@@ -8,7 +8,7 @@ module.exports = function map(res, symbols) {
 function mapSymbols(res, symbols) {
     let nCommits = res.nCommitments;
     for(let i = 0; i < symbols.length; ++i) {
-    let symbol = symbols[i];
+        let symbol = symbols[i];
         if(["witness", "fixed", "tmpPol"].includes(symbol.type)) {
             let stage;
             if(symbol.type === "fixed") {
