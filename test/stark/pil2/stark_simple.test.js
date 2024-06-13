@@ -7,14 +7,13 @@ const protobuf = require('protobufjs');
 const Logger = require('logplease');
 
 const fs = require("fs");
-const { newCommitPolsArrayPil2, newConstantPolsArrayPil2 } = require("pilcom/src/polsarray");
-
 const smSimple = require("../../state_machines/pil2/sm_simple/sm_simple.js");
 
 const { getFixedPolsPil2 } = require("../../../src/pil_info/helpers/pil2/piloutInfo");
 
 
 const { generateStarkProof } = require("../helpers");
+const { generateWtnsCols, generateFixedCols } = require("../../../src/witness/witnessCalculator.js");
 
 async function runTest(pilFile) {
         const logger = Logger.create("pil-stark", {showTimestamp: false});
@@ -49,11 +48,11 @@ async function runTest(pilFile) {
         pil.airId = 0;
         pil.subproofId = 0;
 
-        const cnstPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
+        const cnstPols = generateFixedCols(pil.symbols, pil.numRows);
         getFixedPolsPil2(pil, cnstPols, F);
 
-        const cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
-
+        const cmPols = generateWtnsCols(1, pil.symbols, pil.numRows);
+        
         if(pilFile === "simple2.pil") {
             await smSimple.execute2(pil.numRows, cmPols.Simple, F);
         } else if (pilFile === "simple3.pil") {
@@ -83,7 +82,7 @@ describe("simple sm", async function () {
     it("Simple3", async () => {
         await runTest("simple3.pil");
     });
-    it("Simple4", async () => {
+    it.only("Simple4", async () => {
         await runTest("simple4.pil");
     });
 });

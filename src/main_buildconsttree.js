@@ -10,7 +10,7 @@ const { newConstantPolsArray, compile } = require("pilcom");
 const { buildConstTree } = require("./stark/stark_buildConstTree");
 
 const { compile: compilePil2 } = require("pilcom2");
-const { newConstantPolsArrayPil2 } = require("pilcom/src/polsarray");
+const { generateFixedCols } = require("./witness/witnessCalculator.js");
 
 const argv = require("yargs")
     .version(version)
@@ -50,7 +50,7 @@ async function run() {
         const pil = pilout.subproofs[0].airs[0];
         pil.symbols = pilout.symbols;
         
-        constPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
+        constPols = generateFixedCols(pil.symbols, pil.numRows);
     } else {
         const pil = await compile(F, pilFile, null, pilConfig);
         constPols = newConstantPolsArray(pil, F);

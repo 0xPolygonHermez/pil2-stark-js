@@ -35,7 +35,7 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
 
     const setup = await starkSetup(constPols, pil, {...starkStruct, hashCommits}, {...options, debug: false});
 
-    await buildCHelpers(setup.starkInfo, setup.expressionsInfo, "tmp/chelpersfile.hpp", "Test", "tmp/chelpersTest.bin");
+    // await buildCHelpers(setup.starkInfo, setup.expressionsInfo, "tmp/chelpersfile.hpp", "Test", "tmp/chelpersTest.bin");
     const resP = await starkGen(cmPols, constPols, setup.constTree, setup.starkInfo, setup.expressionsInfo, inputs, {...options, debug: false});
 
     const resV = await starkVerify(resP.proof, resP.publics, setup.constRoot, { challenges: resP.challenges, challengesFRISteps: resP.challengesFRISteps }, setup.starkInfo, setup.verifierInfo, {...options, debug: false});

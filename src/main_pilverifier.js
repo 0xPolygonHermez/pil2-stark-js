@@ -8,11 +8,11 @@ const { compile, newConstantPolsArray, newCommitPolsArray } = require("pilcom");
 const { compile: compilePil2 } = require("pilcom2");
 
 const { F1Field, getCurveFromName } = require("ffjavascript");
-const { pilInfo, starkGen } = require("..");
+const { starkGen } = require("..");
 const F3g = require("./helpers/f3g");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 const Logger = require('logplease');
-const { newConstantPolsArrayPil2, newCommitPolsArrayPil2 } = require("pilcom/src/polsarray");
+const { generateFixedCols, generateWtnsCols } = require("./witness/witnessCalculator");
 
 const argv = require("yargs")
     .version(version)
@@ -70,8 +70,8 @@ async function run() {
         pil.airId = 0;
         pil.subproofId = 0;
 
-        constPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
-        cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
+        constPols = generateFixedCols(pil.symbols, pil.numRows);
+        cmPols = generateWtnsCols(1, pil.symbols, pil.numRows);
     } else {
         pil = await compile(F, pilFile, null, config);
 

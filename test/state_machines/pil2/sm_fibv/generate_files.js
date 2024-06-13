@@ -12,7 +12,7 @@ const { F1Field, getCurveFromName } = require("ffjavascript");
 const F3g = require("../../../../src/helpers/f3g.js");
 
 const { getFixedPolsPil2 } = require("../../../../src/pil_info/helpers/pil2/piloutInfo.js");
-const { newConstantPolsArrayPil2 } = require("pilcom/src/polsarray.js");
+const { generateFixedCols } = require("../../../../src/witness/witnessCalculator.js");
 
 const argv = require("yargs")
     .version(version)
@@ -80,7 +80,7 @@ async function run() {
             const constTreeFile = path.join(outPath, air_name + ".consttree");
 
             // Generate const file
-            const constPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
+            const constPols = generateFixedCols(pil.symbols, pil.numRows);
             getFixedPolsPil2(pil, constPols, F);
 
             if (curveName === "gl") {

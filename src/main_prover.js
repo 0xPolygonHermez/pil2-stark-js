@@ -17,7 +17,7 @@ const Logger = require('logplease');
 
 const F3g = require("./helpers/f3g.js");
 const { createHash } = require("crypto");
-const { newConstantPolsArrayPil2, newCommitPolsArrayPil2 } = require("pilcom/src/polsarray");
+const { generateWtnsCols, generateFixedCols } = require("./witness/witnessCalculator.js");
 
 
 
@@ -78,8 +78,8 @@ async function run() {
         pil.airId = 0;
         pil.subproofId = 0;
 
-        constPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
-        cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
+        constPols = generateFixedCols(pil.symbols, pil.numRows);
+        cmPols = generateWtnsCols(1, pil.symbols, pil.numRows);
     } else {
         const pil = await compile(F, pilFile, null);
 

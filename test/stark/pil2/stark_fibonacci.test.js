@@ -7,7 +7,8 @@ const protobuf = require('protobufjs');
 const Logger = require('logplease');
 
 const fs = require("fs");
-const { newCommitPolsArrayPil2, newConstantPolsArrayPil2 } = require("pilcom/src/polsarray");
+
+const { generateWtnsCols, generateFixedCols } = require("../../../src/witness/witnessCalculator.js");
 
 const smFibonacci = require("../../state_machines/pil2/sm_fibonacci/sm_fibonacci.js");
 
@@ -52,10 +53,10 @@ describe("test fibonacci pil2 sm", async function () {
         pil.airId = 0;
         pil.subproofId = 0;
 
-        const cnstPols = newConstantPolsArrayPil2(pil.symbols, pil.numRows, F);
+        const cnstPols = generateFixedCols(pil.symbols, pil.numRows);
         getFixedPolsPil2(pil, cnstPols, F);
 
-        const cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
+        const cmPols = generateWtnsCols(1, pil.symbols, pil.numRows);
         await smFibonacci.execute(pil.numRows, cmPols.Fibonacci, [1, 2], F);
 
         const publics = [cmPols.Fibonacci.b[0], cmPols.Fibonacci.a[0], cmPols.Fibonacci.a[pil.numRows - 1], 5n]; 

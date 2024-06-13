@@ -10,7 +10,8 @@ const { F1Field, getCurveFromName } = require("ffjavascript");
 
 const smFibonacci = require("./sm_fibonacci.js");
 
-const { newCommitPolsArrayPil2 } = require("pilcom/src/polsarray.js");
+const { generateWtnsCols } = require("../../../../src/witness/witnessCalculator.js");
+
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 
 const argv = require("yargs")
@@ -46,7 +47,7 @@ async function run() {
     const pil = pilout.subproofs[0].airs[0];
     pil.symbols = pilout.symbols;
 
-    const cmPols = newCommitPolsArrayPil2(pil.symbols, pil.numRows, F);
+    const cmPols = generateWtnsCols(1, pil.symbols, pil.numRows, F);
 
     const input = JSON.parse(await fs.promises.readFile(inputFile, "utf8"));
 
