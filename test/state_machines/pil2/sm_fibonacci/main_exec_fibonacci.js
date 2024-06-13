@@ -47,7 +47,7 @@ async function run() {
     const pil = pilout.subproofs[0].airs[0];
     pil.symbols = pilout.symbols;
 
-    const cmPols = generateWtnsCols(1, pil.symbols, pil.numRows, F);
+    const cmPols = generateWtnsCols(1, pil.symbols, pil.numRows);
 
     const input = JSON.parse(await fs.promises.readFile(inputFile, "utf8"));
 

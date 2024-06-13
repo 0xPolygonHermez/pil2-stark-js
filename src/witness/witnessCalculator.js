@@ -40,7 +40,7 @@ module.exports.generateFixedCols = function generateFixedCols(symbols, degree) {
     return fixedCols;
 }
 
-module.exports.generateWtnsCols = function generateWtnsCols(stage, symbols, degree) {
+module.exports.generateWtnsCols = function generateWtnsCols(stage, symbols, degree, nCols, buffer) {
     const witnessSymbols = [];
     for (let i = 0; i < symbols.length; ++i) {
         if(symbols[i].type !== 3 || symbols[i].stage !== stage) continue;
@@ -51,19 +51,26 @@ module.exports.generateWtnsCols = function generateWtnsCols(stage, symbols, degr
         }
     }
     
-    const wtnsCols = new ColsPil2(witnessSymbols, degree);
+    const wtnsCols = new ColsPil2(witnessSymbols, degree, nCols, buffer);
     return wtnsCols;
 }
 
 class ColsPil2 {
-    constructor(symbols, degree) {
+    constructor(symbols, degree, nCols, buffer) {
         this.$$def = {};
         this.$$defArray = [];
 
+        if(!nCols) nCols = symbols.length;
+
         this.F = new F3g();
         this.$$n = degree;
-        this.$$nCols = symbols.length;
-        this.polBuffer = new BigBuffer(symbols.length*this.$$n);
+        this.$$nCols = nCols;
+        
+        if(!buffer) {
+            this.polBuffer = new BigBuffer(this.$$nCols*this.$$n);
+        } else {
+            this.polBuffer = buffer;
+        }
 
         this.symbols = symbols;
         for(let i = 0; i < symbols.length; ++i) {
@@ -102,13 +109,14 @@ class ColsPil2 {
             set(target, prop, value) {
                 const pos = parseInt(prop, 10);
                 const buffIndex = nCols * pos + symbolId;
-                polBuffer[buffIndex] = value;
+                polBuffer.setElement(buffIndex,value);
+                return true;
             },
 
             get(target, prop) {
                 const pos = parseInt(prop, 10);
                 const buffIndex = nCols * pos + symbolId;
-                return polBuffer[buffIndex];
+                return polBuffer.getElement(buffIndex);
             }
         });
     }
@@ -175,23 +183,17 @@ class ColsPil2 {
         for (let i=0; i<this.$$n; i++) {
             for(let j = 0; j < this.$$nCols; ++j) {
                 let c = i*this.$$nCols + j;
-                const value = (this.polBuffer[c] < 0n) ? (this.polBuffer[c] + this.F.p) : this.polBuffer[c];
+                const value = (this.polBuffer.getElement(c) < 0n) ? (this.polBuffer.getElement(c) + this.F.p) : this.polBuffer.getElement(c);
                 buff.setElement(p++, value);
             }
             for(let j = this.$$nCols; j < nCols; ++j) buff.setElement(p++, 0n);
 
         }
         return buff;
-    }
+    };
 
     writeToBuff(buff) {
-        if (typeof buff == "undefined") {
-            const constBuffBuff = new ArrayBuffer(this.$$n*this.$$nCols*8);
-            buff = new BigUint64Array(constBuffBuff);
-        }
-        for (let i=0; i<this.$$n * this.$$nCols; i++) {
-            buff[i] = (this.polBuffer[i] < 0n) ? (this.polBuffer[i] + 0xffffffff00000001n) : this.polBuffer[i];
-        }
+        buff = this.polBuffer;
         return buff;
     }
 }

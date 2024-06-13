@@ -1,14 +1,15 @@
 const workerpool = require("workerpool");
-const {BigBuffer} = require("ffjavascript");
+const {BigBuffer} = require("pilcom");
 const { starkgen_execute } = require("./stark_prover_worker");
 const { fflonkgen_execute } = require("./fflonk_prover_worker");
+const F3g = require("../helpers/f3g");
 
 const maxNperThread = 1<<18;
 const minNperThread = 1<<12;
 
-module.exports.calculateExpression = function calculateExpression(ctx, expId, dom = "n") {
+module.exports.calculateExpression = function calculateExpression(ctx, expId) {
     const expressionCode = ctx.expressionsInfo.expressionsCode.find(e => e.expId === expId);
-    return module.exports.calculateExps(ctx, expressionCode.code, dom, false, true);
+    return module.exports.calculateExps(ctx, expressionCode.code, "n", false, true);
 }
 
 module.exports.calculateExpressionAtRow = function calculateExpressionAtRow(ctx, expId, row) {
@@ -30,7 +31,7 @@ module.exports.calculateExps = function calculateExps(ctx, code, dom, debug, ret
     const retValue = debug || ret || false;
     cEveryRow = new Function("ctx", "i", module.exports.compileCode(ctx, code.code, dom, retValue, global));
 
-    const N = dom=="n" ? ctx.N : ctx.extN;
+    const N = dom=="n" ? 1 << ctx.nBits : 1 << ctx.nBitsExt;
     
     const pCtx = ctxProxy(ctx, global);
 
@@ -41,6 +42,7 @@ module.exports.calculateExps = function calculateExps(ctx, code, dom, debug, ret
         }
     } else {
         let first, last;
+        pCtx.errors = [];
         if(code.boundary === "everyRow") {
             first = 0;
             last = N;
@@ -540,56 +542,35 @@ module.exports.printPol = function printPol(buffer, Fr) {
     console.log("---------------------------");
 }
 
-function ctxProxy(ctx, global) {
+function ctxProxy(ctx, global, stark = true) {
     const pCtx = {};
     
-    const stark = ctx.prover === "stark" ? true : false;
-
     if(!global) {
-        createProxy("const_n", stark);
-        createProxy("const_ext", stark);
-        createProxy("const_coefs", stark);
-        for(let i = 0; i < ctx.pilInfo.nStages; i++) {
-            createProxy(`cm${i + 1}_n`, stark);
-            createProxy(`cm${i + 1}_ext`, stark);
-            if(!stark) createProxy(`cm${i + 1}_coefs`, stark);
-        }
-
-        createProxy("tmpExp_n", stark);
-        createProxy("x_n", stark);
-        createProxy("x_ext", stark);
-        createProxy("q_ext", stark);
-
-        if(stark) {
-            createProxy(`cm${ctx.pilInfo.nStages + 1}_ext`, stark);
-
-            createProxy("Zi_ext", stark);
-
-            createProxy("xDivXSubXi_ext", stark);
-
-            createProxy("f_ext", stark);
+        for(let i = 0; i < Object.keys(ctx).length; ++i) {
+            const key = Object.keys(ctx)[i];
+            if(ctx[key] instanceof BigBuffer) {
+                createProxy(key, stark);
+            }
         }
     }
 
-    pCtx.N = ctx.N;
     pCtx.nBits = ctx.nBits;
+    pCtx.N = 1 << ctx.nBits;
 
-    pCtx.extN = ctx.extN;
-    pCtx.nBitsExt = ctx.nBitsExt;
+    if(ctx.nBitsExt) {
+        pCtx.nBitsExt = ctx.nBitsExt;
+        pCtx.extN = ctx.extN;
+    }
 
     pCtx.tmp = ctx.tmp;
 
-    pCtx.pilInfo = ctx.pilInfo;
+    pCtx.F = new F3g();
 
-    pCtx.F = ctx.F;
-
-    pCtx.publics = ctx.publics;
-    pCtx.challenges = ctx.challenges;
-    pCtx.challengesFRISteps = ctx.challengesFRISteps;
-    pCtx.subAirValues = ctx.subAirValues;
-    pCtx.evals = ctx.evals;
-
-    pCtx.errors = ctx.errors;
+    if(ctx.publics) pCtx.publics = ctx.publics;
+    if(ctx.challenges) pCtx.challenges = ctx.challenges;
+    if(ctx.challengesFRISteps) pCtx.challengesFRISteps = ctx.challengesFRISteps;
+    if(ctx.subAirValues) pCtx.subAirValues = ctx.subAirValues;
+    if(ctx.evals) pCtx.evals = ctx.evals;
 
     return pCtx;
 
