@@ -2,9 +2,6 @@ const { pilCodeGen, buildCode } = require("./codegen");
 
 module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
     const expressionsCode = [];
-    for(let i = 0; i < expressions.length; ++i) {
-        if(expressions[i].dim === 3) console.log(i);
-    }
     for(let j = 0; j < expressions.length; ++j) {
         const exp = expressions[j];
         if(j === res.cExpId || j === res.friExpId) continue;

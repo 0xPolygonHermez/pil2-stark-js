@@ -1,3 +1,4 @@
+const { BigBuffer } = require("pilcom");
 const F3g = require("../helpers/f3g");
 const fs= require("fs");
 
@@ -62,7 +63,7 @@ class ColsPil2 {
         this.F = new F3g();
         this.$$n = degree;
         this.$$nCols = symbols.length;
-        this.polBuffer = new Array(symbols.length*this.$$n).fill(0n);
+        this.polBuffer = new BigBuffer(symbols.length*this.$$n);
 
         this.symbols = symbols;
         for(let i = 0; i < symbols.length; ++i) {
