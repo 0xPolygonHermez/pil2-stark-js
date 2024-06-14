@@ -54,7 +54,9 @@ function addHintsInfo(res, symbols, hints) {
                 if(!symbol) throw new Error("Something went wrong!");
                 const op = symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol) ? "cm" : "tmp";
                 const id = symbol.polId;
-                hintFields.push({name: field, op, id});
+                const fieldInfo = {name: field, op, id};
+                if(op === "tmp") fieldInfo.expId = hint[field].id;
+                hintFields.push(fieldInfo);
             } else if(["cm", "challenge", "public"].includes(hint[field].op)) {
                 hintFields.push({name: field, op: hint[field].op, id: hint[field].id});
             } else if(["public", "subproofValue", "const"].includes(hint[field].op)) {

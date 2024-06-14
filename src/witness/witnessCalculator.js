@@ -130,7 +130,7 @@ class ColsPil2 {
 
         let p=0;
         for (let i=0; i<totalSize; i++) {
-            buff[p++] = (this.polBuffer[i] < 0n) ? (this.polBuffer[i] + 0xffffffff00000001n) : this.polBuffer[i];
+            buff[p++] = (this.polBuffer.getElement(i) < 0n) ? (this.polBuffer.getElement(i) + 0xffffffff00000001n) : this.polBuffer.getElement(i);
             if (p == buff.length) {
                 const buff8 = new Uint8Array(buff.buffer);
                 await fd.write(buff8);
@@ -167,7 +167,7 @@ class ColsPil2 {
             n = res.bytesRead/8;
             p += n*8;
             for (let l=0; l<n; l++) {
-                this.polBuffer[i++] = buff[l];
+                this.polBuffer.setElement(i++, buff[l]);
             }
         }
 
