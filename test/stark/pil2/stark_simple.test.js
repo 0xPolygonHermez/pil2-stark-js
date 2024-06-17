@@ -51,14 +51,15 @@ async function runTest(pilFile) {
         const cnstPols = generateFixedCols(pil.symbols, pil.numRows);
         getFixedPolsPil2(pil, cnstPols, F);
 
-        const cmPols = generateWtnsCols(1, pil.symbols, pil.numRows);
-        
-        if(pilFile === "simple2.pil") {
+        const cmPols = generateWtnsCols(pil.symbols, pil.numRows);
+        if(pilFile === "simple1.pil") {
+            await smSimple.execute(pil.numRows, cmPols.Simple, F);
+        } else if(pilFile === "simple2.pil") {
             await smSimple.execute2(pil.numRows, cmPols.Simple, F);
         } else if (pilFile === "simple3.pil") {
             await smSimple.execute3(pil.numRows, cmPols.Simple, F);
         } else {
-            await smSimple.execute(pil.numRows, cmPols.Simple, F);
+            await smSimple.execute4(pil.numRows, cmPols.Simple, F);
         }
         
         const publics = []; 
@@ -73,7 +74,7 @@ async function runTest(pilFile) {
 describe("simple sm", async function () {
     this.timeout(10000000);
 
-    it("Simple1", async () => {
+    it.only("Simple1", async () => {
         await runTest("simple1.pil");
     });
     it("Simple2", async () => {

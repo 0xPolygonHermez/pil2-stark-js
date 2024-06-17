@@ -46,6 +46,8 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
     if(exp.op) return exp;
 
     let op = Object.keys(exp)[0];
+    
+    let store = false;
 
     if(op === "expression") {
         const id = exp[op].idx;
@@ -69,35 +71,42 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
         const subproofId = exp[op].subproofId;
         const airId = exp[op].subproofId;
         exp = { op: "cm", id, stageId, rowOffset, stage, dim, subproofId, airId };
+        store = true;
     } else if (op === "fixedCol") {
         const id = exp[op].idx;
         const rowOffset = exp[op].rowOffset;
         const subproofId = exp[op].subproofId;
         const airId = exp[op].subproofId;
         exp = { op: "const", id, rowOffset, stage: 0, dim: 1, subproofId, airId };
+        store = true;
     } else if (op === "publicValue") {
         const id = exp[op].idx;
         exp = { op: "public", id, stage: 1 };
+        store = true;
     } else if (op === "subproofValue") {
         const id = exp[op].idx;
         const stage = pilout.numChallenges.length;
         const subproofId = exp[op].subproofId;
         exp = { op: "subproofValue", id, stage, subproofId };
+        store = true;
     } else if (op === "challenge") {
         const id = exp[op].idx + pilout.numChallenges.slice(0, exp[op].stage - 1).reduce((acc, c) => acc + c, 0);
         const stageId = exp[op].idx;
         const stage = exp[op].stage;
         exp = { op: "challenge", stage, stageId, id };
+        store = true;
     } else throw new Error("Unknown op: " + op);
 
-    if(saveSymbols) {
+    if(saveSymbols && store) {
         addSymbol(symbols, exp, stark);
     }
 
     return exp;
 }
 
-function addSymbol(exp, symbols, stark) {
+function addSymbol(symbols, exp, stark) {
+    let subproofId = exp.subproofId || 0;
+    let airId = exp.airId || 0;
     if(exp.op === "public") {
         const publicSymbol = symbols.find(s => s.type === "public" && s.id === exp.id);
         if(!publicSymbol) {
@@ -113,26 +122,28 @@ function addSymbol(exp, symbols, stark) {
             symbols.push({ type: "challenge", stageId: exp.stageId, stage: exp.stage, id, dim, name});
         }
     } else if(exp.op === "const") {
-        const fixedSymbol = symbols.find(s => s.type === "fixed" && s.airId === exp.airId && s.subproofId === exp.subproofId
-            && s.stage === exp.stage && s.stageId === exp.stageId);
+        const fixedSymbol = symbols.find(s => s.type === "fixed" && s.airId === airId && s.subproofId === subproofId
+            && s.stage === exp.stage && s.id === exp.stageId);
         if(!fixedSymbol) {
-            const name = "fixed_" + exp.stageId;
-            symbols.push({ type: "fixed", polId: exp.stageId, stageId: exp.stageId, stage: exp.stage, dim: 1, name, airId: exp.airId, subproofId: exp.subproofId});
+            const name = "fixed_" + exp.id;
+            symbols.push({ type: "fixed", polId: exp.id, stageId: exp.id, stage: exp.stage, dim: 1, name, airId , subproofId});
         }
     } else if(exp.op === "cm") {
-        const witnessSymbol = symbols.find(s => s.type === "witness" && s.airId === exp.airId && s.subproofId === exp.subproofId
+        const witnessSymbol = symbols.find(s => s.type === "witness" && s.airId === airId && s.subproofId === subproofId
             && s.stage === exp.stage && s.stageId === exp.stageId);
         if(!witnessSymbol) {
             const name = "witness_" + exp.stage + "_" + exp.stageId;
             const dim = (exp.stage === 1 || !stark) ? 1 : 3;
-            symbols.push({ type: "witness", polId: exp.id, stageId: exp.stageId, stage: exp.stage, dim, name, airId: exp.airId, subproofId: exp.subproofId});
+            symbols.push({ type: "witness", polId: exp.id, stageId: exp.stageId, stage: exp.stage, dim, name, airId, subproofId});
         }
     } else if(exp.op === "subproofValue") {
-        const subProofValueSymbol = symbols.find(s => s.type === "subproofValue" && s.id === exp.id && s.airId === exp.airId && s.subproofId === exp.subproofId);
+        const subProofValueSymbol = symbols.find(s => s.type === "subproofValue" && s.id === exp.id && s.airId === airId && s.subproofId === subproofId);
         if(!subProofValueSymbol) {
             const name = "subproofvalue_" + exp.id;
-            symbols.push({type: "subproofValue", dim: 1, id: exp.id, name, airId: exp.airId, subproofId: exp.subproofId });
+            symbols.push({type: "subproofValue", dim: 1, id: exp.id, name, airId, subproofId });
         }
+    } else {
+        throw new Error ("Unknown operation " + exp.op);
     }
     return;
 }

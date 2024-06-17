@@ -33,7 +33,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     if(pilout.numChallenges) {
         res.nStages = pilout.numChallenges.length;
     } else {
-        const numChallenges = new Array(Math.max(...symbols.map(s => s.stage || 0))).fill(0);
+        const numChallenges = symbols.length > 0 ? new Array(Math.max(...symbols.map(s => s.stage || 0))).fill(0) : [];
         res.nStages = numChallenges.length;
     }
     

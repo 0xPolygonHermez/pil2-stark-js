@@ -1,12 +1,7 @@
 module.exports.execute = async function (N, pols, F) {
     for (let i=0; i<N; i++) {
         const v = BigInt(i);
-        if(pols.a.length == 2) {
-            pols.a[0][i] = v;
-            pols.a[1][i] = v;
-        } else {
-            pols.a[i] = v;
-        }
+        pols.a[i] = v;
         pols.b[i] = F.square(v);
     }
 }
@@ -32,5 +27,14 @@ module.exports.execute3 = async function (N, pols, F) {
         pols.a[1][1][i] = v - 1n;
         pols.a[1][2][i] = v - 2n;
         pols.b[1][i] = F.mul(v, F.mul(v - 1n, v - 2n));
+    }
+}
+
+module.exports.execute4 = async function (N, pols, F) {
+    for (let i=0; i<N; i++) {
+        const v = BigInt(i);
+        pols.a[0][i] = v;
+        pols.a[1][i] = v;
+        pols.b[i] = F.square(v);
     }
 }

@@ -56,7 +56,7 @@ describe("test fibonacci pil2 sm", async function () {
         const cnstPols = generateFixedCols(pil.symbols, pil.numRows);
         getFixedPolsPil2(pil, cnstPols, F);
 
-        const cmPols = generateWtnsCols(1, pil.symbols, pil.numRows);
+        const cmPols = generateWtnsCols(pil.symbols, pil.numRows);
         await smFibonacci.execute(pil.numRows, cmPols.Fibonacci, [1, 2], F);
 
         const publics = [cmPols.Fibonacci.b[0], cmPols.Fibonacci.a[0], cmPols.Fibonacci.a[pil.numRows - 1], 5n]; 

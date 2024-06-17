@@ -79,7 +79,7 @@ async function run() {
         pil.subproofId = 0;
 
         constPols = generateFixedCols(pil.symbols, pil.numRows);
-        cmPols = generateWtnsCols(1, pil.symbols, pil.numRows);
+        cmPols = generateWtnsCols(pil.symbols, pil.numRows);
     } else {
         const pil = await compile(F, pilFile, null);
 
