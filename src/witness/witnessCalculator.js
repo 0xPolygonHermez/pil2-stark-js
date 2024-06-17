@@ -116,6 +116,7 @@ class ColsPil2 {
           
         const nCols = this.$$nCols["cm" + stage];
         const buff = this.$$buffers["cm" + stage];
+        const N = this.$$n;
 
         return new Proxy([], {
             set(target, prop, value) {
@@ -126,6 +127,9 @@ class ColsPil2 {
             },
 
             get(target, prop) {
+                if (prop === 'length') {
+                    return N; // Return the degree for 'length' property
+                }
                 const pos = parseInt(prop, 10);
                 const buffIndex = nCols * pos + symbolId;
                 return buff.getElement(buffIndex);
