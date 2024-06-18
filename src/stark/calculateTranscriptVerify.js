@@ -38,7 +38,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
 
     for(let i=0; i < starkInfo.nStages; i++) {
         const stage = i + 1;
-        const nChallengesStage = starkInfo.challengesMap.filter(c => c.stageNum === stage).length;
+        const nChallengesStage = starkInfo.challengesMap.filter(c => c.stage === stage).length;
         challenges[stage - 1] = [];
         for(let j = 0; j < nChallengesStage; ++j) {
             challenges[stage - 1][j] = transcript.getField();

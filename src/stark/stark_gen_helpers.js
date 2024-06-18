@@ -435,7 +435,7 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, tran
 
     let qStage = ctx.pilInfo.nStages + 1;
 
-    nChallengesStage = ctx.pilInfo.challengesMap.filter(c => c.stageNum === stage).length;
+    nChallengesStage = ctx.pilInfo.challengesMap.filter(c => c.stage === stage).length;
 
     ctx.challenges[stage - 1] = [];
     for (let i=0; i<nChallengesStage; i++) {
@@ -449,7 +449,7 @@ module.exports.setChallengesStark = function setChallengesStark(stage, ctx, tran
 
     if(stage < qStage) {
         for(let i = 0; i < ctx.pilInfo.challengesMap.length; i++) {
-            if(ctx.pilInfo.challengesMap[i].stageNum === stage) {
+            if(ctx.pilInfo.challengesMap[i].stage === stage) {
                 setSymbolCalculated(ctx, { op: "challenge", stage, id: i}, options);
             }
         }

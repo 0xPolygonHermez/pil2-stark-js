@@ -13,7 +13,7 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
     }
 
     for(let i = 0; i < ctx.pilInfo.challengesMap.length; ++i) {
-        if(ctx.pilInfo.challengesMap[i].stageNum !== stage) continue;
+        if(ctx.pilInfo.challengesMap[i].stage !== stage) continue;
         if(!module.exports.isSymbolCalculated(ctx, {op: "challenge", id: i})) {
             symbolsToBeCalculated++;
         }

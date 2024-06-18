@@ -198,9 +198,9 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
 
 module.exports.challenges2zkinCircom = function challenges2zkinCircom(challenges, starkInfo, zkin) {
     for(let i=0; i < starkInfo.nStages; i++) {
-        if(starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length === 0) continue;
+        if(starkInfo.challengesMap.filter(c => c.stage === i + 1).length === 0) continue;
         zkin[`challengesStage${i+1}`] = [];
-        for(let j = 0; j < starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length; ++j) {
+        for(let j = 0; j < starkInfo.challengesMap.filter(c => c.stage === i + 1).length; ++j) {
             zkin[`challengesStage${i+1}`][j] = challenges.challenges[i][j];
         }       
     }

@@ -291,8 +291,8 @@ template <%- transcriptName %>() {
     signal input finalPol[<%- 1 << starkStruct.steps[starkStruct.steps.length-1].nBits %>][3];
     
 <%  for(let i = 0; i < starkInfo.nStages; ++i) { -%>
-<%  if(starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length === 0) continue; -%>
-    signal output challengesStage<%- i + 1 %>[<%- starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length %>][3];
+<%  if(starkInfo.challengesMap.filter(c => c.stage === i + 1).length === 0) continue; -%>
+    signal output challengesStage<%- i + 1 %>[<%- starkInfo.challengesMap.filter(c => c.stage === i + 1).length %>][3];
 <%  } -%>
 
     signal output challengeQ[3];
@@ -322,7 +322,7 @@ template <%- transcriptName %>() {
 
 <%   for(let i=0; i < starkInfo.nStages; i++) {
         const stage = i + 1;
-        for(let j = 0; j < starkInfo.challengesMap.filter(c => c.stageNum === stage).length; ++j) {
+        for(let j = 0; j < starkInfo.challengesMap.filter(c => c.stage === stage).length; ++j) {
             transcript.getField("challengesStage" + stage + "[" + j + "]", 3);
         }
         transcript.put("root" + stage, 4);
@@ -428,8 +428,8 @@ template parallel <%- verifyFriName %>(nBitsExt, prevStepBits, currStepBits, nex
 template parallel <%- verifyEvaluationsName %>() {
 <%  for(let i = 0; i < starkInfo.nStages; ++i) { -%>
 <%  const stage = i + 1; -%>
-<%  if(starkInfo.challengesMap.filter(c => c.stageNum === stage).length === 0) continue; -%>
-    signal input challengesStage<%- stage %>[<%- starkInfo.challengesMap.filter(c => c.stageNum === stage).length -%>][3];
+<%  if(starkInfo.challengesMap.filter(c => c.stage === stage).length === 0) continue; -%>
+    signal input challengesStage<%- stage %>[<%- starkInfo.challengesMap.filter(c => c.stage === stage).length -%>][3];
 <%  } -%>
     signal input challengeQ[3];
     signal input challengeXi[3];
@@ -779,8 +779,8 @@ template <%- verifierName %>() {
 <% if (!options.inputChallenges) { -%>
 <%  let challengeNames = []; -%>
 <%  for(let i = 0; i < starkInfo.nStages; ++i) { -%>
-<%  if(starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length === 0) continue; -%>
-    signal challengesStage<%- i + 1 %>[<%- starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length %>][3];
+<%  if(starkInfo.challengesMap.filter(c => c.stage === i + 1).length === 0) continue; -%>
+    signal challengesStage<%- i + 1 %>[<%- starkInfo.challengesMap.filter(c => c.stage === i + 1).length %>][3];
 <%      challengeNames.push("challengesStage" + (i + 1)); -%>
 <%  }-%>
 
@@ -810,8 +810,8 @@ template <%- verifierName %>() {
 
 <% } else { -%>
 <%  for(let i = 0; i < starkInfo.nStages; ++i) { -%>
-<%  if(starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length === 0) continue; -%>
-    signal input challengesStage<%- i + 1 %>[<%- starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length %>][3];
+<%  if(starkInfo.challengesMap.filter(c => c.stage === i + 1).length === 0) continue; -%>
+    signal input challengesStage<%- i + 1 %>[<%- starkInfo.challengesMap.filter(c => c.stage === i + 1).length %>][3];
 <%  }-%>
 
     signal input challengeQ[3];
@@ -834,7 +834,7 @@ template <%- verifierName %>() {
 <%  const verifyEvalsInputs = []; -%>
 <%  for(let i = 0; i < starkInfo.nStages; ++i) { -%>
 <%      const stage = i + 1; -%>
-<%  if(starkInfo.challengesMap.filter(c => c.stageNum === stage).length === 0) continue; -%>
+<%  if(starkInfo.challengesMap.filter(c => c.stage === stage).length === 0) continue; -%>
 <%      verifyEvalsInputs.push("challengesStage" + stage); -%>
 <%  } -%> 
 <%      verifyEvalsInputs.push("challengeQ"); -%>

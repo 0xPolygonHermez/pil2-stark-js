@@ -254,7 +254,7 @@ module.exports.genProofFflonk = async function genProof(ctx, logger) {
 module.exports.setChallengesFflonk = function setChallengesFflonk(stage, ctx, transcript, challenge, options) {
     let qStage = ctx.pilInfo.nStages + 1;
 
-    let nChallengesStage = ctx.pilInfo.challengesMap.filter(c => c.stageNum === stage).length;
+    let nChallengesStage = ctx.pilInfo.challengesMap.filter(c => c.stage === stage).length;
  
     ctx.challenges[stage - 1] = [];
     for (let i=0; i<nChallengesStage; i++) {

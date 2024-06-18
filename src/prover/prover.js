@@ -42,7 +42,7 @@ module.exports = async function proofGen(cmPols, pilInfo, expressionsInfo, input
     for(let i = 1; i <= qStage; i++) {
         const stage = i;
         if(stage === qStage && options.debug) continue;
-        if(ctx.pilInfo.challengesMap.filter(c => c.stageNum === stage).length > 0) {
+        if(ctx.pilInfo.challengesMap.filter(c => c.stage === stage).length > 0) {
             setChallenges(stage, ctx, ctx.transcript, challenge, options);
         }
         await computeStage(stage, ctx, options);
@@ -61,7 +61,7 @@ module.exports = async function proofGen(cmPols, pilInfo, expressionsInfo, input
 
             addTranscript(ctx.transcript, commits, stark);
 
-            if(ctx.pilInfo.challengesMap.filter(c => c.stageNum === stage).length > 0) {
+            if(ctx.pilInfo.challengesMap.filter(c => c.stage === stage).length > 0) {
                 challenge = getChallenge(ctx.transcript, stark);
             }
 

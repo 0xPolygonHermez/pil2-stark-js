@@ -148,7 +148,7 @@ async function calculateTranscript(ctx, vk, options) {
 
     for(let i=0; i < ctx.fflonkInfo.nStages; i++) {
         const stage = i + 1;
-        const nChallengesStage = ctx.fflonkInfo.challengesMap.filter(c => c.stageNum === stage).length;
+        const nChallengesStage = ctx.fflonkInfo.challengesMap.filter(c => c.stage === stage).length;
         ctx.challenges[stage - 1] = [];
         for(let j = 0; j < nChallengesStage; ++j) {
             ctx.challenges[stage - 1][j] = transcript.getChallenge();

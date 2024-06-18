@@ -17,8 +17,8 @@ module.exports.generateFRIPolynomial = function generateFRIPolynomial(res, symbo
     symbols.push(vf1_symbol);
     symbols.push(vf2_symbol);
 
-    res.challengesMap[vf1_symbol.id] = {name: vf1_symbol.name, stageNum: vf1_symbol.stage, dim: vf1_symbol.dim, stageId: vf1_symbol.stageId};
-    res.challengesMap[vf2_symbol.id] = {name: vf2_symbol.name, stageNum: vf2_symbol.stage, dim: vf2_symbol.dim, stageId: vf2_symbol.stageId};
+    res.challengesMap[vf1_symbol.id] = {name: vf1_symbol.name, stage: vf1_symbol.stage, dim: vf1_symbol.dim, stageId: vf1_symbol.stageId};
+    res.challengesMap[vf2_symbol.id] = {name: vf2_symbol.name, stage: vf2_symbol.stage, dim: vf2_symbol.dim, stageId: vf2_symbol.stageId};
 
     const vf1 = E.challenge("std_vf1", stage, 3, 0, vf1_id);
     const vf2 = E.challenge("std_vf2", stage, 3, 1, vf2_id);

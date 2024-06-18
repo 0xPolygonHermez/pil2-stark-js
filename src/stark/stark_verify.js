@@ -69,7 +69,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         ctx.challengesFRISteps = challenges.challengesFRISteps;
         if(logger) {
             for(let i=0; i < starkInfo.nStages; i++) {
-                for(let j = 0; j < starkInfo.challengesMap.filter(c => c.stageNum === i + 1).length; ++j) {
+                for(let j = 0; j < starkInfo.challengesMap.filter(c => c.stage === i + 1).length; ++j) {
                     logger.debug("··· challenges[" + i + "][" + j + "]: " + F.toString(ctx.challenges[i][j]));
                 }
             }

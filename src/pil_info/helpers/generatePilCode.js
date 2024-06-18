@@ -52,7 +52,7 @@ function addHintsInfo(res, symbols, hints) {
             if(hint[field].op === "exp") {
                 const symbol = symbols.find(s => s.expId === hint[field].id);
                 if(!symbol) throw new Error("Something went wrong!");
-                const op = symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol) ? "cm" : "tmp";
+                const op = symbol.type === "witness" ? "cm" : "tmp";
                 const id = symbol.polId;
                 const fieldInfo = {name: field, op, id};
                 if(op === "tmp") fieldInfo.expId = hint[field].id;

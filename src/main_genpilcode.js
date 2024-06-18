@@ -42,7 +42,7 @@ async function run() {
     
     for(let i = 0; i < expressions.length; i++) {
         if(expressions[i].keep && !expressions[i].imPol) {
-            const symbol = { type: "tmpPol", name: `tmpPol${i}`, expId: i, stage: expressions[i].stage, dim: expressions[i].dim, subproofId: res.subproofId, airId: res.airId };
+            const symbol = { type: "tmpPol", name: `TmpPol.${i}`, expId: i, stage: expressions[i].stage, dim: expressions[i].dim, subproofId: res.subproofId, airId: res.airId };
             symbols.push(symbol);
         }    
     }

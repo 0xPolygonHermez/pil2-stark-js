@@ -27,7 +27,6 @@ function getHintField(ctx, hint, field, dest = false) {
     }
     if(["number"].includes(hintField.op)) return BigInt(hintField.value);
     if(["subproofValue", "public"].includes(hintField.op)) return hintField;
-    console.log(hint);
     throw new Error("Case not considered");
 }
 

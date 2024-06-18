@@ -21,15 +21,17 @@ function mapSymbols(res, symbols) {
             
 
             if(symbol.type === "tmpPol") {
-                const im = symbol.imPol;
-                if(!im) {
-                    symbol.polId = nCommits++;  
-                    stage = "tmpExp";      
+                if(symbol.imPol) {
+                    throw new Error("Something went wrong!");
+                } else {
+                    symbol.polId = nCommits++;
+                    symbol.stage = "tmpExp";
+                    stage = "tmpExp";
                 }
-            } 
+            }
             addPol(res, stage, symbol);
         } else if(symbol.type === "challenge") {
-            res.challengesMap[symbol.id] = {name: symbol.name, stageNum: symbol.stage, dim: symbol.dim, stageId: symbol.stageId};
+            res.challengesMap[symbol.id] = {name: symbol.name, stage: symbol.stage, dim: symbol.dim, stageId: symbol.stageId};
         }
     }
 }
@@ -40,8 +42,7 @@ function addPol(res, stage, symbol) {
     const stageNum = symbol.stage;
     const name = symbol.name;
     const dim = symbol.dim;
-    const imPol = symbol.imPol || false;
-    ref[pos] = {stage, stageNum, name, dim, imPol, pos};
+    ref[pos] = {stage, stageNum, name, dim, cmPolsMapId: pos};
     if(symbol.stageId >= 0) ref[pos].stageId = symbol.stageId;
     res.mapSectionsN[stage] += dim;
     if(symbol.lengths) ref[pos].lengths = symbol.lengths;
@@ -55,7 +56,7 @@ function setStageInfoSymbols(res, symbols) {
         if(!["fixed", "witness", "tmpPol"].includes(symbol.type)) continue;
         const polsMapName = symbol.type === "fixed" ? "constPolsMap" : "cmPolsMap";
         const stage = symbol.type === "fixed" ? "const" : "cm" + symbol.stage;
-        if(symbol.type === "witness" || (symbol.type === "tmpPol" && symbol.imPol)){
+        if(symbol.type === "witness"){
             const prevPolsStage = res[polsMapName]
             .filter((p, index) => p.stage === stage && index < symbol.polId);
 

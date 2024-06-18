@@ -38,12 +38,13 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
           
         const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId && s.airId === res.airId && s.subproofId === res.subproofId);
         if(!symbol) {
-            symbols.push({ type: "tmpPol", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage: stageIm, dim, imPol: true, airId: res.airId, subproofId: res.subproofId });
+            symbols.push({ type: "witness", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage: stageIm, dim, imPol: true, airId: res.airId, subproofId: res.subproofId });
         } else {
             symbol.imPol = true;
             symbol.expId = expId;
             symbol.polId = res.nCommitments++;
             symbol.stage = stageIm;
+            symbol.type = "witness";
         };
         
         expressions[expId].imPol = true;

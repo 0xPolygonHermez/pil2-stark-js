@@ -172,7 +172,7 @@ contract PilFflonkVerifier {
 <%  let challengeCount = 0; -%>
 <%  for(let i = 0; i < fflonkInfo.nStages; ++i) { -%>
 <%      let stage = i + 1; -%>
-<%      for(let j = 0; j < fflonkInfo.challengesMap.filter(c => c.stageNum === stage).length; ++j) { -%>
+<%      for(let j = 0; j < fflonkInfo.challengesMap.filter(c => c.stage === stage).length; ++j) { -%>
     uint16 constant pChallengeStage<%- stage %>_<%- j %> = <%- challengeCount %>;
 <%          challengeCount += 32; -%>
 <%      } -%>
@@ -236,7 +236,7 @@ contract PilFflonkVerifier {
 
 <%  for(let i = 0; i < fflonkInfo.nStages; ++i) { -%>
 <%      const stage = i + 1 -%>
-<%      const nChallengesStage = fflonkInfo.challengesMap.filter(c => c.stageNum === stage).length; -%>
+<%      const nChallengesStage = fflonkInfo.challengesMap.filter(c => c.stage === stage).length; -%>
                 // Transcript stage <%= stage %>
 <%      for(let j = 0; j < nChallengesStage; ++j) { -%>
                 challenge := mod(keccak256(add(pMem, pLastMem), <%= memC - pLastMem %>), q)

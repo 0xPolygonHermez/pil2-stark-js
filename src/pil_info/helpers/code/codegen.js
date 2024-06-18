@@ -61,7 +61,7 @@ function calculateEvMap(ctx, symbols, expressions, exp, prime) {
     } else if (exp.op === "exp") {
         let p = exp.rowOffset || prime; 
         const r = { type: exp.op, expId: exp.id, id: exp.id, prime: p, dim: exp.dim };
-        const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
+        const symbol = symbols.find(s => s.type === "witness" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
         if(symbol && symbol.imPol) {
             r.type = "cm";
             r.id = symbol.polId;
@@ -203,7 +203,7 @@ function fixDimensionsVerifier(ctx) {
 }
 
 function fixCommitPol(r, ctx, symbols) {
-    const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
+    const symbol = symbols.find(s => ["witness", "tmpPol"].includes(s.type) && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
     if(symbol && (symbol.imPol || (!ctx.verifierEvaluations && ctx.dom === "n"))) {
         r.type = "cm";
         r.id = symbol.polId;
