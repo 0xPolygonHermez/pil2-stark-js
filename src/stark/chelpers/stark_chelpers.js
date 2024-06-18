@@ -33,7 +33,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
 
     let debug = false;
     // Get parser args for each stage
-    for(let i = 0; i < nStages + 2; ++i) {
+    for(let i = 0; i < nStages; ++i) {
         let stage = i + 1;
         if(binFile) {
             const stageInfo = getParserArgsCode(expressionsInfo.stagesCode[i], "n", debug);
@@ -48,6 +48,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
         }
     }
 
+    // TODO: ADD IMPOLSCODE
     const N = 1 << (starkInfo.starkStruct.nBits);
 
     // Get parser args for each constraint

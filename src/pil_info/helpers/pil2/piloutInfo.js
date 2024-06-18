@@ -27,7 +27,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     res.nConstants = symbols.filter(s => s.type === "fixed" && s.airId === res.airId && s.subproofId === res.subproofId).length;
     res.nPublics = symbols.filter(s => s.type === "public").length;
     res.aggregationTypes = aggregationTypes;
-    res.nSubAirValues = pilout.aggregationTypes 
+    res.nSubproofValues = pilout.aggregationTypes 
         ? aggregationTypes.length 
         : symbols.filter(s => s.type === "subproofValue" && s.subproofId === res.subproofId).length;
     if(pilout.numChallenges) {

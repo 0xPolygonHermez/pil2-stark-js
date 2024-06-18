@@ -193,7 +193,7 @@ class Transcript {
         } else if (r.type == "number") {
             return r.value;
         } else if (r.type === "subproofValue") {
-            return "subAirValues[" + r.id + "]";
+            return "subproofValues[" + r.id + "]";
         } else {
             throw new Error("Invalid Ref: " +r.type);
         }
@@ -435,8 +435,8 @@ template parallel <%- verifyEvaluationsName %>() {
     signal input challengeXi[3];
     signal input evals[<%- starkInfo.evMap.length %>][3];
     signal input publics[<%- starkInfo.nPublics %>];
-<%  if(starkInfo.nSubAirValues > 0) { -%>
-    signal input subAirValues[<%- starkInfo.nSubAirValues %>][3];
+<%  if(starkInfo.nSubproofValues > 0) { -%>
+    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3];
 <%  } -%>
     signal input {binary} enable;
 
@@ -701,8 +701,8 @@ template parallel <%- verifyFinalPolName %>() {
 <% } -%>
 template <%- verifierName %>() {
     signal input publics[<%- starkInfo.nPublics %>]; // publics polynomials
-<% if(starkInfo.nSubAirValues > 0) { -%>
-    signal input subAirValues[<%- starkInfo.nSubAirValues %>][3]; // subproof values
+<% if(starkInfo.nSubproofValues > 0) { -%>
+    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3]; // subproof values
 <% } -%>
 <% for(let i=0; i < starkInfo.nStages; i++) {  -%>
 <%  const stage = i + 1; -%>
@@ -841,7 +841,7 @@ template <%- verifierName %>() {
 <%      verifyEvalsInputs.push("challengeXi"); -%>
 <%      verifyEvalsInputs.push("evals"); -%>
 <%      verifyEvalsInputs.push("publics"); -%>
-<%      if(starkInfo.nSubAirValues > 0) verifyEvalsInputs.push("subAirValues"); -%>
+<%      if(starkInfo.nSubproofValues > 0) verifyEvalsInputs.push("subproofValues"); -%>
 <%      verifyEvalsInputs.push("enabled"); -%>
 
     <%- verifyEvaluationsName %>()(<%- verifyEvalsInputs.join(", ") %>);

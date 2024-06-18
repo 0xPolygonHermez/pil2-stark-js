@@ -34,7 +34,7 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
     }
 
     if(stage === ctx.pilInfo.nStages) {
-        for(let i = 0; i < ctx.pilInfo.nSubAirValues; ++i) {
+        for(let i = 0; i < ctx.pilInfo.nSubproofValues; ++i) {
             if(!module.exports.isSymbolCalculated(ctx, {op: "subproofValue", id: i})) {
                 symbolsToBeCalculated++;
             }

@@ -52,8 +52,8 @@ module.exports.initProverStark = async function initProverStark(pilInfo, express
         ctx.calculatedSymbols.const = new Array(ctx.pilInfo.nConstants).fill(false);
     }
 
-    if(ctx.pilInfo.nSubAirValues > 0) {
-        ctx.calculatedSymbols.subproofValue = new Array(ctx.pilInfo.nSubAirValues).fill(false);
+    if(ctx.pilInfo.nSubproofValues > 0) {
+        ctx.calculatedSymbols.subproofValue = new Array(ctx.pilInfo.nSubproofValues).fill(false);
     }
 
     const nChallenges = ctx.pilInfo.challengesMap.length;
@@ -63,7 +63,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, express
     
     ctx.publics = [];
 
-    ctx.subAirValues = new Array(pilInfo.nSubAirValues).fill(0n) || [];
+    ctx.subproofValues = new Array(pilInfo.nSubproofValues).fill(0n) || [];
 
     ctx.challenges[0] = [];
 
@@ -385,7 +385,7 @@ module.exports.genProofStark = async function genProof(ctx, options) {
     
     const proof = {
         evals: ctx.evals,
-        subAirValues: ctx.subAirValues,
+        subproofValues: ctx.subproofValues,
         fri: ctx.friProof
     };
 

@@ -16,7 +16,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     ctx = {
         evals: proof.evals,
-        subAirValues: proof.subAirValues,
+        subproofValues: proof.subproofValues,
         publics,
         starkInfo,
         proof,
@@ -253,7 +253,7 @@ module.exports.executeCode = function executeCode(F, ctx, code, global) {
             case "number": return BigInt(r.value);
             case "public": return BigInt(ctx.publics[r.id]);
             case "challenge": return ctx.challenges[r.stage - 1][r.stageId];
-            case "subproofValue": return global ? ctx.subAirValues[r.subproofId][r.id] : ctx.subAirValues[r.id];
+            case "subproofValue": return global ? ctx.subproofValues[r.subproofId][r.id] : ctx.subproofValues[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
             case "x": {
                 let evalsStage = ctx.starkInfo.nStages + 1;

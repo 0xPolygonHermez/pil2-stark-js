@@ -205,7 +205,7 @@ class Transcript {
 <%        } else if (r.type == "const") { -%>
 <%            return "consts[" + r.id + "]"; -%>
 <%        } else if (r.type === "subproofValue") { -%>
-<%            return "subAirValues[" + r.id + "]"; -%>
+<%            return "subproofValues[" + r.id + "]"; -%>
 <%        } else if (r.type == "number") { -%>
 <%            let val = r.value; -%>
 <%            if(val < 0n) val = F.add(BigInt(val),18446744069414584321n); -%>
@@ -511,8 +511,8 @@ template parallel VerifyEvaluations() {
     signal input {maxNum} challengeXi[3];
     signal input {maxNum} evals[<%- starkInfo.evMap.length %>][3];
     signal input {maxNum} publics[<%- starkInfo.nPublics %>];
-<%  if(starkInfo.nSubAirValues > 0) { -%>
-    signal input subAirValues[<%- starkInfo.nSubAirValues %>][3];
+<%  if(starkInfo.nSubproofValues > 0) { -%>
+    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3];
 <%  } -%>
     signal input {binary} enable;
 
@@ -829,8 +829,8 @@ template parallel VerifyFinalPol() {
 
 template StarkVerifier() {
     signal input publics[<%- starkInfo.nPublics %>]; // constant polynomials
-<% if(starkInfo.nSubAirValues > 0) { -%>
-    signal input subAirValues[<%- starkInfo.nSubAirValues %>][3]; // subproof values
+<% if(starkInfo.nSubproofValues > 0) { -%>
+    signal input subproofValues[<%- starkInfo.nSubproofValues %>][3]; // subproof values
 <% } -%>
 <% for(let i=0; i < starkInfo.nStages; i++) {  -%>
 <%  const stage = i + 1; -%>
@@ -906,11 +906,11 @@ signal input s0_vals<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkInfo.map
         }
     }
 
-<%  if(starkInfo.nSubAirValues > 0) { -%>
-    signal {maxNum} subAirValuesGL[<%- starkInfo.nSubAirValues %>][3];
-    for(var i = 0; i < <%- starkInfo.nSubAirValues %>; i++){
+<%  if(starkInfo.nSubproofValues > 0) { -%>
+    signal {maxNum} subproofValuesGL[<%- starkInfo.nSubproofValues %>][3];
+    for(var i = 0; i < <%- starkInfo.nSubproofValues %>; i++){
         for(var j = 0; j < 3; j++) {
-            subAirValuesGL[i][j] <== LessThan64Bits()(subAirValues[i][j]);
+            subproofValuesGL[i][j] <== LessThan64Bits()(subproofValues[i][j]);
         }
     }
 <%  } -%>
@@ -1037,7 +1037,7 @@ signal input s0_vals<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkInfo.map
 <%      verifyEvalsInputs.push("challengeXiGL"); -%>
 <%      verifyEvalsInputs.push("evalsGL"); -%>
 <%      verifyEvalsInputs.push("publicsGL"); -%>
-<%      if(starkInfo.nSubAirValues > 0) verifyEvalsInputs.push("subAirValuesGL"); -%>
+<%      if(starkInfo.nSubproofValues > 0) verifyEvalsInputs.push("subproofValuesGL"); -%>
 <%      verifyEvalsInputs.push("enabled"); -%>
 
     VerifyEvaluations()(<%- verifyEvalsInputs.join(", ") %>);    
@@ -1180,8 +1180,8 @@ signal input s0_vals<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkInfo.map
     signal output publicsHash;
 
     signal input publics[<%- starkInfo.nPublics %>];
-<%  if(starkInfo.nSubAirValues > 0) { -%>
-    signal input subproofs[<%- starkInfo.nSubAirValues %>];
+<%  if(starkInfo.nSubproofValues > 0) { -%>
+    signal input subproofs[<%- starkInfo.nSubproofValues %>];
 <% } -%>
 <% for(let i=0; i < starkInfo.nStages; i++) {  -%>
 <%  const stage = i + 1; -%>

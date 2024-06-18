@@ -95,7 +95,7 @@ template AggregateValues() {
 
 }
 
-template AggregateSubAirValues() {
+template AggregateSubproofValues() {
     signal input subAirValueA[3];
     signal input subAirValueB[3];
     signal input {binary} isNullA; // 1 if is circuit type A is 0 (null), 0 otherwise 
@@ -115,6 +115,6 @@ template AggregateSubAirValues() {
     values[0] <== [valueA[0] + valueB[0], valueA[1] + valueB[1], valueA[2] + valueB[2]];
     values[1] <== [valueA[0] * valueB[0], valueA[1] * valueB[1], valueA[2] * valueB[2]];
 
-    // Either add or multiply the subAirValues according to the aggregation type and then return the result
+    // Either add or multiply the subproofValues according to the aggregation type and then return the result
     subAirValueAB <== MultiMux1(3)(values, aggregationType);
 }

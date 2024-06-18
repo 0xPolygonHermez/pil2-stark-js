@@ -4,7 +4,7 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
     const friSteps = starkInfo.starkStruct.steps;
     const nQueries = starkInfo.starkStruct.nQueries;
     const nStages = starkInfo.nStages;
-    const nSubAirValues = starkInfo.nSubAirValues;
+    const nSubproofValues = starkInfo.nSubproofValues;
 
     const qStage = nStages + 1;
     
@@ -71,8 +71,8 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
 
     zkin.finalPol = p.fri[friSteps.length];
 
-    if(nSubAirValues > 0) {
-        zkin.subAirValues = p.subAirValues;
+    if(nSubproofValues > 0) {
+        zkin.subproofValues = p.subproofValues;
     }
          
     return zkin;
@@ -84,7 +84,7 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
     const friSteps = starkInfo.starkStruct.steps;
     const nQueries = starkInfo.starkStruct.nQueries;
     const nStages = starkInfo.nStages;
-    const nSubAirValues = starkInfo.nSubAirValues;
+    const nSubproofValues = starkInfo.nSubproofValues;
     const nEvals = starkInfo.evMap.length;
 
     const qStage = nStages + 1;
@@ -116,8 +116,8 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
 
     zkin.finalPol = [];
 
-    if(nSubAirValues > 0) {
-        zkin.subAirValues = [];
+    if(nSubproofValues > 0) {
+        zkin.subproofValues = [];
     }
 
 
@@ -185,9 +185,9 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
         zkin.finalPol[i] = ["0", "0", "0"];
     }
 
-    if(nSubAirValues > 0) {
-        for(let i = 0; i < nSubAirValues; i++) {
-            zkin.subAirValues[i] = ["0", "0", "0"];
+    if(nSubproofValues > 0) {
+        for(let i = 0; i < nSubproofValues; i++) {
+            zkin.subproofValues[i] = ["0", "0", "0"];
         }
     }
 

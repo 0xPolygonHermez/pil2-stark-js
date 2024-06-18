@@ -81,7 +81,7 @@ async function resolveHint(ctx, hint, options) {
         const value = polinomial[position];
 
         const subAirValue = getHintField(ctx, hint, "reference");
-        ctx.subAirValues[subAirValue.id] = value;
+        ctx.subproofValues[subAirValue.id] = value;
         setSubproofValue(ctx, subAirValue.id, value, options);
     } else if (hint.name === "public") {
         const polinomial = getHintField(ctx, hint, "expression");
