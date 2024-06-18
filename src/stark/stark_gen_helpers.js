@@ -86,12 +86,12 @@ module.exports.initProverStark = async function initProverStark(pilInfo, express
         logger.debug(`  Domain size: ${ctx.N} (2^${ctx.nBits})`);
         logger.debug(`  Domain size ext: ${ctx.extN} (2^${ctx.nBitsExt})`);
         logger.debug(`  Const  pols:   ${ctx.pilInfo.nConstants}`);
-        logger.debug(`  Stage 1 pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage === `cm1`).length}`);
+        logger.debug(`  Stage 1 pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage === 1).length}`);
         for(let i = 0; i < ctx.pilInfo.nStages - 1; i++) {
             const stage = i + 2;
-            logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage === `cm${stage}`).length}`);
+            logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage === stage).length}`);
         }
-        logger.debug(`  Stage ${qStage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage === `cm${qStage}`).length}`);
+        logger.debug(`  Stage ${qStage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage === qStage).length}`);
         logger.debug(`  Temp exp pols: ${ctx.pilInfo.cmPolsMap.filter(p => p.stage === "tmpExp").length}`);
         logger.debug("-----------------------------");   
     }

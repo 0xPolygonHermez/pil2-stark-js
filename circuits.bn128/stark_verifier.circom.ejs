@@ -613,7 +613,7 @@ template parallel VerifyEvaluations() {
     // Note: Each Qi has degree < n. qDeg determines the number of polynomials of degree < n needed to define Q
     // Calculate Q(X) = Q1(X) + X^n*Q2(X) + X^(2n)*Q3(X) + ..... X^((qDeg-1)n)*Q(X) evaluated at z 
     for (var i=0; i< <%- starkInfo.qDeg %>; i++) {
-<%      let qIndex = starkInfo.cmPolsMap.findIndex(p => p.stageNum === qStage && p.stageId === 0); -%>
+<%      let qIndex = starkInfo.cmPolsMap.findIndex(p => p.stage === qStage && p.stageId === 0); -%>
 <%      const evId = starkInfo.evMap.findIndex(e => e.type === "cm" && e.id === qIndex); -%>
         if (i==0) {
             xAcc[0] <== [1, 0, 0];
@@ -771,7 +771,7 @@ template MapValues() {
 
 <% for (let t = 1; t<=starkInfo.nStages + 1; t++) {                              -%>
 <%      let index = t;                       -%>
-<%      let sectionsStage = starkInfo.cmPolsMap.filter(p => p.stage === "cm" + index);  -%>
+<%      let sectionsStage = starkInfo.cmPolsMap.filter(p => p.stage === index);  -%>
 <%      for (let i=0; i< sectionsStage.length; i++) {         -%>
 <%          const p = sectionsStage[i];  -%>
 <%          if (p.dim == 1) {                                                    -%>
@@ -784,7 +784,7 @@ template MapValues() {
 
 <% for (let t = 1; t<=starkInfo.nStages + 1; t++) {                              -%>
 <%      let index = t;                       -%>
-<%      let sectionsStage = starkInfo.cmPolsMap.filter(p => p.stage === "cm" + index);  -%>
+<%      let sectionsStage = starkInfo.cmPolsMap.filter(p => p.stage === index);  -%>
 <%      for (let i=0; i< sectionsStage.length; i++) {         -%>
 <%          const p = sectionsStage[i];  -%>
 <%          let posStage = sectionsStage

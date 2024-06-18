@@ -45,13 +45,13 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
         for(let i = 1; i <= res.nStages + 1; ++i) {
             let stage = i;
             let stageName = "cm" + stage;
-            let nColsStage = res.cmPolsMap.filter(p => p.stage == stageName).length;
+            let nColsStage = res.cmPolsMap.filter(p => p.stage == stage).length;
             nCols[stageName] = nColsStage;
             let nColsBaseField = res.mapSectionsN[stageName];
             if(i === res.nStages + 1 || (i < res.nStages && !res.imPolsStages)) {
                 console.log(`Columns stage ${stage}: ${nColsStage} -> Columns in the basefield: ${nColsBaseField}`);
             } else {
-                console.log(`Columns stage ${stage}: ${nColsStage} (${res.cmPolsMap.filter(p => p.stage == stageName && p.imPol).length} intermediate columns) -> Columns in the basefield: ${nColsBaseField}`);
+                console.log(`Columns stage ${stage}: ${nColsStage} (${res.cmPolsMap.filter(p => p.stage == stage && p.imPol).length} intermediate columns) -> Columns in the basefield: ${nColsBaseField}`);
             }
             nColumns += nColsStage;
             nColumnsBaseField += nColsBaseField;

@@ -10,13 +10,10 @@ function mapSymbols(res, symbols) {
     for(let i = 0; i < symbols.length; ++i) {
     let symbol = symbols[i];
         if(["witness", "fixed", "tmpPol"].includes(symbol.type)) {
-            let stage;
             if(symbol.type === "fixed") {
-                stage = "const";
                 symbol.stageId = symbol.polId;
             } else {
                 if(isNaN(symbol.stage) || (symbol.type === "witness" && symbol.stage === 0)) throw new Error("Invalid witness stage");
-                stage = "cm" + symbol.stage;
             }
             
 
@@ -26,25 +23,30 @@ function mapSymbols(res, symbols) {
                 } else {
                     symbol.polId = nCommits++;
                     symbol.stage = "tmpExp";
-                    stage = "tmpExp";
                 }
             }
-            addPol(res, stage, symbol);
+            addPol(res, symbol);
         } else if(symbol.type === "challenge") {
             res.challengesMap[symbol.id] = {name: symbol.name, stage: symbol.stage, dim: symbol.dim, stageId: symbol.stageId};
         }
     }
 }
 
-function addPol(res, stage, symbol) {
-    const ref = stage === "const" ? res.constPolsMap : res.cmPolsMap;
+function addPol(res, symbol) {
+    const ref = symbol.type === "fixed" ? res.constPolsMap : res.cmPolsMap;
     const pos = symbol.polId;
-    const stageNum = symbol.stage;
+    const stage = symbol.type === "tmpPol" ? "tmpExp" : symbol.stage;
     const name = symbol.name;
     const dim = symbol.dim;
-    ref[pos] = {stage, stageNum, name, dim, cmPolsMapId: pos};
+    ref[pos] = {stage, name, dim, cmPolsMapId: pos};
     if(symbol.stageId >= 0) ref[pos].stageId = symbol.stageId;
-    res.mapSectionsN[stage] += dim;
+    if(symbol.type === "tmpPol") {
+        res.mapSectionsN["tmpExp"] += dim;
+    } else if(symbol.type === "fixed") {
+        res.mapSectionsN["const"] += dim;
+    } else {
+        res.mapSectionsN["cm" + stage] += dim;
+    }
     if(symbol.lengths) ref[pos].lengths = symbol.lengths;
     if(symbol.imPol) ref[pos].imPol = symbol.imPol;
 }
@@ -55,17 +57,16 @@ function setStageInfoSymbols(res, symbols) {
         const symbol = symbols[i];
         if(!["fixed", "witness", "tmpPol"].includes(symbol.type)) continue;
         const polsMapName = symbol.type === "fixed" ? "constPolsMap" : "cmPolsMap";
-        const stage = symbol.type === "fixed" ? "const" : "cm" + symbol.stage;
         if(symbol.type === "witness"){
             const prevPolsStage = res[polsMapName]
-            .filter((p, index) => p.stage === stage && index < symbol.polId);
+            .filter((p, index) => p.stage === symbol.stage && index < symbol.polId);
 
             symbol.stagePos = prevPolsStage.reduce((acc, p) => acc + p.dim, 0);
             res.cmPolsMap[symbol.polId].stagePos = symbol.stagePos;
             if(!symbol.stageId) {
                 symbol.stageId = symbol.stage === qStage 
                     ? prevPolsStage.length 
-                    : res[polsMapName].filter(p => p.stageNum === symbol.stage).findIndex(p => p.name === symbol.name);
+                    : res[polsMapName].filter(p => p.stage === symbol.stage).findIndex(p => p.name === symbol.name);
                 res.cmPolsMap[symbol.polId].stageId = symbol.stageId;
             }
         } else if(symbol.type === "tmpPol") {

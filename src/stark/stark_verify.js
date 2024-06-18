@@ -52,9 +52,9 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         logger.debug(`  Const  pols:   ${starkInfo.nConstants}`);
         for(let i = 0; i < starkInfo.nStages; i++) {
             const stage = i + 1;
-            logger.debug(`  Stage ${stage} pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == "cm" + stage).length}`);
+            logger.debug(`  Stage ${stage} pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == stage).length}`);
         }
-        logger.debug(`  Stage ${qStage} pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == `cm${qStage}`).length}`);
+        logger.debug(`  Stage ${qStage} pols:   ${starkInfo.cmPolsMap.filter(p => p.stage == qStage).length}`);
         logger.debug("-----------------------------");
     }
 
@@ -139,7 +139,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     let xAcc = 1n;
     let q = 0n;
-    let qIndex = starkInfo.cmPolsMap.findIndex(p => p.stageNum === qStage && p.stageId === 0);
+    let qIndex = starkInfo.cmPolsMap.findIndex(p => p.stage === qStage && p.stageId === 0);
     for (let i=0; i<starkInfo.qDeg; i++) {
         const evId = starkInfo.evMap.findIndex(e => e.type === "cm" && e.id === qIndex + i);
         q = F.add(q, F.mul(xAcc, ctx.evals[evId]));

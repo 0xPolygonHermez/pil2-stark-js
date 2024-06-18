@@ -18,7 +18,7 @@ module.exports = async function proofGen(cmPols, pilInfo, expressionsInfo, input
 
     let ctx = await initProver(pilInfo, expressionsInfo, constTree, constPols, zkey, stark, options);
     
-    let nCm1 = ctx.pilInfo.cmPolsMap.filter(c => c.stage === "cm1").length;
+    let nCm1 = ctx.pilInfo.cmPolsMap.filter(c => c.stage === 1).length;
     if(ctx.prover === "stark") {
         // Read committed polynomials
         cmPols.writeToBigBuffer(ctx.cm1_n, nCm1);

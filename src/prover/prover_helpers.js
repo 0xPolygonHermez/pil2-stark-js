@@ -303,14 +303,15 @@ module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
     if(!["n", "ext"].includes(dom)) throw new Error("invalid stage");
     const deg = dom === "ext" ? ctx.extN : ctx.N;
     let p = ctx.pilInfo.cmPolsMap[idPol];
-    let stage = p.stage + "_" + dom;
+    let st = p.stage === "tmpExp" ? p.stage : "cm" + p.stage;
+    let stage = st + "_" + dom;
     let offset = p.stagePos;
     let polRef = {
         stage,
         buffer: ctx[stage],
         deg,
         offset,
-        size: ctx.pilInfo.mapSectionsN[p.stage],
+        size: ctx.pilInfo.mapSectionsN[st],
         dim: p.dim
     };
     return polRef;

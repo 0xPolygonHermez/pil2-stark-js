@@ -221,7 +221,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
     function evalMap_(polId, prime) {
         let p = starkInfo.cmPolsMap[polId];
 
-        const stage = p.stage === "tmpExp" ? starkInfo.nStages + 1 : p.stageNum;
+        const stage = p.stage === "tmpExp" ? starkInfo.nStages + 1 : p.stage;
         
         const primeIndex = starkInfo.openingPoints.findIndex(p => p === prime);
         if(primeIndex == -1) throw new Error("Something went wrong");

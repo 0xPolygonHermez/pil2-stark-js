@@ -29,11 +29,11 @@ module.exports.generateFixedCols = function generateFixedCols(symbols, degree, f
     const fixedSymbols = [];
     for (let i = 0; i < symbols.length; ++i) {
         const name = symbols[i].name;
-        const stage = fromPilout ? symbols[i].stage : symbols[i].stageNum;
+        const stage = symbols[i].stage;
         const id = fromPilout ? symbols[i].id : symbols[i].stageId;
         const lengths = symbols[i].lengths || [];
         if(fromPilout && (symbols[i].type !== 1 || stage !== 0)) continue;
-        if((fromPilout && !symbols[i].dim) || (!fromPilout && !symbols[i].length)) {
+        if(!lengths.length) {
             fixedSymbols.push({name, id, stage, lengths});
         } else {
             generateMultiArrayIndexes(fixedSymbols, name, lengths, id, stage);
@@ -49,10 +49,10 @@ module.exports.generateWtnsCols = function generateWtnsCols(symbols, degree, fro
     for (let i = 0; i < symbols.length; ++i) {
         if(fromPilout && symbols[i].type !== 3) continue;
         const name = symbols[i].name;
-        const stage = fromPilout ? symbols[i].stage : symbols[i].stageNum;
+        const stage = symbols[i].stage;
         const id = fromPilout ? symbols[i].id : symbols[i].stageId;
         const lengths = symbols[i].lengths || [];
-        if((fromPilout && !symbols[i].dim) || (!fromPilout && !symbols[i].length)) {
+        if(!lengths.length) {
             witnessSymbols.push({name, id, lengths: [], stage });
         } else {
             generateMultiArrayIndexes(witnessSymbols, name, lengths, id, stage);

@@ -219,7 +219,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
     }
 
     pilCodeGen(ctx, symbols, expressions, res.cExpId, 0, true);
-    let qIndex = res.cmPolsMap.findIndex(p => p.stageNum === res.nStages + 1 && p.stageId === 0);
+    let qIndex = res.cmPolsMap.findIndex(p => p.stage === res.nStages + 1 && p.stageId === 0);
     let openingPos = res.openingPoints.findIndex(p => p === 0);
     for (let i = 0; i < res.qDeg; i++) {
         const rf = { type: "cm", id: qIndex + i, prime: 0, openingPos };

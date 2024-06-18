@@ -74,7 +74,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     res.qDim = cExpDim;
 
     if(stark) {
-        for (let i=0; i<res.qDeg; i++) {
+                for (let i=0; i<res.qDeg; i++) {
             const index = res.nCommitments++;
             symbols.push({ type: "witness", name: `Q${i}`, polId: index, stage, dim: res.qDim, airId: res.airId, subproofId: res.subproofId });
             E.cm(index, 0, stage, res.qDim);

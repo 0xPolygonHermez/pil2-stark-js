@@ -64,10 +64,10 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, expre
         logger.debug(`  Domain size ext: ${ctx.extN} (2^${ctx.nBitsExt})`);
         logger.debug(`  ExtendBits: ${ctx.extendBits}`);
         logger.debug(`  Const  pols:   ${ctx.pilInfo.nConstants}`);
-        logger.debug(`  Stage 1 pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm1").length}`);
+        logger.debug(`  Stage 1 pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == 1).length}`);
         for(let i = 0; i < ctx.pilInfo.nStages - 1; i++) {
             const stage = i + 2;
-            logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "cm" + stage).length}`);
+            logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == stage).length}`);
         }
         logger.debug(`  Stage Q pols:   ${ctx.nQ}`);
         logger.debug(`  Temp exp pols: ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "tmpExp").length}`);
