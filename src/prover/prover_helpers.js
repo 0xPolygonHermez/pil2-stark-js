@@ -293,6 +293,12 @@ module.exports.setPol = function setPol(ctx, idPol, pol, dom, options) {
     if(options?.logger) options.logger.debug(`Symbol cm for with id ${idPol} has been calculated`);
 }
 
+module.exports.setSubproofValue = function setSubproofValue(ctx, id, value, options) {
+    ctx.subAirValues[id] = value;
+    ctx.calculatedSymbols["subproofValue"][id] = true;
+    if(options?.logger) options.logger.debug(`Symbol subproofValue for with id ${id} has been calculated`);
+}
+
 module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
     if(!["n", "ext"].includes(dom)) throw new Error("invalid stage");
     const deg = dom === "ext" ? ctx.extN : ctx.N;

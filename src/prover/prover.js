@@ -220,6 +220,10 @@ async function computeStage(stage, ctx, options) {
             }
             symbolsToBeCalculated = symbolsToBeCalculatedUpdated;
         };
+        
+        if(stage === qStage - 1) {
+            await callCalculateExps(stage, ctx.expressionsInfo.imPolsCode, dom, ctx, options.parallelExec, options.useThreads);
+        }
 
         if (logger) logger.debug(`> STAGE ${stage} DONE`);
     } else {

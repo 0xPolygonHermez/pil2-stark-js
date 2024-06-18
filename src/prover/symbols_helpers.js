@@ -6,7 +6,7 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
     
     for(let i = 0; i < ctx.pilInfo.cmPolsMap.length; ++i) {
         const cmPol = ctx.pilInfo.cmPolsMap[i];
-        if(cmPol.stageNum !== stage || cmPol.stage === "tmpExp") continue;
+        if(cmPol.stageNum !== stage || cmPol.stage === "tmpExp" || cmPol.imPol) continue;
         if(!module.exports.isSymbolCalculated(ctx, {op: "cm", id: i})) {
             symbolsToBeCalculated++;
         }

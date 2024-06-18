@@ -1,5 +1,5 @@
 const { calculateH1H2, calculateS, calculateZ } = require("../helpers/polutils");
-const { getPol, setPol } = require("./prover_helpers");
+const { getPol, setPol, setSubproofValue } = require("./prover_helpers");
 const { isSymbolCalculated, setSymbolCalculated } = require("./symbols_helpers");
 
 module.exports.applyHints = async function applyHints(stage, ctx, options) {
@@ -82,7 +82,7 @@ async function resolveHint(ctx, hint, options) {
 
         const subAirValue = getHintField(ctx, hint, "reference");
         ctx.subAirValues[subAirValue.id] = value;
-        setSymbolCalculated(ctx, subAirValue, options);
+        setSubproofValue(ctx, subAirValue.id, value, options);
     } else if (hint.name === "public") {
         const polinomial = getHintField(ctx, hint, "expression");
         const position = getHintField(ctx, hint, "row_index");
