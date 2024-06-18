@@ -41,9 +41,10 @@ function addPol(res, stage, symbol) {
     const name = symbol.name;
     const dim = symbol.dim;
     const imPol = symbol.imPol || false;
-    ref[pos] = {stage, stageNum, name, dim, imPol, id: pos};
+    ref[pos] = {stage, stageNum, name, dim, imPol, pos};
     if(symbol.stageId >= 0) ref[pos].stageId = symbol.stageId;
     res.mapSectionsN[stage] += dim;
+    if(symbol.lengths) ref[pos].lengths = symbol.lengths;
     if(symbol.imPol) ref[pos].imPol = symbol.imPol;
 }
 

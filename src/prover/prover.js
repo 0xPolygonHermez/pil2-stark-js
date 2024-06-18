@@ -197,18 +197,17 @@ async function computeStage(stage, ctx, options) {
     const qStage = ctx.pilInfo.nStages + 1;
     const dom = stage === qStage ? "ext" : "n";
 
-    const symbolsCalculatedStep = ctx.expressionsInfo.stagesCode[stage - 1].symbolsCalculated;
-
-    if (logger) logger.debug("Calculating expressions...");
-    await callCalculateExps(stage, ctx.expressionsInfo.stagesCode[stage - 1], dom, ctx, options.parallelExec, options.useThreads);
-    if (logger) logger.debug("Expressions calculated.");
-
-    for(let i = 0; i < symbolsCalculatedStep.length; i++) {
-        const symbolCalculated = symbolsCalculatedStep[i];
-        setSymbolCalculated(ctx, symbolCalculated, options);
-    }
-
     if(stage !== qStage) {
+        if (logger) logger.debug("Calculating expressions...");
+        await callCalculateExps(stage, ctx.expressionsInfo.stagesCode[stage - 1], dom, ctx, options.parallelExec, options.useThreads);
+        if (logger) logger.debug("Expressions calculated.");
+
+        const symbolsCalculatedStep = ctx.expressionsInfo.stagesCode[stage - 1].symbolsCalculated;
+        for(let i = 0; i < symbolsCalculatedStep.length; i++) {
+            const symbolCalculated = symbolsCalculatedStep[i];
+            setSymbolCalculated(ctx, symbolCalculated, options);
+        }
+
         let symbolsToBeCalculated = isStageCalculated(ctx, stage, options);
         while(symbolsToBeCalculated > 0) {
             await tryCalculateExps(ctx, stage, dom, options); 
@@ -223,6 +222,10 @@ async function computeStage(stage, ctx, options) {
         };
 
         if (logger) logger.debug(`> STAGE ${stage} DONE`);
+    } else {
+        if (logger) logger.debug("Calculating Q polinomial...");
+        await callCalculateExps(stage, ctx.expressionsInfo.expressionsCode[ctx.pilInfo.cExpId].code, dom, ctx, options.parallelExec, options.useThreads);
+        if (logger) logger.debug("Q polinomial calculated.");
     }
     
     if(options.debug) {

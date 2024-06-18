@@ -49,6 +49,22 @@ class ExpressionOps {
         }
     }
 
+    q(qDim) {
+        return {
+            op: "q",
+            id: 0,
+            dim: qDim,
+        }
+    }
+
+    f() {
+        return {
+            op: "f",
+            id: 0,
+            dim: 3
+        }
+    }
+
     const(id, rowOffset = 0, stage = 0, dim = 1) {
         if(stage !== 0) throw new Error("Const must be declared in stage 0");
         return {

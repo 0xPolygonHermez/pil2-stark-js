@@ -44,6 +44,7 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
         }
     }
     
+    
     res.qDim = getExpDim(expressions, res.cExpId, stark);
 
     const xi_id = symbols.filter(s => s.type === "challenge" && s.stage < stage + 1).length;

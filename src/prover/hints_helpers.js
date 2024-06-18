@@ -96,24 +96,20 @@ async function resolveHint(ctx, hint, options) {
         let denominator = getHintField(ctx, hint, "denominator");
         let gsum = await calculateS(ctx.F, numerator, denominator);
         let gsumField = getHintField(ctx, hint, "reference", true);
-        setPol(ctx, gsumField.id, gsum, "n");
-        setSymbolCalculated(ctx, gsumField, options);
+        setPol(ctx, gsumField.id, gsum, "n", options);
     } else if(hint.name === "gprod") {
         let numerator = getHintField(ctx, hint, "numerator");
         let denominator = getHintField(ctx, hint, "denominator");
         let gprod = await calculateZ(ctx.F, numerator, denominator);
         let gprodField = getHintField(ctx, hint, "reference", true);
-        setPol(ctx, gprodField.id, gprod, "n");
-        setSymbolCalculated(ctx, gprodField, options);
+        setPol(ctx, gprodField.id, gprod, "n", options);
     } else if(hint.name === "h1h2") {
         let f = getHintField(ctx, hint, "f");
         let t = getHintField(ctx, hint, "t");
         const H1H2 = calculateH1H2(ctx.F, f, t);
         const h1Field = getHintField(ctx, hint, "referenceH1", true);
         const h2Field = getHintField(ctx, hint, "referenceH2", true);
-        setPol(ctx, h1Field.id, H1H2[0], "n");
-        setPol(ctx, h2Field.id, H1H2[1], "n");
-        setSymbolCalculated(ctx, h1Field, options);
-        setSymbolCalculated(ctx, h2Field, options);
+        setPol(ctx, h1Field.id, H1H2[0], "n", options);
+        setPol(ctx, h2Field.id, H1H2[1], "n", options);
     } else throw new Error(`Hint ${hint.name} cannot be resolved.`);
 }

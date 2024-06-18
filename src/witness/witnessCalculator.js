@@ -2,9 +2,9 @@ const { BigBuffer } = require("pilcom");
 const F3g = require("../helpers/f3g");
 const fs= require("fs");
 
-function generateMultiArrayIndexes(symbols, name, lengths, polId, stage, indexes) {
+function generateMultiArrayIndexes(symbols, name, lengths, polId, stage, indexes = []) {
     if (indexes.length === lengths.length) {
-        symbols.push({ name, idx: indexes, id: polId, stage, });
+        symbols.push({ name, lengths: indexes, id: polId, stage, });
         return polId + 1;
     }
 
@@ -25,14 +25,18 @@ function setValueMultiArray(arr, indexes, value) {
     } 
 }
     
-module.exports.generateFixedCols = function generateFixedCols(symbols, degree) {
+module.exports.generateFixedCols = function generateFixedCols(symbols, degree, fromPilout = true) {
     const fixedSymbols = [];
     for (let i = 0; i < symbols.length; ++i) {
-        if(symbols[i].type !== 1 || symbols[i].stage !== 0) continue;
-        if(!symbols[i].dim) {
-            fixedSymbols.push({name: symbols[i].name, id: symbols[i].id, stage: symbols[i].stage, idx: []});
+        const name = symbols[i].name;
+        const stage = fromPilout ? symbols[i].stage : symbols[i].stageNum;
+        const id = fromPilout ? symbols[i].id : symbols[i].stageId;
+        const lengths = symbols[i].lengths || [];
+        if(fromPilout && (symbols[i].type !== 1 || stage !== 0)) continue;
+        if((fromPilout && !symbols[i].dim) || (!fromPilout && !symbols[i].length)) {
+            fixedSymbols.push({name, id, stage, lengths});
         } else {
-            generateMultiArrayIndexes(fixedSymbols, symbols[i].name, symbols[i].lengths, symbols[i].id, symbols[i].stage, []);
+            generateMultiArrayIndexes(fixedSymbols, name, lengths, id, stage);
         }
     }
     
@@ -40,14 +44,18 @@ module.exports.generateFixedCols = function generateFixedCols(symbols, degree) {
     return fixedCols;
 }
 
-module.exports.generateWtnsCols = function generateWtnsCols(symbols, degree, nCols, buffer) {
+module.exports.generateWtnsCols = function generateWtnsCols(symbols, degree, fromPilout = true, nCols, buffer) {
     const witnessSymbols = [];
     for (let i = 0; i < symbols.length; ++i) {
-        if(symbols[i].type !== 3) continue;
-        if(!symbols[i].dim) {
-            witnessSymbols.push({name: symbols[i].name, id: symbols[i].id, idx: [], stage: symbols[i].stage });
+        if(fromPilout && symbols[i].type !== 3) continue;
+        const name = symbols[i].name;
+        const stage = fromPilout ? symbols[i].stage : symbols[i].stageNum;
+        const id = fromPilout ? symbols[i].id : symbols[i].stageId;
+        const lengths = symbols[i].lengths || [];
+        if((fromPilout && !symbols[i].dim) || (!fromPilout && !symbols[i].length)) {
+            witnessSymbols.push({name, id, lengths: [], stage });
         } else {
-            generateMultiArrayIndexes(witnessSymbols, symbols[i].name, symbols[i].lengths, symbols[i].id, symbols[i].stage, []);
+            generateMultiArrayIndexes(witnessSymbols, name, lengths, id, stage);
         }
     }
     
@@ -100,11 +108,11 @@ class ColsPil2 {
             polDeg: degree
             };
 
-            if (symbol.idx.length > 0) {
+            if (symbol.lengths.length > 0) {
                 if (!this[nameSpace][namePol]) this[nameSpace][namePol] = [];
                 if (!this.$$def[nameSpace][namePol]) this.$$def[nameSpace][namePol] = [];
-                setValueMultiArray(this[nameSpace][namePol], symbol.idx, polProxy);
-                setValueMultiArray(this.$$def[nameSpace][namePol], symbol.idx, this.$$defArray[symbol.id]);
+                setValueMultiArray(this[nameSpace][namePol], symbol.lengths, polProxy);
+                setValueMultiArray(this.$$def[nameSpace][namePol], symbol.lengths, this.$$defArray[symbol.id]);
             } else {
                 this[nameSpace][namePol] = polProxy;
                 this.$$def[nameSpace][namePol] = this.$$defArray[symbol.id];

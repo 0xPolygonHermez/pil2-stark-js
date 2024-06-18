@@ -242,7 +242,9 @@ function generateMultiArraySymbols(E, symbols, indexes, sym, type, dim, polId, s
     if (indexes.length === sym.lengths.length) {
         E.cm(polId + shift, 0, sym.stage, dim);
         symbols.push({
-            name: sym.name + shift,
+            name: sym.name,
+            lengths: indexes,
+            idx: shift,
             stage: sym.stage,
             type,
             polId: polId + shift,

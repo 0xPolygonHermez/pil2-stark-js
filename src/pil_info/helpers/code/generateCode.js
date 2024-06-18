@@ -4,30 +4,31 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
     const expressionsCode = [];
     for(let j = 0; j < expressions.length; ++j) {
         const exp = expressions[j];
-        if(j === res.cExpId || j === res.friExpId) continue;
+        const dom = (j === res.cExpId || j === res.friExpId) ? "ext" : "n";
         const ctx = {
             calculated: {},
-            symbolsCalculated: [],
             symbolsUsed: [],
+            symbolsCalculated: [],
             tmpUsed: 0,
             code: [],
-            dom: "n",
+            dom,
             airId: res.airId,
             subproofId: res.subproofId,
             stark,
         };
 
-        const tmpExpressionsIds = expressionsCode.filter(e => (e.stage < exp.stage) && e.dest).map(e => e.expId);
-
-        for(let i = 0; i < tmpExpressionsIds.length; i++) {
-            const expId = tmpExpressionsIds[i];
-            ctx.calculated[expId] = {};
-            for(let j = 0; j < res.openingPoints.length; ++j) {
-                const openingPoint = res.openingPoints[j];
-                ctx.calculated[expId][openingPoint] = true;
+        if(j === res.friExpId) ctx.openingPoints = res.openingPoints;
+        if(j === res.cExpId) {
+            for(let i = 0; i < symbols.length; i++) {
+                if(!symbols[i].imPol) continue;
+                const expId = symbols[i].expId;
+                ctx.calculated[expId] = {};
+                for(let i = 0; i < res.openingPoints.length; ++i) {
+                    const openingPoint = res.openingPoints[i];
+                    ctx.calculated[expId][openingPoint] = true;
+                }
             }
         }
-        
         let exprDest;
         if(exp.keep || exp.imPol) {
             const symbolDest = symbols.find(s => s.expId === j);
@@ -47,7 +48,15 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         }
 
         pilCodeGen(ctx, symbols, expressions, j, 0);
-        const code = buildCode(ctx, expressions);
+        const code = buildCode(ctx);
+
+        if(j == res.cExpId) {
+            code.code[code.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
+        }
+        if(j == res.friExpId) {
+            code.code[code.code.length-1].dest = { type: "f", id: 0, dim: 3 };
+        }
+
         const expInfo = {
             expId: j,
             stage: exp.stage,
@@ -55,13 +64,57 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             code,
             dest: exprDest, 
         }
-
         expressionsCode.push(expInfo);
     }
 
     return expressionsCode;
 }
 
+module.exports.generateImPolynomialsCode = function generateStagesCode(res, expressionsInfo, symbols, expressions, stark) {
+    const ctx = {
+        calculated: {},
+        symbolsCalculated: [],
+        symbolsUsed: [],
+        tmpUsed: 0,
+        code: [],
+        dom: "n",
+        airId: res.airId,
+        subproofId: res.subproofId,
+        stark,
+    };
+
+    for(let j = 0; j < expressions.length; ++j) {
+        if(expressions[j].imPol) {
+            let symbolDest = symbols.find(s => s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId);
+            if(!symbolDest) continue;
+            let skip = false;
+            for(let k = 0; k < expressions[j].symbols.length; k++) {
+                const symbol = expressions[j].symbols[k];
+                const imPol = symbol.op === "cm" && res.cmPolsMap[symbol.id].imPol;
+                if(!imPol && (symbol.stage > stage || (stage != 1 && symbol.op === "cm" && symbol.stage === stage))) {
+                    skip = true;
+                    break; 
+                }
+            }
+
+            if(symbolDest.type === "witness" || (symbolDest.type === "tmpPol" && symbolDest.imPol)) {
+                ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
+            } else {
+                ctx.symbolsCalculated.push({ op: "tmp",  stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
+            }
+            
+            for(let k = 0; k < expressions[j].symbols.length; k++) {
+                const symbolUsed = expressions[j].symbols[k];
+                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                    ctx.symbolsUsed.push(symbolUsed);
+                };
+            }
+            pilCodeGen(ctx, symbols, expressions, j, 0);
+        }
+    }
+    expressionsInfo.imPolsCode = buildCode(ctx);
+
+}
 module.exports.generateStagesCode = function generateStagesCode(res, expressionsInfo, symbols, expressions, stark) {
     const ctx = {
         calculated: {},
@@ -108,7 +161,7 @@ module.exports.generateStagesCode = function generateStagesCode(res, expressions
                 pilCodeGen(ctx, symbols, expressions, j, 0);
             }
         }
-        expressionsInfo.stagesCode.push(buildCode(ctx, expressions));
+        expressionsInfo.stagesCode.push(buildCode(ctx));
     }
 }
 
@@ -136,7 +189,7 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
         }
 
         pilCodeGen(ctx, symbols, expressions, constraints[j].e, 0);
-        const constraint = buildCode(ctx, expressions);
+        const constraint = buildCode(ctx);
         constraint.boundary = constraints[j].boundary;
         constraint.line = constraints[j].line;
         constraint.filename = constraints[j].fileName;
@@ -148,43 +201,6 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
         constraintsCode[j] = constraint;
     }
     return constraintsCode;
-}
-
-
-module.exports.generateConstraintPolynomialCode = function generateConstraintPolynomialCode(res, expressionsInfo, symbols, constraints, expressions, stark) {
-    const ctxExt = {
-        calculated: {},
-        symbolsCalculated: [],
-        symbolsUsed: [],
-        tmpUsed: 0,
-        code: [],
-        dom: "ext",
-        airId: res.airId,
-        subproofId: res.subproofId,
-        stark,
-    };
-
-    for(let i = 0; i < symbols.length; i++) {
-        if(!symbols[i].imPol) continue;
-        const expId = symbols[i].expId;
-        ctxExt.calculated[expId] = {};
-        for(let i = 0; i < res.openingPoints.length; ++i) {
-            const openingPoint = res.openingPoints[i];
-            ctxExt.calculated[expId][openingPoint] = true;
-        }
-    }
-
-    for(let k = 0; k < expressions[res.cExpId].symbols.length; k++) {
-        const symbolUsed = expressions[res.cExpId].symbols[k];
-        if(!ctxExt.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-            ctxExt.symbolsUsed.push(symbolUsed);
-        };
-    } 
-
-    pilCodeGen(ctxExt, symbols, expressions, res.cExpId, 0);  
-    const qCode = buildCode(ctxExt, expressions);
-    qCode.code[qCode.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
-    expressionsInfo.stagesCode.push(qCode);
 }
 
 module.exports.generateConstraintPolynomialVerifierCode = function generateConstraintPolynomialVerifierCode(res, verifierInfo, symbols, expressions, stark) {       
@@ -251,8 +267,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
     }
 }
 
-
-module.exports.generateFRICode = function generateFRICode(res, expressionsInfo, verifierInfo, symbols, expressions) {
+module.exports.generateFRIVerifierCode = function generateFRIVerifierCode(res, verifierInfo, symbols, expressions) {
     const ctxExt = {
         calculated: {},
         symbolsUsed: [],
@@ -263,28 +278,20 @@ module.exports.generateFRICode = function generateFRICode(res, expressionsInfo, 
         airId: res.airId,
         subproofId: res.subproofId,
         openingPoints: res.openingPoints,
+        verifierQuery: true,
+        addMul: false,
         stark: true,
     };
 
-
-    const friExpId = res.friExpId;
-
-    for(let k = 0; k < expressions[friExpId].symbols.length; k++) {
-        const symbolUsed = expressions[friExpId].symbols[k];
+    for(let k = 0; k < expressions[res.friExpId].symbols.length; k++) {
+        const symbolUsed = expressions[res.friExpId].symbols[k];
         if(!ctxExt.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
             ctxExt.symbolsUsed.push(symbolUsed);
         };
     } 
 
-    pilCodeGen(ctxExt, symbols, expressions, friExpId, 0);
-    const friCode = buildCode(ctxExt, expressions);
-    friCode.code[friCode.code.length-1].dest = { type: "f", id: 0, dim: 3 };
-    expressionsInfo.stagesCode.push(friCode);
-    
-    let addMul = false;
-
     ctxExt.verifierQuery = true;
-    ctxExt.addMul = addMul;
-    pilCodeGen(ctxExt, symbols, expressions, friExpId, 0);
-    verifierInfo.queryVerifier = buildCode(ctxExt, expressions);
+    ctxExt.addMul = false;
+    pilCodeGen(ctxExt, symbols, expressions, res.friExpId, 0);
+    verifierInfo.queryVerifier = buildCode(ctxExt);
 }

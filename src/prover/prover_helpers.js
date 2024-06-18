@@ -255,7 +255,7 @@ function evalMap(ctx, polId, prime, dom, val) {
     }
 }
 
-module.exports.setPol = function setPol(ctx, idPol, pol, dom) {
+module.exports.setPol = function setPol(ctx, idPol, pol, dom, options) {
     const p = module.exports.getPolRef(ctx, idPol, dom);
 
     if (p.dim == 1) {
@@ -289,6 +289,8 @@ module.exports.setPol = function setPol(ctx, idPol, pol, dom) {
     } else {
         throw new Error("invalid dim" + p.dim)
     }
+    ctx.calculatedSymbols["cm"][idPol] = true;
+    if(options?.logger) options.logger.debug(`Symbol cm for with id ${idPol} has been calculated`);
 }
 
 module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {

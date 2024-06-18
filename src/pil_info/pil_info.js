@@ -63,10 +63,8 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
         if(!options.debug) console.log(`Number of evaluations: ${res.evMap.length}`)
         console.log("------------------------------------------------------------")
     }
-    
+        
     delete res.nCommitments;
-    delete res.cExpId;
-    delete res.friExpId;
     delete res.imPolsStages;
     delete res.pilPower;
 

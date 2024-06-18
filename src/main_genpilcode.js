@@ -52,8 +52,6 @@ async function run() {
     const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, expressions, hints, debug, stark);
 
     delete res.nCommitments;
-    delete res.cExpId;
-    delete res.friExpId;
     delete res.imPolsStages;
     delete res.pilPower;
 

@@ -248,13 +248,7 @@ function fixCommitsQuery(r, ctx, symbols) {
     r.dim = symbol.dim;
 }
 
-function buildCode(ctx, expressions) {
-    // Expressions that are not saved, cannot be reused later on
-    for (let i=0; i<expressions.length; i++) {
-        const e = expressions[i];
-        if (!e.keep) delete ctx.calculated[i];
-    }
-
+function buildCode(ctx) {
     ctx.expMap = [];
     for(let i = 0; i < ctx.code.length; i++) {
         for(let j = 0; j < ctx.code[i].src.length; j++) {
@@ -275,6 +269,7 @@ function buildCode(ctx, expressions) {
     }
 
     ctx.code = [];
+    ctx.calculated = [];
     ctx.symbolsCalculated = [];
     ctx.symbolsUsed = [];
     ctx.tmpUsed = 0;
