@@ -12,7 +12,7 @@ const { generateFflonkProof } = require("../helpers.js");
 
 const protobuf = require('protobufjs');
 
-const { compile } = require("pilcom2");
+const compilePil2 = require("pil2-compiler/src/compiler.js");
 const { newCommitPolsArrayPil2, newConstantPolsArrayPil2 } = require("pilcom/src/polsarray");
 
 const { getFixedPolsPil2 } = require("../../../src/pil_info/helpers/pil2/piloutInfo");
@@ -29,7 +29,7 @@ async function runTest(pilFile) {
     await compile(F, path.join(__dirname, "../../state_machines/", "pil2", "sm_simple", pilFile), null, pilConfig);
     
     const piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
-    const pilOutProtoPath = path.resolve(__dirname, '../../../node_modules/pilcom2/src/pilout.proto');
+    const pilOutProtoPath = path.resolve(__dirname, '../../../node_modules/pil2-compiler/src/pilout.proto');
     const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
     let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
     

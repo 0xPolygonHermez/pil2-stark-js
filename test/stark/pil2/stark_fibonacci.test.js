@@ -1,7 +1,7 @@
 const F3g = require("../../../src/helpers/f3g");
 const path = require("path");
 
-const { compile } = require("pilcom2");
+const compilePil2 = require("pil2-compiler/src/compiler.js");
 const protobuf = require('protobufjs');
 
 const Logger = require('logplease');
@@ -37,12 +37,13 @@ describe("test fibonacci pil2 sm", async function () {
         const F = new F3g("0xFFFFFFFF00000001");
 
         const tmpPath = path.resolve(__dirname, '../../../tmp');
+        const piloutPath = path.join(tmpPath, "pilout.ptb");
         if(!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath);
-        let pilConfig = { piloutDir: tmpPath};
-        await compile(F, path.join(__dirname, "../../state_machines/", "pil2", "sm_fibonacci", "fibonacci.pil"), null, pilConfig);
+        let pilConfig = { outputFile: piloutPath };
+        compilePil2(F, path.join(__dirname, "../../state_machines/", "pil2", "sm_fibonacci", "fibonacci.pil"), null, pilConfig);
         
-        const piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
-        const pilOutProtoPath = path.resolve(__dirname, '../../../node_modules/pilcom2/src/pilout.proto');
+        const piloutEncoded = fs.readFileSync(piloutPath);
+        const pilOutProtoPath = path.resolve(__dirname, '../../../node_modules/pil2-compiler/src/pilout.proto');
         const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
         let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
         

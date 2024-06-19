@@ -1,6 +1,5 @@
-const ProtoOut = require("pilcom2/src/proto_out.js");
+const ProtoOut = require("pil2-compiler/src/proto_out.js");
 const ExpressionOps = require("../../expressionops");
-const { getExpDim } = require("../helpers");
 
 const piloutTypes =  {
     FIXED_COL: 1,
@@ -51,6 +50,10 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
 
     if(op === "expression") {
         const id = exp[op].idx;
+        const expOp = Object.keys(pilout.expressions[id])[0];
+        if(expOp != "mul" && Object.keys(pilout.expressions[id][expOp].lhs)[0] !== "expression" && Object.keys(pilout.expressions[id][expOp].rhs)[0] === "constant" && P.buf2bint(pilout.expressions[id][expOp].rhs.constant.value).toString() === "0") {
+            return formatExpression(pilout.expressions[id][expOp].lhs, pilout, symbols, stark, saveSymbols);
+        }
         exp = { op: "exp", id };
     } else if(["add", "mul", "sub"].includes(op)) {
         const lhs = formatExpression(exp[op].lhs, pilout, symbols, stark, saveSymbols);

@@ -1,6 +1,12 @@
-subproof Simple(2**6) {
+air Simple(int N = 2**6) {
 
     col witness a,b;
+    
+    col fixed A = [0,1..+..];
 
-    a*a === b; 
+    a*a === b;
+
+    a === A;
 }
+
+Simple(2**6);

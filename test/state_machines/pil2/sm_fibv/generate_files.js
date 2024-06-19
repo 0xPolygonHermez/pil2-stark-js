@@ -5,7 +5,7 @@ const pilInfo = require("../../../../src/pil_info/pil_info.js");
 const { buildCHelpers } = require("../../../../src/stark/chelpers/stark_chelpers.js");
 const { buildConstTree } = require("../../../../src/stark/stark_buildConstTree");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
-const { compile } = require("pilcom2");
+const compilePil2 = require("pil2-compiler/src/compiler.js");
 
 const fs = require("fs");
 const { F1Field, getCurveFromName } = require("ffjavascript");
@@ -42,14 +42,14 @@ async function run() {
         const tmpPath = path.resolve(__dirname, "./tmp");
         if (!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath);
         let pilConfig = { piloutDir: tmpPath };
-        await compile(F, path.join(__dirname, "fibonacci.pil"), null, pilConfig);
+        await compilePil2(F, path.join(__dirname, "fibonacci.pil"), null, pilConfig);
 
         piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
     } else {
         piloutEncoded = fs.readFileSync(argv.pilout);
     }
 
-    const pilOutProtoPath = path.resolve(__dirname, "../../../../node_modules/pilcom2/src/pilout.proto");
+    const pilOutProtoPath = path.resolve(__dirname, "../../../../node_modules/pil2-compiler/src/pilout.proto");
     const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
     let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
 

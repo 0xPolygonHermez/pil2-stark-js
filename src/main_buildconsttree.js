@@ -9,7 +9,7 @@ const F3g = require("./helpers/f3g.js");
 const { newConstantPolsArray, compile } = require("pilcom");
 const { buildConstTree } = require("./stark/stark_buildConstTree");
 
-const { compile: compilePil2 } = require("pilcom2");
+const compilePil2 = require("pil2-compiler/src/compiler.js");
 const { generateFixedCols } = require("./witness/witnessCalculator.js");
 
 const argv = require("yargs")
@@ -39,11 +39,12 @@ async function run() {
     if(starkInfo.pil2) {
         const tmpPath = path.resolve(__dirname, '../tmp');
         if(!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath);
-        let pilConfig = { piloutDir: tmpPath};
-        await compilePil2(F, pilFile, null, pilConfig);
+        let piloutPath = path.join(tmpPath, "pilout.ptb");
+        let pilConfig = { outputFile: piloutPath};
+        compilePil2(F, pilFile, null, pilConfig);
         
-        const piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
-        const pilOutProtoPath = path.resolve(__dirname, '../node_modules/pilcom2/src/pilout.proto');
+        const piloutEncoded = fs.readFileSync(piloutPath);
+        const pilOutProtoPath = path.resolve(__dirname, '../node_modules/pil2-compiler/src/pilout.proto');
         const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
         let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
         

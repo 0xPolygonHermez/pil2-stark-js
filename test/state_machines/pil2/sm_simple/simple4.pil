@@ -1,7 +1,7 @@
 public in1;
 public in2;
 
-subproof Simple(2**6) {
+air Simple(int N = 2**6) {
 
     col witness a,b;
 
@@ -13,3 +13,5 @@ subproof Simple(2**6) {
     L2 * (b - in1) === 0;
     LLAST * (a*a*a - in2) === 0;
 }
+
+Simple(2**6);

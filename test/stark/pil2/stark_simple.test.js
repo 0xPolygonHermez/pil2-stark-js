@@ -1,7 +1,9 @@
 const F3g = require("../../../src/helpers/f3g");
 const path = require("path");
 
-const { compile } = require("pilcom2");
+const compilePil2 = require("pil2-compiler/src/compiler.js");
+const piloutProto = require.resolve('pil2-compiler/src/pilout.proto');
+
 const protobuf = require('protobufjs');
 
 const Logger = require('logplease');
@@ -32,13 +34,13 @@ async function runTest(pilFile) {
 
         const F = new F3g("0xFFFFFFFF00000001");
         const tmpPath = path.resolve(__dirname, '../../../tmp');
+        const piloutPath = path.join(tmpPath, "pilout.ptb");
         if(!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath);
-        let pilConfig = { piloutDir: tmpPath};
-        await compile(F, path.join(__dirname, "../../state_machines/", "pil2", "sm_simple", pilFile), null, pilConfig);
-        
-        const piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
-        const pilOutProtoPath = path.resolve(__dirname, '../../../node_modules/pilcom2/src/pilout.proto');
-        const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
+        let pilConfig = { outputFile: piloutPath };
+        compilePil2(F, path.join(__dirname, "../../state_machines/", "pil2", "sm_simple", pilFile), null, pilConfig);
+
+        const piloutEncoded = fs.readFileSync(piloutPath);
+        const PilOut = protobuf.loadSync(piloutProto).lookupType("PilOut");
         let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
         
         const pil = pilout.subproofs[0].airs[0];
@@ -48,11 +50,11 @@ async function runTest(pilFile) {
         pil.airId = 0;
         pil.subproofId = 0;
 
-        console.log(pilout.symbols);
         const cnstPols = generateFixedCols(pil.symbols, pil.numRows);
         getFixedPolsPil2(pil, cnstPols, F);
 
         const cmPols = generateWtnsCols(pil.symbols, pil.numRows);
+
         if(pilFile === "simple1.pil") {
             await smSimple.execute(pil.numRows, cmPols.Simple, F);
         } else if(pilFile === "simple2.pil") {
@@ -81,7 +83,7 @@ describe("simple sm", async function () {
     it("Simple2", async () => {
         await runTest("simple2.pil");
     });
-    it.only("Simple3", async () => {
+    it("Simple3", async () => {
         await runTest("simple3.pil");
     });
     it("Simple4", async () => {

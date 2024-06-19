@@ -3,7 +3,7 @@ const version = require("../package").version;
 
 const F3g = require("./helpers/f3g.js");
 const { compile } = require("pilcom");
-const { compile: compilePil2 } = require("pilcom2");
+const compilePil2 = require("pil2-compiler/src/compiler.js");
 const { preparePil } = require("./pil_info/helpers/preparePil");
 
 const argv = require("yargs")
@@ -35,7 +35,10 @@ async function run() {
 
     let pil;
     if(pil2) {
-        pil = await compilePil2(F, pilFile, null, pilConfig);
+        const tmpPath = path.resolve(__dirname, '../tmp');
+        const piloutPath = path.join(tmpPath, "pilout.ptb");
+        pilConfig.outputFile = piloutPath;
+        pil = compilePil2(F, pilFile, null, pilConfig);
     } else {
         pil = await compile(F, pilFile, null, pilConfig);
     }

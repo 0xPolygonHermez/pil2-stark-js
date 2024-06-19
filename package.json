@@ -156,7 +156,7 @@
     "fs-extra": "^11.2.0",
     "json-bigint": "^1.0.0",
     "pilcom": "https://github.com/0xPolygonHermez/pilcom.git#polsArrayGeneric",
-    "pilcom2": "https://github.com/0xPolygonHermez/pilcom.git#feature/pil2-piloutDir",
+    "pil2-compiler": "https://github.com/0xPolygonHermez/pil2-compiler.git#develop",
     "protobufjs": "^7.2.4",
     "r1csfile": "^0.0.44",
     "sha3": "^2.1.4",

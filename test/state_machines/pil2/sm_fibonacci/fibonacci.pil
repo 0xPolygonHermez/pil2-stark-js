@@ -6,7 +6,7 @@ public mod;
 challenge stage(2) std_alpha;
 challenge stage(2) std_beta;
 
-subproof Fibonacci(2**6) {
+air Fibonacci(int N = 2**6) {
 
     col witness a,b;
 
@@ -30,3 +30,5 @@ subproof Fibonacci(2**6) {
     (gsum - 'gsum * (1 - L1)) * ((((L1'2*out + (1 - L1'2)*a') * std_alpha + a * a + b * b) * std_alpha) + 1 + std_beta) + 1 === 0;
     L1' * (gsum - gsum_fibonacci) === 0;
 }
+
+Fibonacci(2**6);

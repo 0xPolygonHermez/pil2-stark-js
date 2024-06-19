@@ -1,6 +1,8 @@
-subproof Simple(2**6) {
+air Simple(int N = 2**6) {
 
     col witness a,b,c;
 
     a*c'3 === 2'b;
 }
+
+Simple(2**6);

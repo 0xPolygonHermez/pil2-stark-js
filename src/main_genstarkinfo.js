@@ -4,7 +4,7 @@ const version = require("../package").version;
 const F3g = require("./helpers/f3g.js");
 const pilInfo = require("./pil_info/pil_info.js");
 const { compile } = require("pilcom");
-const { compile: compilePil2 } = require("pilcom2");
+const compilePil2 = require("pil2-compiler/src/compiler.js");
 const protobuf = require('protobufjs');
 const path = require('path');
 
@@ -41,10 +41,11 @@ async function run() {
     if(pil2) {
         const tmpPath = path.resolve(__dirname, '../tmp');
         if(!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath);
-        pilConfig.piloutDir = tmpPath;
-        await compilePil2(F, pilFile, null, pilConfig);
-        const piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
-        const pilOutProtoPath = path.resolve(__dirname, '../node_modules/pilcom2/src/pilout.proto');
+        const piloutPath = path.join(tmpPath, "pilout.ptb");
+        pilConfig.outputFile = piloutPath;
+        compilePil2(F, pilFile, null, pilConfig);
+        const piloutEncoded = fs.readFileSync(piloutPath);
+        const pilOutProtoPath = path.resolve(__dirname, '../node_modules/pil2-compiler/src/pilout.proto');
         const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
         let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
         

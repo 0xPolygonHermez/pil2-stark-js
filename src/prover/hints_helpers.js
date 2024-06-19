@@ -1,5 +1,5 @@
 const { calculateH1H2, calculateS, calculateZ } = require("../helpers/polutils");
-const { getPol, setPol, setSubproofValue } = require("./prover_helpers");
+const { getPol, setPol, setSubproofValue, calculateExpression } = require("./prover_helpers");
 const { isSymbolCalculated, setSymbolCalculated } = require("./symbols_helpers");
 
 module.exports.applyHints = async function applyHints(stage, ctx, options) {
@@ -21,11 +21,12 @@ module.exports.applyHints = async function applyHints(stage, ctx, options) {
 function getHintField(ctx, hint, field, dest = false) {
     const hintField = hint.fields.find(f => f.name === field);
     if(!hintField) throw new Error(`${field} field is missing`);
-    if(hintField.op === "cm" && dest) return hintField;
-    if(["cm", "tmp"].includes(hintField.op)) {
+    if((hintField.op === "cm")) {
+        if (dest) return hintField;
         return getPol(ctx, hintField.id, "n");
     }
-    if(["number"].includes(hintField.op)) return BigInt(hintField.value);
+    if(hintField.op === "tmp") return calculateExpression(ctx, hintField.expId);
+    if((hintField.op === "number")) return BigInt(hintField.value);
     if(["subproofValue", "public"].includes(hintField.op)) return hintField;
     throw new Error("Case not considered");
 }

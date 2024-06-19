@@ -5,7 +5,7 @@ const version = require("../package").version;
 const protobuf = require('protobufjs');
 
 const { compile, newConstantPolsArray, newCommitPolsArray } = require("pilcom");
-const { compile: compilePil2 } = require("pilcom2");
+const compilePil2 = require("pil2-compiler/src/compiler.js");
 
 const { F1Field, getCurveFromName } = require("ffjavascript");
 const { starkGen } = require("..");
@@ -54,12 +54,13 @@ async function run() {
     let pil;
     if(pil2) {
         const tmpPath = path.resolve(__dirname, '../tmp');
+        const piloutPath = path.join(tmpPath, "pilout.ptb");
         if(!fs.existsSync(tmpPath)) fs.mkdirSync(tmpPath);
-        let pilConfig = { piloutDir: tmpPath};
-        await compilePil2(F, pilFile, null, pilConfig);
+        let pilConfig = { outputFile: piloutPath };
+        compilePil2(F, pilFile, null, pilConfig);
         
-        const piloutEncoded = fs.readFileSync(path.join(tmpPath, "pilout.ptb"));
-        const pilOutProtoPath = path.resolve(__dirname, '../node_modules/pilcom2/src/pilout.proto');
+        const piloutEncoded = fs.readFileSync(piloutPath);
+        const pilOutProtoPath = path.resolve(__dirname, '../node_modules/pil2-compiler/src/pilout.proto');
         const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
         let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
         

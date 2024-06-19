@@ -46,7 +46,7 @@ module.exports = async function proofGen(cmPols, pilInfo, expressionsInfo, input
             setChallenges(stage, ctx, ctx.transcript, challenge, options);
         }
         await computeStage(stage, ctx, options);
-
+        
         if(stage === 1) {
             await addPublicsTranscript(ctx, stark, options);
         }
