@@ -60,7 +60,7 @@ module.exports.calculateExps = function calculateExps(ctx, code, dom, debug, ret
         for(let i = first; i < last; i++) {
             const v = cEveryRow(pCtx, i);
             if (!pCtx.F.isZero(v)) {
-                pCtx.errors.push(`${code.filename}:${code.line}: identity does not match w=${i} val=${pCtx.F.toString(v)} `);
+                ctx.errors.push(`${code.line}: identity does not match w=${i} val=${ctx.F.toString(v)} `);
                 return;
             }
         }

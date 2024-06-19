@@ -6,7 +6,7 @@ air Simple(int N = 2**6) {
 
     a*a === b;
 
-    a === A;
+    a' === A';
 }
 
 Simple(2**6);
