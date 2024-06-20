@@ -367,3 +367,13 @@ module.exports.extendAndCommit = async function extendAndCommit(stage, ctx, opti
         return 0;
     } 
 }
+
+module.exports.printPolFr = function printPolFr(buffer, Fr) {
+    const len = buffer.byteLength / Fr.n8;
+
+    console.log("---------------------------");
+    for (let i = 0; i < len; ++i) {
+        console.log(i, Fr.toString(buffer.slice(i * Fr.n8, (i + 1) * Fr.n8)));
+    }
+    console.log("---------------------------");
+}

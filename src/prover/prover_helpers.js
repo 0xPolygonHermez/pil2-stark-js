@@ -541,16 +541,6 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
     await pool.terminate();
 }
 
-module.exports.printPol = function printPol(buffer, Fr) {
-    const len = buffer.byteLength / Fr.n8;
-
-    console.log("---------------------------");
-    for (let i = 0; i < len; ++i) {
-        console.log(i, Fr.toString(buffer.slice(i * Fr.n8, (i + 1) * Fr.n8)));
-    }
-    console.log("---------------------------");
-}
-
 function ctxProxy(ctx, global, stark = true) {
     const pCtx = {};
     

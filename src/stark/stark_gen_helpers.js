@@ -511,6 +511,19 @@ module.exports.getPermutationsStark = async function getPermutationsStark(ctx, c
     return friQueries;
 }
 
+module.exports.printPol = async function printPolRoot(ctx, polId, row = -1) {
+    const cmPol = ctx.pilInfo.cmPolsMap[polId];
+    let p = getPolRef(ctx, polId, "n");
+    let pol = getPol(ctx, polId, "n");
+
+    console.log("··· " + cmPol.name + " ···" + ": "); 
+    for(let i = 0; i < ctx.N; ++i) {
+        if(row !== -1 && i !== row) continue;
+        console.log("Value at row " + i + " is " + pol[i]);
+    } 
+    console.log('---------------------------');
+}
+
 module.exports.printPolRoot = async function printPolRoot(ctx, polId, options) {
     let MH = await buildMerkleHashGL(false);
 
@@ -520,7 +533,7 @@ module.exports.printPolRoot = async function printPolRoot(ctx, polId, options) {
 
     const tree = await MH.merkelize(pol.flat(), p.dim, ctx.N);
     const rootN = MH.root(tree);
-    options.logger.debug("··· " + cmPol.name + " " + ": " + ctx.F.toString(rootN[0]) + " " + ctx.F.toString(rootN[1]) + " " + ctx.F.toString(rootN[2]) + " " + ctx.F.toString(rootN[3]));  
-    options.logger.debug('---------------------------');
+    console.log("··· " + cmPol.name + " " + ": " + ctx.F.toString(rootN[0]) + " " + ctx.F.toString(rootN[1]) + " " + ctx.F.toString(rootN[2]) + " " + ctx.F.toString(rootN[3]));  
+    console.log('---------------------------');
     
 }

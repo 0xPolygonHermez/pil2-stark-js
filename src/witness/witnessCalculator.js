@@ -131,6 +131,9 @@ class ColsPil2 {
                 const pos = parseInt(prop, 10);
                 const buffIndex = nCols * pos + symbolId;
                 buff.setElement(buffIndex,value);
+
+                target[pos] = value; // This adds the value to the array itself
+                
                 return true;
             },
 
