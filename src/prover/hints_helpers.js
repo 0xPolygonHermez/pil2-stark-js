@@ -113,3 +113,5 @@ async function resolveHint(ctx, hint, options) {
         setPol(ctx, h2Field.id, H1H2[1], "n", options);
     } else throw new Error(`Hint ${hint.name} cannot be resolved.`);
 }
+
+module.exports.getHintField = getHintField;
