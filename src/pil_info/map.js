@@ -1,8 +1,22 @@
-module.exports = function map(res, symbols) {  
+const { printExpressions } = require("./helpers/pil2/utils");
+
+module.exports = function map(res, symbols, expressions, constraints) {
     mapSymbols(res, symbols);
     setStageInfoSymbols(res, symbols);
+    for(let i = 0; i < expressions.length; ++i) {
+        if(i !== res.cExpId && i !== res.friExpId) {
+            expressions[i].line = printExpressions(res, expressions[i], expressions);
+        }
+    }
 
-    res.nCommitmentsStage1 = res.cmPolsMap.filter(p => p.stage === "cm1" && !p.imPol).length;
+    for(let i = 0; i < constraints.length; ++i) {
+        if(constraints[i].filename === `${res.name}.ImPol`) {
+            constraints[i].line = printExpressions(res, expressions[constraints[i].e], expressions, true);
+        }
+        constraints[i].line += " == 0";
+    }
+
+    res.nCommitmentsStage1 = res.cmPolsMap.filter(p => p.stage === "cm1" && !p.imPol).length; 
 }
 
 function mapSymbols(res, symbols) {
@@ -28,6 +42,10 @@ function mapSymbols(res, symbols) {
             addPol(res, symbol);
         } else if(symbol.type === "challenge") {
             res.challengesMap[symbol.id] = {name: symbol.name, stage: symbol.stage, dim: symbol.dim, stageId: symbol.stageId};
+        } else if(symbol.type === "public") {
+            res.publicsMap[symbol.id] = {name: symbol.name, stage: symbol.stage};
+        } else if(symbol.type === "subproofValue") {
+            res.subproofValuesMap[symbol.id] = { name: symbol.name };
         }
     }
 }
@@ -48,7 +66,10 @@ function addPol(res, symbol) {
         res.mapSectionsN["cm" + stage] += dim;
     }
     if(symbol.lengths) ref[pos].lengths = symbol.lengths;
-    if(symbol.imPol) ref[pos].imPol = symbol.imPol;
+    if(symbol.imPol) {
+        ref[pos].imPol = symbol.imPol;
+        ref[pos].expId = symbol.expId;
+    }
 }
 
 function setStageInfoSymbols(res, symbols) {

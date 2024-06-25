@@ -47,7 +47,7 @@ async function run() {
         }    
     }
 
-    map(res, symbols);     
+    map(res, symbols, expressions, constraints);     
 
     const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, expressions, hints, debug, stark);
 

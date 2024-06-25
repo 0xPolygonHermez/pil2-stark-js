@@ -9,11 +9,14 @@ const { generateConstraintPolynomial } = require("./polynomials/constraintPolyno
 module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2, options = {}) {
     const res = {};
 
+    res.name = pil.name;
     res.imPolsStages = options.imPolsStages || false;
 
     res.cmPolsMap = [];
     res.constPolsMap = [];
     res.challengesMap = [];
+    res.publicsMap = [];
+    res.subproofValuesMap = [];
     res.pil2 = pil2;
 
     res.mapSectionsN = {

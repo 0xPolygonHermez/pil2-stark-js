@@ -5,7 +5,6 @@ const { generatePilCode } = require("./helpers/generatePilCode");
 const map = require("./map");
 
 module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct, options = {}) {
-
     const infoPil = preparePil(F, pil, starkStruct, stark, pil2, options);
     
     const expressions = infoPil.expressions;
@@ -33,7 +32,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
         }    
     }
 
-    map(res, symbols);       
+    map(res, symbols, expressions, constraints);       
 
     const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, newExpressions, hints, options.debug, stark);
     

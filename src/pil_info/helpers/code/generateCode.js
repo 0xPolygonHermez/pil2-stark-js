@@ -62,8 +62,11 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             stage: exp.stage,
             symbols: exp.symbols,
             code,
-            dest: exprDest, 
+            dest: exprDest,
+            line: "",
         }
+
+        if(![res.cExpId, res.friExpId].includes(j)) expInfo.line = exp.line;
         expressionsCode.push(expInfo);
     }
 

@@ -32,8 +32,9 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
         }
 
         for(let i = 0; i < ctx.pilInfo.nPublics; ++i) {
+            const public = ctx.pilInfo.publicsMap[i];
             if(!module.exports.isSymbolCalculated(ctx, {op: "public", id: i})) {
-                console.log(`Public with id ${i} is not calculated.`);
+                console.log(`Public ${public.name} with id ${i} is not calculated.`);
                 symbolsToBeCalculated++;
             }
         }
@@ -41,8 +42,9 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
 
     if(stage === ctx.pilInfo.nStages) {
         for(let i = 0; i < ctx.pilInfo.nSubproofValues; ++i) {
+            const subproofValue = ctx.pilInfo.subproofValuesMap[i];
             if(!module.exports.isSymbolCalculated(ctx, {op: "subproofValue", id: i})) {
-                console.log(`Subproof value with id ${i} is not calculated.`);
+                console.log(`Subproof value ${subproofValue.name} with id ${i} is not calculated.`);
                 symbolsToBeCalculated++;
             }
         }
@@ -62,7 +64,13 @@ module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, opti
         
         const op = ref.op === "tmp" ? "cm" : ref.op;
         ctx.calculatedSymbols[op][ref.id] = true;
-        if(options?.logger) options.logger.debug(`Symbol ${ref.op} for with id ${ref.id} has been calculated`);
+        if(options?.logger) {
+            if(op === "cm") options.logger.debug(`Witness ${ctx.pilInfo.cmPolsMap[ref.id].name} for with id ${ref.id} has been calculated`);
+            if(op === "const") options.logger.debug(`Fixed ${ctx.pilInfo.constPolsMap[ref.id].name} for with id ${ref.id} has been calculated`);
+            if(op === "challenge") options.logger.debug(`Challenge ${ctx.pilInfo.challengesMap[ref.id].name} for with id ${ref.id} has been calculated`);
+            if(op === "public") options.logger.debug(`Public ${ctx.pilInfo.publicsMap[ref.id].name} for with id ${ref.id} has been calculated`);
+            if(op === "subproofValue") options.logger.debug(`SubproofValue ${ctx.pilInfo.subproofValuesMap[ref.id].name} for with id ${ref.id} has been calculated`);
+        }
     }
 }
 

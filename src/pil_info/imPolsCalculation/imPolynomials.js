@@ -33,17 +33,20 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
         }
 
         const stageIm = res.imPolsStages ? expressions[expId].stage : res.nStages;
-                
+        
+        const stageId = symbols.filter(s => s.type === "witness" && s.stage === stageIm).length;
+
         const dim = getExpDim(expressions, expId, stark);
           
         const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId && s.airId === res.airId && s.subproofId === res.subproofId);
         if(!symbol) {
-            symbols.push({ type: "witness", name: `ImPol.${expId}`, expId, polId: res.nCommitments++, stage: stageIm, dim, imPol: true, airId: res.airId, subproofId: res.subproofId });
+            symbols.push({ type: "witness", name: `${res.name}.ImPol`, expId, polId: res.nCommitments++, stage: stageIm, stageId, dim, imPol: true, airId: res.airId, subproofId: res.subproofId });
         } else {
             symbol.imPol = true;
             symbol.expId = expId;
             symbol.polId = res.nCommitments++;
             symbol.stage = stageIm;
+            symbol.stageId = stageId;
             symbol.type = "witness";
         };
         
@@ -54,14 +57,14 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
         let e = {
             op: "sub",
             values: [
-                Object.assign({}, expressions[imExps[i]]),
                 E.cm(res.nCommitments-1, 0, stageIm, dim),
+                Object.assign({}, expressions[imExps[i]]),
             ]
         };
         expressions.push(e);
         addInfoExpressions(expressions, e, stark);
 
-        constraints.push({ e: expressions.length - 1, boundary: "everyRow", filename: `ImPol.${expId}`, line: `ImPol.${expId}`, stage: expressions[expId].stage });
+        constraints.push({ e: expressions.length - 1, boundary: "everyRow", filename: `${res.name}.ImPol`, stage: expressions[expId].stage });
         
         expressions[res.cExpId] = E.add(E.mul(vc, expressions[res.cExpId]), e);
     }

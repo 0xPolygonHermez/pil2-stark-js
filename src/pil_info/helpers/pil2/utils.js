@@ -151,6 +151,45 @@ function addSymbol(symbols, exp, stark) {
     return;
 }
 
+module.exports.printExpressions = function printExpressions(res, exp, expressions, isConstraint = false) {
+    if(exp.op === "exp") {
+        if(!exp.line) exp.line = printExpressions(res, expressions[exp.id], expressions, isConstraint);
+        return exp.line;
+    } else if(["add", "mul", "sub"].includes(exp.op)) {
+        const lhs = printExpressions(res, exp.values[0], expressions, isConstraint);
+        const rhs = printExpressions(res, exp.values[1], expressions, isConstraint);
+        const op = exp.op === "add" ? " + " : exp.op === "sub" ? " - " : " * ";
+        return "(" + lhs + op + rhs + ")";
+    } else if(exp.op === "neg") {
+        return printExpressions(res, exp.values[0], expressions, isConstraint);
+    } else if (exp.op === "number") {
+        return exp.value;
+    } else if (exp.op === "const" || exp.op === "cm") {
+        const col = exp.op === "const" ? res.constPolsMap[exp.id] : res.cmPolsMap[exp.id];
+        if(col.imPol && !isConstraint) {
+            return printExpressions(res, expressions[col.expId], expressions, false);
+        }
+        let name = col.name;
+        if(col.lengths) name += col.lengths.map(len => `[${len}]`).join('');
+        if(col.imPol) name += res.cmPolsMap.filter((w, i) => i < exp.id && !w.imPol).length;
+        if(exp.rowOffset) {
+            if(exp.rowOffset > 0) {
+                name += "'";
+                if(exp.rowOffset > 1) name += exp.rowOffset;
+            } else {
+                name = "'" + name;
+                if(exp.rowOffset < -1) name = Math.abs(exp.rowOffset) + name;
+            }
+        }
+        return name;
+    } else if (exp.op === "public") {
+        return res.publicsMap[exp.id].name;
+    } else if (exp.op === "subproofValue") {
+        return res.subproofValuesMap[exp.id].name;    
+    } else if (exp.op === "challenge") {
+        return res.challengesMap[exp.id].name;
+    } else throw new Error("Unknown op: " + exp.op);
+}
 
 module.exports.formatConstraints = function formatConstraints(pilout) {
     const constraints = pilout.constraints.map(c => {
