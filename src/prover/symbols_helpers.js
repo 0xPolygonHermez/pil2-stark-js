@@ -8,26 +8,32 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
         const cmPol = ctx.pilInfo.cmPolsMap[i];
         if(cmPol.stage !== stage || cmPol.stage === "tmpExp" || cmPol.imPol) continue;
         if(!module.exports.isSymbolCalculated(ctx, {op: "cm", id: i})) {
+            console.log(`Witness col ${cmPol.name} with id ${i} for stage ${cmPol.stage} is not calculated.`);
             symbolsToBeCalculated++;
         }
     }
 
     for(let i = 0; i < ctx.pilInfo.challengesMap.length; ++i) {
+        const challenge = ctx.pilInfo.challengesMap[i];
         if(ctx.pilInfo.challengesMap[i].stage !== stage) continue;
         if(!module.exports.isSymbolCalculated(ctx, {op: "challenge", id: i})) {
+            console.log(`Challenge ${challenge.stageId} for stage ${stage} is not calculated.`);
             symbolsToBeCalculated++;
         }
     }
 
     if(stage == 1) {
         for(let i = 0; i < ctx.pilInfo.constPolsMap.length; ++i) {
+            const fixedCol = ctx.pilInfo.constPolsMap[i];
             if(!module.exports.isSymbolCalculated(ctx, {op: "const", id: i})) {
+                console.log(`Fixed Col ${fixedCol.name} with id ${i} is not calculated.`);
                 symbolsToBeCalculated++;
             }
         }
 
         for(let i = 0; i < ctx.pilInfo.nPublics; ++i) {
             if(!module.exports.isSymbolCalculated(ctx, {op: "public", id: i})) {
+                console.log(`Public with id ${i} is not calculated.`);
                 symbolsToBeCalculated++;
             }
         }
@@ -36,6 +42,7 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
     if(stage === ctx.pilInfo.nStages) {
         for(let i = 0; i < ctx.pilInfo.nSubproofValues; ++i) {
             if(!module.exports.isSymbolCalculated(ctx, {op: "subproofValue", id: i})) {
+                console.log(`Subproof value with id ${i} is not calculated.`);
                 symbolsToBeCalculated++;
             }
         }
