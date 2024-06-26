@@ -18,14 +18,14 @@ module.exports.applyHints = async function applyHints(stage, ctx, options) {
     }
 }
 
-function getHintField(ctx, hint, field, dest = false) {
+function getHintField(ctx, hint, field, debug = false, dest = false) {
     const hintField = hint.fields.find(f => f.name === field);
     if(!hintField) throw new Error(`${field} field is missing`);
     if((hintField.op === "cm")) {
         if (dest) return hintField;
         return getPol(ctx, hintField.id, "n");
     }
-    if(hintField.op === "tmp") return calculateExpression(ctx, hintField.expId);
+    if(hintField.op === "tmp") return calculateExpression(ctx, hintField.expId, debug);
     if((hintField.op === "number")) return BigInt(hintField.value);
     if(["subproofValue", "public"].includes(hintField.op)) return hintField;
     throw new Error("Case not considered");
@@ -58,14 +58,14 @@ function isHintResolved(ctx, hint) {
         const public = getHintField(ctx, hint, "reference");
         return isSymbolCalculated(ctx, public);
     } else if(hint.name === "gsum") {
-        const s = getHintField(ctx, hint, "reference", true);
+        const s = getHintField(ctx, hint, "reference", false, true);
         return isSymbolCalculated(ctx, s);
     } else if(hint.name === "gprod") {
-        const z = getHintField(ctx, hint, "reference", true);
+        const z = getHintField(ctx, hint, "reference", false, true);
         return isSymbolCalculated(ctx, z);
     } else if(hint.name === "h1h2") {
-        const h1 = getHintField(ctx, hint, "referenceH1", true);
-        const h2 = getHintField(ctx, hint, "referenceH2", true);
+        const h1 = getHintField(ctx, hint, "referenceH1", false, true);
+        const h2 = getHintField(ctx, hint, "referenceH2", false, true);
         return isSymbolCalculated(ctx, h1) && isSymbolCalculated(ctx, h2);
     } else throw new Error("Unknown hint type " + hint.name);
 }
@@ -95,20 +95,20 @@ async function resolveHint(ctx, hint, options) {
         let numerator = getHintField(ctx, hint, "numerator");
         let denominator = getHintField(ctx, hint, "denominator");
         let gsum = await calculateS(ctx.F, numerator, denominator);
-        let gsumField = getHintField(ctx, hint, "reference", true);
+        let gsumField = getHintField(ctx, hint, "reference", false, true);
         setPol(ctx, gsumField.id, gsum, "n", options);
     } else if(hint.name === "gprod") {
         let numerator = getHintField(ctx, hint, "numerator");
         let denominator = getHintField(ctx, hint, "denominator");
         let gprod = await calculateZ(ctx.F, numerator, denominator);
-        let gprodField = getHintField(ctx, hint, "reference", true);
+        let gprodField = getHintField(ctx, hint, "reference", false, true);
         setPol(ctx, gprodField.id, gprod, "n", options);
     } else if(hint.name === "h1h2") {
         let f = getHintField(ctx, hint, "f");
         let t = getHintField(ctx, hint, "t");
         const H1H2 = calculateH1H2(ctx.F, f, t);
-        const h1Field = getHintField(ctx, hint, "referenceH1", true);
-        const h2Field = getHintField(ctx, hint, "referenceH2", true);
+        const h1Field = getHintField(ctx, hint, "referenceH1", false, true);
+        const h2Field = getHintField(ctx, hint, "referenceH2", false, true);
         setPol(ctx, h1Field.id, H1H2[0], "n", options);
         setPol(ctx, h2Field.id, H1H2[1], "n", options);
     } else throw new Error(`Hint ${hint.name} cannot be resolved.`);

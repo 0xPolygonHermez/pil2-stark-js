@@ -7,8 +7,11 @@ const F3g = require("../helpers/f3g");
 const maxNperThread = 1<<18;
 const minNperThread = 1<<12;
 
-module.exports.calculateExpression = function calculateExpression(ctx, expId) {
+module.exports.calculateExpression = function calculateExpression(ctx, expId, debug = false) {
     const expressionCode = ctx.expressionsInfo.expressionsCode.find(e => e.expId === expId);
+    if(debug) {
+        console.log(`The expression ${expId} is the following: ${expressionCode.line}`);
+    }
     return module.exports.calculateExps(ctx, expressionCode.code, "n", false, true);
 }
 

@@ -101,48 +101,48 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
     } else throw new Error("Unknown op: " + op);
 
     if(saveSymbols && store) {
-        addSymbol(symbols, exp, stark);
+        addSymbol(pilout.name, symbols, exp, stark);
     }
 
     return exp;
 }
 
-function addSymbol(symbols, exp, stark) {
+function addSymbol(subproofName, symbols, exp, stark) {
     let subproofId = exp.subproofId || 0;
     let airId = exp.airId || 0;
     if(exp.op === "public") {
         const publicSymbol = symbols.find(s => s.type === "public" && s.id === exp.id);
         if(!publicSymbol) {
-            const name = "public_" + exp.id;
+            const name = subproofName + ".public_" + exp.id;
             symbols.push({type: "public", dim: 1, id: exp.id, name });
         }
     } else if(exp.op === "challenge") {
         const challengeSymbol = symbols.find(s => s.type === "challenge" && s.stage === exp.stage && s.stageId === exp.stageId);
         if(!challengeSymbol) {
             const dim = stark ? 3 : 1;
-            const name = "challenge_" + exp.stage + "_" + exp.stageId;
+            const name = subproofName + ".challenge_" + exp.stage + "_" + exp.stageId;
             const id = symbols.filter(si => si.type === "challenge" && ((si.stage < exp.stage) || (si.stage === exp.stage && si.stageId < exp.stageId))).length;
             symbols.push({ type: "challenge", stageId: exp.stageId, stage: exp.stage, id, dim, name});
         }
     } else if(exp.op === "const") {
         const fixedSymbol = symbols.find(s => s.type === "fixed" && s.airId === airId && s.subproofId === subproofId
-            && s.stage === exp.stage && s.id === exp.stageId);
+            && s.stage === exp.stage && s.stageId === exp.id);
         if(!fixedSymbol) {
-            const name = "fixed_" + exp.id;
-            symbols.push({ type: "fixed", polId: exp.id, stageId: exp.id, stage: exp.stage, dim: 1, name, airId , subproofId});
+            const name = subproofName + ".fixed_" + exp.id;
+            symbols.push({ type: "fixed", polId: exp.id, stageId: exp.id, stage: exp.stage, dim: 1, name, airId, subproofId});
         }
     } else if(exp.op === "cm") {
         const witnessSymbol = symbols.find(s => s.type === "witness" && s.airId === airId && s.subproofId === subproofId
             && s.stage === exp.stage && s.stageId === exp.stageId);
         if(!witnessSymbol) {
-            const name = "witness_" + exp.stage + "_" + exp.stageId;
+            const name = subproofName + ".witness_" + exp.stage + "_" + exp.stageId;
             const dim = (exp.stage === 1 || !stark) ? 1 : 3;
             symbols.push({ type: "witness", polId: exp.id, stageId: exp.stageId, stage: exp.stage, dim, name, airId, subproofId});
         }
     } else if(exp.op === "subproofValue") {
         const subProofValueSymbol = symbols.find(s => s.type === "subproofValue" && s.id === exp.id && s.airId === airId && s.subproofId === subproofId);
         if(!subProofValueSymbol) {
-            const name = "subproofvalue_" + exp.id;
+            const name = subproofName + ".subproofvalue_" + exp.id;
             symbols.push({type: "subproofValue", dim: 1, id: exp.id, name, airId, subproofId });
         }
     } else {
