@@ -96,25 +96,25 @@ template AggregateValues() {
 }
 
 template AggregateSubproofValues() {
-    signal input subAirValueA[3];
-    signal input subAirValueB[3];
+    signal input subproofValueA[3];
+    signal input subproofValueB[3];
     signal input {binary} isNullA; // 1 if is circuit type A is 0 (null), 0 otherwise 
     signal input {binary} isNullB; // 1 if is circuit type B is 0 (null), 0 otherwise 
 
     signal input {binary} aggregationType; // 1 if aggregation is multiplication, 0 if aggregation is addition
 
-    signal output subAirValueAB[3];
+    signal output subproofValueAB[3];
 
-    // If circuit type A is null, then its subAirValue is zero;
-    signal valueA[3] <== [ (1 - isNullA)*subAirValueA[0], (1 - isNullA)*subAirValueA[1], (1 - isNullA)*subAirValueA[2] ];
+    // If circuit type A is null, then its subproofValue is zero;
+    signal valueA[3] <== [ (1 - isNullA)*subproofValueA[0], (1 - isNullA)*subproofValueA[1], (1 - isNullA)*subproofValueA[2] ];
 
-    // If circuit type B is null, then its subAirValue is zero;
-    signal valueB[3] <== [ (1 - isNullB)*subAirValueB[0], (1 - isNullB)*subAirValueB[1], (1 - isNullB)*subAirValueB[2] ];
+    // If circuit type B is null, then its subproofValue is zero;
+    signal valueB[3] <== [ (1 - isNullB)*subproofValueB[0], (1 - isNullB)*subproofValueB[1], (1 - isNullB)*subproofValueB[2] ];
 
     signal values[2][3];
     values[0] <== [valueA[0] + valueB[0], valueA[1] + valueB[1], valueA[2] + valueB[2]];
     values[1] <== [valueA[0] * valueB[0], valueA[1] * valueB[1], valueA[2] * valueB[2]];
 
     // Either add or multiply the subproofValues according to the aggregation type and then return the result
-    subAirValueAB <== MultiMux1(3)(values, aggregationType);
+    subproofValueAB <== MultiMux1(3)(values, aggregationType);
 }
