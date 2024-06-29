@@ -53,11 +53,13 @@ module.exports.getFixedPolsPil2 = function getFixedPolsPil2(pil, cnstPols, F) {
         const deg = def.polDeg;
         const fixedCols = pil.fixedCols[i];
         for(let j = 0; j < deg; ++j) {
-            if(def.idx) {
-                cnstPols[nameSpace][namePol][def.idx][j] = P.buf2bint(fixedCols.values[j]);
-            } else {
-                cnstPols[nameSpace][namePol][j] = P.buf2bint(fixedCols.values[j]);
+            let constPol = cnstPols[nameSpace][namePol];
+            if(def.lengths) {
+                for(let l = 0; l < def.lengths.length; ++l) {
+                    constPol = constPol[def.lengths[l]];
+                }
             }
+            constPol[j] = P.buf2bint(fixedCols.values[j]);
         }
     }
 }

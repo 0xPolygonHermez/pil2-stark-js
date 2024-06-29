@@ -105,7 +105,8 @@ class ColsPil2 {
             name: name,
             id: symbol.id,
             stage: symbol.stage,
-            polDeg: degree
+            polDeg: degree,
+            lengths: symbol.lengths
             };
 
             if (symbol.lengths.length > 0) {

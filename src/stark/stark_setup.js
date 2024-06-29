@@ -14,7 +14,7 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
     
     const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = pilInfo(F, pil, true, pil2, starkStruct, options );
 
-    const nConstants = pil2 ? pil.symbols.filter(s => s.type == 1).length : pil.nConstants;
+    const nConstants = starkInfo.constPolsMap.length;
     const nBits = starkStruct.nBits;
     const nBitsExt = starkStruct.nBitsExt;
     const extN= 1 << nBitsExt;
