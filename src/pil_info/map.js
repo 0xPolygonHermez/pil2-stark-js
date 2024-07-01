@@ -5,13 +5,22 @@ module.exports = function map(res, symbols, expressions, constraints) {
     setStageInfoSymbols(res, symbols);
     for(let i = 0; i < expressions.length; ++i) {
         if(i !== res.cExpId && i !== res.friExpId) {
-            expressions[i].line = printExpressions(res, expressions[i], expressions);
+            try {
+                expressions[i].line = printExpressions(res, expressions[i], expressions);
+            } catch(e) {
+                expressions[i].line = "";
+            }
+            
         }
     }
 
     for(let i = 0; i < constraints.length; ++i) {
         if(constraints[i].filename === `${res.name}.ImPol`) {
-            constraints[i].line = printExpressions(res, expressions[constraints[i].e], expressions, true);
+            try {
+                constraints[i].line = printExpressions(res, expressions[constraints[i].e], expressions, true);
+            } catch(e) {
+                constraints[i].line = "";
+            }  
         }
         constraints[i].line += " == 0";
     }

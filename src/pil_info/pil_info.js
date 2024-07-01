@@ -20,9 +20,11 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
     } else {
         maxDeg = Math.pow(2,3) + 1;
     }
-    const imInfo = calculateIntermediatePolynomials(expressions, res.cExpId, maxDeg, res.qDim);
-    addIntermediatePolynomials(res, expressions, constraints, symbols, imInfo.imExps, imInfo.qDeg, stark);
-    newExpressions = imInfo.newExpressions;
+    if(!options.debug || !options.skipImPols) {
+        const imInfo = calculateIntermediatePolynomials(expressions, res.cExpId, maxDeg, res.qDim);
+        addIntermediatePolynomials(res, expressions, constraints, symbols, imInfo.imExps, imInfo.qDeg, stark);
+        newExpressions = imInfo.newExpressions;
+    }
     
     for(let i = 0; i < newExpressions.length; i++) {
         if(newExpressions[i].keep && !newExpressions[i].imPol) {

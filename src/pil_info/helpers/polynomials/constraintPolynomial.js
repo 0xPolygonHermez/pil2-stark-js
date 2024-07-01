@@ -50,7 +50,7 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
     const xi_id = symbols.filter(s => s.type === "challenge" && s.stage < stage + 1).length;
     symbols.push({type: "challenge", name: "std_xi", stage: stage + 1, dim: 3, stageId: 0, id: xi_id})
 
-    const initial_q_degree = calculateExpDeg(expressions, expressions[res.cExpId], []);
+    const initial_q_degree = calculateExpDeg(expressions, expressions[res.cExpId], [], true);
 
     console.log(`The polynomial Q has degree ${initial_q_degree} without intermediate polynomials`);
 

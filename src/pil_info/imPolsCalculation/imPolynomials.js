@@ -199,21 +199,27 @@ function calculateImPols(expressions, _exp, maxDeg) {
     }
 }
 
-module.exports.calculateExpDeg = function calculateExpDeg(expressions, exp, imExps = []) {
+module.exports.calculateExpDeg = function calculateExpDeg(expressions, exp, imExps = [], cacheValues = false) {
+    if(cacheValues && exp.degree_) return exp.degree_;
     if (exp.op == "exp") {
         if (imExps.includes(exp.id)) return 1;
-        return calculateExpDeg(expressions, expressions[exp.id], imExps);
+        let deg = calculateExpDeg(expressions, expressions[exp.id], imExps, cacheValues);
+        if(cacheValues) exp.degree_= deg;
+        return deg;
     } else if (["x", "const", "cm"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         return 1;
     } else if (["number", "public", "challenge", "eval", "subproofValue"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
         return 0;
     } else if(exp.op === "neg") {
-        return calculateExpDeg(expressions, exp.values[0], imExps);
+        return calculateExpDeg(expressions, exp.values[0], imExps, cacheValues);
     } else if(["add", "sub", "mul"].includes(exp.op)) {
-        const lhsDeg = calculateExpDeg(expressions, exp.values[0], imExps);
-        const rhsDeg = calculateExpDeg(expressions, exp.values[1], imExps);
-        return exp.op === "mul" ? lhsDeg + rhsDeg : Math.max(lhsDeg, rhsDeg);
+        const lhsDeg = calculateExpDeg(expressions, exp.values[0], imExps, cacheValues);
+        const rhsDeg = calculateExpDeg(expressions, exp.values[1], imExps, cacheValues);
+        let deg = exp.op === "mul" ? lhsDeg + rhsDeg : Math.max(lhsDeg, rhsDeg);
+        if(cacheValues) exp.degree_= deg;
+        return deg;
     } else {
         throw new Error("Exp op not defined: "+ exp.op);
     }
 }
+

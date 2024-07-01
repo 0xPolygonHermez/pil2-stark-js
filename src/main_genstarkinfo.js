@@ -20,6 +20,8 @@ const argv = require("yargs")
     .alias("n", "pil2")
     .alias("m", "impolsstages")
     .alias("t", "firstpossiblestage")
+    .alias("d", "debug")
+    .alias("k", "skipimpols")
     .string("subproofId")
     .string("airId")
     .argv;
@@ -62,16 +64,20 @@ async function run() {
         pil = await compile(F, pilFile, null, pilConfig);
     }
 
-    const starkStruct = JSON.parse(await fs.promises.readFile(starkStructFile, "utf8"));
+    const debug = argv.debug || false;
+    const starkStruct = debug ? {} : JSON.parse(await fs.promises.readFile(starkStructFile, "utf8"));
 
     const options = {};
-    if(starkStruct.verificationHashType === "BN128") {
+
+    if(!debug && starkStruct.verificationHashType === "BN128") {
         options.arity = starkStruct.merkleTreeArity || 16;
         options.custom = starkStruct.merkleTreeCustom || false;
     }
     
     options.imPolsStages = argv.impolsstages || false;
     options.firstPossibleStage = argv.firstpossiblestage || false;
+    options.debug = debug;
+    options.skipImPols = debug ? (argv.skipImPols || false) : false;
 
     const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = pilInfo(F, pil, true, pil2, starkStruct, options);
 

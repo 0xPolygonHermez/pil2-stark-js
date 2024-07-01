@@ -188,6 +188,8 @@ module.exports.printExpressions = function printExpressions(res, exp, expression
         return res.subproofValuesMap[exp.id].name;    
     } else if (exp.op === "challenge") {
         return res.challengesMap[exp.id].name;
+    } else if (exp.op === "x") {
+        return "x";
     } else throw new Error("Unknown op: " + exp.op);
 }
 
