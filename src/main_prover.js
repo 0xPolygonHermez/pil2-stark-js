@@ -84,6 +84,7 @@ async function run() {
     } else {
         const pil = await compile(F, pilFile, null);
 
+        const N = Object.values(pil.references)[0].polDeg;
         constPols = generateFixedCols(pil.references, N, false);
         cmPols = generateWtnsCols(pil.references, N, false);
     }

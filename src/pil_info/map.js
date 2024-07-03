@@ -1,16 +1,18 @@
 const { printExpressions } = require("./helpers/pil2/utils");
 
-module.exports = function map(res, symbols, expressions, constraints) {
+module.exports = function map(res, symbols, expressions, constraints, options) {
     mapSymbols(res, symbols);
     setStageInfoSymbols(res, symbols);
-    for(let i = 0; i < expressions.length; ++i) {
-        if(i !== res.cExpId && i !== res.friExpId) {
-            try {
-                expressions[i].line = printExpressions(res, expressions[i], expressions);
-            } catch(e) {
-                expressions[i].line = "";
+    if(options.debugLine) {
+        for(let i = 0; i < expressions.length; ++i) {
+            if(i !== res.cExpId && i !== res.friExpId) {
+                try {
+                    expressions[i].line = printExpressions(res, expressions[i], expressions);
+                } catch(e) {
+                    expressions[i].line = "";
+                }
+                
             }
-            
         }
     }
 

@@ -77,7 +77,8 @@ async function run() {
     options.imPolsStages = argv.impolsstages || false;
     options.firstPossibleStage = argv.firstpossiblestage || false;
     options.debug = debug;
-    options.skipImPols = debug ? (argv.skipImPols || false) : false;
+    options.skipImPols = debug ? (argv.skipimpols || false) : false;
+    options.debugLine = argv.debugLine || false;
 
     const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = pilInfo(F, pil, true, pil2, starkStruct, options);
 

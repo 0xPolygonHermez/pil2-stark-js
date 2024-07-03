@@ -47,7 +47,9 @@ async function run() {
         }    
     }
 
-    map(res, symbols, expressions, constraints);     
+    const debugLine = argv.debugLine || false;
+
+    map(res, symbols, expressions, constraints, { debugLine });     
 
     const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, expressions, hints, debug, stark);
 

@@ -13,7 +13,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
     const symbols = infoPil.symbols;
     const res = infoPil.res;
     
-    let newExpressions;
+    let newExpressions = expressions;
     let maxDeg;
     if(stark) {
         maxDeg = (1 << (res.starkStruct.nBitsExt- res.starkStruct.nBits)) + 1;
@@ -34,7 +34,7 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
         }    
     }
 
-    map(res, symbols, expressions, constraints);       
+    map(res, symbols, expressions, constraints, options);       
 
     const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, newExpressions, hints, options.debug, stark);
     
