@@ -1,13 +1,14 @@
 const F3g = require("../../src/helpers/f3g");
 const path = require("path");
 
-const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
+const { compile } = require("pilcom");
 
 const Logger = require('logplease');
 
 const smSimple = require("../state_machines/sm_simple/sm_simple.js");
 
 const { generateStarkProof } = require("./helpers");
+const { generateWtnsCols, generateFixedCols } = require("../../src/witness/witnessCalculator.js");
 
 async function runTest(pilFile) {
     const logger = Logger.create("pil-stark", {showTimestamp: false});
@@ -28,13 +29,13 @@ async function runTest(pilFile) {
     const F = new F3g("0xFFFFFFFF00000001");
     const pil = await compile(F, path.join(__dirname, "../state_machines/", "sm_simple", pilFile));
 
-    const constPols =  newConstantPolsArray(pil, F);
-
     const N = 2**(starkStruct.nBits);
+
+    const constPols = generateFixedCols(pil.references, N, false);
 
     await smSimple.buildConstants(N, constPols.Simple);
 
-    const cmPols = newCommitPolsArray(pil, F);
+    const cmPols = generateWtnsCols(pil.references, N, false);
 
     await smSimple.execute(N, cmPols.Simple, F);
 
@@ -44,7 +45,7 @@ async function runTest(pilFile) {
         pil.polIdentities[0].boundary = "lastRow";
     }
 
-    let inputs = pilFile === "simple2p.pil" ? [cmPolsSimple.b[N - 1], cmPolsSimple.b[N - 2]] : [];
+    let inputs = pilFile === "simple2p.pil" ? [cmPols.Simple.b[N - 1], cmPols.Simple.b[N - 2]] : [];
     
     const skipVerifierCircom = pilFile === "simple1.pil" ? true : false;
     await generateStarkProof(constPols, cmPols, pil, starkStruct, inputs, {logger, F, pil2: false, skip: skipVerifierCircom, debug: true});

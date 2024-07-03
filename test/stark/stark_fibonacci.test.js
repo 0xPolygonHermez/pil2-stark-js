@@ -1,12 +1,13 @@
 const F3g = require("../../src/helpers/f3g");
 const path = require("path");
 
-const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
+const { compile } = require("pilcom");
 
 const Logger = require('logplease');
 
 const smFibonacci = require("../state_machines/sm_fibonacci/sm_fibonacci.js");
 const { generateStarkProof } = require("./helpers");
+const { generateWtnsCols, generateFixedCols } = require("../../src/witness/witnessCalculator.js");
 
 describe("test fibonacci sm", async function () {
     this.timeout(10000000);
@@ -42,14 +43,13 @@ describe("test fibonacci sm", async function () {
         pil.polIdentities[3].boundary = "firstRow";
         pil.polIdentities[4].boundary = "lastRow";
 
-        
-        const constPols =  newConstantPolsArray(pil, F);
-        
         const N = 2**(starkStruct.nBits);
 
+        const constPols = generateFixedCols(pil.references, N, false);
+        
         await smFibonacci.buildConstants(N, constPols.Fibonacci);
 
-        const cmPols = newCommitPolsArray(pil, F);
+        const cmPols = generateWtnsCols(pil.references, N, false);
 
         await smFibonacci.execute(N, cmPols.Fibonacci, [1,2], F);
 
@@ -71,17 +71,16 @@ describe("test fibonacci sm", async function () {
             ]
         };
 
+        const N = 2**(starkStruct.nBits);
+
         const F = new F3g("0xFFFFFFFF00000001");
         const pil = await compile(F, path.join(__dirname, "../state_machines/", "sm_fibonacci", "fibonacci_main.pil"));
         
-        const constPols =  newConstantPolsArray(pil, F);
+        const constPols = generateFixedCols(pil.references, N, false);
         
-        const N = 2**(starkStruct.nBits);
-
         await smFibonacci.buildConstants(N, constPols.Fibonacci);
 
-        const cmPols = newCommitPolsArray(pil, F);
-
+        const cmPols = generateWtnsCols(pil.references, N, false);
         await smFibonacci.execute(N, cmPols.Fibonacci, [1,2], F);
 
         await generateStarkProof(constPols, cmPols, pil, starkStruct, [1n, 2n, cmPols.Fibonacci.l1[N - 1]], {logger, F, pil2: false, debug: true});

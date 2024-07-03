@@ -1,6 +1,6 @@
 const path = require("path");
 const version = require("../../../package").version;
-const { newConstantPolsArray, compile } = require("pilcom");
+const { compile } = require("pilcom");
 
 const smGlobal = require("../sm/sm_global.js");
 const smPlookup = require("../sm_plookup/sm_plookup.js");
@@ -9,8 +9,7 @@ const smPermutation = require("../sm_permutation/sm_permutation.js");
 const smConnection = require("../sm_connection/sm_connection.js");
 
 const F3g = require("../../../src/helpers/f3g.js");
-const { log2 } = require("pilcom/src/utils");
-
+const { generateFixedCols } = require("../../../src/witness/witnessCalculator.js");
 
 const argv = require("yargs")
     .version(version)
@@ -25,9 +24,10 @@ async function run() {
     const F = new F3g();
     const pil = await compile(F, path.join(__dirname, "all_main.pil"));
 
-    const constPols = newConstantPolsArray(pil, F);
-
     const N = Object.values(pil.references)[0].polDeg;
+
+    const constPols = generateFixedCols(pil.references, N, false);
+
     await smGlobal.buildConstants(N,constPols.Global);
     await smPlookup.buildConstants(N, constPols.Plookup);
     await smFibonacci.buildConstants(N, constPols.Fibonacci);

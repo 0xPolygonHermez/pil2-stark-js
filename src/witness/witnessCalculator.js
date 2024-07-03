@@ -25,14 +25,16 @@ function setValueMultiArray(arr, indexes, value) {
     } 
 }
     
-module.exports.generateFixedCols = function generateFixedCols(symbols, degree, fromPilout = true) {
+module.exports.generateFixedCols = function generateFixedCols(symbols, degree, pil2 = true) {
     const fixedSymbols = [];
-    for (let i = 0; i < symbols.length; ++i) {
-        const name = symbols[i].name;
-        const stage = symbols[i].stage;
-        const id = fromPilout ? symbols[i].id : symbols[i].stageId;
-        const lengths = symbols[i].lengths || [];
-        if(fromPilout && (symbols[i].type !== 1 || stage !== 0)) continue;
+    const nSymbols = pil2 ? symbols.length : Object.keys(symbols).length;
+    for (let i = 0; i < nSymbols; ++i) {
+        const symbol = pil2 ? symbols[i] : symbols[Object.keys(symbols)[i]];
+        const name = pil2 ? symbol.name : Object.keys(symbols)[i];
+        const stage = symbol.stage;
+        const id = symbol.id;
+        const lengths = pil2 ? (symbol.lengths || []) : symbol.isArray ? [ symbol.len ] : [];
+        if((pil2 && (stage !== 0 || symbol.type !== 1)) || (!pil2 && symbol.type !== "constP")) continue;
         if(!lengths.length) {
             fixedSymbols.push({name, id, stage, lengths});
         } else {
@@ -40,18 +42,20 @@ module.exports.generateFixedCols = function generateFixedCols(symbols, degree, f
         }
     }
     
-    const fixedCols = new ColsPil2(fixedSymbols, degree, true);
+    const fixedCols = new ColsPil2(fixedSymbols, degree);
     return fixedCols;
 }
 
-module.exports.generateWtnsCols = function generateWtnsCols(symbols, degree, fromPilout = true, nCols, buffer) {
+module.exports.generateWtnsCols = function generateWtnsCols(symbols, degree, pil2 = true) {
     const witnessSymbols = [];
-    for (let i = 0; i < symbols.length; ++i) {
-        if(fromPilout && symbols[i].type !== 3) continue;
-        const name = symbols[i].name;
-        const stage = symbols[i].stage;
-        const id = fromPilout ? symbols[i].id : symbols[i].stageId;
-        const lengths = symbols[i].lengths || [];
+    const nSymbols = pil2 ? symbols.length : Object.keys(symbols).length;
+    for (let i = 0; i < nSymbols; ++i) {
+        const symbol = pil2 ? symbols[i] : symbols[Object.keys(symbols)[i]];
+        const name = pil2 ? symbol.name : Object.keys(symbols)[i];
+        const stage = symbol.stage;
+        if((pil2 && (stage !== 1 || symbol.type !== 3)) || (!pil2 && symbol.type !== "cmP")) continue;
+        const id = symbol.id;
+        const lengths = pil2 ? (symbol.lengths || []) : symbol.isArray ? [ symbol.len ] : [];
         if(!lengths.length) {
             witnessSymbols.push({name, id, lengths: [], stage });
         } else {
@@ -59,37 +63,21 @@ module.exports.generateWtnsCols = function generateWtnsCols(symbols, degree, fro
         }
     }
     
-    const wtnsCols = new ColsPil2(witnessSymbols, degree, false, nCols, buffer);
+    const wtnsCols = new ColsPil2(witnessSymbols, degree);
     return wtnsCols;
 }
 
 class ColsPil2 {
-    constructor(symbols, degree, constants = false, nCols = {}, buffers = {}) {
+    constructor(symbols, degree) {
         this.$$def = {};
         this.$$defArray = [];
 
         this.F = new F3g();
         this.$$n = degree;
-        this.$$nCols = {};
-        this.$$buffers = {};
-        this.$$nStages = Object.keys(nCols).length != 0 ? Object.keys(nCols).length : constants ? 0 : 1;
-        
-        const initialStage = constants ? 0 : 1;
-        for(let s = initialStage; s <= this.$$nStages; ++s) {
-            let st = "cm" + s;
-            if(nCols[st]) {
-                this.$$nCols[st] =  nCols[st];
-            } else {
-                let nColsStage = 0;
-                for(let i = 0; i < symbols.length; ++i) {
-                    if(symbols[i].stage == s) nColsStage++;
-                }
-                this.$$nCols[st] = nColsStage;
-            }            
-            this.$$buffers[st] = buffers[st] ? buffers[st] : new BigBuffer(this.$$nCols[st]*this.$$n);
-        }
-
-        this.$$constants = constants;
+        this.$$nCols = symbols.length;
+        this.$$buffer = [];
+                    
+        this.$$buffer = new BigBuffer(this.$$nCols*this.$$n);
 
         this.symbols = symbols;
         for(let i = 0; i < symbols.length; ++i) {
@@ -99,7 +87,7 @@ class ColsPil2 {
             if (!this[nameSpace]) this[nameSpace] = {};
             if (!this.$$def[nameSpace]) this.$$def[nameSpace] = {};
             
-            const polProxy = this.createArrayProxy(symbol.stage, symbol.id);
+            const polProxy = this.createArrayProxy(symbol.id);
 
             this.$$defArray[symbol.id] = {
             name: name,
@@ -121,10 +109,10 @@ class ColsPil2 {
         }
     }
 
-    createArrayProxy(stage, symbolId) {
+    createArrayProxy(symbolId) {
           
-        const nCols = this.$$nCols["cm" + stage];
-        const buff = this.$$buffers["cm" + stage];
+        const nCols = this.$$nCols;
+        const buff = this.$$buffer;
         const N = this.$$n;
 
         return new Proxy([], {
@@ -152,15 +140,13 @@ class ColsPil2 {
     async saveToFile(fileName) {
         const fd =await fs.promises.open(fileName, "w+");
 
-        const st = this.$$constants ? "cm0" : "cm1";
-
         const MaxBuffSize = 1024*1024*32;  //  256Mb
-        const totalSize = this.$$nCols[st]*this.$$n;
+        const totalSize = this.$$nCols*this.$$n;
         const buff = new BigUint64Array(Math.min(totalSize, MaxBuffSize));
 
         let p=0;
         for (let i=0; i<totalSize; i++) {
-            buff[p++] = (this.$$buffers[st].getElement(i) < 0n) ? (this.$$buffers[st].getElement(i) + 0xffffffff00000001n) : this.$$buffers[st].getElement(i);
+            buff[p++] = (this.$$buffer.getElement(i) < 0n) ? (this.$$buffer.getElement(i) + 0xffffffff00000001n) : this.$$buffer.getElement(i);
             if (p == buff.length) {
                 const buff8 = new Uint8Array(buff.buffer);
                 await fd.write(buff8);
@@ -181,10 +167,8 @@ class ColsPil2 {
 
         const fd =await fs.promises.open(fileName, "r");
         
-        const st = this.$$constants ? "cm0" : "cm1";
-
         const MaxBuffSize = 1024*1024*32;  //  256Mb
-        const totalSize = this.$$nCols[st]*this.$$n;
+        const totalSize = this.$$nCols*this.$$n;
         const buff = new BigUint64Array(Math.min(totalSize, MaxBuffSize));
         const buff8 = new Uint8Array(buff.buffer);
 
@@ -199,7 +183,7 @@ class ColsPil2 {
             n = res.bytesRead/8;
             p += n*8;
             for (let l=0; l<n; l++) {
-                this.$$buffers[st].setElement(i++, buff[l]);
+                this.$$buffer.setElement(i++, buff[l]);
             }
         }
 
@@ -207,29 +191,25 @@ class ColsPil2 {
     }
 
     writeToBigBuffer(buff, nCols) {
-        const st = this.$$constants ? "cm0" : "cm1";
-
-        if(!nCols) nCols = this.$$nCols[st];
+        if(!nCols) nCols = this.$$nCols;
         if (typeof buff == "undefined") {
             buff = new BigBuffer(this.$$n*nCols);
         }
         let p=0;
         for (let i=0; i<this.$$n; i++) {
-            for(let j = 0; j < this.$$nCols[st]; ++j) {
-                let c = i*this.$$nCols[st] + j;
-                const value = (this.$$buffers[st].getElement(c) < 0n) ? (this.$$buffers[st].getElement(c) + this.F.p) : this.$$buffers[st].getElement(c);
+            for(let j = 0; j < this.$$nCols; ++j) {
+                let c = i*this.$$nCols + j;
+                const value = (this.$$buffer.getElement(c) < 0n) ? (this.$$buffer.getElement(c) + this.F.p) : this.$$buffer.getElement(c);
                 buff.setElement(p++, value);
             }
-            for(let j = this.$$nCols[st]; j < nCols; ++j) buff.setElement(p++, 0n);
+            for(let j = this.$$nCols; j < nCols; ++j) buff.setElement(p++, 0n);
 
         }
         return buff;
     };
 
     writeToBuff(buff) {
-        const st = this.$$constants ? "cm0" : "cm1";
-
-        buff = this.$$buffers[st];
+        buff = this.$$buffer;
         return buff;
     }
 }

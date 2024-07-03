@@ -4,7 +4,7 @@ const version = require("../package").version;
 
 const protobuf = require('protobufjs');
 
-const { compile, newConstantPolsArray, newCommitPolsArray } = require("pilcom");
+const { compile } = require("pilcom");
 const compilePil2 = require("pil2-compiler/src/compiler.js");
 
 const { F1Field, getCurveFromName } = require("ffjavascript");
@@ -76,8 +76,8 @@ async function run() {
     } else {
         pil = await compile(F, pilFile, null, config);
 
-        constPols = newConstantPolsArray(pil, F);
-        cmPols =  newCommitPolsArray(pil, F);
+        constPols = generateFixedCols(pil.references, N, false);
+        cmPols = generateWtnsCols(pil.references, N, false);
     }
     
     let Fr;

@@ -7,7 +7,8 @@ const smFibonacci = require("./sm_fibonacci.js");
 const F3g = require("../../../src/helpers/f3g");
 const { F1Field, getCurveFromName } = require("ffjavascript");
 
-const { newCommitPolsArray, compile } = require("pilcom");
+const { compile } = require("pilcom");
+const { generateWtnsCols } = require("../../../src/witness/witnessCalculator.js");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 
 const argv = require("yargs")
@@ -34,9 +35,9 @@ async function run() {
 
     const input = JSON.parse(await fs.promises.readFile(inputFile, "utf8"));
 
-    const cmPols =  newCommitPolsArray(pil, F);
-
     const N = Object.values(pil.references)[0].polDeg;
+
+    const cmPols = generateWtnsCols(pil.references, N, false);
 
     const result = await smFibonacci.execute(N, cmPols.Fibonacci, input, F);
     console.log("Result: " + result);

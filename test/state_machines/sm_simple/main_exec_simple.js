@@ -6,7 +6,7 @@ const smSimple = require("./sm_simple.js");
 
 const F3g = require("../../../src/helpers/f3g");
 const { F1Field, getCurveFromName } = require("ffjavascript");
-const { newCommitPolsArray, compile } = require("pilcom");
+const { compile } = require("pilcom");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 
 
@@ -32,7 +32,9 @@ async function run() {
     const simple = argv.simple.toString() || "2";
     const pil = await compile(F, path.join(__dirname, "simple" + simple + ".pil"));
 
-    const cmPols =  newCommitPolsArray(pil, F);
+    const N = pil.references[Object.keys(pil.references)[0]].polDeg;
+    
+    const cmPols = generateWtnsCols(pil.references, N, false);
 
     await smSimple.execute(N, cmPols.Simple, F);
 

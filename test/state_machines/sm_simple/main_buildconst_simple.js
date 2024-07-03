@@ -1,11 +1,12 @@
 const path = require("path");
 const version = require("../../../package").version;
-const { newConstantPolsArray, compile } = require("pilcom");
+const { compile } = require("pilcom");
 
 const smSimple = require("./sm_simple.js");
 
 const F3g = require("../../../src/helpers/f3g");
 const { F1Field, getCurveFromName } = require("ffjavascript");
+const { generateFixedCols } = require("../../../src/witness/witnessCalculator.js");
 
 
 const argv = require("yargs")
@@ -27,9 +28,10 @@ async function run() {
     const simple = argv.simple.toString() || "2";
     const pil = await compile(F, path.join(__dirname, "simple" + simple + ".pil"));
 
-    const constPols = newConstantPolsArray(pil, F);
-
     const N = Object.values(pil.references)[0].polDeg;
+
+    const constPols = generateFixedCols(pil.references, N, false);
+
     await smSimple.buildConstants(N, constPols.Simple);
 
     if(curveName === "gl"){

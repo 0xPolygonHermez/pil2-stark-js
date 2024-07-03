@@ -1,12 +1,13 @@
 const path = require("path");
 const version = require("../../../package").version;
-const { newConstantPolsArray, compile } = require("pilcom");
+const { compile } = require("pilcom");
 
 const smFibonacci = require("./sm_fibonacci.js");
 
 const F3g = require("../../../src/helpers/f3g");
 const { F1Field, getCurveFromName } = require("ffjavascript");
 const { log2 } = require("pilcom/src/utils");
+const { generateFixedCols } = require("../../../src/witness/witnessCalculator.js");
 
 const argv = require("yargs")
     .version(version)
@@ -26,9 +27,9 @@ async function run() {
     
     const pil = await compile(F, path.join(__dirname, "fibonacci_main.pil"));
 
-    const constPols = newConstantPolsArray(pil, F);
-    
     const N = Object.values(pil.references)[0].polDeg;
+
+    const constPols = generateFixedCols(pil.references, N, false);
 
     await smFibonacci.buildConstants(N, constPols.Fibonacci);
 

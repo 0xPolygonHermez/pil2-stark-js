@@ -6,7 +6,7 @@ const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig
 const protobuf = require('protobufjs');
 
 const F3g = require("./helpers/f3g.js");
-const { newConstantPolsArray, compile } = require("pilcom");
+const { compile } = require("pilcom");
 const { buildConstTree } = require("./stark/stark_buildConstTree");
 
 const compilePil2 = require("pil2-compiler/src/compiler.js");
@@ -54,7 +54,7 @@ async function run() {
         constPols = generateFixedCols(pil.symbols, pil.numRows);
     } else {
         const pil = await compile(F, pilFile, null, pilConfig);
-        constPols = newConstantPolsArray(pil, F);
+        constPols = generateFixedCols(pil.references, pil.references[Object.keys(pil.references)[0]].polDeg, false);
     }
 
     await constPols.loadFromFile(constFile);

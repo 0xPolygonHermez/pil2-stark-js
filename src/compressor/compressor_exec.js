@@ -1,11 +1,13 @@
-const { newCommitPolsArray } = require("pilcom");
 const { WitnessCalculatorBuilder } = require("circom_runtime");
 const fs = require("fs");
+const { generateWtnsCols } = require("../witness/witnessCalculator");
 
 module.exports.compressorExec = async function compressorExec(F, pil, wasm, input, exec) {
-    const cmPols = newCommitPolsArray(pil);
+    const N = cmPols.Compressor.a[0].length;
+    
+    const cmPols = generateWtnsCols(pil.references, N, false);
 
-    const nCommittedPols =cmPols.Compressor.a.length;
+    const nCommittedPols = cmPols.Compressor.a.length;
     
     const { nAdds, nSMap, addsBuff, sMapBuff } = exec;
     

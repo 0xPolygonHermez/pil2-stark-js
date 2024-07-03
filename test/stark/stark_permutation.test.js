@@ -1,7 +1,7 @@
 const F3g = require("../../src/helpers/f3g");
 const path = require("path");
 
-const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
+const { compile } = require("pilcom");
 
 const Logger = require('logplease');
 
@@ -9,6 +9,7 @@ const smGlobal = require("../state_machines/sm/sm_global.js");
 const smPermutation = require("../state_machines/sm_permutation/sm_permutation.js");
 
 const { generateStarkProof } = require("./helpers");
+const { generateWtnsCols, generateFixedCols } = require("../../src/witness/witnessCalculator.js");
 
 describe("test permutation sm", async function () {
     this.timeout(10000000);
@@ -28,16 +29,16 @@ describe("test permutation sm", async function () {
             ]
         };
 
+        const N = 2**(starkStruct.nBits);
+
         const F = new F3g("0xFFFFFFFF00000001");
         const pil = await compile(F, path.join(__dirname, "../state_machines/", "sm_permutation", "permutation_main.pil"));
-        const constPols =  newConstantPolsArray(pil, F);
-
-        const N = 2**(starkStruct.nBits);
+        const constPols = generateFixedCols(pil.references, N, false);
 
         await smGlobal.buildConstants(N, constPols.Global);
         await smPermutation.buildConstants(N, constPols.Permutation);
 
-        const cmPols = newCommitPolsArray(pil, F);
+        const cmPols = generateWtnsCols(pil.references, N, false);
 
         await smPermutation.execute(N, cmPols.Permutation);
 

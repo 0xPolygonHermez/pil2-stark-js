@@ -3,11 +3,12 @@ const fs = require("fs");
 const path = require("path");
 const { log2 } = require("pilcom/src/utils.js");
 const {tmpName} = require("tmp-promise");
-const { newConstantPolsArray, compile, getKs } = require("pilcom");
+const { compile, getKs } = require("pilcom");
 const ejs = require("ejs");
 const {M, P, S, C} = require("../helpers/hash/poseidon/poseidon_constants_opt.js");
 const { connect } = require("../helpers/polutils");
 const { getCompressorConstraints } = require("./compressor_constraints");
+const { generateFixedCols } = require("../witness/witnessCalculator.js");
 
 /*
     Compress plonk constraints and verifies custom gates using 18 committed polynomials
@@ -50,7 +51,7 @@ module.exports = async function plonkSetup(F, r1cs, options) {
     const pilFile = await tmpName();
     await fs.promises.writeFile(pilFile, pilStr, "utf8");
     const pil = await compile(F, pilFile);
-    const constPols =  newConstantPolsArray(pil, F);
+    const constPols = generateFixedCols(pil.references, pil.references[Object.keys(pil.references)[0]].polDeg, false);
 
     fs.promises.unlink(pilFile);
 

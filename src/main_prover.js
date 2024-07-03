@@ -4,7 +4,7 @@ const version = require("../package").version;
 
 const protobuf = require('protobufjs');
 
-const { newConstantPolsArray, newCommitPolsArray, compile } = require("pilcom");
+const { compile } = require("pilcom");
 const compilePil2 = require("pil2-compiler/src/compiler.js");
 
 const proofGen = require("./prover/prover.js");
@@ -84,8 +84,8 @@ async function run() {
     } else {
         const pil = await compile(F, pilFile, null);
 
-        constPols = newConstantPolsArray(pil, F);
-        cmPols =  newCommitPolsArray(pil, F);
+        constPols = generateFixedCols(pil.references, N, false);
+        cmPols = generateWtnsCols(pil.references, N, false);
     }
    
     await constPols.loadFromFile(constFile);

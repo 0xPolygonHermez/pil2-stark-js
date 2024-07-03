@@ -2,9 +2,10 @@ const fs = require("fs");
 const path = require("path");
 const { log2 } = require("pilcom/src/utils.js");
 const {tmpName} = require("tmp-promise");
-const { newConstantPolsArray, compile, getKs } = require("pilcom");
+const { compile, getKs } = require("pilcom");
 const ejs = require("ejs");
 const r1cs2plonk = require("../../src/r1cs2plonk");
+const { generateFixedCols } = require("../../src/witness/witnessCalculator");
 
 
 
@@ -31,8 +32,8 @@ module.exports = async function plonkSetup(F, r1cs) {
     await fs.promises.writeFile(pilFile, pilStr, "utf8");
 
     const pil = await compile(F, pilFile);
-    const constPols =  newConstantPolsArray(pil, F);
 
+    const constPols = generateFixedCols(pil.references, N, false);
     fs.promises.unlink(pilFile);
 
     const sMap = [];
