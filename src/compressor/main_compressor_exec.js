@@ -41,7 +41,7 @@ async function run() {
     await fd.read(wasm, 0, st.size);
     await fd.close();
 
-    const {cmPols} = await compressorExec(F, pil, wasm, input, exec);
+    const cmPols = await compressorExec(F, pil, wasm, input, exec);
 
     await cmPols.saveToFile(commitFile);
 

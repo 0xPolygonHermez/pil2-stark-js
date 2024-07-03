@@ -3,7 +3,7 @@ const fs = require("fs");
 const { generateWtnsCols } = require("../witness/witnessCalculator");
 
 module.exports.compressorExec = async function compressorExec(F, pil, wasm, input, exec) {
-    const N = cmPols.Compressor.a[0].length;
+    const N = Object.values(pil.references)[0].polDeg;
     
     const cmPols = generateWtnsCols(pil.references, N, false);
 
