@@ -39,8 +39,6 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
             exp = expressions[exp.id];
         }
 
-        exp.tmpExps = expressions[exp.id].tmpExps || [];
-        if(expressions[exp.id].keep && !exp.tmpExps.includes(exp.id)) exp.tmpExps.push(exp.id);
     } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         exp.expDeg = 1;
         if(!exp.stage || exp.op === "const") exp.stage = exp.op === "cm" ? 1 : 0;
@@ -88,10 +86,6 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
         const lhsRowOffsets = lhsValue.rowsOffsets || [0];
         const rhsRowOffsets = rhsValue.rowsOffsets || [0];
         exp.rowsOffsets = [...new Set([...lhsRowOffsets, ...rhsRowOffsets])];
-
-        const lhsTmpExps = lhsValue.tmpExps || [];
-        const rhsTmpExps = rhsValue.tmpExps || [];
-        exp.tmpExps = [...new Set([...lhsTmpExps, ...rhsTmpExps])];
     } else {
         throw new Error("Exp op not defined: "+ exp.op);
     }
@@ -106,18 +100,17 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
         addInfoExpressionsSymbols(symbols, expressions, expressions[exp.id], stark);
         exp.symbols = expressions[exp.id].symbols ? [...expressions[exp.id].symbols] : [];
 
-        if(expressions[exp.id].keep) {
-            const expSym = symbols.find(s => ["witness", "tmpPol"].includes(s.type) && s.expId === exp.id);
-            const op = expressions[exp.id].imPol ? "cm" : "tmp";
-            if(!exp.symbols.find(s => s.op === op && s.stage === expSym.stage && s.stageId === expSym.stageId && s.id === expSym.polId)) {
-                exp.symbols.push({op: op, stage: expSym.stage, stageId: expSym.stageId, id: expSym.polId});
+        if(expressions[exp.id].imPol) {
+            const expSym = symbols.find(s => s.type === "witness" && s.expId === exp.id);
+            if(!exp.symbols.find(s => s.op === "cm" && s.stage === expSym.stage && s.stageId === expSym.stageId && s.id === expSym.polId)) {
+                exp.symbols.push({op: "cm", stage: expSym.stage, stageId: expSym.stageId, id: expSym.polId});
             }
         }
 
     } else if (["cm", "const"].includes(exp.op) && !exp.symbols) {
         if(exp.op === "cm") {
             if(exp.stageId === undefined) {
-                const sym = symbols.find(s => ["tmpPol", "witness"].includes(s.type) && s.polId === exp.id);
+                const sym = symbols.find(s => s.type === "witness" && s.polId === exp.id);
                 exp.stageId = sym.stageId;
             }
             exp.symbols = [{op: "cm", stage: exp.stage, stageId: exp.stageId, id: exp.id}];

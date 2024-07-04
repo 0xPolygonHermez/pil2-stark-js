@@ -134,16 +134,6 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 }
                 break;
             }
-            case "tmpExp": {
-                if (dom == "n") {
-                    evalMap_(r.dest.id, r.dest.prime)
-                } else if (dom == "ext") {
-                    throw new Error("Invalid dom");
-                } else {
-                    throw new Error("Invalid dom");
-                }
-                break;
-            }
             case "f": {
                 break;
             }
@@ -173,16 +163,6 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
 
                 args.push(primeIndex);
                 
-                break;
-            }
-            case "tmpExp": {
-                if (dom == "n") {
-                    evalMap_(r.id, r.prime)
-                } else if (dom == "ext") {
-                    throw new Error("Invalid dom");
-                } else {
-                    throw new Error("Invalid dom");
-                }
                 break;
             }
             case "cm": {
@@ -221,7 +201,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
     function evalMap_(polId, prime) {
         let p = starkInfo.cmPolsMap[polId];
 
-        const stage = p.stage === "tmpExp" ? starkInfo.nStages + 1 : p.stage;
+        const stage = p.stage;
         
         const primeIndex = starkInfo.openingPoints.findIndex(p => p === prime);
         if(primeIndex == -1) throw new Error("Something went wrong");

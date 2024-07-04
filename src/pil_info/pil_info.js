@@ -26,14 +26,6 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
         newExpressions = imInfo.newExpressions;
     }
     
-    for(let i = 0; i < newExpressions.length; i++) {
-        if(newExpressions[i].keep && !newExpressions[i].imPol) {
-            if(newExpressions[i].stage === 0) newExpressions[i].stage = 1;
-            const symbol = { type: "tmpPol", name: `TmpPol.${i}`, expId: i, stage: newExpressions[i].stage, dim: newExpressions[i].dim, subproofId: res.subproofId, airId: res.airId };
-            symbols.push(symbol);
-        }    
-    }
-
     map(res, symbols, expressions, constraints, options);       
 
     const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, newExpressions, hints, options.debug, stark);
@@ -58,7 +50,6 @@ module.exports = function pilInfo(F, pil, stark = true, pil2 = true, starkStruct
             nColumnsBaseField += nColsBaseField;
         }
         
-        nCols["tmpExp"] = res.cmPolsMap.filter(p => p.stage == "tmpExp").length;
         console.log(`Total Columns: ${nColumns} -> Total Columns in the basefield: ${nColumnsBaseField}`);
         console.log(`Total Constraints: ${constraints.length}`)
         if(!options.debug) console.log(`Number of evaluations: ${res.evMap.length}`)

@@ -385,8 +385,6 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
                 execInfo.inputSections.push({ name: `cm${stage}_n` });
                 execInfo.outputSections.push({ name: `cm${stage}_n` });
             }
-            execInfo.inputSections.push({ name: "tmpExp_n" });
-            execInfo.outputSections.push({ name: "tmpExp_n" });
             dom = "n";
         } else if (stageCode === ctx.pilInfo.nStages + 1) {
             execInfo.inputSections.push({ name: "const_ext" });

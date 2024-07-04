@@ -70,7 +70,6 @@ module.exports.initProverFflonk = async function initProverFflonk(pilInfo, expre
             logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == stage).length}`);
         }
         logger.debug(`  Stage Q pols:   ${ctx.nQ}`);
-        logger.debug(`  Temp exp pols: ${ctx.pilInfo.cmPolsMap.filter(p => p.stage == "tmpExp").length}`);
         logger.debug("-----------------------------");
     }
 

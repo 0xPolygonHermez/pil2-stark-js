@@ -40,13 +40,6 @@ async function run() {
 
     addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark);
     
-    for(let i = 0; i < expressions.length; i++) {
-        if(expressions[i].keep && !expressions[i].imPol) {
-            const symbol = { type: "tmpPol", name: `TmpPol.${i}`, expId: i, stage: expressions[i].stage, dim: expressions[i].dim, subproofId: res.subproofId, airId: res.airId };
-            symbols.push(symbol);
-        }    
-    }
-
     const debugLine = argv.debugLine || false;
 
     map(res, symbols, expressions, constraints, { debugLine });     
@@ -77,7 +70,6 @@ async function run() {
             nColumnsBaseField += nColsBaseField;
         }
         
-        nCols["tmpExp"] = res.cmPolsMap.filter(p => p.stage == "tmpExp").length;
         console.log(`Total Columns: ${nColumns} -> Total Columns in the basefield: ${nColumnsBaseField}`);
         console.log(`Total Constraints: ${constraints.length}`)
         console.log(`Number of evaluations: ${res.evMap.length}`)
