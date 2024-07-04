@@ -1,12 +1,35 @@
 const { callCalculateExps } = require("./prover_helpers");
 
+module.exports.initCalculatedSymbols = function initCalculatedSymbols(pilInfo) {
+    let calculatedSymbols = {};
+
+    if(pilInfo.nPublics > 0) {
+        calculatedSymbols.public = new Array(pilInfo.nPublics).fill(false);
+    }
+
+    if(pilInfo.nConstants > 0) {
+        calculatedSymbols.const = new Array(pilInfo.nConstants).fill(false);
+    }
+
+    if(pilInfo.nSubproofValues > 0) {
+        calculatedSymbols.subproofValue = new Array(pilInfo.nSubproofValues).fill(false);
+    }
+
+    const nChallenges = pilInfo.challengesMap.length;
+    calculatedSymbols.challenge = new Array(nChallenges).fill(false);
+    
+    calculatedSymbols.cm = new Array(pilInfo.cmPolsMap.length).fill(false);
+
+    return calculatedSymbols;
+}
+
 module.exports.isStageCalculated = function isStageCalculated(ctx, stage, options) {
     
     let symbolsToBeCalculated = 0;
     
     for(let i = 0; i < ctx.pilInfo.cmPolsMap.length; ++i) {
         const cmPol = ctx.pilInfo.cmPolsMap[i];
-        if(cmPol.stage !== stage || cmPol.stage === "tmpExp" || cmPol.imPol) continue;
+        if(cmPol.stage !== stage || cmPol.imPol) continue;
         if(!module.exports.isSymbolCalculated(ctx, {op: "cm", id: i})) {
             console.log(`Witness col ${cmPol.name} with id ${i} for stage ${cmPol.stage} is not calculated.`);
             symbolsToBeCalculated++;
@@ -55,21 +78,19 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
 }
 
 module.exports.isSymbolCalculated = function isSymbolCalculated(ctx, symbol) {
-    const op = symbol.op === "tmp" ? "cm" : symbol.op;
-    return ctx.calculatedSymbols[op][symbol.id];
+    return ctx.calculatedSymbols[symbol.op][symbol.id];
 }
 
 module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, options) {
     if(!module.exports.isSymbolCalculated(ctx, ref)) {
         
-        const op = ref.op === "tmp" ? "cm" : ref.op;
-        ctx.calculatedSymbols[op][ref.id] = true;
+        ctx.calculatedSymbols[ref.op][ref.id] = true;
         if(options?.logger) {
-            if(op === "cm") options.logger.debug(`Witness ${ctx.pilInfo.cmPolsMap[ref.id].name} for with id ${ref.id} has been calculated`);
-            if(op === "const") options.logger.debug(`Fixed ${ctx.pilInfo.constPolsMap[ref.id].name} for with id ${ref.id} has been calculated`);
-            if(op === "challenge") options.logger.debug(`Challenge ${ctx.pilInfo.challengesMap[ref.id].name} for with id ${ref.id} has been calculated`);
-            if(op === "public") options.logger.debug(`Public ${ctx.pilInfo.publicsMap[ref.id].name} for with id ${ref.id} has been calculated`);
-            if(op === "subproofValue") options.logger.debug(`SubproofValue ${ctx.pilInfo.subproofValuesMap[ref.id].name} for with id ${ref.id} has been calculated`);
+            if(ref.op === "cm") options.logger.debug(`Witness ${ctx.pilInfo.cmPolsMap[ref.id].name} for with id ${ref.id} has been calculated`);
+            if(ref.op === "const") options.logger.debug(`Fixed ${ctx.pilInfo.constPolsMap[ref.id].name} for with id ${ref.id} has been calculated`);
+            if(ref.op === "challenge") options.logger.debug(`Challenge ${ctx.pilInfo.challengesMap[ref.id].name} for with id ${ref.id} has been calculated`);
+            if(ref.op === "public") options.logger.debug(`Public ${ctx.pilInfo.publicsMap[ref.id].name} for with id ${ref.id} has been calculated`);
+            if(ref.op === "subproofValue") options.logger.debug(`SubproofValue ${ctx.pilInfo.subproofValuesMap[ref.id].name} for with id ${ref.id} has been calculated`);
         }
     }
 }

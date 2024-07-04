@@ -44,22 +44,11 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
         const stageId = symbols.filter(s => s.type === "witness" && s.stage === stageIm).length;
 
         const dim = getExpDim(expressions, expId, stark);
-          
-        const symbol = symbols.find(s => s.type === "tmpPol" && s.expId === expId && s.airId === res.airId && s.subproofId === res.subproofId);
-        if(!symbol) {
-            symbols.push({ type: "witness", name: `${res.name}.ImPol`, expId, polId: res.nCommitments++, stage: stageIm, stageId, dim, imPol: true, airId: res.airId, subproofId: res.subproofId });
-        } else {
-            symbol.imPol = true;
-            symbol.expId = expId;
-            symbol.polId = res.nCommitments++;
-            symbol.stage = stageIm;
-            symbol.stageId = stageId;
-            symbol.type = "witness";
-        };
+      
+        symbols.push({ type: "witness", name: `${res.name}.ImPol`, expId, polId: res.nCommitments++, stage: stageIm, stageId, dim, imPol: true, airId: res.airId, subproofId: res.subproofId });    
         
         expressions[expId].imPol = true;
         expressions[expId].polId = res.nCommitments - 1;
-        expressions[expId].keep = true;
 
         let e = {
             op: "sub",

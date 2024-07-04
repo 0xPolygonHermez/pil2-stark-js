@@ -203,12 +203,14 @@ function fixDimensionsVerifier(ctx) {
 }
 
 function fixCommitPol(r, ctx, symbols) {
-    const symbol = symbols.find(s => ["witness", "tmpPol"].includes(s.type) && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
-    if(symbol && (symbol.imPol || (!ctx.verifierEvaluations && ctx.dom === "n"))) {
+    const symbol = symbols.find(s => s.type === "witness" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
+    if(symbol) {
+        if(symbol.imPol) {
         r.type = "cm";
         r.id = symbol.polId;
         r.dim = symbol.dim;
         if(ctx.verifierEvaluations) fixEval(r, ctx);
+        }
     }
 }
 
@@ -241,7 +243,7 @@ function fixEval(r, ctx) {
 }
 
 function fixCommitsQuery(r, ctx, symbols) {
-    const symbol = symbols.find(s => s.polId === r.id && ["tmpPol", "witness"].includes(s.type) && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
+    const symbol = symbols.find(s => s.polId === r.id && s.type === "witness" && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
     r.type = "tree" + symbol.stage;
     r.stageId = symbol.stageId;
     r.treePos = symbol.stagePos;

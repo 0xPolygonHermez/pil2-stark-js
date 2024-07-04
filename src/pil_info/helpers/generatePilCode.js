@@ -50,12 +50,10 @@ function addHintsInfo(res, symbols, hints) {
             const field = fields[j];
             if(field === "name") continue;
             if(hint[field].op === "exp") {
-                const symbol = symbols.find(s => s.expId === hint[field].id);
-                if(!symbol) throw new Error("Something went wrong!");
-                const op = symbol.type === "witness" ? "cm" : "tmp";
-                const id = symbol.polId;
-                const fieldInfo = {name: field, op, id};
-                if(op === "tmp") fieldInfo.expId = hint[field].id;
+                const symbol = symbols.find(s => s.type === "witness" && s.expId === hint[field].id);
+                const fieldInfo = symbol 
+                    ? {name: field, op: "cm", id: symbol.id}
+                    : {name: field, op: "tmp", expId: hint[field].id};
                 hintFields.push(fieldInfo);
             } else if(["cm", "challenge", "public"].includes(hint[field].op)) {
                 hintFields.push({name: field, op: hint[field].op, id: hint[field].id});
