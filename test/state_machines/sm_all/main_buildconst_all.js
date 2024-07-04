@@ -9,7 +9,7 @@ const smPermutation = require("../sm_permutation/sm_permutation.js");
 const smConnection = require("../sm_connection/sm_connection.js");
 
 const F3g = require("../../../src/helpers/f3g.js");
-const { generateFixedCols } = require("../../../src/witness/witnessCalculator.js");
+const { generateFixedCols } = require("../../../src/setup/witness/witnessCalculator.js");
 
 const argv = require("yargs")
     .version(version)

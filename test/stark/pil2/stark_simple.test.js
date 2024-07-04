@@ -15,7 +15,7 @@ const { getFixedPolsPil2 } = require("../../../src/pil_info/helpers/pil2/piloutI
 
 
 const { generateStarkProof } = require("../helpers");
-const { generateWtnsCols, generateFixedCols } = require("../../../src/witness/witnessCalculator.js");
+const { generateWtnsCols, generateFixedCols } = require("../../../src/setup/witness/witnessCalculator.js");
 
 async function runTest(pilFile) {
         const logger = Logger.create("pil-stark", {showTimestamp: false});

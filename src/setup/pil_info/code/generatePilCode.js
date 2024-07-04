@@ -1,4 +1,4 @@
-const {generateFRIPolynomial} = require("../helpers/polynomials/friPolinomial");
+const {generateFRIPolynomial} = require("../polynomials/friPolinomial");
 
 const { generateConstraintPolynomialVerifierCode, generateConstraintsDebugCode, generateExpressionsCode, generateFRIVerifierCode, generateImPolynomialsCode } = require("./generateCode");
 const { addInfoExpressionsSymbols } = require("../helpers/helpers");

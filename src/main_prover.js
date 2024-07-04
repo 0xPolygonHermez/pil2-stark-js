@@ -17,7 +17,7 @@ const Logger = require('logplease');
 
 const F3g = require("./helpers/f3g.js");
 const { createHash } = require("crypto");
-const { generateWtnsCols, generateFixedCols } = require("./witness/witnessCalculator.js");
+const { generateWtnsCols, generateFixedCols } = require("./setup/witness/witnessCalculator.js");
 
 
 

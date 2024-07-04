@@ -7,7 +7,7 @@ const Logger = require('logplease');
 
 const smFibonacci = require("../state_machines/sm_fibonacci/sm_fibonacci.js");
 const { generateStarkProof } = require("./helpers");
-const { generateWtnsCols, generateFixedCols } = require("../../src/witness/witnessCalculator.js");
+const { generateWtnsCols, generateFixedCols } = require("../../src/setup/witness/witnessCalculator.js");
 
 describe("test fibonacci sm", async function () {
     this.timeout(10000000);

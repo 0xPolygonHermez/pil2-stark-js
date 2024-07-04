@@ -6,7 +6,7 @@ const smSimple = require("./sm_simple.js");
 
 const F3g = require("../../../src/helpers/f3g");
 const { F1Field, getCurveFromName } = require("ffjavascript");
-const { generateFixedCols } = require("../../../src/witness/witnessCalculator.js");
+const { generateFixedCols } = require("../../../src/setup/witness/witnessCalculator.js");
 
 
 const argv = require("yargs")

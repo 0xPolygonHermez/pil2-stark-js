@@ -12,7 +12,7 @@ const { F1Field, getCurveFromName } = require("ffjavascript");
 const F3g = require("../../../../src/helpers/f3g.js");
 
 const { getFixedPolsPil2 } = require("../../../../src/pil_info/helpers/pil2/piloutInfo.js");
-const { generateFixedCols } = require("../../../../src/witness/witnessCalculator.js");
+const { generateFixedCols } = require("../../../../src/setup/witness/witnessCalculator.js");
 
 const argv = require("yargs")
     .version(version)

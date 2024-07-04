@@ -1,4 +1,4 @@
-const {calculateIntermediatePolynomials, addIntermediatePolynomials} = require("./pil_info/helpers/imPolsCalculation/imPolynomials");
+const {calculateIntermediatePolynomials, addIntermediatePolynomials} = require("./imPolsCalculation/imPolynomials");
 
 const { preparePil } = require("./preparePil");
 const { generatePilCode } = require("./code/generatePilCode");

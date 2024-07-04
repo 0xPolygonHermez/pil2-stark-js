@@ -10,7 +10,7 @@ const { compile } = require("pilcom");
 const { buildConstTree } = require("./stark/stark_buildConstTree");
 
 const compilePil2 = require("pil2-compiler/src/compiler.js");
-const { generateFixedCols } = require("./witness/witnessCalculator.js");
+const { generateFixedCols } = require("./setup/witness/witnessCalculator.js");
 
 const argv = require("yargs")
     .version(version)

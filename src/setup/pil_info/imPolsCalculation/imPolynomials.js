@@ -1,7 +1,7 @@
 
-const ExpressionOps = require("../expressionops");
+const ExpressionOps = require("../helpers/expressionops");
 
-const { getExpDim, addInfoExpressions } = require("../helpers");
+const { getExpDim, addInfoExpressions } = require("../helpers/helpers");
 
 module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark = true) {
     const E = new ExpressionOps();

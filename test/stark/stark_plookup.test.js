@@ -9,7 +9,7 @@ const smGlobal = require("../state_machines/sm/sm_global.js");
 const smPlookup = require("../state_machines/sm_plookup/sm_plookup.js");
 
 const { generateStarkProof } = require("./helpers");
-const { generateWtnsCols, generateFixedCols } = require("../../src/witness/witnessCalculator.js");
+const { generateWtnsCols, generateFixedCols } = require("../../src/setup/witness/witnessCalculator.js");
 
 describe("test stark plookup sm", async function () {
     this.timeout(10000000);

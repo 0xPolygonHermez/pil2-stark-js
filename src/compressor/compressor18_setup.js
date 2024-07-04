@@ -8,7 +8,7 @@ const ejs = require("ejs");
 const {M, P, S, C} = require("../helpers/hash/poseidon/poseidon_constants_opt.js");
 const { connect } = require("../helpers/polutils");
 const { getCompressorConstraints } = require("./compressor_constraints");
-const { generateFixedCols } = require("../witness/witnessCalculator.js");
+const { generateFixedCols } = require("../setup/witness/witnessCalculator.js");
 
 /*
     Compress plonk constraints and verifies custom gates using 18 committed polynomials

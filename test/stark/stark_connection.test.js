@@ -9,7 +9,7 @@ const smGlobal = require("../state_machines/sm/sm_global.js");
 const smConnection = require("../state_machines/sm_connection/sm_connection.js");
 
 const { generateStarkProof } = require("./helpers");
-const { generateWtnsCols, generateFixedCols } = require("../../src/witness/witnessCalculator.js");
+const { generateWtnsCols, generateFixedCols } = require("../../src/setup/witness/witnessCalculator.js");
 
 describe("test connection sm", async function () {
     this.timeout(10000000);

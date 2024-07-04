@@ -12,7 +12,7 @@ const { starkGen } = require("..");
 const F3g = require("./helpers/f3g");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 const Logger = require('logplease');
-const { generateFixedCols, generateWtnsCols } = require("./witness/witnessCalculator");
+const { generateFixedCols, generateWtnsCols } = require("./setup/witness/witnessCalculator");
 
 const argv = require("yargs")
     .version(version)

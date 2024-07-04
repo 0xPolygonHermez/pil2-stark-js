@@ -7,7 +7,7 @@ const smFibonacci = require("./sm_fibonacci.js");
 const F3g = require("../../../src/helpers/f3g");
 const { F1Field, getCurveFromName } = require("ffjavascript");
 const { log2 } = require("pilcom/src/utils");
-const { generateFixedCols } = require("../../../src/witness/witnessCalculator.js");
+const { generateFixedCols } = require("../../../src/setup/witness/witnessCalculator.js");
 
 const argv = require("yargs")
     .version(version)

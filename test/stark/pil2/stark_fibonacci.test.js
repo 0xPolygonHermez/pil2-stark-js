@@ -8,7 +8,7 @@ const Logger = require('logplease');
 
 const fs = require("fs");
 
-const { generateWtnsCols, generateFixedCols } = require("../../../src/witness/witnessCalculator.js");
+const { generateWtnsCols, generateFixedCols } = require("../../../src/setup/witness/witnessCalculator.js");
 
 const smFibonacci = require("../../state_machines/pil2/sm_fibonacci/sm_fibonacci.js");
 

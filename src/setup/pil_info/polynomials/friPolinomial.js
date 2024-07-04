@@ -1,6 +1,6 @@
 
-const ExpressionOps = require("../expressionops");
-const { getExpDim } = require("../helpers");
+const ExpressionOps = require("../helpers/expressionops");
+const { getExpDim } = require("../helpers/helpers");
 
 
 module.exports.generateFRIPolynomial = function generateFRIPolynomial(res, symbols, expressions) {

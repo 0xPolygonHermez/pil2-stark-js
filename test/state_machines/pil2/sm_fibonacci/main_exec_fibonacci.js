@@ -10,7 +10,7 @@ const { F1Field, getCurveFromName } = require("ffjavascript");
 
 const smFibonacci = require("./sm_fibonacci.js");
 
-const { generateWtnsCols } = require("../../../../src/witness/witnessCalculator.js");
+const { generateWtnsCols } = require("../../../../src/setup/witness/witnessCalculator.js");
 
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 

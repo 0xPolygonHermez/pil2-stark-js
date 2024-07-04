@@ -1,6 +1,6 @@
 const { WitnessCalculatorBuilder } = require("circom_runtime");
 const fs = require("fs");
-const { generateWtnsCols } = require("../witness/witnessCalculator");
+const { generateWtnsCols } = require("../setup/witness/witnessCalculator");
 
 module.exports.compressorExec = async function compressorExec(F, pil, wasm, input, exec) {
     const N = Object.values(pil.references)[0].polDeg;

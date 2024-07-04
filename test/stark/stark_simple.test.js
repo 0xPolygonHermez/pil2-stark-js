@@ -8,7 +8,7 @@ const Logger = require('logplease');
 const smSimple = require("../state_machines/sm_simple/sm_simple.js");
 
 const { generateStarkProof } = require("./helpers");
-const { generateWtnsCols, generateFixedCols } = require("../../src/witness/witnessCalculator.js");
+const { generateWtnsCols, generateFixedCols } = require("../../src/setup/witness/witnessCalculator.js");
 
 async function runTest(pilFile) {
     const logger = Logger.create("pil-stark", {showTimestamp: false});

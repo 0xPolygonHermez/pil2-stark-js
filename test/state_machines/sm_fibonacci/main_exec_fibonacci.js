@@ -8,7 +8,7 @@ const F3g = require("../../../src/helpers/f3g");
 const { F1Field, getCurveFromName } = require("ffjavascript");
 
 const { compile } = require("pilcom");
-const { generateWtnsCols } = require("../../../src/witness/witnessCalculator.js");
+const { generateWtnsCols } = require("../../../src/setup/witness/witnessCalculator.js");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 
 const argv = require("yargs")

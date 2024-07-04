@@ -9,7 +9,7 @@ const smGlobal = require("../state_machines/sm/sm_global.js");
 const smPermutation = require("../state_machines/sm_permutation/sm_permutation.js");
 
 const { generateStarkProof } = require("./helpers");
-const { generateWtnsCols, generateFixedCols } = require("../../src/witness/witnessCalculator.js");
+const { generateWtnsCols, generateFixedCols } = require("../../src/setup/witness/witnessCalculator.js");
 
 describe("test permutation sm", async function () {
     this.timeout(10000000);

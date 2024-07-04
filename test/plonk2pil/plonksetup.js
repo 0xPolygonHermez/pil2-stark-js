@@ -5,7 +5,7 @@ const {tmpName} = require("tmp-promise");
 const { compile, getKs } = require("pilcom");
 const ejs = require("ejs");
 const r1cs2plonk = require("../../src/r1cs2plonk");
-const { generateFixedCols } = require("../../src/witness/witnessCalculator");
+const { generateFixedCols } = require("../../src/setup/witness/witnessCalculator");
 
 
 
