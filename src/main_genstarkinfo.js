@@ -2,7 +2,7 @@ const fs = require("fs");
 const version = require("../package").version;
 
 const F3g = require("./helpers/f3g.js");
-const pilInfo = require("./pil_info/pil_info.js");
+const pilInfo = require("./setup/pil_info/pil_info.js");
 const { compile } = require("pilcom");
 const compilePil2 = require("pil2-compiler/src/compiler.js");
 const protobuf = require('protobufjs');

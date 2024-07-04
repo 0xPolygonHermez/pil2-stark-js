@@ -1,4 +1,4 @@
-const { printExpressions } = require("./helpers/pil2/utils");
+const { printExpressions } = require("./utils");
 
 module.exports = function map(res, symbols, expressions, constraints, options) {
     mapSymbols(res, symbols);

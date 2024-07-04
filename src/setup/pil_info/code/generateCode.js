@@ -109,55 +109,6 @@ module.exports.generateImPolynomialsCode = function generateImPolynomialsCode(re
     return buildCode(ctx);
 
 }
-module.exports.generateStagesCode = function generateStagesCode(res, expressionsInfo, symbols, expressions, stark) {
-    const ctx = {
-        calculated: {},
-        symbolsCalculated: [],
-        symbolsUsed: [],
-        tmpUsed: 0,
-        code: [],
-        dom: "n",
-        airId: res.airId,
-        subproofId: res.subproofId,
-        stark,
-    };
-
-    expressionsInfo.stagesCode = [];
-
-    for(let stage = 1; stage <= res.nStages; ++stage) {
-        for(let j = 0; j < expressions.length; ++j) {
-            if(expressions[j].stage === stage) {
-                let symbolDest = symbols.find(s => s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId);
-                if(!symbolDest) continue;
-                let skip = false;
-                for(let k = 0; k < expressions[j].symbols.length; k++) {
-                    const symbol = expressions[j].symbols[k];
-                    const imPol = symbol.op === "cm" && res.cmPolsMap[symbol.id].imPol;
-                    if(!imPol && (symbol.stage > stage || (stage != 1 && symbol.op === "cm" && symbol.stage === stage))) {
-                        skip = true;
-                        break; 
-                    }
-                }
-
-                if(skip) continue;
-                if(symbolDest.type === "witness") {
-                    ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
-                } else {
-                    ctx.symbolsCalculated.push({ op: "tmp",  stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
-                }
-                
-                for(let k = 0; k < expressions[j].symbols.length; k++) {
-                    const symbolUsed = expressions[j].symbols[k];
-                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                        ctx.symbolsUsed.push(symbolUsed);
-                    };
-                }
-                pilCodeGen(ctx, symbols, expressions, j, 0);
-            }
-        }
-        expressionsInfo.stagesCode.push(buildCode(ctx));
-    }
-}
 
 module.exports.generateConstraintsDebugCode = function generateConstraintsDebugCode(res, symbols, constraints, expressions, stark) {
     const constraintsCode = [];

@@ -1,9 +1,9 @@
 const fs = require("fs");
 const version = require("../package").version;
 
-const { generatePilCode } = require("./pil_info/helpers/generatePilCode");
-const { addIntermediatePolynomials } = require("./pil_info/imPolsCalculation/imPolynomials");
-const map = require("./pil_info/map");
+const { generatePilCode } = require("./setup/pil_info/code/generatePilCode");
+const { addIntermediatePolynomials } = require("./setup/pil_info/helpers/imPolsCalculation/imPolynomials");
+const map = require("./setup/pil_info/helpers/map");
 
 const argv = require("yargs")
     .version(version)

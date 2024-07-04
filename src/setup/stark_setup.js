@@ -2,17 +2,15 @@
 const {BigBuffer} = require("pilcom");
 const buildMerkleHashGL = require("../helpers/hash/merklehash/merklehash_p.js");
 const buildMerkleHashBN128 = require("../helpers/hash/merklehash/merklehash_bn128_p.js");
-const pilInfo = require("../pil_info/pil_info.js");
 
-const { interpolate } = require("../helpers/fft/fft_p");
+const { interpolate } = require("../helpers/fft/fft_p.js");
+const { pilInfo } = require("./pil_info/pil_info.js");
 
 module.exports = async function starkSetup(constPols, pil, starkStruct, options) {
 
     const F = options.F;
-    
-    const pil2 = options.pil2 || false;
-    
-    const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = pilInfo(F, pil, true, pil2, starkStruct, options );
+        
+    const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = pilInfo(F, pil, starkStruct, options );
 
     const nConstants = starkInfo.constPolsMap.length;
     const nBits = starkStruct.nBits;

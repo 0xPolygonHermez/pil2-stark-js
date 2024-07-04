@@ -1,5 +1,5 @@
 const { BigBuffer } = require("pilcom");
-const F3g = require("../helpers/f3g");
+const F3g = require("../../helpers/f3g");
 const fs= require("fs");
 
 function generateMultiArrayIndexes(symbols, name, lengths, polId, stage, indexes = []) {

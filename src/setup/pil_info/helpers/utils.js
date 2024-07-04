@@ -1,5 +1,5 @@
 const ProtoOut = require("pil2-compiler/src/proto_out.js");
-const ExpressionOps = require("../../expressionops");
+const ExpressionOps = require("./expressionops");
 
 const piloutTypes =  {
     FIXED_COL: 1,

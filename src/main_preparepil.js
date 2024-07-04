@@ -4,7 +4,7 @@ const version = require("../package").version;
 const F3g = require("./helpers/f3g.js");
 const { compile } = require("pilcom");
 const compilePil2 = require("pil2-compiler/src/compiler.js");
-const { preparePil } = require("./pil_info/helpers/preparePil");
+const { preparePil } = require("./setup/pil_info/preparePil.js");
 
 const argv = require("yargs")
     .version(version)

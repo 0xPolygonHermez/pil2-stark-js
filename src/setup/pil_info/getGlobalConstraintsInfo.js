@@ -1,6 +1,6 @@
-const { pilCodeGen, buildCode } = require("./helpers/code/codegen");
+const { pilCodeGen, buildCode } = require("./code/codegen");
 const { addInfoExpressions } = require("./helpers/helpers");
-const { formatExpressions, formatSymbols } = require("./helpers/pil2/utils");
+const { formatExpressions, formatSymbols } = require("./helpers/utils");
 
 module.exports.getGlobalConstraintsInfo = function getGlobalConstraintsInfo(pilout, stark) {
     

@@ -1,5 +1,5 @@
-const ExpressionOps = require("../../expressionops");
-const { calculateExpDeg } = require("../../imPolsCalculation/imPolynomials");
+const ExpressionOps = require("../expressionops");
+const { calculateExpDeg } = require("../imPolsCalculation/imPolynomials");
 const { getExpDim } = require("../helpers");
 
 module.exports.generateConstraintPolynomial = function generateConstraintPolynomial(res, expressions, symbols, constraints, stark) {
