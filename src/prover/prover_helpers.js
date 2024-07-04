@@ -306,7 +306,7 @@ module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
     if(!["n", "ext"].includes(dom)) throw new Error("invalid stage");
     const deg = dom === "ext" ? ctx.extN : ctx.N;
     let p = ctx.pilInfo.cmPolsMap[idPol];
-    let st = p.stage === "tmpExp" ? p.stage : "cm" + p.stage;
+    let st = "cm" + p.stage;
     let stage = st + "_" + dom;
     let offset = p.stagePos;
     let polRef = {
@@ -382,8 +382,6 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
                 execInfo.inputSections.push({ name: `cm${stage}_n` });
                 execInfo.outputSections.push({ name: `cm${stage}_n` });
             }
-            execInfo.inputSections.push({ name: "tmpExp_n" });
-            execInfo.outputSections.push({ name: "tmpExp_n" });
             dom = "n";
         } else if (stageCode === ctx.pilInfo.nStages + 1) {
             execInfo.inputSections.push({ name: "const_ext" });

@@ -21,7 +21,6 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
 
     res.mapSectionsN = {
         "const": 0,
-        "tmpExp": 0,
     };
     
     let expressions, symbols, constraints;

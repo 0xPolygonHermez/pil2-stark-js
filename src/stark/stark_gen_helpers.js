@@ -13,7 +13,7 @@ const _ = require("json-bigint");
 const { interpolate, ifft, fft } = require("../helpers/fft/fft_p.js");
 const {BigBuffer} = require("pilcom");
 const { callCalculateExps, getPolRef, getPol } = require("../prover/prover_helpers.js");
-const { setSymbolCalculated } = require("../prover/symbols_helpers.js");
+const { setSymbolCalculated, initCalculatedSymbols } = require("../prover/symbols_helpers.js");
 const { C } = require("../helpers/hash/poseidon/poseidon_constants_opt.js");
 
 module.exports.initProverStark = async function initProverStark(pilInfo, expressionsInfo, constPols, constTree, options = {}) {
@@ -42,25 +42,8 @@ module.exports.initProverStark = async function initProverStark(pilInfo, express
     ctx.challenges = [];
     ctx.challengesFRISteps = [];
 
-    ctx.calculatedSymbols = {};
+    ctx.calculatedSymbols = initCalculatedSymbols(ctx.pilInfo);
 
-    if(ctx.pilInfo.nPublics > 0) {
-        ctx.calculatedSymbols.public = new Array(ctx.pilInfo.nPublics).fill(false);
-    }
-
-    if(ctx.pilInfo.nConstants > 0) {
-        ctx.calculatedSymbols.const = new Array(ctx.pilInfo.nConstants).fill(false);
-    }
-
-    if(ctx.pilInfo.nSubproofValues > 0) {
-        ctx.calculatedSymbols.subproofValue = new Array(ctx.pilInfo.nSubproofValues).fill(false);
-    }
-
-    const nChallenges = ctx.pilInfo.challengesMap.length;
-    ctx.calculatedSymbols.challenge = new Array(nChallenges).fill(false);
-    
-    ctx.calculatedSymbols.cm = new Array(ctx.pilInfo.cmPolsMap.length).fill(false);
-    
     ctx.publics = [];
 
     ctx.subproofValues = new Array(pilInfo.nSubproofValues).fill(0n) || [];
@@ -92,7 +75,6 @@ module.exports.initProverStark = async function initProverStark(pilInfo, express
             logger.debug(`  Stage ${stage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage === stage).length}`);
         }
         logger.debug(`  Stage ${qStage} pols:   ${ctx.pilInfo.cmPolsMap.filter(p => p.stage === qStage).length}`);
-        logger.debug(`  Temp exp pols: ${ctx.pilInfo.cmPolsMap.filter(p => p.stage === "tmpExp").length}`);
         logger.debug("-----------------------------");   
     }
 
@@ -124,7 +106,6 @@ module.exports.initProverStark = async function initProverStark(pilInfo, express
         const stage = i + 1;
         ctx[`cm${stage}_n`] = new BigBuffer(ctx.pilInfo.mapSectionsN[`cm${stage}`]*ctx.N);
     }
-    ctx.tmpExp_n = new BigBuffer(ctx.pilInfo.mapSectionsN.tmpExp*ctx.N);
     ctx.x_n = new BigBuffer(ctx.N);
 
     // Build x_n
