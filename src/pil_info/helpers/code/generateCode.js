@@ -30,13 +30,9 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             }
         }
         let exprDest;
-        if(exp.keep || exp.imPol) {
+        if(exp.imPol) {
             const symbolDest = symbols.find(s => s.expId === j);
-            if(symbolDest.type === "witness") {
-                exprDest = { op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId};
-            } else {
-                exprDest = { op: "tmp", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId };
-            }
+            exprDest = { op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId};
             ctx.symbolsCalculated.push(exprDest);
         }
 
@@ -142,8 +138,6 @@ module.exports.generateStagesCode = function generateStagesCode(res, expressions
                 if(skip) continue;
                 if(symbolDest.type === "witness") {
                     ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
-                } else {
-                    ctx.symbolsCalculated.push({ op: "tmp",  stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
                 }
                 
                 for(let k = 0; k < expressions[j].symbols.length; k++) {

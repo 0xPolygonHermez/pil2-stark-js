@@ -10,7 +10,7 @@ module.exports.applyHints = async function applyHints(stage, ctx, options) {
 
         if(isHintResolved(ctx, hint, options)) {
             if(options?.logger) options.logger.debug(`Hint ${i} already resolved`);
-        } else if(canResolveHint(ctx, hint, options)) {
+        } else if(canResolveHint(ctx, hint, stage, options)) {
             await resolveHint(ctx, hint, options);
         } else {
             if(options?.logger) options.logger.debug(`Skipping hint ${i} because it can not be resolved`);
@@ -33,20 +33,24 @@ function getHintField(ctx, hint, field, dest = false, debug = false) {
     throw new Error("Case not considered");
 }
 
-function canResolveHint(ctx, hint) {
+function canResolveHint(ctx, hint, stage) {
     if(hint.name === "subproofValue" || hint.name === "public") {
         const expression = hint.fields.find(f => f.name === "expression");
-        if(["cm", "tmp"].includes(expression.op) && !isSymbolCalculated(ctx, expression)) return false;
+        if(expression.op === "cm" && !isSymbolCalculated(ctx, expression)) return false;
     } else if (hint.name === "gsum" || hint.name === "gprod") {
         const numerator = hint.fields.find(f => f.name === "numerator");
         const denominator = hint.fields.find(f => f.name === "denominator");
-        if((["cm", "tmp"].includes(numerator.op) && !isSymbolCalculated(ctx, numerator)) 
-            || (["cm", "tmp"].includes(denominator.op) && !isSymbolCalculated(ctx, denominator))) return false;
+        if((numerator.op === "cm" && !isSymbolCalculated(ctx, numerator))
+            || (denominator.op === "cm" && !isSymbolCalculated(ctx, denominator))) return false;
+        const reference = hint.fields.find(f => f.name === "reference");
+        if(ctx.pilInfo.cmPolsMap[reference.id].stage !== stage) return false;
     } else if (hint.name === "h1h2") {
         const f = hint.fields.find(f => f.name === "f");
         const t = hint.fields.find(f => f.name === "t");
-        if((["cm", "tmp"].includes(f.op) && !isSymbolCalculated(ctx, f)) 
-        || (["cm", "tmp"].includes(t.op) && !isSymbolCalculated(ctx, t))) return false;
+        if((f.op === "cm" && !isSymbolCalculated(ctx, f)) 
+        || (t.op === "cm" && !isSymbolCalculated(ctx, t))) return false;
+        const h1 = hint.fields.find(f => f.name === "referenceH1");
+        if(ctx.pilInfo.cmPolsMap[h1.id].stage !== stage) return false;
     } else throw new Error("Unknown hint type " + hint.name);
 
     return true;

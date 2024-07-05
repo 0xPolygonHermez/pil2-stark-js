@@ -51,8 +51,8 @@ function addHintsInfo(res, symbols, hints) {
             if(field === "name") continue;
             if(hint[field].op === "exp") {
                 const symbol = symbols.find(s => s.type === "witness" && s.expId === hint[field].id);
-                const fieldInfo = symbol 
-                    ? {name: field, op: "cm", id: symbol.id}
+                const fieldInfo = symbol
+                    ? {name: field, op: "cm", id: symbol.polId}
                     : {name: field, op: "tmp", expId: hint[field].id};
                 hintFields.push(fieldInfo);
             } else if(["cm", "challenge", "public"].includes(hint[field].op)) {
