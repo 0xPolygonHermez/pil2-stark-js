@@ -92,6 +92,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     // Get parser args for each expression
     for(let i = 0; i < expressionsInfo.expressionsCode.length; ++i) {
         const expCode = expressionsInfo.expressionsCode[i];
+        if(!expCode) continue;
         if(binFile) {
             const expInfo = getParserArgsCode(expCode.code, "n");
             expInfo.expId = expCode.expId;

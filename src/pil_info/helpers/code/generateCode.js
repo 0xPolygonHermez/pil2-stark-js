@@ -4,6 +4,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
     const expressionsCode = [];
     for(let j = 0; j < expressions.length; ++j) {
         const exp = expressions[j];
+        if(!exp.keep && ![res.cExpId, res.friExpId].includes(j)) continue;
         const dom = (j === res.cExpId || j === res.friExpId) ? "ext" : "n";
         const ctx = {
             calculated: {},
@@ -66,7 +67,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         }
 
         if(![res.cExpId, res.friExpId].includes(j)) expInfo.line = exp.line;
-        expressionsCode.push(expInfo);
+        expressionsCode[j] = expInfo;
     }
 
     return expressionsCode;
