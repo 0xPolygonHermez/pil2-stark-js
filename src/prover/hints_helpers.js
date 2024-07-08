@@ -1,5 +1,5 @@
 const { calculateH1H2, calculateS, calculateZ } = require("../helpers/polutils");
-const { getPol, setPol, setSubproofValue, calculateExpression } = require("./prover_helpers");
+const { getPol, setPol, setSubproofValue, calculateExpression, getFixedPol } = require("./prover_helpers");
 const { isSymbolCalculated, setSymbolCalculated } = require("./symbols_helpers");
 
 module.exports.applyHints = async function applyHints(stage, ctx, options) {
@@ -25,6 +25,7 @@ function getHintField(ctx, hint, field, dest = false, debug = false) {
 
     if (dest) return hintField;
 
+    if (hintField.op === "const") return getFixedPol(ctx, hintField.id);
     if ((hintField.op === "cm")) return getPol(ctx, hintField.id, "n");
     if (hintField.op === "tmp") return calculateExpression(ctx, hintField.expId, debug);
     if ((hintField.op === "number")) return BigInt(hintField.value);
