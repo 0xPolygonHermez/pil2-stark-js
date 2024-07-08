@@ -302,13 +302,13 @@ module.exports.setSubproofValue = function setSubproofValue(ctx, id, value, opti
     if(options?.logger) options.logger.debug(`Symbol subproofValue for with id ${id} has been calculated`);
 }
 
-module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
+module.exports.getPolRef = function getPolRef(ctx, idPol, dom, isFixed = false) {
     if(!["n", "ext"].includes(dom)) throw new Error("invalid stage");
     const deg = dom === "ext" ? ctx.extN : ctx.N;
-    let p = ctx.pilInfo.cmPolsMap[idPol];
-    let st = p.stage === "tmpExp" ? p.stage : "cm" + p.stage;
+    let p = isFixed ? ctx.pilInfo.constPolsMap[idPol] : ctx.pilInfo.cmPolsMap[idPol];
+    let st = isFixed ? "const" : p.stage === "tmpExp" ? p.stage : "cm" + p.stage;
     let stage = st + "_" + dom;
-    let offset = p.stagePos;
+    let offset = isFixed ? idPol : p.stagePos;
     let polRef = {
         stage,
         buffer: ctx[stage],
@@ -320,8 +320,8 @@ module.exports.getPolRef = function getPolRef(ctx, idPol, dom) {
     return polRef;
 }
 
-module.exports.getPol = function getPol(ctx, idPol, dom) {
-    const p = module.exports.getPolRef(ctx, idPol, dom);
+module.exports.getPol = function getPol(ctx, idPol, dom, isFixed = false) {
+    const p = module.exports.getPolRef(ctx, idPol, dom, isFixed);
     const res = new Array(p.deg);
     if (p.dim == 1) {
         let buildPol = ctx.prover === "stark" 
@@ -353,6 +353,9 @@ module.exports.getPol = function getPol(ctx, idPol, dom) {
     return res;
 }
 
+module.exports.getFixedPol = function getFixedPol(ctx, idPol) {
+    return module.exports.getPol(ctx, idPol, "n", true);
+}
 
 module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx, stageCode, code, useThreads, debug, isGlobal = false) {
     const stark = ctx.prover === "stark" ? true : false;
