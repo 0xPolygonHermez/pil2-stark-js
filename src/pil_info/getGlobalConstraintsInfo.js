@@ -38,6 +38,7 @@ module.exports.getGlobalConstraintsInfo = function getGlobalConstraintsInfo(pilo
     for(let j = 0; j < constraints.length; ++j) {
         pilCodeGen(ctx, symbols, expressions, constraints[j].e, 0);
         let code = buildCode(ctx, expressions);
+        ctx.tmpUsed = code.tmpUsed;
         code.boundary = constraints[j].boundary;
         code.line = constraints[j].line;
 
