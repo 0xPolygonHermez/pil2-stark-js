@@ -48,17 +48,11 @@ module.exports.getFixedPolsPil2 = function getFixedPolsPil2(pil, cnstPols, F) {
 
     for(let i = 0; i < cnstPols.$$defArray.length; ++i) {
         const def = cnstPols.$$defArray[i];
-        const name = def.name;
-        const [nameSpace, namePol] = name.split(".");
+        const id = def.id;
         const deg = def.polDeg;
         const fixedCols = pil.fixedCols[i];
         for(let j = 0; j < deg; ++j) {
-            let constPol = cnstPols[nameSpace][namePol];
-            if(def.lengths) {
-                for(let l = 0; l < def.lengths.length; ++l) {
-                    constPol = constPol[def.lengths[l]];
-                }
-            }
+            const constPol = cnstPols[id];
             constPol[j] = P.buf2bint(fixedCols.values[j]);
         }
     }
