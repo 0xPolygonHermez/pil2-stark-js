@@ -117,13 +117,17 @@ class ColsPil2 {
         const nCols = this.$$nCols;
         const buff = this.$$buffer;
         const N = this.$$n;
+        const F = this.F;
 
         return new Proxy([], {
             set(target, prop, value) {
                 const pos = parseInt(prop, 10);
                 const buffIndex = nCols * pos + symbolId;
-                buff.setElement(buffIndex,value);
+                
+                if(value < 0n) value += F.p;
 
+                buff.setElement(buffIndex,value);
+                
                 target[pos] = value; // This adds the value to the array itself
                 
                 return true;
