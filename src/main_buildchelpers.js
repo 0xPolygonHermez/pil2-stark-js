@@ -2,6 +2,8 @@ const fs = require("fs");
 const version = require("../package").version;
 
 const {buildCHelpers} = require("./stark/chelpers/stark_chelpers.js");
+const { writeCHelpersFile } = require("./stark/chelpers/binFile.js");
+const path = require("path");
 
 const argv = require("yargs")
     .version(version)
@@ -29,7 +31,21 @@ async function run() {
     const starkInfo = JSON.parse(await fs.promises.readFile(starkInfoFile, "utf8"));
     const expressionsInfo = JSON.parse(await fs.promises.readFile(expressionsInfoFile, "utf8"));
 
-    await buildCHelpers(starkInfo, expressionsInfo, cHelpersFile, cls, binFile, genericBinFile);
+    const res = await buildCHelpers(starkInfo, expressionsInfo, binFile, genericBinFile, cls);
+
+    if(res.binFileInfo) {
+        const baseDir = path.dirname(cHelpersFile);
+        if (!fs.existsSync(baseDir)) {
+            fs.mkdirSync(baseDir, { recursive: true });
+        }
+        await fs.promises.writeFile(cHelpersFile, res.cHelpers, "utf8");
+        
+        await writeCHelpersFile(binFile, res.binFileInfo);
+    }
+
+    if(genericBinFile) {
+        await writeCHelpersFile(genericBinFile, res.genericBinFileInfo);
+    }
     
     console.log("files Generated Correctly");
 }

@@ -13,6 +13,7 @@ const F3g = require("../../../../src/helpers/f3g.js");
 
 const { getFixedPolsPil2 } = require("../../../../src/pil_info/helpers/pil2/piloutInfo.js");
 const { generateFixedCols } = require("../../../../src/witness/witnessCalculator.js");
+const { writeCHelpersFile } = require("../../../../src/stark/chelpers/binFile.js");
 
 const argv = require("yargs")
     .version(version)
@@ -111,7 +112,21 @@ async function run() {
             await fs.promises.writeFile(expressionsInfoFile, JSON.stringify(expressionsInfo, null, 1), "utf8");
             await fs.promises.writeFile(verifierInfoFile, JSON.stringify(verifierInfo, null, 1), "utf8");
 
-            await buildCHelpers(starkInfo, expressionsInfo, cHelpersFile, className, binFile, genericBinFile);
+            const res = await buildCHelpers(starkInfo, expressionsInfo, binFile, genericBinFile, className);
+
+            if(res.binFileInfo) {
+                const baseDir = path.dirname(cHelpersFile);
+                if (!fs.existsSync(baseDir)) {
+                    fs.mkdirSync(baseDir, { recursive: true });
+                }
+                await fs.promises.writeFile(cHelpersFile, res.cHelpers, "utf8");
+                
+                await writeCHelpersFile(binFile, res.binFileInfo);
+            }
+        
+            if(genericBinFile) {
+                await writeCHelpersFile(genericBinFile, res.genericBinFileInfo);
+            }
 
             const {MH, constTree, verKey} = await buildConstTree(starkInfo, constPols);
 

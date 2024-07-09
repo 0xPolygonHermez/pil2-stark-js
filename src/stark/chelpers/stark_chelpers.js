@@ -1,11 +1,8 @@
 const { getParserArgs } = require("./getParserArgs.js");
 const { generateParser, getAllOperations } = require("./generateParser.js");
 const { findPatterns } = require("./helpers.js");
-const { writeCHelpersFile } = require("./binFile.js");
-const path = require("path");
-const fs = require("fs");
 
-module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressionsInfo, cHelpersFile, className = "", binFile, genericBinFile) {
+module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressionsInfo, binFile, genericBinFile, className = "") {
 
     if(className === "") className = "Stark";
     className = className[0].toUpperCase() + className.slice(1) + "Steps";
@@ -147,21 +144,25 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     return `case ${newIndex}:`;
     });
  
+    const res = {};
+
     if(binFile) {
-        const baseDir = path.dirname(cHelpersFile);
-        if (!fs.existsSync(baseDir)) {
-            fs.mkdirSync(baseDir, { recursive: true });
+        res.binFileInfo = {
+            stagesInfo, expsInfo, constraintsInfo, hintsInfo: expressionsInfo.hintsInfo
         }
-        await fs.promises.writeFile(cHelpersFile, cHelpers, "utf8");
-        
-        await writeCHelpersFile(binFile, stagesInfo, expsInfo, constraintsInfo, expressionsInfo.hintsInfo);
+        res.cHelpers = cHelpers;
     }
 
     if(genericBinFile) {
-        await writeCHelpersFile(genericBinFile, stagesInfoGeneric, expsInfoGeneric, constraintsInfoGeneric, expressionsInfo.hintsInfo);
+        res.genericBinFileInfo = {
+            stagesInfo: stagesInfoGeneric,
+            expsInfo: expsInfoGeneric,
+            constraintsInfo: constraintsInfoGeneric,
+            hintsInfo: expressionsInfo.hintsInfo,
+        }
     }
 
-    return;
+    return res;
 
     function getParserArgsCode(code, dom, debug = false) {
         const {expsInfo, opsUsed} = getParserArgs(starkInfo, operationsWithPatterns, code, dom, debug);

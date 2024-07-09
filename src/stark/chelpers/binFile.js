@@ -20,8 +20,13 @@ async function writeStringToFile(fd, str) {
     await fd.write(buff);
 }
 
-exports.writeCHelpersFile = async function (cHelpersFilename, stagesInfo, expressionsInfo, constraintsInfo, hintsInfo) {
+exports.writeCHelpersFile = async function (cHelpersFilename, binFileInfo) {
     console.log("> Writing the chelpers file");
+
+    const stagesInfo = binFileInfo.stagesInfo;
+    const expressionsInfo = binFileInfo.expsInfo;
+    const constraintsInfo = binFileInfo.constraintsInfo;
+    const hintsInfo = binFileInfo.hintsInfo;
 
     const cHelpersBin = await createBinFile(cHelpersFilename, "chps", 1, CHELPERS_NSECTIONS, 1 << 22, 1 << 24);    
         
