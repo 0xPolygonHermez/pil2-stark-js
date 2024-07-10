@@ -60,7 +60,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
     }
 
     const constPolsIds = symbolsUsed.filter(s => s.op === "const").map(s => s.id).sort();
-    const cmPolsIds = symbolsUsed.filter(s => s.op === "cm" || s.op === "tmp").map(s => s.id).sort();
+    const cmPolsIds = symbolsUsed.filter(s => s.op === "cm").map(s => s.id).sort();
     const challengeIds = symbolsUsed.filter(s => s.op === "challenge").map(s => s.id).sort();
     const publicsIds = symbolsUsed.filter(s => s.op === "public").map(s => s.id).sort();
     const subproofValuesIds = symbolsUsed.filter(s => s.op === "subproofValue").map(s => s.id).sort();
@@ -84,16 +84,13 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
 
     if(debug) {
         const destTmp = code_[code_.length - 1].dest;
-        if(destTmp.type !== "tmp") {
-            expsInfo.destDim = destTmp.dim;
-            expsInfo.destId = 0;
-        } else if(destTmp.dim == 1) {
+        if(destTmp.dim == 1) {
             expsInfo.destDim = 1;
             expsInfo.destId = ID1D[destTmp.id];
         } else if(destTmp.dim == 3) {
             expsInfo.destDim = 3;
             expsInfo.destId = ID3D[destTmp.id];
-        }
+        } else throw new Error("Unknown");
     }
     
     const opsUsed = counters_ops.reduce((acc, currentValue, currentIndex) => {

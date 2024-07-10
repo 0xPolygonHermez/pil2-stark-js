@@ -8,10 +8,12 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     className = className[0].toUpperCase() + className.slice(1) + "Steps";
     
     const stagesInfo = [];
+    let imPolsInfo = {};
     const expsInfo = [];
     const constraintsInfo = [];
 
     const stagesInfoGeneric = [];
+    let imPolsInfoGeneric = {};
     const expsInfoGeneric = [];
     const constraintsInfoGeneric = [];
 
@@ -45,7 +47,14 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
         }
     }
 
-    // TODO: ADD IMPOLSCODE
+    if(binFile) {
+        imPolsInfo = getParserArgsCode(expressionsInfo.imPolsCode, "n", debug);
+    }
+
+    if(genericBinFile) {
+        imPolsInfoGeneric = getParserArgsCode(expressionsInfo.imPolsCode, "n", debug);
+    }    
+
     const N = 1 << (starkInfo.starkStruct.nBits);
 
     // Get parser args for each constraint
@@ -129,6 +138,10 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
         stagesInfo[i].ops = stagesInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
     }
 
+    if(imPolsInfo.ops) {
+        imPolsInfo.ops = imPolsInfo.ops.map(op => totalSubsetOperationsUsed.find(o => o === op));
+    }
+
     for(let i = 0; i < expsInfo.length; ++i) {
         expsInfo[i].ops = expsInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
     }
@@ -148,13 +161,14 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
 
     if(binFile) {
         res.binFileInfo = {
-            stagesInfo, expsInfo, constraintsInfo, hintsInfo: expressionsInfo.hintsInfo
+            stagesInfo, expsInfo, imPolsInfo, constraintsInfo, hintsInfo: expressionsInfo.hintsInfo
         }
         res.cHelpers = cHelpers;
     }
 
     if(genericBinFile) {
         res.genericBinFileInfo = {
+            imPolsInfo: imPolsInfoGeneric,
             stagesInfo: stagesInfoGeneric,
             expsInfo: expsInfoGeneric,
             constraintsInfo: constraintsInfoGeneric,

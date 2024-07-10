@@ -78,10 +78,13 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
 }
 
 module.exports.isSymbolCalculated = function isSymbolCalculated(ctx, symbol) {
-    return ctx.calculatedSymbols[symbol.op][symbol.id];
+    const op = symbol.op;
+    if(op === "tmp") return true;
+    return ctx.calculatedSymbols[op][symbol.id];
 }
 
 module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, options) {
+    if(ref.op === "tmp") return true;
     if(!module.exports.isSymbolCalculated(ctx, ref)) {
         
         ctx.calculatedSymbols[ref.op][ref.id] = true;

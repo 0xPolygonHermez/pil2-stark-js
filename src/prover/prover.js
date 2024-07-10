@@ -228,7 +228,7 @@ async function computeStage(stage, ctx, options) {
         if (logger) logger.debug(`> STAGE ${stage} DONE`);
     } else {
         if (logger) logger.debug("Calculating Q polinomial...");
-        await callCalculateExps(stage, ctx.expressionsInfo.expressionsCode[ctx.pilInfo.cExpId].code, dom, ctx, options.parallelExec, options.useThreads);
+        await callCalculateExps(stage, ctx.expressionsInfo.expressionsCode.find(e => e.expId === ctx.pilInfo.cExpId).code, dom, ctx, options.parallelExec, options.useThreads);
         if (logger) logger.debug("Q polinomial calculated.");
     }
     

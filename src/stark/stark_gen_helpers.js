@@ -322,7 +322,7 @@ module.exports.computeFRIStark = async function computeFRIStark(ctx, options) {
         }
     }
 
-    await callCalculateExps(stage, ctx.expressionsInfo.expressionsCode[ctx.pilInfo.friExpId].code, "ext", ctx, options.parallelExec, options.useThreads, false);
+    await callCalculateExps(stage,ctx.expressionsInfo.expressionsCode.find(e => e.expId === ctx.pilInfo.friExpId).code, "ext", ctx, options.parallelExec, options.useThreads, false);
 
     ctx.friPol[0] = new Array(ctx.extN);
     for (let i=0; i<ctx.extN; i++) {

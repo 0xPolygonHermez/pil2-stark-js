@@ -49,7 +49,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
 
         pilCodeGen(ctx, symbols, expressions, j, 0);
         const code = buildCode(ctx);
-
+        
         if(j == res.cExpId) {
             code.code[code.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
         }
@@ -67,7 +67,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         }
 
         if(![res.cExpId, res.friExpId].includes(j)) expInfo.line = exp.line;
-        expressionsCode[j] = expInfo;
+        expressionsCode.push(expInfo);
     }
 
     return expressionsCode;
@@ -137,9 +137,6 @@ module.exports.generateStagesCode = function generateStagesCode(res, expressions
                 }
 
                 if(skip) continue;
-                if(symbolDest.type === "witness") {
-                    ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
-                }
                 
                 for(let k = 0; k < expressions[j].symbols.length; k++) {
                     const symbolUsed = expressions[j].symbols[k];
