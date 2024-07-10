@@ -77,14 +77,14 @@ async function runTest(pilFile) {
 describe("simple sm", async function () {
     this.timeout(10000000);
 
-    it.only("Simple1", async () => {
+    it("Simple1", async () => {
         await runTest("simple1.pil");
     });
 
     it("Simple2", async () => {
         await runTest("simple2.pil");
     });
-    it("Simple3", async () => {
+    it.only("Simple3", async () => {
         await runTest("simple3.pil");
     });
     it("Simple4", async () => {

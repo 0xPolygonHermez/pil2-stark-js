@@ -99,16 +99,14 @@ class ColsPil2 {
 
             if (symbol.lengths.length > 0) {
                 if (!this[nameSpace][namePol]) this[nameSpace][namePol] = [];
-                if (!this[symbol.id]) this[symbol.id] = [];
                 if (!this.$$def[nameSpace][namePol]) this.$$def[nameSpace][namePol] = [];
                 setValueMultiArray(this[nameSpace][namePol], symbol.lengths, polProxy);
-                setValueMultiArray(this[symbol.id], symbol.lengths, polProxy);
                 setValueMultiArray(this.$$def[nameSpace][namePol], symbol.lengths, this.$$defArray[symbol.id]);
             } else {
                 this[nameSpace][namePol] = polProxy;
-                this[symbol.id] = polProxy;
                 this.$$def[nameSpace][namePol] = this.$$defArray[symbol.id];
             }
+            this[symbol.id] = polProxy;
         }
     }
 

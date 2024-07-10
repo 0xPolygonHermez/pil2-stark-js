@@ -1,10 +1,11 @@
 air Simple(int N = 2**6) {
 
-    col witness a[2][3], b[2];
+    col witness a[2][3], b[2], c;
 
+    col fixed D = [0,1..+..];
     col fixed B[2]; 
     col fixed A[2][3];
-
+    col fixed C = [0,1..+..];
 
     B[0] = [6...];
     B[1] = [24...];
@@ -21,7 +22,10 @@ air Simple(int N = 2**6) {
     a[1][0]*a[1][1]*a[1][2] === b[1]; 
 
     A[0][0]*A[0][1]*A[0][2] === B[0]; 
-    A[1][0]*A[1][1]*A[1][2] === B[1]; 
+    A[1][0]*A[1][1]*A[1][2] === B[1];
+
+    C === c;
+    D === c;
 }
 
 Simple(2**6);
