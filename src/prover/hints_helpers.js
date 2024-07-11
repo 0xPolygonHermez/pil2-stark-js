@@ -27,7 +27,7 @@ function getHintField(ctx, hint, field, dest = false, debug = false) {
 
     if (hintField.op === "const") return getFixedPol(ctx, hintField.id);
     if ((hintField.op === "cm")) return getPol(ctx, hintField.id, "n");
-    if (hintField.op === "tmp") return calculateExpression(ctx, hintField.expId, debug);
+    if (hintField.op === "tmp") return calculateExpression(ctx, hintField.id, debug);
     if ((hintField.op === "number")) return BigInt(hintField.value);
     if (["subproofValue", "public"].includes(hintField.op)) return hintField;
     throw new Error("Case not considered");

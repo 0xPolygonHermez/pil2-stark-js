@@ -99,17 +99,26 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     for(let i = 0; i < expressionsInfo.expressionsCode.length; ++i) {
         const expCode = expressionsInfo.expressionsCode[i];
         if(!expCode) continue;
+        const setDest = expCode.expId === starkInfo.cExpId || expCode.expId === starkInfo.friExpId ? false : true;
         if(binFile) {
-            const expInfo = getParserArgsCode(expCode.code, "n");
+            const expInfo = getParserArgsCode(expCode.code, "n", setDest);
             expInfo.expId = expCode.expId;
             expInfo.stage = expCode.stage;
+            if(expCode.expId === starkInfo.cExpId || expCode.expId === starkInfo.friExpId) {
+                expInfo.destDim = 0;
+                expInfo.destId = 0;
+            }
             expsInfo.push(expInfo);
         }
 
         if(genericBinFile) {
-            const expInfoGeneric = getParserArgsCodeGeneric(expCode.code, "n");
+            const expInfoGeneric = getParserArgsCodeGeneric(expCode.code, "n", setDest);
             expInfoGeneric.expId = expCode.expId;
             expInfoGeneric.stage = expCode.stage;
+            if(expInfoGeneric.expId === starkInfo.cExpId || expInfoGeneric.expId === starkInfo.friExpId) {
+                expInfoGeneric.destDim = 0;
+                expInfoGeneric.destId = 0;
+            }
             expsInfoGeneric.push(expInfoGeneric);
         }
     }

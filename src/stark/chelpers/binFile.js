@@ -298,8 +298,6 @@ async function writeImPolsSection(cHelpersBin, imPolsInfo) {
     await cHelpersBin.writeULE32(subproofValuesIds.length);
     await cHelpersBin.writeULE32(cmPolsCalculatedIds.length);
 
-
-    await cHelpersBin.writeULE32(imPolsInfo.stage);
     await cHelpersBin.writeULE32(imPolsInfo.nTemp1);
     await cHelpersBin.writeULE32(imPolsInfo.nTemp3);
 
@@ -492,6 +490,8 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
         const expInfo = expressionsInfo[i];
 
         await cHelpersBin.writeULE32(expInfo.expId);
+        await cHelpersBin.writeULE32(expInfo.destDim);
+        await cHelpersBin.writeULE32(expInfo.destId);
         await cHelpersBin.writeULE32(expInfo.stage);
         await cHelpersBin.writeULE32(expInfo.nTemp1);
         await cHelpersBin.writeULE32(expInfo.nTemp3);
@@ -792,6 +792,7 @@ async function writeHintsSection(cHelpersBin, hintsInfo) {
             } else {
                 await cHelpersBin.writeULE32(field.id);
             }
+            if(field.op === "tmp") await cHelpersBin.writeULE32(field.dim);
         }
     }
 

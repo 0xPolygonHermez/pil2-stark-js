@@ -31,13 +31,13 @@ module.exports.generatePilCode = function generatePilCode(res, symbols, constrai
 
     expressionsInfo.constraints = generateConstraintsDebugCode(res, symbols, constraints, expressions, stark);
 
-    expressionsInfo.hintsInfo = addHintsInfo(res, symbols, hints);
+    expressionsInfo.hintsInfo = addHintsInfo(res, symbols, expressions, hints);
 
     return {expressionsInfo, verifierInfo};
 }
 
 
-function addHintsInfo(res, symbols, hints) {
+function addHintsInfo(res, symbols, expressions, hints) {
     const hintsInfo = [];
     for(let i = 0; i < hints.length; ++i) {
         const hint = hints[i];
@@ -50,15 +50,11 @@ function addHintsInfo(res, symbols, hints) {
             const field = fields[j];
             if(field === "name") continue;
             if(hint[field].op === "exp") {
-                const symbol = symbols.find(s => s.type === "witness" && s.expId === hint[field].id);
-                const fieldInfo = symbol
-                    ? {name: field, op: "cm", id: symbol.polId}
-                    : {name: field, op: "tmp", expId: hint[field].id};
-                hintFields.push(fieldInfo);
+                hintFields.push({name: field, op: "tmp", id: hint[field].id, dim: expressions[hint[field].id].dim });
             } else if(["cm", "challenge", "public"].includes(hint[field].op)) {
-                hintFields.push({name: field, op: hint[field].op, id: hint[field].id});
+                hintFields.push({name: field, op: hint[field].op, id: hint[field].id });
             } else if(["public", "subproofValue", "const"].includes(hint[field].op)) {
-                hintFields.push({name: field, op: hint[field].op, id: hint[field].id});
+                hintFields.push({name: field, op: hint[field].op, id: hint[field].id });
             } else if(hint[field].op === "number") {
                 hintFields.push({name: field, op: "number", value: hint[field].value});
             } else throw new Error("Invalid hint op: " + hint[field].op);
