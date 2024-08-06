@@ -22,6 +22,7 @@ const argv = require("yargs")
     .alias("t", "firstpossiblestage")
     .alias("d", "debug")
     .alias("k", "skipimpols")
+    .alias("o", "optimpols")
     .string("subproofId")
     .string("airId")
     .argv;
@@ -78,9 +79,10 @@ async function run() {
     options.firstPossibleStage = argv.firstpossiblestage || false;
     options.debug = debug;
     options.skipImPols = debug ? (argv.skipimpols || false) : false;
+    options.optImPols = argv.optimpols || false;
     options.debugLine = argv.debugLine || false;
 
-    const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = pilInfo(F, pil, true, pil2, starkStruct, options);
+    const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = await pilInfo(F, pil, true, pil2, starkStruct, options);
 
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
     

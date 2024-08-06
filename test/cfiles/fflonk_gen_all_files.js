@@ -70,7 +70,7 @@ describe("all sm generate files", async function () {
         }
 
         // Create & save fflonkInfo
-        const {pilInfo: fflonkInfo} = pilInfo(F, pil, false);
+        const {pilInfo: fflonkInfo} = await pilInfo(F, pil, false);
         
         const fflonkInfoFilename =  path.join(__dirname, "../../", "tmp", `all.fflonkinfo.json`);
         await fs.promises.writeFile(fflonkInfoFilename, JSON.stringify(fflonkInfo, null, 1), "utf8");

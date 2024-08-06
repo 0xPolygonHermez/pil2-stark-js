@@ -18,7 +18,7 @@ module.exports.generateFflonkProof = async function generateFflonkProof(constPol
     const ptauFile =  path.join(__dirname, "../../", "tmp", "powersOfTau28_hez_final_19.ptau");
     const zkeyFilename =  path.join(__dirname, "../../", "tmp", "fflonk_all.zkey");
 
-    const {pilInfo: fflonkInfo, expressionsInfo, verifierInfo} = pilInfo(F, pil, false);
+    const {pilInfo: fflonkInfo, expressionsInfo, verifierInfo} = await pilInfo(F, pil, false);
 
     await fflonkSetup(constPols, zkeyFilename, ptauFile, fflonkInfo, {extraMuls, maxQDegree, logger});
 

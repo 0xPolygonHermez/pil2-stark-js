@@ -26,7 +26,7 @@ module.exports.generateStarkProof = async function generateStarkProof(constPols,
 
         const optionsPilVerify = {logger, debug: true, useThreads: false, parallelExec: false, verificationHashType, splitLinearHash};
 
-        const {pilInfo: starkInfo, expressionsInfo} = pilInfo(F, pil, true, pil2, {}, {debug: debug});
+        const {pilInfo: starkInfo, expressionsInfo} = await pilInfo(F, pil, true, pil2, {}, {debug: debug});
         const pilVerification = await starkGen(cmPols, constPols, {}, starkInfo, expressionsInfo, inputs, optionsPilVerify);
         assert(pilVerification==true);
     }

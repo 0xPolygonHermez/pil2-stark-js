@@ -106,7 +106,7 @@ async function run() {
 
             options.imPolsStages = argv.impolsstages || false;
 
-            const { pilInfo: starkInfo, expressionsInfo, verifierInfo } = pilInfo(F, pil, true, true, starkStruct, options);
+            const { pilInfo: starkInfo, expressionsInfo, verifierInfo } = await pilInfo(F, pil, true, true, starkStruct, options);
 
             await fs.promises.writeFile(starkInfoFile, JSON.stringify(starkInfo, null, 1), "utf8");
             await fs.promises.writeFile(expressionsInfoFile, JSON.stringify(expressionsInfo, null, 1), "utf8");
