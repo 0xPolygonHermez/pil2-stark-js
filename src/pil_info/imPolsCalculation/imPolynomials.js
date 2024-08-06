@@ -6,9 +6,10 @@ const { getExpDim, addInfoExpressions } = require("../helpers/helpers");
 module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark) {
     const E = new ExpressionOps();
 
-    console.log("Number of intermediate expressions: " + imExps.length);
-    console.log("Q degree: " + qDeg);
-    
+    console.log("--------------------- SELECTED DEGREE ----------------------");
+    console.log(`Quotient polynomial degree: ${qDeg}`);
+    console.log(`Number of intermediate polynomials required: ${imExps.length}`);
+
     res.qDeg = qDeg;
 
     const dim = stark ? 3 : 1;
@@ -19,13 +20,11 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     const vc = E.challenge("std_vc", stage, dim, 0, vc_id);
     vc.expDeg = 0;
     
-    console.log("Checking that constraint polynomial numerator expression has degree less than qDeg + 1");
     const maxDegExpr = module.exports.calculateExpDeg(expressions, expressions[res.cExpId], imExps);
     if(maxDegExpr > qDeg + 1) {
         throw new Error(`The maximum degree of the constraint expression has a higher degree (${maxDegExpr}) than the maximum allowed degree (${qDeg + 1})`);
     }
     
-    console.log("Checking that intermediate polynomials have degree less than qDeg + 1");
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
         
@@ -35,7 +34,6 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
         }
     }
 
-    console.log("Adding intermediate polynomials to the expressions and constraints.");
     for (let i=0; i<imExps.length; i++) {
         const expId = imExps[i];
 
@@ -84,10 +82,14 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
 module.exports.calculateIntermediatePolynomials = function calculateIntermediatePolynomials(expressions, cExpId, maxQDeg, qDim) {
     let d = 2;
 
+    console.log("-------------------- POSSIBLE DEGREES ----------------------");
+    console.log(`** Considering degrees between 2 and ${maxQDeg} (blowup factor: ${Math.log2(maxQDeg - 1)}) **`);
+    console.log("------------------------------------------------------------");
     const cExp = expressions[cExpId];
     let [imExps, qDeg] = calculateImPols(expressions, cExp, d);
     let addedBasefieldCols = calculateAddedCols(d++, expressions, imExps, qDeg, qDim);
     while(imExps.length > 0 && d <= maxQDeg) {
+        console.log("------------------------------------------------------------");
         let [imExpsP, qDegP] = calculateImPols(expressions, cExp, d);
         let newAddedBasefieldCols = calculateAddedCols(d++, expressions, imExpsP, qDegP, qDim);
         if ((maxQDeg && newAddedBasefieldCols < addedBasefieldCols) 
@@ -108,7 +110,10 @@ function calculateAddedCols(maxDeg, expressions, imExps, qDeg, qDim) {
        imCols += expressions[imExps[i]].dim;
     }
     let addedCols = qCols + imCols;
-    console.log(`maxDeg: ${maxDeg}, nIm: ${imExps.length}, d: ${qDeg}, addedCols in the basefield: ${addedCols} (${qCols} + ${imCols})`);
+    console.log(`Max constraint degree: ${maxDeg}`);
+    console.log(`Number of intermediate polynomials: ${imExps.length}`);
+    console.log(`Polynomial Q degree: ${qDeg}`);
+    console.log(`Number of columns added in the basefield: ${addedCols} (Polynomial Q columns: ${qCols} + Intermediate polynomials columns: ${imCols})`);
 
     return addedCols;
 }

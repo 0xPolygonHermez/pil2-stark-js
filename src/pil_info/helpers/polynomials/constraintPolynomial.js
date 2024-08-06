@@ -52,6 +52,6 @@ module.exports.generateConstraintPolynomial = function generateConstraintPolynom
 
     const initial_q_degree = calculateExpDeg(expressions, expressions[res.cExpId], [], true);
 
-    console.log(`The polynomial Q has degree ${initial_q_degree} without intermediate polynomials`);
+    console.log(`The maximum constraint degree is ${initial_q_degree} (without intermediate polynomials) `);
 
 }

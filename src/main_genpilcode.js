@@ -52,27 +52,28 @@ async function run() {
 
     let nCols = {}; 
     if(stark) {
-        console.log("--------------------- POLINOMIALS INFO ---------------------")
+        console.log("--------------------- POLYNOMIALS INFO ---------------------")
         let nColumnsBaseField = 0;
         let nColumns = 0;
         for(let i = 1; i <= res.nStages + 1; ++i) {
             let stage = i;
+            let stageDebug = i === res.nStages + 1 ? "Q" : stage;
             let stageName = "cm" + stage;
             let nColsStage = res.cmPolsMap.filter(p => p.stage == stage).length;
             nCols[stageName] = nColsStage;
             let nColsBaseField = res.mapSectionsN[stageName];
             if(i === res.nStages + 1 || (i < res.nStages && !res.imPolsStages)) {
-                console.log(`Columns stage ${stage}: ${nColsStage} -> Columns in the basefield: ${nColsBaseField}`);
+                console.log(`Columns stage ${stageDebug}: ${nColsStage} -> Columns in the basefield: ${nColsBaseField}`);
             } else {
-                console.log(`Columns stage ${stage}: ${nColsStage} (${res.cmPolsMap.filter(p => p.stage == stage && p.imPol).length} intermediate columns) -> Columns in the basefield: ${nColsBaseField}`);
+                console.log(`Columns stage ${stageDebug}: ${nColsStage} (${res.cmPolsMap.filter(p => p.stage == stage && p.imPol).length} intermediate polynomials) -> Columns in the basefield: ${nColsBaseField} (${res.cmPolsMap.filter(p => p.stage == stage && p.imPol).reduce((acc, curr) => acc + curr.dim, 0)} from intermediate polynomials)`);
             }
             nColumns += nColsStage;
             nColumnsBaseField += nColsBaseField;
         }
         
-        console.log(`Total Columns: ${nColumns} -> Total Columns in the basefield: ${nColumnsBaseField}`);
+        console.log(`Total Columns: ${nColumns} -> Columns in the basefield: ${nColumnsBaseField}`);
         console.log(`Total Constraints: ${constraints.length}`)
-        console.log(`Number of evaluations: ${res.evMap.length}`)
+        if(!options.debug) console.log(`Number of evaluations: ${res.evMap.length}`)
         console.log("------------------------------------------------------------")
     }
 

@@ -11,17 +11,6 @@ import smt_generation_pil_2
 import json
   
 
-    # The degree is the maximum of the list    
-def mix_degrees(deg_1, deg_2, deg_3):
-    result = []
-    for d in deg_3:
-        result.append(d)
-    for i in deg_1:
-        for j in deg_2:
-            result.append((i, j))
-    return result
-
-
 def get_used_expressions(expr, expressions, used_expressions):
     type_union = {"add", "sub", "mul"}
     
@@ -104,14 +93,16 @@ def minimize_expression_pil(tree, zero_expressions, one_expressions):
         else:
             return tree
 
-# TODO: Check this function as it is not exactly the same as the one in JS
 def calculate_added_cols(expressions, used_variables, q_deg, q_dim):
     q_cols = q_deg * q_dim
     im_cols = 0
     for v in used_variables:
         im_cols += expressions[v]["dim"]
     added_cols = q_cols + im_cols
-    print("maxDeg: " + str(q_deg + 1) + ", nIm: " + str(len(used_variables)) + ", d: " + str(q_deg) + ", addedCols in the basefield: " + str(added_cols) + " (" + str(q_cols) + " + " + str(im_cols) + ")")
+    print("Max constraint degree: " + str(q_deg + 1))
+    print("Number of intermediate polynomials: " + str(len(used_variables)))
+    print("Polynomial Q degree: " + str(q_deg))
+    print("Number of columns added in the basefield: " + str(added_cols) + " (Polynomial Q columns: " + str(q_cols) + " Intermediate polynomials columns " + str(im_cols) + ")")
     return added_cols
 
 
@@ -177,18 +168,12 @@ trees = {}
 for e in expressions:
     if all_used or i in used_expressions:
         tree = parse_expression_pil(e)
-    
-        #print("Printing tree " + str(i))
-        #print(tree)
-        #print("---------")
 
         new_tree = minimize_expression_pil(tree, zero_expressions, one_expressions)
         if new_tree == 0:
             zero_expressions.add("exp_" + str(i))
         if new_tree == 1:
             one_expressions.add("exp_" + str(i))
-        #print(new_tree)
-        #print("--------------------")
     
         if new_tree != 0 and new_tree != 1:
             trees[i] = new_tree
@@ -199,12 +184,13 @@ optimal_degree = -1
 min_vars = len(expressions)
 possible_degree = 2
 
-print("*** Considering degrees between 2 and " + str(degree) + " ***")
-print() 
+print("-------------------- POSSIBLE DEGREES ----------------------")
+print("** Considering degrees between 2 and " + str(degree) + " (blowup factor: " + str(int(math.log2(degree - 1))) + ") **")
+print("------------------------------------------------------------");
 
 while min_vars != 0 and possible_degree <= degree:
     # Try with degree possible_degree, declare smt problem and try to solve it
-    print("--- Using degree " + str(possible_degree) + " ---")
+    print("------------------------------------------------------------")
     solver = Optimize()
     smt_generation_pil_2.declare_keep_variables(number_intermediates, possible_degree, solver)
     for (index, value) in trees.items():
@@ -220,11 +206,11 @@ while min_vars != 0 and possible_degree <= degree:
     if len(new_used_variables) < min_vars:
         min_vars = len(new_used_variables)
     possible_degree = possible_degree + 1
-    print()
         
         
-print("--> Choosing degree: " + str(optimal_degree))
-print("Variables that are kept:" + str(used_variables))
+print("--------------------- SELECTED DEGREE ----------------------")
+print("Quotient polynomial degree: " + str(optimal_degree))
+print("Number of intermediate polynomials required: " + str(used_variables))
 
 #new_map_expressions = {}
 #i = 0
