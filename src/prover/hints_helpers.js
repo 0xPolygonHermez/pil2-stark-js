@@ -81,15 +81,7 @@ function isHintResolved(ctx, hint) {
 async function resolveHint(ctx, hint, options) {
     if(options?.logger) options.logger.debug(`Calculating hint ${hint.name} with fields: ${hint.fields.map(f => f.name).join(", ")}`);
 
-    if(hint.name === "subproofValue") {
-        const polinomial = getHintField(ctx, hint, "expression");
-        const position = getHintField(ctx, hint, "row_index");
-        const value = polinomial[position];
-
-        const subproofValue = getHintField(ctx, hint, "reference");
-        ctx.subproofValues[subproofValue.id] = value;
-        setSubproofValue(ctx, subproofValue.id, value, options);
-    } else if (hint.name === "public") {
+    if (hint.name === "public") {
         const polinomial = getHintField(ctx, hint, "expression");
         const position = getHintField(ctx, hint, "row_index");
         const value = polinomial[position];
@@ -103,12 +95,22 @@ async function resolveHint(ctx, hint, options) {
         let gsum = await calculateS(ctx.F, numerator, denominator);
         let gsumField = getHintField(ctx, hint, "reference", true);
         setPol(ctx, gsumField.id, gsum, "n", options);
+        if(hint.fields.find(f => f.name === "result")) {
+            const value = gsum[ctx.N - 1];
+            const subproofValue = getHintField(ctx, hint, "result");
+            setSubproofValue(ctx, subproofValue.id, value, options);
+        }
     } else if(hint.name === "gprod") {
         let numerator = getHintField(ctx, hint, "numerator");
         let denominator = getHintField(ctx, hint, "denominator");
         let gprod = await calculateZ(ctx.F, numerator, denominator);
         let gprodField = getHintField(ctx, hint, "reference", true);
         setPol(ctx, gprodField.id, gprod, "n", options);
+        if(hint.fields.find(f => f.name === "result")) {
+            const value = gprod[ctx.N - 1];
+            const subproofValue = getHintField(ctx, hint, "result");
+            setSubproofValue(ctx, subproofValue.id, value, options);
+        }
     } else if(hint.name === "h1h2") {
         let f = getHintField(ctx, hint, "f");
         let t = getHintField(ctx, hint, "t");

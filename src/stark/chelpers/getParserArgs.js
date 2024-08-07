@@ -33,9 +33,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         
         let operation = getOperation(r);
 
-        if(operation.op !== "copy" && "q" !== operation.dest_type) {
-            args.push(operationsTypeMap[operation.op]);
-        }
+        args.push(operationsTypeMap[operation.op]);
 
         pushResArg(r, r.dest.type);
         for(let i = 0; i < operation.src.length; i++) {
@@ -44,9 +42,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
 
         
         let opsIndex;
-        if(r.op === "copy") {
-            opsIndex = operations.findIndex(op => op.dest_type === operation.dest_type && op.src0_type === operation.src0_type && !op.src1_type);
-        } else if(operation.op === "mul" && ["tmp3", "commit3"].includes(operation.dest_type) && operation.src1_type === "challenge") {
+        if(operation.op === "mul" && ["tmp3", "commit3"].includes(operation.dest_type) && operation.src1_type === "challenge") {
             opsIndex = operations.findIndex(op => op.op === operation.op && op.dest_type === operation.dest_type && op.src0_type === operation.src0_type && op.src1_type === operation.src1_type);
         } else {
             opsIndex = operations.findIndex(op => !op.op && op.dest_type === operation.dest_type && op.src0_type === operation.src0_type && op.src1_type === operation.src1_type);
@@ -118,9 +114,6 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 }
                 break;
             }
-            case "q": {
-                break;
-            }
             case "cm": {
                 if (dom == "n") {
                     evalMap_(r.dest.id, r.dest.prime)
@@ -129,9 +122,6 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 } else {
                     throw new Error("Invalid dom");
                 }
-                break;
-            }
-            case "f": {
                 break;
             }
             default: throw new Error("Invalid reference type set: " + r.dest.type);
@@ -180,7 +170,6 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 args.push(numbers.indexOf(numString));
                 break;
             }
-            case "xDivXSubXi":
             case "public":
             case "subproofValue":
             case "eval": 
@@ -188,7 +177,14 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 args.push(r.id);
                 break;
             }
+            case "xDivXSubXi":
+                args.push(starkInfo.nStages + 2);
+                args.push(0);
+                args.push(3*r.id);
+                break;
             case "Zi": {
+                args.push(starkInfo.nStages + 2);
+                args.push(0);
                 args.push(r.boundaryId);
                 break;
             }

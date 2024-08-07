@@ -148,10 +148,7 @@ module.exports.calculateS = async function calculateS(F, num, den) {
     const gsum = [];
 
     const N = den.length;
-
-    // TODO: THIS IS A HACK, REMOVE WHEN PIL2 IS FIXED
-    if(num === 5n) num = F.negone;
-
+    
     const denInv = await F.batchInverse(den);
 
     for(let i = 0; i < N; ++i) {

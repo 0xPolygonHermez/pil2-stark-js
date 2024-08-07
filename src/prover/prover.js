@@ -198,20 +198,8 @@ async function computeStage(stage, ctx, options) {
     const dom = stage === qStage ? "ext" : "n";
 
     if(stage !== qStage) {
-        if (logger) logger.debug("Calculating expressions...");
-        await callCalculateExps(stage, ctx.expressionsInfo.stagesCode[stage - 1], dom, ctx, options.parallelExec, options.useThreads);
-        if (logger) logger.debug("Expressions calculated.");
-
-        const symbolsCalculatedStep = ctx.expressionsInfo.stagesCode[stage - 1].symbolsCalculated;
-        for(let i = 0; i < symbolsCalculatedStep.length; i++) {
-            const symbolCalculated = symbolsCalculatedStep[i];
-            setSymbolCalculated(ctx, symbolCalculated, options);
-        }
-
         let symbolsToBeCalculated = isStageCalculated(ctx, stage, options);
         while(symbolsToBeCalculated > 0) {
-            await tryCalculateExps(ctx, stage, dom, options); 
-
             await applyHints(stage, ctx, options);
             
             let symbolsToBeCalculatedUpdated = isStageCalculated(ctx, stage, options);

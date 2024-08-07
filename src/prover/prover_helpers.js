@@ -306,7 +306,7 @@ module.exports.getPolRef = function getPolRef(ctx, idPol, dom, isFixed = false) 
     if(!["n", "ext"].includes(dom)) throw new Error("invalid stage");
     const deg = dom === "ext" ? ctx.extN : ctx.N;
     let p = isFixed ? ctx.pilInfo.constPolsMap[idPol] : ctx.pilInfo.cmPolsMap[idPol];
-    let st = isFixed ? "const" : p.stage === "tmpExp" ? p.stage : "cm" + p.stage;
+    let st = isFixed ? "const" : "cm" + p.stage;
     let stage = st + "_" + dom;
     let offset = isFixed ? idPol : p.stagePos;
     let polRef = {

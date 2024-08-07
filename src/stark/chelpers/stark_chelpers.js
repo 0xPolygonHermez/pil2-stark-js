@@ -7,12 +7,10 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     if(className === "") className = "Stark";
     className = className[0].toUpperCase() + className.slice(1) + "Steps";
     
-    const stagesInfo = [];
     let imPolsInfo = {};
     const expsInfo = [];
     const constraintsInfo = [];
 
-    const stagesInfoGeneric = [];
     let imPolsInfoGeneric = {};
     const expsInfoGeneric = [];
     const constraintsInfoGeneric = [];
@@ -31,22 +29,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     let totalSubsetOperationsUsed = [];
 
     let debug = false;
-    // Get parser args for each stage
-    for(let i = 0; i < nStages; ++i) {
-        let stage = i + 1;
-        if(binFile) {
-            const stageInfo = getParserArgsCode(expressionsInfo.stagesCode[i], "n", debug);
-            stageInfo.stage = stage;
-            stagesInfo.push(stageInfo);
-        }
-
-        if(genericBinFile) {
-            const stageInfoGeneric = getParserArgsCodeGeneric(expressionsInfo.stagesCode[i], "n", debug);
-            stageInfoGeneric.stage = stage;
-            stagesInfoGeneric.push(stageInfoGeneric);
-        }
-    }
-
+    
     if(binFile) {
         imPolsInfo = getParserArgsCode(expressionsInfo.imPolsCode, "n", debug);
     }
@@ -97,11 +80,14 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
 
     // Get parser args for each expression
     for(let i = 0; i < expressionsInfo.expressionsCode.length; ++i) {
-        const expCode = expressionsInfo.expressionsCode[i];
+        const expCode = JSON.parse(JSON.stringify(expressionsInfo.expressionsCode[i]));
         if(!expCode) continue;
-        const setDest = expCode.expId === starkInfo.cExpId || expCode.expId === starkInfo.friExpId ? false : true;
+        if(expCode.expId === starkInfo.cExpId || expCode.expId === starkInfo.friExpId) {
+            expCode.code.code[expCode.code.code.length - 1].dest = { type: "tmp", id: expCode.code.tmpUsed++, dim: 3 };
+
+        }
         if(binFile) {
-            const expInfo = getParserArgsCode(expCode.code, "n", setDest);
+            const expInfo = getParserArgsCode(expCode.code, "n", true);
             expInfo.expId = expCode.expId;
             expInfo.stage = expCode.stage;
             if(expCode.expId === starkInfo.cExpId || expCode.expId === starkInfo.friExpId) {
@@ -112,7 +98,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
         }
 
         if(genericBinFile) {
-            const expInfoGeneric = getParserArgsCodeGeneric(expCode.code, "n", setDest);
+            const expInfoGeneric = getParserArgsCodeGeneric(expCode.code, "n", true);
             expInfoGeneric.expId = expCode.expId;
             expInfoGeneric.stage = expCode.stage;
             if(expInfoGeneric.expId === starkInfo.cExpId || expInfoGeneric.expId === starkInfo.friExpId) {
@@ -143,10 +129,6 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     }
     
     // Set case to consecutive numbers
-    for(let i = 0; i < stagesInfo.length; ++i) {
-        stagesInfo[i].ops = stagesInfo[i].ops.map(op => totalSubsetOperationsUsed.findIndex(o => o === op));        
-    }
-
     if(imPolsInfo.ops) {
         imPolsInfo.ops = imPolsInfo.ops.map(op => totalSubsetOperationsUsed.find(o => o === op));
     }
@@ -170,7 +152,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
 
     if(binFile) {
         res.binFileInfo = {
-            stagesInfo, expsInfo, imPolsInfo, constraintsInfo, hintsInfo: expressionsInfo.hintsInfo
+            expsInfo, imPolsInfo, constraintsInfo, hintsInfo: expressionsInfo.hintsInfo
         }
         res.cHelpers = cHelpers;
     }
@@ -178,7 +160,6 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     if(genericBinFile) {
         res.genericBinFileInfo = {
             imPolsInfo: imPolsInfoGeneric,
-            stagesInfo: stagesInfoGeneric,
             expsInfo: expsInfoGeneric,
             constraintsInfo: constraintsInfoGeneric,
             hintsInfo: expressionsInfo.hintsInfo,

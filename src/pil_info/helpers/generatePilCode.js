@@ -1,6 +1,6 @@
 const {generateFRIPolynomial} = require("./polynomials/friPolinomial");
 
-const { generateConstraintPolynomialVerifierCode, generateConstraintsDebugCode, generateExpressionsCode, generateStagesCode, generateFRIVerifierCode, generateImPolynomialsCode } = require("./code/generateCode");
+const { generateConstraintPolynomialVerifierCode, generateConstraintsDebugCode, generateExpressionsCode, generateFRIVerifierCode, generateImPolynomialsCode } = require("./code/generateCode");
 const { addInfoExpressionsSymbols } = require("./helpers");
 
 module.exports.generatePilCode = function generatePilCode(res, symbols, constraints, expressions, hints, debug, stark) {
@@ -12,8 +12,6 @@ module.exports.generatePilCode = function generatePilCode(res, symbols, constrai
     for(let i = 0; i < expressions.length; i++) {
         addInfoExpressionsSymbols(symbols, expressions, expressions[i], stark);
     }
-
-    generateStagesCode(res, expressionsInfo, symbols, expressions, stark);
 
     if(!debug) {
         generateConstraintPolynomialVerifierCode(res, verifierInfo, symbols, expressions, stark);

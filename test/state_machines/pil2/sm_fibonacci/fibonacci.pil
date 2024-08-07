@@ -23,9 +23,7 @@ air Fibonacci(int N = 2**6) {
 
     col witness stage(2) gsum;
 
-    @gsum { reference: gsum, numerator: 5, denominator: ((((L1'2*out + (1 - L1'2)*a') * std_alpha + a * a + b * b) * std_alpha) + 1 + std_beta)}
-
-    @subproofValue { reference: gsum_fibonacci, expression: gsum, row_index: N - 1 }
+    @gsum { reference: gsum, numerator: -1, denominator: ((((L1'2*out + (1 - L1'2)*a') * std_alpha + a * a + b * b) * std_alpha) + 1 + std_beta), result: gsum_fibonacci }
 
     (gsum - 'gsum * (1 - L1)) * ((((L1'2*out + (1 - L1'2)*a') * std_alpha + a * a + b * b) * std_alpha) + 1 + std_beta) + 1 === 0;
     L1' * (gsum - gsum_fibonacci) === 0;

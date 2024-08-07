@@ -492,7 +492,7 @@ module.exports.getPermutationsStark = async function getPermutationsStark(ctx, c
     return friQueries;
 }
 
-module.exports.printPol = async function printPolRoot(ctx, polId, row = -1) {
+module.exports.printPol = async function printPol(ctx, polId, row = -1) {
     const cmPol = ctx.pilInfo.cmPolsMap[polId];
     let p = getPolRef(ctx, polId, "n");
     let pol = getPol(ctx, polId, "n");

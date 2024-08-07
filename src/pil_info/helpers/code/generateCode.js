@@ -4,7 +4,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
     const expressionsCode = [];
     for(let j = 0; j < expressions.length; ++j) {
         const exp = expressions[j];
-        if(!exp.keep && ![res.cExpId, res.friExpId].includes(j)) continue;
+        if(!exp.keep && !exp.imPol && ![res.cExpId, res.friExpId].includes(j)) continue;
         const dom = (j === res.cExpId || j === res.friExpId) ? "ext" : "n";
         const ctx = {
             calculated: {},
@@ -17,6 +17,8 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             subproofId: res.subproofId,
             stark,
         };
+
+        ctx.keepImPols = dom === "ext" ? true : false;
 
         if(j === res.friExpId) ctx.openingPoints = res.openingPoints;
         if(j === res.cExpId) {
@@ -53,6 +55,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         if(j == res.cExpId) {
             code.code[code.code.length-1].dest = { type: "q", id: 0, dim: res.qDim };
         }
+
         if(j == res.friExpId) {
             code.code[code.code.length-1].dest = { type: "f", id: 0, dim: 3 };
         }
@@ -81,6 +84,7 @@ module.exports.generateImPolynomialsCode = function generateImPolynomialsCode(re
         tmpUsed: 0,
         code: [],
         dom: "n",
+        keepImPols: true,
         airId: res.airId,
         subproofId: res.subproofId,
         stark,
@@ -106,50 +110,6 @@ module.exports.generateImPolynomialsCode = function generateImPolynomialsCode(re
     return buildCode(ctx);
 
 }
-module.exports.generateStagesCode = function generateStagesCode(res, expressionsInfo, symbols, expressions, stark) {
-    const ctx = {
-        calculated: {},
-        symbolsCalculated: [],
-        symbolsUsed: [],
-        tmpUsed: 0,
-        code: [],
-        dom: "n",
-        airId: res.airId,
-        subproofId: res.subproofId,
-        stark,
-    };
-
-    expressionsInfo.stagesCode = [];
-
-    for(let stage = 1; stage <= res.nStages; ++stage) {
-        for(let j = 0; j < expressions.length; ++j) {
-            if(expressions[j].stage === stage) {
-                let symbolDest = symbols.find(s => s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId);
-                if(!symbolDest) continue;
-                let skip = false;
-                for(let k = 0; k < expressions[j].symbols.length; k++) {
-                    const symbol = expressions[j].symbols[k];
-                    const imPol = symbol.op === "cm" && res.cmPolsMap[symbol.id].imPol;
-                    if(!imPol && (symbol.stage > stage || (stage != 1 && symbol.op === "cm" && symbol.stage === stage))) {
-                        skip = true;
-                        break; 
-                    }
-                }
-
-                if(skip) continue;
-                
-                for(let k = 0; k < expressions[j].symbols.length; k++) {
-                    const symbolUsed = expressions[j].symbols[k];
-                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                        ctx.symbolsUsed.push(symbolUsed);
-                    };
-                }
-                pilCodeGen(ctx, symbols, expressions, j, 0);
-            }
-        }
-        expressionsInfo.stagesCode.push(buildCode(ctx));
-    }
-}
 
 module.exports.generateConstraintsDebugCode = function generateConstraintsDebugCode(res, symbols, constraints, expressions, stark) {
     const constraintsCode = [];
@@ -161,6 +121,7 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
             tmpUsed: 0,
             code: [],
             dom: "n",
+            keepImPols: false,
             airId: res.airId,
             subproofId: res.subproofId,
             stark,
@@ -202,6 +163,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
         openingPoints: res.openingPoints,
         stark,
         addMul,
+        keepImPols: true,
         verifierEvaluations: true,
     };
 
@@ -264,6 +226,7 @@ module.exports.generateFRIVerifierCode = function generateFRIVerifierCode(res, v
         subproofId: res.subproofId,
         openingPoints: res.openingPoints,
         verifierQuery: true,
+        keepImPols: true,
         addMul: false,
         stark: true,
     };

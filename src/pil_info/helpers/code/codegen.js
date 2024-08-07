@@ -21,6 +21,7 @@ function pilCodeGen(ctx, symbols, expressions, expId, prime, evMap) {
             airId: ctx.airId,
             subproofId: ctx.subproofId,
             openingPoints: ctx.openingPoints,
+            keepImPols: ctx.keepImPols,
             code: []
         }
     
@@ -204,11 +205,16 @@ function fixDimensionsVerifier(ctx) {
 
 function fixCommitPol(r, ctx, symbols) {
     const symbol = symbols.find(s => s.type === "witness" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
-    if(symbol && (symbol.imPol || (!ctx.verifierEvaluations && ctx.dom === "n"))) {
+    if(!symbol) return;
+    if(symbol.imPol && ctx.keepImPols) {
         r.type = "cm";
         r.id = symbol.polId;
         r.dim = symbol.dim;
         if(ctx.verifierEvaluations) fixEval(r, ctx);
+    } else if(!ctx.verifierEvaluations && ctx.dom === "n") {
+        r.type = "cm";
+        r.id = symbol.polId;
+        r.dim = symbol.dim;
     }
 }
 
