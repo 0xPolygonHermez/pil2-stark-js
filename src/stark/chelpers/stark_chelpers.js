@@ -15,8 +15,6 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     const expsInfoGeneric = [];
     const constraintsInfoGeneric = [];
 
-    const nStages = starkInfo.nStages;
-
     const cHelpersStepsHpp = [
         `#include "chelpers_steps.hpp"\n\n`,
         `class ${className} : public CHelpersSteps {`,
@@ -83,8 +81,10 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
         const expCode = JSON.parse(JSON.stringify(expressionsInfo.expressionsCode[i]));
         if(!expCode) continue;
         if(expCode.expId === starkInfo.cExpId || expCode.expId === starkInfo.friExpId) {
-            expCode.code.code[expCode.code.code.length - 1].dest = { type: "tmp", id: expCode.code.tmpUsed++, dim: 3 };
-
+            if(expCode.expId === starkInfo.cExpId || expCode.expId === starkInfo.friExpId) {
+                expCode.code.code[expCode.code.code.length - 1].dest.type = "tmp";
+                expCode.code.code[expCode.code.code.length - 1].dest.id = expCode.code.tmpUsed++;
+            }
         }
         if(binFile) {
             const expInfo = getParserArgsCode(expCode.code, "n", true);

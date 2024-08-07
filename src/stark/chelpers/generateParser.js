@@ -1,15 +1,16 @@
 const operationsMap = {
     "commit1": 1,
-    "const": 2,
-    "tmp1": 3,
-    "public": 4,
-    "number": 5,
-    "commit3": 6,
-    "xDivXSubXi": 7,
-    "tmp3": 8,
-    "subproofValue": 9,
-    "challenge": 10, 
-    "eval": 11,
+    "Zi": 2,
+    "const": 3,
+    "tmp1": 4,
+    "public": 5,
+    "number": 6,
+    "commit3": 7,
+    "xDivXSubXi": 8,
+    "tmp3": 9,
+    "subproofValue": 10,
+    "challenge": 11, 
+    "eval": 12,
 }
 
 module.exports.generateParser = function generateParser(operations, operationsUsed) {
