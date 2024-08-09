@@ -7,7 +7,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     const E = new ExpressionOps();
 
     console.log("--------------------- SELECTED DEGREE ----------------------");
-    console.log(`Quotient polynomial degree: ${qDeg}`);
+    console.log(`Constraints maximum degree: ${qDeg + 1}`);
     console.log(`Number of intermediate polynomials required: ${imExps.length}`);
 
     res.qDeg = qDeg;
@@ -47,6 +47,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
         
         expressions[expId].imPol = true;
         expressions[expId].polId = res.nCommitments - 1;
+        expressions[expId].stage = stageIm;
 
         let e = {
             op: "sub",
@@ -64,7 +65,8 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     }
 
     expressions[res.cExpId] = E.mul(expressions[res.cExpId], E.zi(res.boundaries.findIndex(b => b.name === "everyRow")));
-
+    expressions[res.cExpId].stage = res.nStages + 1;
+    
     let cExpDim = getExpDim(expressions, res.cExpId, stark);
     expressions[res.cExpId].dim = cExpDim;
 

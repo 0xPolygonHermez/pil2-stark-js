@@ -27,6 +27,14 @@ module.exports = function map(res, symbols, expressions, constraints, options) {
         constraints[i].line += " == 0";
     }
 
+    console.log("----------------- INTERMEDIATE POLYNOMIALS -----------------");
+    const imPols = res.cmPolsMap.filter(i => i.imPol === true);
+    for(let i = 0; i < imPols.length; ++i) {
+        const imPolExpression = printExpressions(res, expressions[imPols[i].expId], expressions);
+        if(i > 0) console.log("------------------------------------------------------------");
+        console.log(`Intermediate polynomial ${i} columns: ${imPols[i].dim}`);
+        console.log(imPolExpression);
+    }
     res.nCommitmentsStage1 = res.cmPolsMap.filter(p => p.stage === "cm1" && !p.imPol).length; 
 }
 

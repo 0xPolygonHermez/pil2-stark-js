@@ -209,7 +209,7 @@ while min_vars != 0 and possible_degree <= degree:
         
         
 print("--------------------- SELECTED DEGREE ----------------------")
-print("Quotient polynomial degree: " + str(optimal_degree))
+print("Constraints maximum degree: " + str(optimal_degree + 1))
 print("Number of intermediate polynomials required: " + str(used_variables))
 
 #new_map_expressions = {}

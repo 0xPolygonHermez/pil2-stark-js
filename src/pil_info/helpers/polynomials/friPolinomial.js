@@ -54,4 +54,5 @@ module.exports.generateFRIPolynomial = function generateFRIPolynomial(res, symbo
     res.friExpId = friExpId;
     expressions.push(friExp);
     expressions[friExpId].dim = getExpDim(expressions, friExpId, true);
+    expressions[friExpId].stage = res.nStages + 2;
 }
