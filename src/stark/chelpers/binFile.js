@@ -59,34 +59,61 @@ async function writeImPolsSection(cHelpersBin, imPolsInfo) {
     const challengesIds = [];
     const publicsIds = [];
     const subproofValuesIds = [];
-    const cmPolsCalculatedIds = [];
     
-    for(let j = 0; j < imPolsInfo.ops.length; j++) {
-        ops.push(imPolsInfo.ops[j]);
-    }
-    for(let j = 0; j < imPolsInfo.args.length; j++) {
-        args.push(imPolsInfo.args[j]);
-    }
-    for(let j = 0; j < imPolsInfo.numbers.length; j++) {
-        numbers.push(imPolsInfo.numbers[j]);
-    }
-    for(let j = 0; j < imPolsInfo.constPolsIds.length; j++) {
-        constPolsIds.push(imPolsInfo.constPolsIds[j]);
-    }
-    for(let j = 0; j < imPolsInfo.cmPolsIds.length; j++) {
-        cmPolsIds.push(imPolsInfo.cmPolsIds[j]);
-    }
-    for(let j = 0; j < imPolsInfo.challengeIds.length; j++) {
-        challengesIds.push(imPolsInfo.challengeIds[j]);
-    }
-    for(let j = 0; j < imPolsInfo.publicsIds.length; j++) {
-        publicsIds.push(imPolsInfo.publicsIds[j]);
-    }
-    for(let j = 0; j < imPolsInfo.subproofValuesIds.length; j++) {
-        subproofValuesIds.push(imPolsInfo.subproofValuesIds[j]);
-    }
-    for(let j = 0; j < imPolsInfo.cmPolsCalculatedIds.length; j++) {
-        cmPolsCalculatedIds.push(imPolsInfo.cmPolsCalculatedIds[j]);
+    const opsOffset = [];
+    const argsOffset = [];
+    const numbersOffset = [];
+    const constPolsIdsOffset = [];
+    const cmPolsIdsOffset = [];
+    const challengesIdsOffset = [];
+    const publicsIdsOffset = [];
+    const subproofValuesIdsOffset = [];
+
+    for(let i = 0; i < imPolsInfo.length; i++) {
+        const imPolsStageInfo = imPolsInfo[i];
+        if(i == 0) {
+            opsOffset.push(0);
+            argsOffset.push(0);
+            numbersOffset.push(0);
+            constPolsIdsOffset.push(0);
+            cmPolsIdsOffset.push(0);
+            challengesIdsOffset.push(0);
+            publicsIdsOffset.push(0);
+            subproofValuesIdsOffset.push(0);
+        } else {
+            opsOffset.push(opsOffset[i-1] + imPolsInfo[i-1].ops.length);
+            argsOffset.push(argsOffset[i-1] + imPolsInfo[i-1].args.length);
+            numbersOffset.push(numbersOffset[i-1] + imPolsInfo[i-1].numbers.length);
+            constPolsIdsOffset.push(constPolsIdsOffset[i-1] + imPolsInfo[i-1].constPolsIds.length);
+            cmPolsIdsOffset.push(cmPolsIdsOffset[i-1] + imPolsInfo[i-1].cmPolsIds.length);
+            challengesIdsOffset.push(challengesIdsOffset[i-1] + imPolsInfo[i-1].challengeIds.length);
+            publicsIdsOffset.push(publicsIdsOffset[i-1] + imPolsInfo[i-1].publicsIds.length);
+            subproofValuesIdsOffset.push(subproofValuesIdsOffset[i-1] + imPolsInfo[i-1].subproofValuesIds.length);
+        }
+        for(let j = 0; j < imPolsStageInfo.ops.length; j++) {
+            ops.push(imPolsStageInfo.ops[j]);
+        }
+        for(let j = 0; j < imPolsStageInfo.args.length; j++) {
+            args.push(imPolsStageInfo.args[j]);
+        }
+        for(let j = 0; j < imPolsStageInfo.numbers.length; j++) {
+            numbers.push(imPolsStageInfo.numbers[j]);
+        }
+        for(let j = 0; j < imPolsStageInfo.constPolsIds.length; j++) {
+            constPolsIds.push(imPolsStageInfo.constPolsIds[j]);
+        }
+        for(let j = 0; j < imPolsStageInfo.cmPolsIds.length; j++) {
+            cmPolsIds.push(imPolsStageInfo.cmPolsIds[j]);
+        }
+        for(let j = 0; j < imPolsStageInfo.challengeIds.length; j++) {
+            challengesIds.push(imPolsStageInfo.challengeIds[j]);
+        }
+        for(let j = 0; j < imPolsStageInfo.publicsIds.length; j++) {
+            publicsIds.push(imPolsStageInfo.publicsIds[j]);
+        }
+        for(let j = 0; j < imPolsStageInfo.subproofValuesIds.length; j++) {
+            subproofValuesIds.push(imPolsStageInfo.subproofValuesIds[j]);
+        }
     }
 
     await cHelpersBin.writeULE32(ops.length);
@@ -98,37 +125,40 @@ async function writeImPolsSection(cHelpersBin, imPolsInfo) {
     await cHelpersBin.writeULE32(challengesIds.length);
     await cHelpersBin.writeULE32(publicsIds.length);
     await cHelpersBin.writeULE32(subproofValuesIds.length);
-    await cHelpersBin.writeULE32(cmPolsCalculatedIds.length);
 
-    await cHelpersBin.writeULE32(imPolsInfo.nTemp1);
-    await cHelpersBin.writeULE32(imPolsInfo.nTemp3);
+    //Write the number of expressions
+    await cHelpersBin.writeULE32(imPolsInfo.length);
 
-    await cHelpersBin.writeULE32(imPolsInfo.ops.length);
-    await cHelpersBin.writeULE32(0);
+    for(let i = 0; i < imPolsInfo.length; ++i) {
+        const imPolsStageInfo = imPolsInfo[i];
+        
+        await cHelpersBin.writeULE32(imPolsStageInfo.nTemp1);
+        await cHelpersBin.writeULE32(imPolsStageInfo.nTemp3);
 
-    await cHelpersBin.writeULE32(imPolsInfo.args.length);
-    await cHelpersBin.writeULE32(0);
+        await cHelpersBin.writeULE32(imPolsStageInfo.ops.length);
+        await cHelpersBin.writeULE32(opsOffset[i]);
 
-    await cHelpersBin.writeULE32(imPolsInfo.numbers.length);
-    await cHelpersBin.writeULE32(0);
-    
-    await cHelpersBin.writeULE32(imPolsInfo.constPolsIds.length);
-    await cHelpersBin.writeULE32(0);
+        await cHelpersBin.writeULE32(imPolsStageInfo.args.length);
+        await cHelpersBin.writeULE32(argsOffset[i]);
 
-    await cHelpersBin.writeULE32(imPolsInfo.cmPolsIds.length);
-    await cHelpersBin.writeULE32(0);
+        await cHelpersBin.writeULE32(imPolsStageInfo.numbers.length);
+        await cHelpersBin.writeULE32(numbersOffset[i]);
+        
+        await cHelpersBin.writeULE32(imPolsStageInfo.constPolsIds.length);
+        await cHelpersBin.writeULE32(constPolsIdsOffset[i]);
 
-    await cHelpersBin.writeULE32(imPolsInfo.challengeIds.length);
-    await cHelpersBin.writeULE32(0);
+        await cHelpersBin.writeULE32(imPolsStageInfo.cmPolsIds.length);
+        await cHelpersBin.writeULE32(cmPolsIdsOffset[i]);
 
-    await cHelpersBin.writeULE32(imPolsInfo.publicsIds.length);
-    await cHelpersBin.writeULE32(0);
+        await cHelpersBin.writeULE32(imPolsStageInfo.challengeIds.length);
+        await cHelpersBin.writeULE32(challengesIdsOffset[i]);
 
-    await cHelpersBin.writeULE32(imPolsInfo.subproofValuesIds.length);
-    await cHelpersBin.writeULE32(0);
+        await cHelpersBin.writeULE32(imPolsStageInfo.publicsIds.length);
+        await cHelpersBin.writeULE32(publicsIdsOffset[i]);
 
-    await cHelpersBin.writeULE32(imPolsInfo.cmPolsCalculatedIds.length);
-    await cHelpersBin.writeULE32(0);
+        await cHelpersBin.writeULE32(imPolsStageInfo.subproofValuesIds.length);
+        await cHelpersBin.writeULE32(subproofValuesIdsOffset[i]);
+    }
 
     const buffOps = new Uint8Array(ops.length);
     const buffOpsV = new DataView(buffOps.buffer);
@@ -178,12 +208,6 @@ async function writeImPolsSection(cHelpersBin, imPolsInfo) {
         buffSubproofValuesIdsV.setUint16(2*j, subproofValuesIds[j], true);
     }
 
-    const buffCmPolsCalculatedIds = new Uint8Array(2*cmPolsCalculatedIds.length);
-    const buffCmPolsCalculatedIdsV = new DataView(buffCmPolsCalculatedIds.buffer);
-    for(let j = 0; j < cmPolsCalculatedIds.length; j++) {
-        buffCmPolsCalculatedIdsV.setUint16(2*j, cmPolsCalculatedIds[j], true);
-    }
-
     await cHelpersBin.write(buffOps);
     await cHelpersBin.write(buffArgs);
     await cHelpersBin.write(buffNumbers);
@@ -193,7 +217,6 @@ async function writeImPolsSection(cHelpersBin, imPolsInfo) {
     await cHelpersBin.write(buffChallengesIds);
     await cHelpersBin.write(buffPublicsIds);
     await cHelpersBin.write(buffSubproofValuesIds);
-    await cHelpersBin.write(buffCmPolsCalculatedIds);
 
     await endWriteSection(cHelpersBin);
 }
@@ -209,7 +232,6 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
     const challengesIdsExpressions = [];
     const publicsIdsExpressions = [];
     const subproofValuesIdsExpressions = [];
-    const cmPolsCalculatedIdsExpressions = [];
 
     const opsExpressionsOffset = [];
     const argsExpressionsOffset = [];
@@ -219,7 +241,6 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
     const challengesIdsExpressionsOffset = [];
     const publicsIdsExpressionsOffset = [];
     const subproofValuesIdsExpressionsOffset = [];
-    const cmPolsCalculatedIdsExpressionsOffset = [];
 
     for(let i = 0; i < expressionsInfo.length; i++) {
         if(i == 0) {
@@ -231,7 +252,6 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
             challengesIdsExpressionsOffset.push(0);
             publicsIdsExpressionsOffset.push(0);
             subproofValuesIdsExpressionsOffset.push(0);
-            cmPolsCalculatedIdsExpressionsOffset.push(0);
         } else {
             opsExpressionsOffset.push(opsExpressionsOffset[i-1] + expressionsInfo[i-1].ops.length);
             argsExpressionsOffset.push(argsExpressionsOffset[i-1] + expressionsInfo[i-1].args.length);
@@ -241,7 +261,6 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
             challengesIdsExpressionsOffset.push(challengesIdsExpressionsOffset[i-1] + expressionsInfo[i-1].challengeIds.length);
             publicsIdsExpressionsOffset.push(publicsIdsExpressionsOffset[i-1] + expressionsInfo[i-1].publicsIds.length);
             subproofValuesIdsExpressionsOffset.push(subproofValuesIdsExpressionsOffset[i-1] + expressionsInfo[i-1].subproofValuesIds.length);
-            cmPolsCalculatedIdsExpressionsOffset.push(cmPolsCalculatedIdsExpressionsOffset[i-1] + expressionsInfo[i-1].cmPolsCalculatedIds.length);
         }
         for(let j = 0; j < expressionsInfo[i].ops.length; j++) {
             opsExpressions.push(expressionsInfo[i].ops[j]);
@@ -267,9 +286,6 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
         for(let j = 0; j < expressionsInfo[i].subproofValuesIds.length; j++) {
             subproofValuesIdsExpressions.push(expressionsInfo[i].subproofValuesIds[j]);
         } 
-        for(let j = 0; j < expressionsInfo[i].cmPolsCalculatedIds.length; j++) {
-            cmPolsCalculatedIdsExpressions.push(expressionsInfo[i].cmPolsCalculatedIds[j]);
-        }
     }
     
     await cHelpersBin.writeULE32(opsExpressions.length);
@@ -281,7 +297,6 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
     await cHelpersBin.writeULE32(challengesIdsExpressions.length);
     await cHelpersBin.writeULE32(publicsIdsExpressions.length);
     await cHelpersBin.writeULE32(subproofValuesIdsExpressions.length);
-    await cHelpersBin.writeULE32(cmPolsCalculatedIdsExpressions.length);
 
     const nExpressions = expressionsInfo.length;
 
@@ -321,9 +336,6 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
 
         await cHelpersBin.writeULE32(expInfo.subproofValuesIds.length);
         await cHelpersBin.writeULE32(subproofValuesIdsExpressionsOffset[i]);
-
-        await cHelpersBin.writeULE32(expInfo.cmPolsCalculatedIds.length);
-        await cHelpersBin.writeULE32(cmPolsCalculatedIdsExpressionsOffset[i]);
     }
 
     const buffOpsExpressions = new Uint8Array(opsExpressions.length);
@@ -373,12 +385,6 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
     for(let j = 0; j < subproofValuesIdsExpressions.length; j++) {
         buffSubproofValuesIdsExpressionsV.setUint16(2*j, subproofValuesIdsExpressions[j], true);
     }
-
-    const buffCmPolsCalculatedIdsExpressions = new Uint8Array(2*cmPolsCalculatedIdsExpressions.length);
-    const buffCmPolsCalculatedIdsExpressionsV = new DataView(buffCmPolsCalculatedIdsExpressions.buffer);
-    for(let j = 0; j < cmPolsCalculatedIdsExpressions.length; j++) {
-        buffCmPolsCalculatedIdsExpressionsV.setUint16(2*j, cmPolsCalculatedIdsExpressions[j], true);
-    }
     
     await cHelpersBin.write(buffOpsExpressions);
     await cHelpersBin.write(buffArgsExpressions);
@@ -389,7 +395,6 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
     await cHelpersBin.write(buffChallengesIdsExpressions);
     await cHelpersBin.write(buffPublicsIdsExpressions);
     await cHelpersBin.write(buffSubproofValuesIdsExpressions);
-    await cHelpersBin.write(buffCmPolsCalculatedIdsExpressions);
 
     await endWriteSection(cHelpersBin);
 }
@@ -404,7 +409,7 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo) {
     const cmPolsIdsDebug = [];
     const challengesIdsDebug = [];
     const publicsIdsDebug = [];
-    const subproofValuesIdsDebug = [];
+const subproofValuesIdsDebug = [];
 
     const opsOffsetDebug = [];
     const argsOffsetDebug = [];
@@ -413,7 +418,7 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo) {
     const cmPolsIdsOffsetDebug = [];
     const challengesIdsOffsetDebug = [];
     const publicsIdsOffsetDebug = [];
-    const subproofValuesIdsOffsetDebug = [];
+const subproofValuesIdsOffsetDebug = [];
 
     const nConstraints = constraintsInfo.length;
 
@@ -426,7 +431,7 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo) {
             cmPolsIdsOffsetDebug.push(0);
             challengesIdsOffsetDebug.push(0);
             publicsIdsOffsetDebug.push(0);
-            subproofValuesIdsOffsetDebug.push(0);
+subproofValuesIdsOffsetDebug.push(0);
         } else {
             opsOffsetDebug.push(opsOffsetDebug[i-1] + constraintsInfo[i-1].ops.length);
             argsOffsetDebug.push(argsOffsetDebug[i-1] + constraintsInfo[i-1].args.length);
@@ -435,7 +440,7 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo) {
             cmPolsIdsOffsetDebug.push(cmPolsIdsOffsetDebug[i-1] + constraintsInfo[i-1].cmPolsIds.length);
             challengesIdsOffsetDebug.push(challengesIdsOffsetDebug[i-1] + constraintsInfo[i-1].challengeIds.length);
             publicsIdsOffsetDebug.push(publicsIdsOffsetDebug[i-1] + constraintsInfo[i-1].publicsIds.length);
-            subproofValuesIdsOffsetDebug.push(subproofValuesIdsOffsetDebug[i-1] + constraintsInfo[i-1].subproofValuesIds.length);
+subproofValuesIdsOffsetDebug.push(subproofValuesIdsOffsetDebug[i-1] + constraintsInfo[i-1].subproofValuesIds.length);
         }
         for(let j = 0; j < constraintsInfo[i].ops.length; j++) {
             opsDebug.push(constraintsInfo[i].ops[j]);

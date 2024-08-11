@@ -7,9 +7,9 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         if(!exp.keep && !exp.imPol && ![res.cExpId, res.friExpId].includes(j)) continue;
         const dom = (j === res.cExpId || j === res.friExpId) ? "ext" : "n";
         const ctx = {
+            stage: exp.stage,
             calculated: {},
             symbolsUsed: [],
-            symbolsCalculated: [],
             tmpUsed: 0,
             code: [],
             dom,
@@ -17,8 +17,6 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             subproofId: res.subproofId,
             stark,
         };
-
-        ctx.keepImPols = dom === "ext" ? true : false;
 
         if(j === res.friExpId) ctx.openingPoints = res.openingPoints;
         if(j === res.cExpId) {
@@ -36,7 +34,6 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
         if(exp.imPol) {
             const symbolDest = symbols.find(s => s.expId === j);
             exprDest = { op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId};
-            ctx.symbolsCalculated.push(exprDest);
         }
 
         if(exp.symbols) {
@@ -77,37 +74,47 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
 }
 
 module.exports.generateImPolynomialsCode = function generateImPolynomialsCode(res, symbols, expressions, stark) {
-    const ctx = {
-        calculated: {},
-        symbolsCalculated: [],
-        symbolsUsed: [],
-        tmpUsed: 0,
-        code: [],
-        dom: "n",
-        keepImPols: true,
-        airId: res.airId,
-        subproofId: res.subproofId,
-        stark,
-    };
+    const imPolsCode = [];
 
-    for(let j = 0; j < expressions.length; ++j) {
-        if(expressions[j].imPol) {
-            let symbolDest = symbols.find(s => s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId);
-            if(!symbolDest) continue;
-            
-            ctx.symbolsCalculated.push({ op: "cm", stage: symbolDest.stage, stageId: symbolDest.stageId, id: symbolDest.polId});
-            
-            for(let k = 0; k < expressions[j].symbols.length; k++) {
-                const symbolUsed = expressions[j].symbols[k];
-                if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                    ctx.symbolsUsed.push(symbolUsed);
-                };
+    for(let i = 0; i < res.nStages; ++i) {
+        
+        const stage = i + 1;
+
+        const ctx = {
+            stage,
+            calculated: {},
+            symbolsUsed: [],
+            tmpUsed: 0,
+            code: [],
+            dom: "n",
+            airId: res.airId,
+            subproofId: res.subproofId,
+            stark,
+        };
+
+        for(let j = 0; j < expressions.length; ++j) {
+            if(expressions[j].imPol) {
+                if(expressions[j].stage != stage) continue;
+                let symbolDest = symbols.find(s => s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId);
+                if(!symbolDest) continue;
+                            
+                for(let k = 0; k < expressions[j].symbols.length; k++) {
+                    const symbolUsed = expressions[j].symbols[k];
+                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                        ctx.symbolsUsed.push(symbolUsed);
+                    };
+                }
+                pilCodeGen(ctx, symbols, expressions, j, 0);
             }
-            pilCodeGen(ctx, symbols, expressions, j, 0);
         }
+
+        const imPolsCodeStage = buildCode(ctx);
+        imPolsCodeStage.stage = stage;
+
+        imPolsCode.push(imPolsCodeStage);
     }
 
-    return buildCode(ctx);
+    return imPolsCode;
 
 }
 
@@ -115,13 +122,12 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
     const constraintsCode = [];
     for(let j = 0; j < constraints.length; ++j) {
         const ctx = {
+            stage: constraints[j].stage,
             calculated: {},
             symbolsUsed: [],
-            symbolsCalculated: [],
             tmpUsed: 0,
             code: [],
             dom: "n",
-            keepImPols: false,
             airId: res.airId,
             subproofId: res.subproofId,
             stark,
@@ -153,6 +159,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
     let addMul = stark ? false : true;
 
     let ctx = {
+        stage: res.nStages + 1,
         calculated: {},
         tmpUsed: 0,
         code: [],
@@ -163,7 +170,6 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
         openingPoints: res.openingPoints,
         stark,
         addMul,
-        keepImPols: true,
         verifierEvaluations: true,
     };
 
@@ -216,9 +222,9 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 
 module.exports.generateFRIVerifierCode = function generateFRIVerifierCode(res, verifierInfo, symbols, expressions) {
     const ctxExt = {
+        stage: res.nStages + 2,
         calculated: {},
         symbolsUsed: [],
-        symbolsCalculated: [],
         tmpUsed: 0,
         code: [],
         dom: "ext",
@@ -226,7 +232,6 @@ module.exports.generateFRIVerifierCode = function generateFRIVerifierCode(res, v
         subproofId: res.subproofId,
         openingPoints: res.openingPoints,
         verifierQuery: true,
-        keepImPols: true,
         addMul: false,
         stark: true,
     };

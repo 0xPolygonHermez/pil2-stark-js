@@ -7,11 +7,11 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     if(className === "") className = "Stark";
     className = className[0].toUpperCase() + className.slice(1) + "Steps";
     
-    let imPolsInfo = {};
+    let imPolsInfo = [];
     const expsInfo = [];
     const constraintsInfo = [];
 
-    let imPolsInfoGeneric = {};
+    let imPolsInfoGeneric = [];
     const expsInfoGeneric = [];
     const constraintsInfoGeneric = [];
 
@@ -28,13 +28,17 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
 
     let debug = false;
     
-    if(binFile) {
-        imPolsInfo = getParserArgsCode(expressionsInfo.imPolsCode, "n", debug);
+    for(let i = 0; i < starkInfo.nStages; ++i) {
+        const imPolsCode = expressionsInfo.imPolsCode[i];
+        if(binFile) {
+            imPolsInfo.push(getParserArgsCode(imPolsCode, "n", debug));
+        }
+    
+        if(genericBinFile) {
+            imPolsInfoGeneric.push(getParserArgsCode(imPolsCode, "n", debug));
+        }
     }
-
-    if(genericBinFile) {
-        imPolsInfoGeneric = getParserArgsCode(expressionsInfo.imPolsCode, "n", debug);
-    }    
+     
 
     const N = 1 << (starkInfo.starkStruct.nBits);
 

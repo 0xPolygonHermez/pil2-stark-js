@@ -95,7 +95,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "        uint64_t opening = starkInfo.openingPoints[i] < 0 ? starkInfo.openingPoints[i] + domainSize : starkInfo.openingPoints[i];",
         "        nextStrides[i] = opening * extend;",
         "    }\n",
-        "    ConstantPolsStarks *constPols = domainExtended ? params.pConstPols2ns : params.pConstPols;\n",
+        "    Goldilocks::Element *constPols = domainExtended ? params.constPolsExtended : params.constPols;\n",
         "    uint16_t* cmPolsUsed = &parserArgs.cmPolsIds[parserParams.cmPolsOffset];",
         "    uint16_t* constPolsUsed = &parserArgs.constPolsIds[parserParams.constPolsOffset];\n",
         "    Goldilocks::Element bufferT[nOpenings*nrowsPack];\n",
@@ -104,7 +104,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "        for(uint64_t o = 0; o < nOpenings; ++o) {",
         "            for(uint64_t j = 0; j < nrowsPack; ++j) {",
         "                uint64_t l = (row + j + nextStrides[o]) % domainSize;",
-        "                bufferT[nrowsPack*o + j] = ((Goldilocks::Element *)constPols->address())[l * nColsStages[0] + id];",
+        "                bufferT[nrowsPack*o + j] = constPols[l * nColsStages[0] + id];",
         "            }",
         "            Goldilocks::load_avx(bufferT_[nOpenings * id + o], &bufferT[nrowsPack*o]);",
         "        }",
@@ -135,7 +135,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "        for(uint64_t d = 0; d < starkInfo.openingPoints.size(); ++d) {",
         "           for(uint64_t k = 0; k < FIELD_EXTENSION; ++k) {",
         "               for(uint64_t j = 0; j < nrowsPack; ++j) {",
-        "                   bufferT[j] = params.xDivXSubXi[(row + j + d*domainSize)*FIELD_EXTENSION + k];",
+        `                   bufferT[j] = params.pols[starkInfo.mapOffsets[std::make_pair("xDivXSubXi", true)] + (row + j + d*domainSize)*FIELD_EXTENSION + k];`,
         "                }",
         "                Goldilocks::load_avx(bufferT_[buffTOffsetsStages[starkInfo.nStages + 2] + d*FIELD_EXTENSION + k*starkInfo.openingPoints.size()], &bufferT[0]);",
         "            }",
@@ -171,7 +171,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
     ])
 
     parserCPP.push(...[
-        `${functionType} calculateExpressions(Goldilocks::Element *dest, StarkInfo &starkInfo, StepsParams &params, ParserArgs &parserArgs, ParserParams &parserParams, bool domainExtended) {\n`,
+        `${functionType} calculateExpressions(Goldilocks::Element *dest, StarkInfo &starkInfo, StepsParams &params, ParserArgs &parserArgs, ParserParams &parserParams, bool domainExtended, bool imPols) {\n`,
         "    uint8_t* ops = &parserArgs.ops[parserParams.opsOffset];",
         "    uint16_t* args = &parserArgs.args[parserParams.argsOffset];",
         "    uint64_t* numbers = &parserArgs.numbers[parserParams.numbersOffset];\n",
@@ -336,7 +336,7 @@ module.exports.generateParser = function generateParser(operations, operationsUs
         "        if(dest != nullptr) {",
         "            storePolynomial(dest, parserParams, i, tmp1, tmp3);",
         "        }\n",
-        "        if(parserParams.nCmPolsCalculated > 0) {",
+        "        if(imPols) {",
         "            storeImPolynomials(starkInfo, params, bufferT_, i);",
         "        }\n",
     ]);

@@ -210,7 +210,7 @@ async function computeStage(stage, ctx, options) {
         };
         
         if(stage === qStage - 1) {
-            await callCalculateExps(stage, ctx.expressionsInfo.imPolsCode, dom, ctx, options.parallelExec, options.useThreads);
+            await callCalculateExps(stage, ctx.expressionsInfo.imPolsCode[stage - 1], dom, ctx, options.parallelExec, options.useThreads);
         }
 
         if (logger) logger.debug(`> STAGE ${stage} DONE`);

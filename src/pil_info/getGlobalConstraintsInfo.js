@@ -28,7 +28,6 @@ module.exports.getGlobalConstraintsInfo = function getGlobalConstraintsInfo(pilo
         calculated: {},
         tmpUsed: 0,
         code: [],
-        symbolsCalculated: [],
         dom: "n",
         stark,
     };

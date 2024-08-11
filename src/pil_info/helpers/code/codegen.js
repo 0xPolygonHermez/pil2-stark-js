@@ -21,7 +21,7 @@ function pilCodeGen(ctx, symbols, expressions, expId, prime, evMap) {
             airId: ctx.airId,
             subproofId: ctx.subproofId,
             openingPoints: ctx.openingPoints,
-            keepImPols: ctx.keepImPols,
+            stage: ctx.stage,
             code: []
         }
     
@@ -206,7 +206,7 @@ function fixDimensionsVerifier(ctx) {
 function fixCommitPol(r, ctx, symbols) {
     const symbol = symbols.find(s => s.type === "witness" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
     if(!symbol) return;
-    if(symbol.imPol && ctx.keepImPols) {
+    if(symbol.imPol && symbol.stage <= ctx.stage) {
         r.type = "cm";
         r.id = symbol.polId;
         r.dim = symbol.dim;
@@ -265,7 +265,7 @@ function buildCode(ctx) {
 
     if(ctx.verifierEvaluations || ctx.verifierQuery) fixDimensionsVerifier(ctx);
 
-    let code = { tmpUsed: ctx.tmpUsed, code: ctx.code, symbolsCalculated: ctx.symbolsCalculated };
+    let code = { tmpUsed: ctx.tmpUsed, code: ctx.code };
     if(ctx.symbolsUsed) {
         code.symbolsUsed = ctx.symbolsUsed.sort((s1, s2) => {
             const order = { const: 0, cm: 1, tmp: 2 };
@@ -276,7 +276,6 @@ function buildCode(ctx) {
 
     ctx.code = [];
     ctx.calculated = [];
-    ctx.symbolsCalculated = [];
     ctx.symbolsUsed = [];
     ctx.tmpUsed = 0;
 

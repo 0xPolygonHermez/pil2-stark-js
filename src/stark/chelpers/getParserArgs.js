@@ -20,7 +20,6 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
     let code_ = code.code;
 
     let symbolsUsed = code.symbolsUsed;
-    let symbolsCalculated = code.symbolsCalculated;
 
     // Evaluate max and min temporal variable for tmp_ and tmp3_
     let maxid = 100000;
@@ -61,9 +60,6 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
     const publicsIds = symbolsUsed.filter(s => s.op === "public").map(s => s.id).sort();
     const subproofValuesIds = symbolsUsed.filter(s => s.op === "subproofValue").map(s => s.id).sort();
 
-    const cmPolsCalculatedIds = symbolsCalculated.map(s => s.id).sort();
-
-
     const expsInfo = {
         nTemp1: count1d,
         nTemp3: count3d,
@@ -75,7 +71,6 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         challengeIds,
         publicsIds,
         subproofValuesIds,
-        cmPolsCalculatedIds
     }
 
     if(debug) {
