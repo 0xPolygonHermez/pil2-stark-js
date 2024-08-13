@@ -84,11 +84,9 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
     for(let i = 0; i < expressionsInfo.expressionsCode.length; ++i) {
         const expCode = JSON.parse(JSON.stringify(expressionsInfo.expressionsCode[i]));
         if(!expCode) continue;
-        if(expCode.expId === starkInfo.cExpId || expCode.expId === starkInfo.friExpId) {
-            if(expCode.expId === starkInfo.cExpId || expCode.expId === starkInfo.friExpId) {
+        if(expCode.expId === starkInfo.cExpId || expCode.expId === starkInfo.friExpId || starkInfo.cmPolsMap.find(c => c.expId === expCode.expId)) {
                 expCode.code.code[expCode.code.code.length - 1].dest.type = "tmp";
                 expCode.code.code[expCode.code.code.length - 1].dest.id = expCode.code.tmpUsed++;
-            }
         }
         if(binFile) {
             const expInfo = getParserArgsCode(expCode.code, "n", true);
