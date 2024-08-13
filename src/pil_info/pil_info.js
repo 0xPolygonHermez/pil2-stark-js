@@ -68,6 +68,7 @@ module.exports = async function pilInfo(F, pil, stark = true, pil2 = true, stark
         console.log("--------------------- POLYNOMIALS INFO ---------------------")
         let nColumnsBaseField = 0;
         let nColumns = 0;
+        let summary = `SUMMARY | ${pil.name} `;
         for(let i = 1; i <= res.nStages + 1; ++i) {
             let stage = i;
             let stageDebug = i === res.nStages + 1 ? "Q" : stage;
@@ -75,18 +76,30 @@ module.exports = async function pilInfo(F, pil, stark = true, pil2 = true, stark
             let nColsStage = res.cmPolsMap.filter(p => p.stage == stage).length;
             nCols[stageName] = nColsStage;
             let nColsBaseField = res.mapSectionsN[stageName];
+            let imPols = res.cmPolsMap.filter(p => p.stage == stage && p.imPol);
             if(i === res.nStages + 1 || (i < res.nStages && !res.imPolsStages)) {
                 console.log(`Columns stage ${stageDebug}: ${nColsStage} -> Columns in the basefield: ${nColsBaseField}`);
             } else {
-                console.log(`Columns stage ${stageDebug}: ${nColsStage} (${res.cmPolsMap.filter(p => p.stage == stage && p.imPol).length} intermediate polynomials) -> Columns in the basefield: ${nColsBaseField} (${res.cmPolsMap.filter(p => p.stage == stage && p.imPol).reduce((acc, curr) => acc + curr.dim, 0)} from intermediate polynomials)`);
+                console.log(`Columns stage ${stageDebug}: ${nColsStage} (${imPols.length} intermediate polynomials) -> Columns in the basefield: ${nColsBaseField} (${imPols.reduce((acc, curr) => acc + curr.dim, 0)} from intermediate polynomials)`);
+            }
+            if(i < res.nStages + 1) {
+                summary += `| Stage${i}: ${nColsBaseField} `;
+                
             }
             nColumns += nColsStage;
             nColumnsBaseField += nColsBaseField;
         }
+
+        const imPols = res.cmPolsMap.filter(p => p.imPol);
+        summary += `| ImPols: ${imPols.length} => ${imPols.reduce((acc, curr) => acc + curr.dim, 0)} = ${imPols.filter(i => i.dim === 1).reduce((acc, curr) => acc + curr.dim, 0)} + ${imPols.filter(i => i.dim === 3).reduce((acc, curr) => acc + curr.dim, 0)} `;
+        
+        summary += `| Total: ${nColumnsBaseField} | nConstraints: ${constraints.length} | nEvals: ${res.evMap.length}`;
         
         console.log(`Total Columns: ${nColumns} -> Columns in the basefield: ${nColumnsBaseField}`);
         console.log(`Total Constraints: ${constraints.length}`)
         if(!options.debug) console.log(`Number of evaluations: ${res.evMap.length}`)
+        console.log("------------------------------------------------------------")
+        console.log(summary);
         console.log("------------------------------------------------------------")
     }
         
