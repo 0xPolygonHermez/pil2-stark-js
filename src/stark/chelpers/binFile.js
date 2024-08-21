@@ -516,6 +516,8 @@ subproofValuesIdsOffsetDebug.push(subproofValuesIdsOffsetDebug[i-1] + constraint
 
         await cHelpersBin.writeULE32(constraintInfo.subproofValuesIds.length);
         await cHelpersBin.writeULE32(subproofValuesIdsOffsetDebug[i]);
+
+        writeStringToFile(cHelpersBin, constraintInfo.line);
     }
 
     const buffOpsDebug = new Uint8Array(opsDebug.length);

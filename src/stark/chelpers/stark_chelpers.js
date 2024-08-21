@@ -67,6 +67,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
             constraintInfo.stage = constraintCode.stage;
             constraintInfo.firstRow = firstRow;
             constraintInfo.lastRow = lastRow;
+            constraintInfo.line = constraintCode.line;
             constraintsInfo.push(constraintInfo);
         }
 
@@ -75,6 +76,7 @@ module.exports.buildCHelpers = async function buildCHelpers(starkInfo, expressio
             constraintInfoGeneric.stage = constraintCode.stage;
             constraintInfoGeneric.firstRow = firstRow;
             constraintInfoGeneric.lastRow = lastRow;
+            constraintInfoGeneric.line = constraintCode.line;
             constraintsInfoGeneric.push(constraintInfoGeneric);
         }
     }
