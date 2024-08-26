@@ -54,11 +54,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         counters_ops[opsIndex] += 1;
     }
 
-    const constPolsIds = symbolsUsed.filter(s => s.op === "const").map(s => s.id).sort();
-    const cmPolsIds = symbolsUsed.filter(s => s.op === "cm").map(s => s.id).sort();
-    const challengeIds = symbolsUsed.filter(s => s.op === "challenge").map(s => s.id).sort();
-    const publicsIds = symbolsUsed.filter(s => s.op === "public").map(s => s.id).sort();
-    const subproofValuesIds = symbolsUsed.filter(s => s.op === "subproofValue").map(s => s.id).sort();
+   
 
     const expsInfo = {
         nTemp1: count1d,
@@ -66,11 +62,14 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         ops,
         numbers,
         args,
-        cmPolsIds,
-        constPolsIds,
-        challengeIds,
-        publicsIds,
-        subproofValuesIds,
+    }
+
+    if(symbolsUsed) {
+        expsInfo.constPolsIds = symbolsUsed.filter(s => s.op === "const").map(s => s.id).sort();
+        expsInfo.cmPolsIds = symbolsUsed.filter(s => s.op === "cm").map(s => s.id).sort();
+        expsInfo.challengeIds = symbolsUsed.filter(s => s.op === "challenge").map(s => s.id).sort();
+        expsInfo.publicsIds = symbolsUsed.filter(s => s.op === "public").map(s => s.id).sort();
+        expsInfo.subproofValuesIds = symbolsUsed.filter(s => s.op === "subproofValue").map(s => s.id).sort();
     }
 
     if(debug) {

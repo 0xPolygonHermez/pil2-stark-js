@@ -4,13 +4,12 @@ const { createBinFile,
      } = require("@iden3/binfileutils");
 
 const CHELPERS_NSECTIONS = 5;
-
 const CHELPERS_IMPOLS_SECTION = 2;
 const CHELPERS_EXPRESSIONS_SECTION = 3;
 const CHELPERS_CONSTRAINTS_DEBUG_SECTION = 4;
 const CHELPERS_HINTS_SECTION = 5;
 
-async function writeStringToFile(fd, str) {
+module.exports.writeStringToFile = async function writeStringToFile(fd, str) {
     let buff = new Uint8Array(str.length + 1);
     for (let i = 0; i < str.length; i++) {
         buff[i] = str.charCodeAt(i);
@@ -20,7 +19,7 @@ async function writeStringToFile(fd, str) {
     await fd.write(buff);
 }
 
-exports.writeCHelpersFile = async function (cHelpersFilename, binFileInfo) {
+module.exports.writeExpressionsBinFile = async function writeExpressionsBinFile(cHelpersFilename, binFileInfo) {
     console.log("> Writing the chelpers file");
 
     const imPolsInfo = binFileInfo.imPolsInfo;
@@ -30,17 +29,13 @@ exports.writeCHelpersFile = async function (cHelpersFilename, binFileInfo) {
 
     const cHelpersBin = await createBinFile(cHelpersFilename, "chps", 1, CHELPERS_NSECTIONS, 1 << 22, 1 << 24);    
         
-    console.log(`··· Writing Section ${CHELPERS_IMPOLS_SECTION}. CHelpers imPols section`);
-    await writeImPolsSection(cHelpersBin, imPolsInfo);
+    await writeImPolsSection(cHelpersBin, imPolsInfo, CHELPERS_IMPOLS_SECTION);
 
-    console.log(`··· Writing Section ${CHELPERS_EXPRESSIONS_SECTION}. CHelpers expressions section`);
-    await writeExpressionsSection(cHelpersBin, expressionsInfo);
+    await writeExpressionsSection(cHelpersBin, expressionsInfo, CHELPERS_EXPRESSIONS_SECTION);
 
-    console.log(`··· Writing Section ${CHELPERS_CONSTRAINTS_DEBUG_SECTION}. CHelpers constraints debug section`);
-    await writeConstraintsSection(cHelpersBin, constraintsInfo);
+    await writeConstraintsSection(cHelpersBin, constraintsInfo, CHELPERS_CONSTRAINTS_DEBUG_SECTION);
 
-    console.log(`··· Writing Section ${CHELPERS_HINTS_SECTION}. Hints section`);
-    await writeHintsSection(cHelpersBin, hintsInfo);
+    await writeHintsSection(cHelpersBin, hintsInfo, CHELPERS_HINTS_SECTION);
 
     console.log("> Writing the chelpers file finished");
     console.log("---------------------------------------------");
@@ -48,8 +43,10 @@ exports.writeCHelpersFile = async function (cHelpersFilename, binFileInfo) {
     await cHelpersBin.close();
 }
 
-async function writeImPolsSection(cHelpersBin, imPolsInfo) {
-    await startWriteSection(cHelpersBin, CHELPERS_IMPOLS_SECTION);
+async function writeImPolsSection(cHelpersBin, imPolsInfo, section) {
+    console.log(`··· Writing Section ${section}. CHelpers imPols section`);
+
+    await startWriteSection(cHelpersBin, section);
 
     const ops = [];
     const args = [];
@@ -221,8 +218,10 @@ async function writeImPolsSection(cHelpersBin, imPolsInfo) {
     await endWriteSection(cHelpersBin);
 }
 
-async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
-    await startWriteSection(cHelpersBin, CHELPERS_EXPRESSIONS_SECTION);
+async function writeExpressionsSection(cHelpersBin, expressionsInfo, section) {
+    console.log(`··· Writing Section ${section}. CHelpers expressions section`);
+
+    await startWriteSection(cHelpersBin, section);
 
     const opsExpressions = [];
     const argsExpressions = [];
@@ -399,8 +398,10 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo) {
     await endWriteSection(cHelpersBin);
 }
 
-async function writeConstraintsSection(cHelpersBin, constraintsInfo) {
-    await startWriteSection(cHelpersBin, CHELPERS_CONSTRAINTS_DEBUG_SECTION);
+async function writeConstraintsSection(cHelpersBin, constraintsInfo, section) {
+    console.log(`··· Writing Section ${section}. CHelpers constraints debug section`);
+
+    await startWriteSection(cHelpersBin, section);
 
     const opsDebug = [];
     const argsDebug = [];
@@ -409,7 +410,7 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo) {
     const cmPolsIdsDebug = [];
     const challengesIdsDebug = [];
     const publicsIdsDebug = [];
-const subproofValuesIdsDebug = [];
+    const subproofValuesIdsDebug = [];
 
     const opsOffsetDebug = [];
     const argsOffsetDebug = [];
@@ -418,7 +419,7 @@ const subproofValuesIdsDebug = [];
     const cmPolsIdsOffsetDebug = [];
     const challengesIdsOffsetDebug = [];
     const publicsIdsOffsetDebug = [];
-const subproofValuesIdsOffsetDebug = [];
+    const subproofValuesIdsOffsetDebug = [];
 
     const nConstraints = constraintsInfo.length;
 
@@ -431,7 +432,7 @@ const subproofValuesIdsOffsetDebug = [];
             cmPolsIdsOffsetDebug.push(0);
             challengesIdsOffsetDebug.push(0);
             publicsIdsOffsetDebug.push(0);
-subproofValuesIdsOffsetDebug.push(0);
+            subproofValuesIdsOffsetDebug.push(0);
         } else {
             opsOffsetDebug.push(opsOffsetDebug[i-1] + constraintsInfo[i-1].ops.length);
             argsOffsetDebug.push(argsOffsetDebug[i-1] + constraintsInfo[i-1].args.length);
@@ -440,7 +441,7 @@ subproofValuesIdsOffsetDebug.push(0);
             cmPolsIdsOffsetDebug.push(cmPolsIdsOffsetDebug[i-1] + constraintsInfo[i-1].cmPolsIds.length);
             challengesIdsOffsetDebug.push(challengesIdsOffsetDebug[i-1] + constraintsInfo[i-1].challengeIds.length);
             publicsIdsOffsetDebug.push(publicsIdsOffsetDebug[i-1] + constraintsInfo[i-1].publicsIds.length);
-subproofValuesIdsOffsetDebug.push(subproofValuesIdsOffsetDebug[i-1] + constraintsInfo[i-1].subproofValuesIds.length);
+            subproofValuesIdsOffsetDebug.push(subproofValuesIdsOffsetDebug[i-1] + constraintsInfo[i-1].subproofValuesIds.length);
         }
         for(let j = 0; j < constraintsInfo[i].ops.length; j++) {
             opsDebug.push(constraintsInfo[i].ops[j]);
@@ -517,7 +518,7 @@ subproofValuesIdsOffsetDebug.push(subproofValuesIdsOffsetDebug[i-1] + constraint
         await cHelpersBin.writeULE32(constraintInfo.subproofValuesIds.length);
         await cHelpersBin.writeULE32(subproofValuesIdsOffsetDebug[i]);
 
-        writeStringToFile(cHelpersBin, constraintInfo.line);
+        module.exports.writeStringToFile(cHelpersBin, constraintInfo.line);
     }
 
     const buffOpsDebug = new Uint8Array(opsDebug.length);
@@ -581,21 +582,23 @@ subproofValuesIdsOffsetDebug.push(subproofValuesIdsOffsetDebug[i-1] + constraint
     await endWriteSection(cHelpersBin);
 }
 
-async function writeHintsSection(cHelpersBin, hintsInfo) {
-    await startWriteSection(cHelpersBin, CHELPERS_HINTS_SECTION);
+async function writeHintsSection(cHelpersBin, hintsInfo, section) {
+    console.log(`··· Writing Section ${section}. Hints section`);
+
+    await startWriteSection(cHelpersBin, section);
 
     const nHints = hintsInfo.length;
     await cHelpersBin.writeULE32(nHints);
 
     for(let j = 0; j < nHints; j++) {
         const hint = hintsInfo[j];
-        await writeStringToFile(cHelpersBin, hint.name);
+        await module.exports.writeStringToFile(cHelpersBin, hint.name);
         const nFields = hint.fields.length;
         await cHelpersBin.writeULE32(nFields);
         for(let k = 0; k < nFields; k++) {
             const field = hint.fields[k];
-            await writeStringToFile(cHelpersBin, field.name);
-            await writeStringToFile(cHelpersBin, field.op);
+            await module.exports.writeStringToFile(cHelpersBin, field.name);
+            await module.exports.writeStringToFile(cHelpersBin, field.op);
             if(field.op === "number") {
                 const buffNumber = new Uint8Array(8);
                 const buffNumberV = new DataView(buffNumber.buffer);

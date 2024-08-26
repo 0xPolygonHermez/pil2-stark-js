@@ -5,7 +5,7 @@ const buildMerkleHashBN128 = require("../helpers/hash/merklehash/merklehash_bn12
 const pilInfo = require("../pil_info/pil_info.js");
 
 const { interpolate } = require("../helpers/fft/fft_p");
-const { buildCHelpers } = require("./chelpers/stark_chelpers.js");
+const { prepareExpressionsBin } = require("./chelpers/stark_chelpers.js");
 
 module.exports = async function starkSetup(constPols, pil, starkStruct, options) {
 
@@ -47,7 +47,7 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
         res.constRoot = MH.root(res.constTree);
     }
 
-    const cHelpersInfo = await buildCHelpers(starkInfo, expressionsInfo, false, true);
+    const cHelpersInfo = await prepareExpressionsBin(starkInfo, expressionsInfo, false, true);
 
     res.cHelpers = cHelpersInfo.cHelpers;
     res.binFileInfo = cHelpersInfo.binFileInfo;

@@ -2,7 +2,7 @@ const path = require("path");
 const version = require("../../../../package").version;
 const protobuf = require("protobufjs");
 const pilInfo = require("../../../../src/pil_info/pil_info.js");
-const { buildCHelpers } = require("../../../../src/stark/chelpers/stark_chelpers.js");
+const { prepareExpressionsBin } = require("../../../../src/stark/chelpers/stark_chelpers.js");
 const { buildConstTree } = require("../../../../src/stark/stark_buildConstTree");
 const JSONbig = require('json-bigint')({ useNativeBigInt: true, alwaysParseAsBig: true });
 const compilePil2 = require("pil2-compiler/src/compiler.js");
@@ -13,7 +13,7 @@ const F3g = require("../../../../src/helpers/f3g.js");
 
 const { getFixedPolsPil2 } = require("../../../../src/pil_info/helpers/pil2/piloutInfo.js");
 const { generateFixedCols } = require("../../../../src/witness/witnessCalculator.js");
-const { writeCHelpersFile } = require("../../../../src/stark/chelpers/binFile.js");
+const { writeExpressionsBinFile } = require("../../../../src/stark/chelpers/binFile.js");
 
 const argv = require("yargs")
     .version(version)
@@ -112,7 +112,7 @@ async function run() {
             await fs.promises.writeFile(expressionsInfoFile, JSON.stringify(expressionsInfo, null, 1), "utf8");
             await fs.promises.writeFile(verifierInfoFile, JSON.stringify(verifierInfo, null, 1), "utf8");
 
-            const res = await buildCHelpers(starkInfo, expressionsInfo, binFile, genericBinFile, className);
+            const res = await prepareExpressionsBin(starkInfo, expressionsInfo, binFile, genericBinFile, className);
 
             if(res.binFileInfo) {
                 const baseDir = path.dirname(cHelpersFile);
@@ -121,11 +121,11 @@ async function run() {
                 }
                 await fs.promises.writeFile(cHelpersFile, res.cHelpers, "utf8");
                 
-                await writeCHelpersFile(binFile, res.binFileInfo);
+                await writeExpressionsBinFile(binFile, res.binFileInfo);
             }
         
             if(genericBinFile) {
-                await writeCHelpersFile(genericBinFile, res.genericBinFileInfo);
+                await writeExpressionsBinFile(genericBinFile, res.genericBinFileInfo);
             }
 
             const {MH, constTree, verKey} = await buildConstTree(starkInfo, constPols);

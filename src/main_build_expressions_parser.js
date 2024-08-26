@@ -1,27 +1,27 @@
-const { generateParser, getAllOperations } = require("./stark/chelpers/generateParser");
+const { generateParser } = require("./stark/chelpers/generateParser");
 const fs = require("fs");
+const { getAllOperations, getGlobalOperations } = require("./stark/chelpers/utils");
 
 const version = require("../package").version;
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_buildchelpers_generic.js -c <chelpers.cpp>")
+    .usage("node main_build_expressions_parser.js -c <chelpers.cpp>")
     .alias("c", "chelpers")
     .argv;
 
 async function run() {
     const cHelpersFile = typeof (argv.chelpers) === "string" ? argv.chelpers.trim() : "mycircuit.chelpers";
-    
-    let operations = getAllOperations();
-    
-    const parser = generateParser(operations);
+        
+    const parser = generateParser();
 
+    console.log(getGlobalOperations());
+    
     const cHelpersStepsHpp = [
         `#ifndef CHELPERS_STEPS_HPP`,
         `#define CHELPERS_STEPS_HPP`,
-        `#include "chelpers.hpp"`,
-        `#include "steps.hpp"\n`,
-        `class CHelpersSteps {`,
+        `#include "expressions_builder.hpp"\n`,
+        `class CHelpersSteps : public ExpressionsBuilder {`,
         "public:",
     ];
       
