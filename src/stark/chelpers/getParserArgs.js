@@ -9,7 +9,7 @@ const operationsTypeMap = {
     "sub_swap": 3,
 }
 
-module.exports.getParserArgs = function getParserArgs(starkInfo, operations, code, dom, debug = false) {
+module.exports.getParserArgs = function getParserArgs(starkInfo, operations, code, dom, debug = false, global = false) {
 
     var ops = [];
     var args = [];
@@ -165,10 +165,18 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 break;
             }
             case "public":
-            case "subproofValue":
             case "eval": 
             case "challenge": {
                 args.push(r.id);
+                break;
+            }
+            case "subproofValue": {
+                if(!global) {
+                    args.push(r.id);
+                } else {
+                    args.push(r.subproofId);
+                    args.push(r.id);
+                }
                 break;
             }
             case "xDivXSubXi":

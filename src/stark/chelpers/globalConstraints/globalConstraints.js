@@ -13,7 +13,7 @@ module.exports.writeGlobalConstraintsBinFile = async function writeGlobalConstra
   
     // Get parser args for each constraint
     for(let j = 0; j < globalConstraintsInfo.length; ++j) {
-        const constraintInfo = getParserArgs({}, operations, globalConstraintsInfo[j], "n").expsInfo;
+        const constraintInfo = getParserArgs({}, operations, globalConstraintsInfo[j], "n", true, true).expsInfo;
         constraintInfo.line = globalConstraintsInfo[j].line;
         constraintsInfo.push(constraintInfo);
     }
