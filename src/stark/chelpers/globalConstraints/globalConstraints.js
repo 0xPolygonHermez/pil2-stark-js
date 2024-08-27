@@ -6,7 +6,7 @@ const { getParserArgs } = require("../getParserArgs.js");
 const { getGlobalOperations } = require("../utils.js");
 const { writeStringToFile } = require("../binFile.js");
 
-module.exports.writeGlobalConstraintsBinFile = async function writeGlobalConstraintsBinFile(globalInfo, globalConstraintsInfo, globalConstraintsFilename) {    
+module.exports.writeGlobalConstraintsBinFile = async function writeGlobalConstraintsBinFile(globalConstraintsInfo, globalConstraintsFilename) {    
     const constraintsInfo = [];
 
     let operations = getGlobalOperations();
@@ -20,7 +20,7 @@ module.exports.writeGlobalConstraintsBinFile = async function writeGlobalConstra
 
     const globalConstraintsBin = await createBinFile(globalConstraintsFilename, "chps", 1, GLOBAL_CONSTRAINTS_NSECTIONS, 1 << 22, 1 << 24);    
 
-    await writeConstraintsSection(globalInfo, globalConstraintsBin, constraintsInfo, GLOBAL_CONSTRAINTS_SECTION);
+    await writeConstraintsSection(globalConstraintsBin, constraintsInfo, GLOBAL_CONSTRAINTS_SECTION);
 
     console.log("> Writing the global constraints file finished");
     console.log("---------------------------------------------");
@@ -28,7 +28,7 @@ module.exports.writeGlobalConstraintsBinFile = async function writeGlobalConstra
     await globalConstraintsBin.close();
 }
 
-async function writeConstraintsSection(globalInfo, globalConstraintsBin, constraintsInfo, section) {
+async function writeConstraintsSection(globalConstraintsBin, constraintsInfo, section) {
     console.log(`··· Writing Section ${section}. CHelpers constraints debug section`);
 
     await startWriteSection(globalConstraintsBin, section);
@@ -64,8 +64,6 @@ async function writeConstraintsSection(globalInfo, globalConstraintsBin, constra
         }
     }
 
-    await globalConstraintsBin.writeULE32(globalInfo.nPublics);
-    await globalConstraintsBin.writeULE32(globalInfo.aggTypes.length);
     await globalConstraintsBin.writeULE32(opsDebug.length);
     await globalConstraintsBin.writeULE32(argsDebug.length);
     await globalConstraintsBin.writeULE32(numbersDebug.length);
