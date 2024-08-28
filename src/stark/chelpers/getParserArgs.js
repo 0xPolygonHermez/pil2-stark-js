@@ -182,7 +182,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
             case "xDivXSubXi":
                 args.push(starkInfo.nStages + 2);
                 args.push(0);
-                args.push(3*r.id);
+                args.push(r.id);
                 break;
             case "Zi": {
                 args.push(starkInfo.nStages + 2);

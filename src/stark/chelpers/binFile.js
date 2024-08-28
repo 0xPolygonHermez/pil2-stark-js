@@ -602,7 +602,6 @@ async function writeHintsSection(cHelpersBin, hintsInfo, section) {
             if(field.op === "number") {
                 const buffNumber = new Uint8Array(8);
                 const buffNumberV = new DataView(buffNumber.buffer);
-                console.log(BigInt(field.value));
                 buffNumberV.setBigUint64(0, BigInt(field.value), true);
                 await cHelpersBin.write(buffNumber);
             } else {

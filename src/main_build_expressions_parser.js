@@ -14,8 +14,6 @@ async function run() {
     const cHelpersFile = typeof (argv.chelpers) === "string" ? argv.chelpers.trim() : "mycircuit.chelpers";
         
     const parser = generateParser();
-
-    console.log(getGlobalOperations());
     
     const cHelpersStepsHpp = [
         `#ifndef CHELPERS_STEPS_HPP`,
