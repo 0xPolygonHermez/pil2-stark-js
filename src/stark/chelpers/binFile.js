@@ -335,6 +335,9 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, section) {
 
         await cHelpersBin.writeULE32(expInfo.subproofValuesIds.length);
         await cHelpersBin.writeULE32(subproofValuesIdsExpressionsOffset[i]);
+
+        module.exports.writeStringToFile(cHelpersBin, expInfo.line);
+
     }
 
     const buffOpsExpressions = new Uint8Array(opsExpressions.length);

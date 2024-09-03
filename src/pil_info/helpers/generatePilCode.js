@@ -2,6 +2,7 @@ const {generateFRIPolynomial} = require("./polynomials/friPolinomial");
 
 const { generateConstraintPolynomialVerifierCode, generateConstraintsDebugCode, generateExpressionsCode, generateFRIVerifierCode, generateImPolynomialsCode } = require("./code/generateCode");
 const { addInfoExpressionsSymbols } = require("./helpers");
+const { printExpressions } = require("./pil2/utils");
 
 module.exports.generatePilCode = function generatePilCode(res, symbols, constraints, expressions, hints, debug, stark) {
     
@@ -23,19 +24,19 @@ module.exports.generatePilCode = function generatePilCode(res, symbols, constrai
         } 
     }
 
+    expressionsInfo.hintsInfo = addHintsInfo(res, expressions, hints);
+
     expressionsInfo.imPolsCode = generateImPolynomialsCode(res, symbols, expressions, stark);
 
     expressionsInfo.expressionsCode = generateExpressionsCode(res, symbols, expressions, stark);
 
     expressionsInfo.constraints = generateConstraintsDebugCode(res, symbols, constraints, expressions, stark);
 
-    expressionsInfo.hintsInfo = addHintsInfo(res, symbols, expressions, hints);
-
     return {expressionsInfo, verifierInfo};
 }
 
 
-function addHintsInfo(res, symbols, expressions, hints) {
+function addHintsInfo(res, expressions, hints) {
     const hintsInfo = [];
     for(let i = 0; i < hints.length; ++i) {
         const hint = hints[i];
@@ -48,6 +49,7 @@ function addHintsInfo(res, symbols, expressions, hints) {
             const field = fields[j];
             if(field === "name") continue;
             if(hint[field].op === "exp") {
+                expressions[hint[field].id].line = printExpressions(res, expressions[hint[field].id], expressions);
                 hintFields.push({name: field, op: "tmp", id: hint[field].id, dim: expressions[hint[field].id].dim });
             } else if(["cm", "challenge", "public"].includes(hint[field].op)) {
                 hintFields.push({name: field, op: hint[field].op, id: hint[field].id });

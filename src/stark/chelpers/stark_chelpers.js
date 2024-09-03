@@ -62,6 +62,7 @@ module.exports.prepareExpressionsBin = async function prepareExpressionsBin(star
             expInfo.destDim = 0;
             expInfo.destId = 0;
         }
+        expInfo.line = expCode.line;
         expsInfo.push(expInfo);
     }
     

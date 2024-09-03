@@ -80,7 +80,6 @@ async function run() {
     options.debug = debug;
     options.skipImPols = debug ? (argv.skipimpols || false) : false;
     options.optImPols = argv.optimpols || false;
-    options.debugLine = argv.debugLine || false;
 
     const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = await pilInfo(F, pil, true, pil2, starkStruct, options);
 

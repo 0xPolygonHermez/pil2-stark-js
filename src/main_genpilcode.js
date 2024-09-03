@@ -40,9 +40,7 @@ async function run() {
 
     addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark);
     
-    const debugLine = argv.debugLine || false;
-
-    map(res, symbols, expressions, constraints, { debugLine });     
+    map(res, symbols, expressions, constraints);     
 
     const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, expressions, hints, debug, stark);
 

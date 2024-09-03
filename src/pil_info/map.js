@@ -1,20 +1,8 @@
 const { printExpressions } = require("./helpers/pil2/utils");
 
-module.exports = function map(res, symbols, expressions, constraints, options) {
+module.exports = function map(res, symbols, expressions, constraints) {
     mapSymbols(res, symbols);
     setStageInfoSymbols(res, symbols);
-    if(options.debugLine) {
-        for(let i = 0; i < expressions.length; ++i) {
-            if(i !== res.cExpId && i !== res.friExpId) {
-                try {
-                    expressions[i].line = printExpressions(res, expressions[i], expressions);
-                } catch(e) {
-                    expressions[i].line = "";
-                }
-                
-            }
-        }
-    }
 
     for(let i = 0; i < constraints.length; ++i) {
         if(constraints[i].filename === `${res.name}.ImPol`) {
