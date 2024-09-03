@@ -135,14 +135,11 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 break;
             }
             case "const": {
-
-                args.push(0);
-                args.push(r.id);
-
                 const primeIndex = starkInfo.openingPoints.findIndex(p => p === r.prime);
                 if(primeIndex == -1) throw new Error("Something went wrong");
 
-                args.push(primeIndex);
+                args.push((starkInfo.nStages + 2)*primeIndex);
+                args.push(r.id);
                 
                 break;
             }
@@ -180,13 +177,11 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 break;
             }
             case "xDivXSubXi":
-                args.push(starkInfo.nStages + 2);
-                args.push(0);
-                args.push(r.id);
+                args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
+                args.push(3*r.id);
                 break;
             case "Zi": {
-                args.push(starkInfo.nStages + 2);
-                args.push(0);
+                args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
                 args.push(r.boundaryId);
                 break;
             }
@@ -200,9 +195,8 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         
         const primeIndex = starkInfo.openingPoints.findIndex(p => p === prime);
         if(primeIndex == -1) throw new Error("Something went wrong");
-
-        args.push(Number(stage));
+        
+        args.push((starkInfo.nStages + 2)*primeIndex + stage);        
         args.push(Number(p.stagePos));
-        args.push(Number(primeIndex));
     }
 }

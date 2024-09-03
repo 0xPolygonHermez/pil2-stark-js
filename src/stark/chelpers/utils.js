@@ -1,26 +1,46 @@
-module.exports.writeType = function writeType(type, c_args, global = false) {
+module.exports.writeType = function writeType(type, c_args, parserType, global = false) {
     if(global && !["public", "number", "subproofValue", "tmp1", "tmp3"].includes(type)) {
         throw new Error("Global constraints only allow for publics, numbers and subproofValues");
     }
     switch (type) {
         case "public":
-            return `publics[args[i_args + ${c_args}]]`;
+            return parserType === "pack" 
+                ? `&publics[args[i_args + ${c_args}] * nrowsPack]`
+                : `publics[args[i_args + ${c_args}]]`;
         case "tmp1":
-            return `tmp1[args[i_args + ${c_args}]]`; 
+            return parserType === "pack" 
+                ? `&tmp1[args[i_args + ${c_args}] * nrowsPack]`
+                : `tmp1[args[i_args + ${c_args}]]`; 
         case "tmp3":
-            return `tmp3[args[i_args + ${c_args}]]`;
+            return parserType === "pack" 
+                ? `&tmp3[args[i_args + ${c_args}] * nrowsPack * FIELD_EXTENSION]`
+                : `tmp3[args[i_args + ${c_args}]]`;
         case "commit1":
         case "commit3":
         case "const":
-            return `bufferT_[buffTOffsetsStages[args[i_args + ${c_args}]] + nOpenings * args[i_args + ${c_args+1}] + args[i_args + ${c_args+2}]]`;
+            return parserType === "pack"
+                ? `&bufferT_[(nColsStagesAcc[args[i_args + ${c_args}]] + args[i_args + ${c_args + 1}]) * nrowsPack]`
+                : `${type === "commit3" ? `(${parserType === "avx" ? "Goldilocks3::Element_avx" : "Goldilocks3::Element_avx512"} &)` : ""}bufferT_[nColsStagesAcc[args[i_args + ${c_args}]] + args[i_args + ${c_args + 1}]]`;
         case "challenge":
-            return `challenges[args[i_args + ${c_args}]]`;
+            return parserType === "pack"
+                ? `&challenges[args[i_args + ${c_args}]*FIELD_EXTENSION*nrowsPack]`
+                : `challenges[args[i_args + ${c_args}]]`;
         case "eval":
-            return `evals[args[i_args + ${c_args}]]`;
+            return parserType === "pack"
+                ? `&evals[args[i_args + ${c_args}]*FIELD_EXTENSION*nrowsPack]`
+                : `evals[args[i_args + ${c_args}]]`;
         case "subproofValue":
-            return global ? `subproofValues[args[i_args + ${c_args}][args[i_args + ${c_args}]]` : `subproofValues[args[i_args + ${c_args}]]`;
+            if(global) {
+                return `subproofValues[args[i_args + ${c_args}][args[i_args + ${c_args}]]`;
+            } else {
+                return parserType === "pack"
+                ? `&subproofValues[args[i_args + ${c_args}]*FIELD_EXTENSION*nrowsPack]`
+                : `subproofValues[args[i_args + ${c_args}]]`;
+            }
         case "number":
-            return `numbers_[args[i_args + ${c_args}]]`;
+            return parserType === "pack" 
+                ? `&numbers_[args[i_args + ${c_args}]*nrowsPack]`
+                : `numbers_[args[i_args + ${c_args}]]`;
         default:
             throw new Error("Invalid type: " + type);
     }
@@ -44,7 +64,7 @@ module.exports.numberOfArgs = function numberOfArgs(type, global = false) {
         case "const":
         case "commit1":
         case "commit3":
-            return 3;  
+            return 2;  
         default:
             throw new Error("Invalid type: " + type);
     }
