@@ -171,7 +171,7 @@ module.exports.printExpressions = function printExpressions(res, exp, expression
         }
         let name = col.name;
         if(col.lengths) name += col.lengths.map(len => `[${len}]`).join('');
-        if(col.imPol) name += res.cmPolsMap.filter((w, i) => i < exp.id && !w.imPol).length;
+        if(col.imPol) name += res.cmPolsMap.filter((w, i) => i < exp.id && w.imPol).length;
         if(exp.rowOffset) {
             if(exp.rowOffset > 0) {
                 name += "'";

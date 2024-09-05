@@ -144,6 +144,7 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
         const constraint = buildCode(ctx);
         constraint.boundary = constraints[j].boundary;
         constraint.line = constraints[j].line;
+        constraint.imPol = constraints[j].imPol ? 1 : 0;
         constraint.stage = constraints[j].stage === 0 ? 1 : constraints[j].stage;
         if(constraints[j].boundary === "everyFrame") {
             constraint.offsetMin = constraints[j].offsetMin;

@@ -8,6 +8,7 @@ module.exports = function map(res, symbols, expressions, constraints) {
         if(constraints[i].filename === `${res.name}.ImPol`) {
             try {
                 constraints[i].line = printExpressions(res, expressions[constraints[i].e], expressions, true);
+                constraints[i].imPol = true;
             } catch(e) {
                 constraints[i].line = "";
             }  

@@ -521,6 +521,7 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, section) {
         await cHelpersBin.writeULE32(constraintInfo.subproofValuesIds.length);
         await cHelpersBin.writeULE32(subproofValuesIdsOffsetDebug[i]);
 
+        await cHelpersBin.writeULE32(constraintInfo.imPol);
         module.exports.writeStringToFile(cHelpersBin, constraintInfo.line);
     }
 

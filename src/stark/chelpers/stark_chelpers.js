@@ -43,6 +43,7 @@ module.exports.prepareExpressionsBin = async function prepareExpressionsBin(star
         constraintInfo.firstRow = firstRow;
         constraintInfo.lastRow = lastRow;
         constraintInfo.line = constraintCode.line;
+        constraintInfo.imPol = constraintCode.imPol;
         constraintsInfo.push(constraintInfo);
     }
 
