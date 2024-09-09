@@ -78,8 +78,9 @@ async function run() {
         const imPols = res.cmPolsMap.filter(p => p.imPol);
         summary += `| ImPols: ${imPols.length} => ${imPols.reduce((acc, curr) => acc + curr.dim, 0)} = ${imPols.filter(i => i.dim === 1).reduce((acc, curr) => acc + curr.dim, 0)} + ${imPols.filter(i => i.dim === 3).reduce((acc, curr) => acc + curr.dim, 0)} `;
         
-        summary += `| Total: ${nColumnsBaseField} | nConstraints: ${constraints.length} | nEvals: ${res.evMap.length}`;
-        
+        if(res.evMap) summary += `| Total: ${nColumnsBaseField} | nConstraints: ${constraints.length}`;
+        if(res.evMap) summary += `| nEvals: ${res.evMap.length}`;
+                
         console.log(`Total Columns: ${nColumns} -> Columns in the basefield: ${nColumnsBaseField}`);
         console.log(`Total Constraints: ${constraints.length}`)
         if(!options.debug) console.log(`Number of evaluations: ${res.evMap.length}`)
