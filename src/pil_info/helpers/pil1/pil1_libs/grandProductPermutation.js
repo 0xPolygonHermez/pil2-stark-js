@@ -1,21 +1,20 @@
 const ExpressionOps = require("../../../expressionops");
 const { getExpDim } = require("../../helpers");
 
-module.exports.initChallengesPermutation = function initChallengesPermutation(stark, firstPossibleStage) {
-    const stage = firstPossibleStage ? 2 : 3;
+module.exports.initChallengesPermutation = function initChallengesPermutation(stark) {
     const dim = stark ? 3 : 1;
 
-    const alpha = {name: "std_alpha", stage: stage, dim, stageId: 0};
-    const beta = {name: "std_beta", stage: stage, dim, stageId: 1};
-    const gamma = {name: "std_gamma", stage: stage, dim, stageId: 2};
+    const alpha = {name: "std_alpha", stage: 2, dim, stageId: 0};
+    const beta = {name: "std_beta", stage: 2, dim, stageId: 1};
+    const gamma = {name: "std_gamma", stage: 2, dim, stageId: 2};
 
     return [alpha, beta, gamma];
 }
 
-module.exports.grandProductPermutation = function grandProductPermutation(pil, symbols, hints, stark, subproofId, airId, firstPossibleStage) {
+module.exports.grandProductPermutation = function grandProductPermutation(pil, symbols, hints, stark, subproofId, airId) {
     const E = new ExpressionOps();
 
-    const stage = firstPossibleStage ? 2 : 3;
+    const stage = 2;
     const dim = stark ? 3 : 1;
 
     let alphaSymbol = symbols.find(s => s.type === "challenge" && stage === s.stage && s.stageId === 0);

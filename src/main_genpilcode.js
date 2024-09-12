@@ -13,6 +13,7 @@ const argv = require("yargs")
     .alias("e", "expressionsinfo")
     .alias("v", "verifierinfo")
     .alias("s", "starkinfo")
+    .alias("r", "recursion")
     .argv;
 
 async function run() {
@@ -40,7 +41,11 @@ async function run() {
 
     addIntermediatePolynomials(res, expressions, constraints, symbols, imExps, qDeg, stark);
     
-    map(res, symbols, expressions, constraints);     
+    const options = {
+        recursion: argv.recursion || false,
+    }
+
+    map(res, symbols, expressions, constraints, options);
 
     const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, expressions, hints, debug, stark);
 

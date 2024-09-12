@@ -68,7 +68,7 @@ describe("test All sm", async function () {
         await smPermutation.execute(N, cmPols.Permutation);
         await smConnection.execute(N, cmPols.Connection);
 
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, [1n, 2n, cmPols.Fibonacci.l1[N - 1]], {logger, F, pil2: false, debug: true, firstPossibleStage: true});
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, [1n, 2n, cmPols.Fibonacci.l1[N - 1]], {logger, F, pil2: false, debug: true});
     });
 
     it("Testing all with imPolynomials in each stage", async () => {
@@ -95,7 +95,7 @@ describe("test All sm", async function () {
         await smPermutation.execute(N, cmPols.Permutation);
         await smConnection.execute(N, cmPols.Connection);
 
-        await generateStarkProof(constPols, cmPols, pil, starkStruct, [1n, 2n, cmPols.Fibonacci.l1[N - 1]], {logger, F, pil2: false, debug: true, firstPossibleStage: true, imPolsStages: true});
+        await generateStarkProof(constPols, cmPols, pil, starkStruct, [1n, 2n, cmPols.Fibonacci.l1[N - 1]], {logger, F, pil2: false, debug: true, imPolsStages: true});
     });
 
     it("Testing all with hashCommits set to true", async () => {

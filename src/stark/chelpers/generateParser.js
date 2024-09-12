@@ -2,6 +2,7 @@ const { writeType, getAllOperations, numberOfArgs } = require("./utils");
 
 const operationsMap = {
     "commit1": 1,
+    "x": 2,
     "Zi": 2,
     "const": 3,
     "tmp1": 4,
@@ -76,15 +77,13 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
         `            nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*o + stage] = stage == 0 && o == 0 ? 0 : nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*o + stage - 1] + nColsStages[stage - 1];`,
         `        }`,
         `    }\n`,
-        "    if(expId == setupCtx.starkInfo.cExpId || expId == setupCtx.starkInfo.friExpId) {",
-        "        nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] = nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings - 1] + nColsStages[(setupCtx.starkInfo.nStages + 2)*nOpenings - 1];",
-        "        if(expId == setupCtx.starkInfo.cExpId) {",
-        "            nCols = nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + setupCtx.starkInfo.boundaries.size();",
-        "        } else {",
-        "            nCols = nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + nOpenings*FIELD_EXTENSION;",
-        "        }",
+        "    nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] = nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings - 1] + nColsStages[(setupCtx.starkInfo.nStages + 2)*nOpenings - 1];",
+        "    if(expId == setupCtx.starkInfo.cExpId) {",
+        "        nCols = nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + setupCtx.starkInfo.boundaries.size() + 1;",
+        "    } else if(expId == setupCtx.starkInfo.friExpId) {",
+        "        nCols = nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + nOpenings*FIELD_EXTENSION;",
         "    } else {",
-        "        nCols = nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings - 1] + nColsStages[(setupCtx.starkInfo.nStages + 2)*nOpenings - 1];",
+        "        nCols = nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + 1;",
         "    }",
         "}\n",
     ]);
@@ -131,11 +130,15 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
             "        }",
             "    }\n",
             "    if(parserParams.expId == setupCtx.starkInfo.cExpId) {",
+            "        for(uint64_t j = 0; j < nrowsPack; ++j) {",
+            "            bufferT[j] = setupCtx.constPols.x_2ns[row + j];",
+            "        }",
+            `        Goldilocks::${avxLoad}(bufferT_[nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings]], &bufferT[0]);`,
             "        for(uint64_t d = 0; d < setupCtx.starkInfo.boundaries.size(); ++d) {",
             "            for(uint64_t j = 0; j < nrowsPack; ++j) {",
             "                bufferT[j] = setupCtx.constPols.zi[row + j + d*domainSize];",
             "            }",
-            `            Goldilocks::${avxLoad}(bufferT_[nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + d], &bufferT[0]);`,
+            `            Goldilocks::${avxLoad}(bufferT_[nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + 1 + d], &bufferT[0]);`,
             "        }",
             "    } else if(parserParams.expId == setupCtx.starkInfo.friExpId) {",
             "        for(uint64_t d = 0; d < setupCtx.starkInfo.openingPoints.size(); ++d) {",
@@ -146,6 +149,11 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
             `                Goldilocks::${avxLoad}(bufferT_[nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + d*FIELD_EXTENSION + k], &bufferT[0]);`,
             "            }",
             "        }",
+            "    } else {",
+            "        for(uint64_t j = 0; j < nrowsPack; ++j) {",
+            "            bufferT[j] = setupCtx.constPols.x_n[row + j];",
+            "        }",
+            `        Goldilocks::${avxLoad}(bufferT_[nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings]], &bufferT[0]);`,
             "    }",
             "}\n",
         ])
@@ -190,8 +198,11 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
             "    if(parserParams.expId == setupCtx.starkInfo.cExpId) {",
             "        for(uint64_t d = 0; d < setupCtx.starkInfo.boundaries.size(); ++d) {",
             "            for(uint64_t j = 0; j < nrowsPack; ++j) {",
-            "                bufferT_[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + d)*nrowsPack + j] = setupCtx.constPols.zi[row + j + d*domainSize];",
+            "                bufferT_[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + d + 1)*nrowsPack + j] = setupCtx.constPols.zi[row + j + d*domainSize];",
             "            }",
+            "        }",
+            "        for(uint64_t j = 0; j < nrowsPack; ++j) {",
+            "            bufferT[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings])*nrowsPack + j] = setupCtx.constPols.x_2ns[row + j];",
             "        }",
             "    } else if(parserParams.expId == setupCtx.starkInfo.friExpId) {",
             "        for(uint64_t d = 0; d < setupCtx.starkInfo.openingPoints.size(); ++d) {",
@@ -200,6 +211,10 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
             `                    bufferT_[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + d*FIELD_EXTENSION + k)*nrowsPack + j] = params.pols[setupCtx.starkInfo.mapOffsets[std::make_pair("xDivXSubXi", true)] + (row + j + d*domainSize)*FIELD_EXTENSION + k];`,
             "                }",
             "            }",
+            "        }",
+            "    } else {",
+            "        for(uint64_t j = 0; j < nrowsPack; ++j) {",
+            "            bufferT[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings])*nrowsPack + j] = setupCtx.constPols.x[row + j];",
             "        }",
             "    }",
             "}\n",
@@ -224,6 +239,20 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
         "            for(uint64_t i = 0; i < nrowsPack; ++i) {",
         "                Goldilocks3::inv((Goldilocks3::Element *)&dest[(row + i)*FIELD_EXTENSION], (Goldilocks3::Element *)&dest[(row + i)*FIELD_EXTENSION]);",
         "            }",
+        "        }",
+        "    }",
+        "}\n",
+    ]);
+
+    parserCPP.push(...[
+        `inline void storeImPolynomials(StepsParams &params, ${isAvx ? avxTypeElement : "Goldilocks::Element"} *bufferT_, uint64_t row) {`,
+        "    auto openingPointIndex = std::find(setupCtx.starkInfo.openingPoints.begin(), setupCtx.starkInfo.openingPoints.end(), 0) - setupCtx.starkInfo.openingPoints.begin();\n",
+        "    auto firstImPol = std::find_if(setupCtx.starkInfo.cmPolsMap.begin(), setupCtx.starkInfo.cmPolsMap.end(), [](const PolMap& s) { return s.imPol; });\n",
+        "    if(firstImPol != setupCtx.starkInfo.cmPolsMap.end()) {",
+        "        uint64_t firstImPolPos = firstImPol->stagePos;",
+        "        uint64_t stage = setupCtx.starkInfo.nStages;",
+        "        for(uint64_t k = firstImPolPos; k < nColsStages[stage]; ++k) {",
+        `            Goldilocks::${isAvx ? avxStore : "copy_pack"}(${!isAvx ? "nrowsPack, " : ""}&params.pols[offsetsStages[stage] + k + row * nColsStages[stage]], nColsStages[stage], ${!isAvx ? "&bufferT_[nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*openingPointIndex + stage] + k]" : "bufferT_[nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*openingPointIndex + stage] + k]"});`,
         "        }",
         "    }",
         "}\n",
@@ -272,7 +301,7 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
     ]);
     
     parserCPP.push(...[
-        `void calculateExpressions(StepsParams& params, Goldilocks::Element *dest, ParserArgs &parserArgs, ParserParams &parserParams, bool domainExtended, bool inverse) override {\n`,
+        `void calculateExpressions(StepsParams& params, Goldilocks::Element *dest, ParserArgs &parserArgs, ParserParams &parserParams, bool domainExtended, bool inverse, bool imPols) override {`,
         "    uint8_t* ops = &parserArgs.ops[parserParams.opsOffset];",
         "    uint16_t* args = &parserArgs.args[parserParams.argsOffset];",
         "    uint64_t* numbers = &parserArgs.numbers[parserParams.numbersOffset];\n",
@@ -425,8 +454,10 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
         let operationDescription;
         if(op.op === "mul") {
             operationDescription = `                // MULTIPLICATION WITH DEST: ${op.dest_type} - SRC0: ${op.src0_type} - SRC1: ${op.src1_type}`;
-        } else {
+        } else if(op.src1_type) {
             operationDescription = `                // OPERATION WITH DEST: ${op.dest_type} - SRC0: ${op.src0_type} - SRC1: ${op.src1_type}`;
+        } else {
+            operationDescription = `                // COPY ${op.src0_type} to ${op.dest_type}`;
         }
         operationCase.push(operationDescription);
                 
@@ -450,7 +481,13 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
         "        }\n",
     ]);
 
-    parserCPP.push(`        storePolynomial(dest, parserParams, i, tmp1, tmp3, inverse);\n`);
+    parserCPP.push(...[
+        "        if(imPols) {",
+        "            storeImPolynomials(params, bufferT_, i);",
+        "        } else {",
+        "            storePolynomial(dest, parserParams, i, tmp1, tmp3, inverse);",
+        "        }\n",
+    ])
     parserCPP.push(...[
         `        if (i_args != parserParams.nArgs) std::cout << " " << i_args << " - " << parserParams.nArgs << std::endl;`,
         "        assert(i_args == parserParams.nArgs);",
@@ -470,20 +507,24 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
         
         if(operation.op === "mul") {
             name += "mul";
-        } else {
+        } else if (operation.src1_type) {
             name += "op";
+        } else {
+            name += "copy";
         }
 
         if(["tmp3", "commit3"].includes(operation.dest_type)) {
-            let dimType = "";
-            let dims1 = ["public", "commit1", "tmp1", "const", "number", "Zi"];
-            let dims3 = ["commit3", "tmp3", "subproofValue", "challenge", "eval", "xDivXSubXi"];
-            if(dims1.includes(operation.src0_type)) dimType += "1";
-            if (dims3.includes(operation.src0_type)) dimType += "3";
-            if(dims1.includes(operation.src1_type)) dimType += "1";
-            if (dims3.includes(operation.src1_type)) dimType += "3";
+            if(operation.src1_type)  {
+                let dimType = "";
+                let dims1 = ["public", "commit1", "tmp1", "const", "number", "Zi", "x"];
+                let dims3 = ["commit3", "tmp3", "subproofValue", "challenge", "eval", "xDivXSubXi"];
+                if(dims1.includes(operation.src0_type)) dimType += "1";
+                if (dims3.includes(operation.src0_type)) dimType += "3";
+                if(dims1.includes(operation.src1_type)) dimType += "1";
+                if (dims3.includes(operation.src1_type)) dimType += "3";
 
-            if(dimType !== "33") name += "_" + dimType;
+                if(dimType !== "33") name += "_" + dimType;
+            }
         } 
         
         if(parserType === "avx") {
@@ -496,10 +537,12 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
 
         c_args = 0;
 
-        if(!operation.op) {
-            name += `args[i_args + ${c_args}], `;
+        if(operation.src1_type) {
+            if(!operation.op) {
+                name += `args[i_args + ${c_args}], `;
+            }
+            c_args++;
         }
-        c_args++;
 
         let typeDest = writeType(operation.dest_type, c_args, parserType);
         c_args += numberOfArgs(operation.dest_type);
@@ -507,17 +550,22 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
         let typeSrc0 = writeType(operation.src0_type, c_args, parserType);
         c_args += numberOfArgs(operation.src0_type);
 
-        let typeSrc1 = writeType(operation.src1_type, c_args, parserType);
-        c_args += numberOfArgs(operation.src1_type);
-
+        let typeSrc1;
+        if(operation.src1_type) {
+            typeSrc1 = writeType(operation.src1_type, c_args, parserType);
+            c_args += numberOfArgs(operation.src1_type);
+        }
+                
         const operationCall = [];
 
         name += typeDest + ", ";
         name += typeSrc0 + ", ";
-        if(operation.op === "mul" && operation.src1_type === "challenge") {
-            name += `${typeSrc1}, ${typeSrc1.replace("challenges", "challenges_ops")}, \n                        `;
-        } else {
-            name += typeSrc1 + ", ";
+        if(operation.src1_type) {
+            if(operation.op === "mul" && operation.src1_type === "challenge") {
+                name += `${typeSrc1}, ${typeSrc1.replace("challenges", "challenges_ops")}, \n                        `;
+            } else {
+                name += typeSrc1 + ", ";
+            }
         }
 
         name = name.substring(0, name.lastIndexOf(", ")) + ");";
@@ -553,7 +601,7 @@ module.exports.getOperation = function getOperation(r) {
     for(let i = 0; i < src.length; i++) {
         if(src[i].type === "cm") {
             _op[`src${i}_type`] = `commit${src[i].dim}`;
-        } else if(src[i].type === "const" || src[i].type === "Zi") {
+        } else if(src[i].type === "const" || src[i].type === "Zi" || src[i].type === "x") {
             _op[`src${i}_type`] = "commit1";
         } else if(src[i].type === "xDivXSubXi") {
             _op[`src${i}_type`] = "commit3";

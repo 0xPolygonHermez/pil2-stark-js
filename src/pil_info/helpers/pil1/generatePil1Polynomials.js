@@ -15,9 +15,7 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
     res.nPublics = pil.publics.length;
     res.nConstants = pil.nConstants;
 
-    let firstPossibleStage = options.firstPossibleStage ? options.firstPossibleStage : false;
-
-    res.nStages = firstPossibleStage && pil.plookupIdentities.length == 0 ? 2 : 3;
+    res.nStages = pil.plookupIdentities.length == 0 ? 2 : 3;
 
     const symbols = [];
 
@@ -42,7 +40,7 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
         }
     }
 
-    generateLibsPolynomials(F, res, pil, symbols, hints, stark, firstPossibleStage);
+    generateLibsPolynomials(F, res, pil, symbols, hints, stark);
 
     res.nCommitments = pil.nCommitments;
     res.pilPower = log2(Object.values(pil.references)[0].polDeg);
@@ -57,7 +55,7 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
     }
 
     for(let i = 0; i < res.nPublics; ++i) {
-        symbols.push({ type: "public", stage: 1, id: i });
+        symbols.push({ type: "public", name: `public${i}`, stage: 1, id: i });
     }
 
     return { symbols, hints, expressions, constraints };

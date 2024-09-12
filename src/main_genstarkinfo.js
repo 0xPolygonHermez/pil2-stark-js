@@ -19,12 +19,12 @@ const argv = require("yargs")
     .alias("v", "verifierinfo")
     .alias("n", "pil2")
     .alias("m", "impolsstages")
-    .alias("t", "firstpossiblestage")
     .alias("d", "debug")
     .alias("k", "skipimpols")
     .alias("o", "optimpols")
     .string("subproofId")
     .string("airId")
+    .alias("r", "recursion")
     .argv;
 
 async function run() {
@@ -76,10 +76,10 @@ async function run() {
     }
     
     options.imPolsStages = argv.impolsstages || false;
-    options.firstPossibleStage = argv.firstpossiblestage || false;
     options.debug = debug;
     options.skipImPols = debug ? (argv.skipimpols || false) : false;
     options.optImPols = argv.optimpols || false;
+    options.recursion = argv.recursion || false;
 
     const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = await pilInfo(F, pil, true, pil2, starkStruct, options);
 

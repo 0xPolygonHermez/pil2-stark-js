@@ -32,7 +32,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         
         let operation = getOperation(r);
 
-        args.push(operationsTypeMap[operation.op]);
+        if(operation.op !== "copy") args.push(operationsTypeMap[operation.op]);
 
         pushResArg(r, r.dest.type);
         for(let i = 0; i < operation.src.length; i++) {
@@ -182,7 +182,12 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 break;
             case "Zi": {
                 args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
-                args.push(r.boundaryId);
+                args.push(1 + r.boundaryId);
+                break;
+            }
+            case "x": {
+                args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
+                args.push(0);
                 break;
             }
         }

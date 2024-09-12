@@ -47,11 +47,5 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
         res.constRoot = MH.root(res.constTree);
     }
 
-    const cHelpersInfo = await prepareExpressionsBin(starkInfo, expressionsInfo, false, true);
-
-    res.cHelpers = cHelpersInfo.cHelpers;
-    res.binFileInfo = cHelpersInfo.binFileInfo;
-    res.genericBinFileInfo = cHelpersInfo.genericBinFileInfo;
-
     return res;
 }

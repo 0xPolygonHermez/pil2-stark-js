@@ -1,6 +1,6 @@
 const { printExpressions } = require("./helpers/pil2/utils");
 
-module.exports = function map(res, symbols, expressions, constraints) {
+module.exports = function map(res, symbols, expressions, constraints, options) {
     mapSymbols(res, symbols);
     setStageInfoSymbols(res, symbols);
 
@@ -19,10 +19,12 @@ module.exports = function map(res, symbols, expressions, constraints) {
     console.log("----------------- INTERMEDIATE POLYNOMIALS -----------------");
     const imPols = res.cmPolsMap.filter(i => i.imPol === true);
     for(let i = 0; i < imPols.length; ++i) {
-        const imPolExpression = printExpressions(res, expressions[imPols[i].expId], expressions);
-        if(i > 0) console.log("------------------------------------------------------------");
-        console.log(`Intermediate polynomial ${i} columns: ${imPols[i].dim}`);
-        console.log(imPolExpression);
+        if(!options.recursion) {
+            const imPolExpression = printExpressions(res, expressions[imPols[i].expId], expressions);
+            if(i > 0) console.log("------------------------------------------------------------");
+            console.log(`Intermediate polynomial ${i} columns: ${imPols[i].dim}`);
+            console.log(imPolExpression);
+        }
     }
     res.nCommitmentsStage1 = res.cmPolsMap.filter(p => p.stage === "cm1" && !p.imPol).length; 
 }

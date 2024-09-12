@@ -4,20 +4,19 @@ const { getExpDim } = require("../../helpers");
 
 const getKs = require("pilcom").getKs;
 
-module.exports.initChallengesConnection = function initChallengesConnection(stark, firstPossibleStage) {
-    const stage = firstPossibleStage ? 2 : 3;
+module.exports.initChallengesConnection = function initChallengesConnection(stark) {
     const dim = stark ? 3 : 1;
 
-    const gamma = {name: "std_gamma", stage, dim, stageId: 0};
-    const delta = {name: "std_delta", stage, dim, stageId: 1};
+    const gamma = {name: "std_gamma", stage: 2, dim, stageId: 0};
+    const delta = {name: "std_delta", stage: 2, dim, stageId: 1};
 
     return [gamma, delta];
 }
 
-module.exports.grandProductConnection = function grandProductConnection(pil, symbols, hints, stark, subproofId, airId, firstPossibleStage, F) {
+module.exports.grandProductConnection = function grandProductConnection(pil, symbols, hints, stark, subproofId, airId, F) {
     const E = new ExpressionOps();
 
-    const stage = firstPossibleStage ? 2 : 3;
+    const stage = 2;
     const dim = stark ? 3 : 1;
 
     let gammaSymbol = symbols.find(s => s.type === "challenge" && s.stage === stage && s.stageId === 0);
