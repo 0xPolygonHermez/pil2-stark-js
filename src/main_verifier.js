@@ -28,8 +28,6 @@ async function run() {
     let proof = JSONbig.parse(await fs.promises.readFile(proofFile, "utf8"));
     const public = JSONbig.parse(await fs.promises.readFile(publicFile, "utf8"));
 
-    const constRoot = verkey.constRoot;
-
     proof = str2bigInt(proof);
 
     const logger = Logger.create("pil-stark", {showTimestamp: false});
@@ -43,7 +41,7 @@ async function run() {
 
     } 
     
-    const resV = await starkVerify(proof, public, constRoot, undefined, starkInfo, verifierInfo, options);
+    const resV = await starkVerify(proof, public, verkey, undefined, starkInfo, verifierInfo, options);
 
     if (resV === true) {
         console.log("Verification Ok!!")
