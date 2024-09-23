@@ -42,22 +42,15 @@ function addHintsInfo(res, expressions, hints) {
         const hint = hints[i];
 
         const hintFields = [];
-
-        const fields = Object.keys(hint);
     
-        for(let j = 0; j < fields.length; ++j) {
-            const field = fields[j];
-            if(field === "name") continue;
-            if(hint[field].op === "exp") {
-                expressions[hint[field].id].line = printExpressions(res, expressions[hint[field].id], expressions);
-                hintFields.push({name: field, op: "tmp", id: hint[field].id, dim: expressions[hint[field].id].dim });
-            } else if(["cm", "challenge", "public"].includes(hint[field].op)) {
-                hintFields.push({name: field, op: hint[field].op, id: hint[field].id });
-            } else if(["public", "subproofValue", "const"].includes(hint[field].op)) {
-                hintFields.push({name: field, op: hint[field].op, id: hint[field].id });
-            } else if(hint[field].op === "number") {
-                hintFields.push({name: field, op: "number", value: hint[field].value});
-            } else throw new Error("Invalid hint op: " + hint[field].op);
+        for(let j = 0; j < hint.fields.length; ++j) {
+            const field = hint.fields[j];
+            if(field.op === "exp") {
+                expressions[field.id].line = printExpressions(res, expressions[field.id], expressions);
+                hintFields.push({name: field.name, op: "tmp", id: field.id, dim: expressions[field.id].dim });
+            } else if(["cm", "challenge", "public", "subproofValue", "const", "number", "string"].includes(field.op)) {
+                hintFields.push(field);
+            } else throw new Error("Invalid hint op: " + field.op);
         }
 
 

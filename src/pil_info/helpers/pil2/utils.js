@@ -27,14 +27,22 @@ module.exports.formatHints = function formatHints(pilout, rawHints, symbols, exp
     for(let i = 0; i < rawHints.length; ++i) {
         const hint = { name: rawHints[i].name };
         const fields = rawHints[i].hintFields[0].hintFieldArray.hintFields;
+        hint.fields = [];
         for(let j = 0; j < fields.length; j++) {
             const name = fields[j].name;
-            const value = formatExpression(fields[j].operand, pilout, symbols, stark, saveSymbols);
-            if(value.op === "exp") expressions[value.id].keep = true;
-            hint[name] = value;
+            let value;
+            if(fields[j].operand) {
+                value = formatExpression(fields[j].operand, pilout, symbols, stark, saveSymbols);
+                if(value.op === "exp") expressions[value.id].keep = true;
+            } else if(fields[j].stringValue) {
+                value = { op: "string", string: fields[j].stringValue };
+            } else throw new Error("Unkown hint field");
+            hint.fields.push({name, ...value});
         }
         hints.push(hint);
     }
+
+    console.log(hints);
     return hints;
 }
 

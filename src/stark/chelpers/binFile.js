@@ -608,6 +608,8 @@ async function writeHintsSection(cHelpersBin, hintsInfo, section) {
                 const buffNumberV = new DataView(buffNumber.buffer);
                 buffNumberV.setBigUint64(0, BigInt(field.value), true);
                 await cHelpersBin.write(buffNumber);
+            } else if(field.op === "string") {
+                module.exports.writeStringToFile(cHelpersBin, field.string);
             } else {
                 await cHelpersBin.writeULE32(field.id);
             }
