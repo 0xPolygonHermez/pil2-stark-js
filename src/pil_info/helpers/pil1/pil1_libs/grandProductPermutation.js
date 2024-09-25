@@ -119,9 +119,11 @@ module.exports.grandProductPermutation = function grandProductPermutation(pil, s
 
         const hint = {
             name: "gprod",
-            reference: z,
-            numerator: E.exp(peCtx.numId, 0, stage),
-            denominator: E.exp(peCtx.denId, 0, stage),
+            fields: [
+                {name: "reference", ...z},
+                {name: "numerator", ...E.exp(peCtx.numId, 0, stage)},
+                {name: "denominator", ...E.exp(peCtx.denId, 0, stage)},
+            ],
         };
 
         hints.push(hint);

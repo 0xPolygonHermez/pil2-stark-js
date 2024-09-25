@@ -182,17 +182,21 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
 
         const hint1 = {
             name: "h1h2",
-            referenceH1: h1,
-            referenceH2: h2,
-            f: E.exp(puCtx.fExpId, 0, stage1),
-            t: E.exp(puCtx.tExpId, 0, stage1),
+            fields: [
+                {name: "referenceH1", ...h1},
+                {name: "referenceH2", ...h2},
+                {name: "f", ...E.exp(puCtx.fExpId, 0, stage1)},
+                {name: "t", ...E.exp(puCtx.tExpId, 0, stage1)},
+            ],
         };
 
         const hint2 = {
             name: "gprod",
-            reference: z,
-            numerator: E.exp(puCtx.numId, 0, stage2),
-            denominator: E.exp(puCtx.denId, 0, stage2),
+            fields: [
+                {name: "reference", ...z},
+                {name: "numerator", ...E.exp(puCtx.numId, 0, stage2)},
+                {name: "denominator", ...E.exp(puCtx.denId, 0, stage2)},
+            ],
         };
 
         hints.push(hint1);
