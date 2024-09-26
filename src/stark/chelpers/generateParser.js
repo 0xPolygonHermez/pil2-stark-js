@@ -62,17 +62,17 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
     parserCPP.push(`${expressionsClassName}(SetupCtx& setupCtx) : ExpressionsCtx(setupCtx) {};\n`);
 
     parserCPP.push(...[
-        `void setBufferTInfo(uint64_t stage, bool domainExtended, uint64_t expId, bool prover_initialized) {`,
+        `void setBufferTInfo(uint64_t stage, bool domainExtended, uint64_t expId) {`,
         "    uint64_t nOpenings = setupCtx.starkInfo.openingPoints.size();",
         `    offsetsStages.resize((setupCtx.starkInfo.nStages + 2)*nOpenings + 1);`,
         `    nColsStages.resize((setupCtx.starkInfo.nStages + 2)*nOpenings + 1);`,
         `    nColsStagesAcc.resize((setupCtx.starkInfo.nStages + 2)*nOpenings + 1);\n`,
         `    nCols = setupCtx.starkInfo.nConstants;`,
-        `    uint64_t ns = !prover_initialized ? 1 : setupCtx.starkInfo.nStages + 2;`,
+        `    uint64_t ns = setupCtx.starkInfo.nStages + 2;`,
         `    for(uint64_t o = 0; o < nOpenings; ++o) {`,
         `        for(uint64_t stage = 0; stage <= ns; ++stage) {`,
         `            std::string section = stage == 0 ? "const" : "cm" + to_string(stage);`,
-        `            offsetsStages[(setupCtx.starkInfo.nStages + 2)*o + stage] = !prover_initialized ? 0 : setupCtx.starkInfo.mapOffsets[std::make_pair(section, domainExtended)];`,
+        `            offsetsStages[(setupCtx.starkInfo.nStages + 2)*o + stage] = setupCtx.starkInfo.mapOffsets[std::make_pair(section, domainExtended)];`,
         `            nColsStages[(setupCtx.starkInfo.nStages + 2)*o + stage] = setupCtx.starkInfo.mapSectionsN[section];`,
         `            nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*o + stage] = stage == 0 && o == 0 ? 0 : nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*o + stage - 1] + nColsStages[stage - 1];`,
         `        }`,
@@ -144,7 +144,7 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
             "        for(uint64_t d = 0; d < setupCtx.starkInfo.openingPoints.size(); ++d) {",
             "           for(uint64_t k = 0; k < FIELD_EXTENSION; ++k) {",
             "                for(uint64_t j = 0; j < nrowsPack; ++j) {",
-            `                    bufferT[j] = params.pols[setupCtx.starkInfo.mapOffsets[std::make_pair("xDivXSubXi", true)] + (row + j + d*domainSize)*FIELD_EXTENSION + k];`,
+            `                    bufferT[j] = params.xDivXSub[(row + j + d*domainSize)*FIELD_EXTENSION + k];`,
             "                }",
             `                Goldilocks::${avxLoad}(bufferT_[nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + d*FIELD_EXTENSION + k], &bufferT[0]);`,
             "            }",
@@ -202,19 +202,19 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
             "            }",
             "        }",
             "        for(uint64_t j = 0; j < nrowsPack; ++j) {",
-            "            bufferT[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings])*nrowsPack + j] = setupCtx.constPols.x_2ns[row + j];",
+            "            bufferT_[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings])*nrowsPack + j] = setupCtx.constPols.x_2ns[row + j];",
             "        }",
             "    } else if(parserParams.expId == setupCtx.starkInfo.friExpId) {",
             "        for(uint64_t d = 0; d < setupCtx.starkInfo.openingPoints.size(); ++d) {",
             "           for(uint64_t k = 0; k < FIELD_EXTENSION; ++k) {",
             "                for(uint64_t j = 0; j < nrowsPack; ++j) {",
-            `                    bufferT_[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + d*FIELD_EXTENSION + k)*nrowsPack + j] = params.pols[setupCtx.starkInfo.mapOffsets[std::make_pair("xDivXSubXi", true)] + (row + j + d*domainSize)*FIELD_EXTENSION + k];`,
+            `                    bufferT_[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings] + d*FIELD_EXTENSION + k)*nrowsPack + j] = params.xDivXSub[(row + j + d*domainSize)*FIELD_EXTENSION + k];`,
             "                }",
             "            }",
             "        }",
             "    } else {",
             "        for(uint64_t j = 0; j < nrowsPack; ++j) {",
-            "            bufferT[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings])*nrowsPack + j] = setupCtx.constPols.x[row + j];",
+            "            bufferT_[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*nOpenings])*nrowsPack + j] = setupCtx.constPols.x[row + j];",
             "        }",
             "    }",
             "}\n",
@@ -252,7 +252,7 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
         "        uint64_t firstImPolPos = firstImPol->stagePos;",
         "        uint64_t stage = setupCtx.starkInfo.nStages;",
         "        for(uint64_t k = firstImPolPos; k < nColsStages[stage]; ++k) {",
-        `            Goldilocks::${isAvx ? avxStore : "copy_pack"}(${!isAvx ? "nrowsPack, " : ""}&params.pols[offsetsStages[stage] + k + row * nColsStages[stage]], nColsStages[stage], ${!isAvx ? "&bufferT_[nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*openingPointIndex + stage] + k]" : "bufferT_[nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*openingPointIndex + stage] + k]"});`,
+        `            Goldilocks::${isAvx ? avxStore : "copy_pack"}(${!isAvx ? "nrowsPack, " : ""}&params.pols[offsetsStages[stage] + k + row * nColsStages[stage]], nColsStages[stage], ${!isAvx ? "&bufferT_[nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*openingPointIndex + stage] + k]" : "bufferT_[(nColsStagesAcc[(setupCtx.starkInfo.nStages + 2)*openingPointIndex + stage] + k)*nrowsPack]"});`,
         "        }",
         "    }",
         "}\n",
@@ -309,7 +309,7 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
         "    uint64_t domainSize = domainExtended ? 1 << setupCtx.starkInfo.starkStruct.nBitsExt : 1 << setupCtx.starkInfo.starkStruct.nBits;\n",
     ]);
 
-    parserCPP.push("    setBufferTInfo(parserParams.stage, domainExtended, parserParams.expId, params.prover_initialized);\n")
+    parserCPP.push("    setBufferTInfo(parserParams.stage, domainExtended, parserParams.expId);\n")
       
     if(isAvx) {
         parserCPP.push(...[
