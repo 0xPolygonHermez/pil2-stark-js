@@ -50,6 +50,7 @@ function addHintsInfo(res, expressions, hints) {
                 values: processHintFieldValue(field.values, res, expressions).flat(Infinity),
             };
 
+            if(!field.lengths) hintField.values[0].pos = [];
             hintFields.push(hintField);
         }
 
