@@ -30,20 +30,57 @@ module.exports.formatHints = function formatHints(pilout, rawHints, symbols, exp
         hint.fields = [];
         for(let j = 0; j < fields.length; j++) {
             const name = fields[j].name;
-            let value;
-            if(fields[j].operand) {
-                value = formatExpression(fields[j].operand, pilout, symbols, stark, saveSymbols);
-                if(value.op === "exp") expressions[value.id].keep = true;
-            } else if(fields[j].stringValue) {
-                value = { op: "string", string: fields[j].stringValue };
-            } else throw new Error("Unkown hint field");
-            hint.fields.push({name, ...value});
+            const {values, lengths} = processHintField(fields[j], pilout, symbols, expressions, stark, saveSymbols);
+            if(!lengths) {
+                hint.fields.push({name, values: [values], lengths});
+            } else {
+                hint.fields.push({name, values, lengths});
+            }
         }
         hints.push(hint);
     }
 
-    console.log(hints);
     return hints;
+}
+
+function processHintField(hintField, pilout, symbols, expressions, stark, saveSymbols) {
+    let resultFields = [];
+    let lengths = [];
+    if (hintField.hintFieldArray) {
+        const fields = hintField.hintFieldArray.hintFields;
+        for (let j = 0; j < fields.length; j++) {
+            const { values, lengths: subLengths } = processHintField(fields[j], pilout, symbols, expressions, stark, saveSymbols);
+
+            resultFields.push(values);
+
+            if (lengths.length === 0) {
+                lengths.push(fields.length);
+            }
+            
+            if (subLengths && subLengths.length > 0) {
+                for (let k = 0; k < subLengths.length; k++) {
+                    if (lengths[k + 1] === undefined) {
+                        lengths[k + 1] = subLengths[k];
+                    }
+                }
+            }
+        }
+    } else {
+        let value;
+
+        if (hintField.operand) {
+            value = formatExpression(hintField.operand, pilout, symbols, stark, saveSymbols);
+            if (value.op === "exp") expressions[value.id].keep = true;
+        } else if (hintField.stringValue) {
+            value = { op: "string", string: hintField.stringValue };
+        } else {
+            throw new Error("Unknown hint field");
+        }
+
+        return { values: value };
+    }
+
+    return {values: resultFields, lengths };
 }
 
 

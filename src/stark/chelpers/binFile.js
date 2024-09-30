@@ -602,18 +602,29 @@ async function writeHintsSection(cHelpersBin, hintsInfo, section) {
         for(let k = 0; k < nFields; k++) {
             const field = hint.fields[k];
             await module.exports.writeStringToFile(cHelpersBin, field.name);
-            await module.exports.writeStringToFile(cHelpersBin, field.op);
-            if(field.op === "number") {
-                const buffNumber = new Uint8Array(8);
-                const buffNumberV = new DataView(buffNumber.buffer);
-                buffNumberV.setBigUint64(0, BigInt(field.value), true);
-                await cHelpersBin.write(buffNumber);
-            } else if(field.op === "string") {
-                module.exports.writeStringToFile(cHelpersBin, field.string);
-            } else {
-                await cHelpersBin.writeULE32(field.id);
+            const nValues = field.values.length;
+            await cHelpersBin.writeULE32(nValues);
+            for(let v = 0; v < field.values.length; ++v) {
+                const value = field.values[v];
+                await module.exports.writeStringToFile(cHelpersBin, value.op);
+                if(field.op === "number") {
+                    const buffNumber = new Uint8Array(8);
+                    const buffNumberV = new DataView(buffNumber.buffer);
+                    buffNumberV.setBigUint64(0, BigInt(value.value), true);
+                    await cHelpersBin.write(buffNumber);
+                } else if(value.op === "string") {
+                    module.exports.writeStringToFile(cHelpersBin, value.string);
+                } else {
+                    await cHelpersBin.writeULE32(value.id);
+                }
+                if(value.op === "tmp") await cHelpersBin.writeULE32(value.dim);
+                
+                await cHelpersBin.writeULE32(value.pos.length);
+                for(let p = 0; p < value.pos.length; ++p) {
+                    await cHelpersBin.writeULE32(value.pos[p]);
+                }
             }
-            if(field.op === "tmp") await cHelpersBin.writeULE32(field.dim);
+            
         }
     }
 

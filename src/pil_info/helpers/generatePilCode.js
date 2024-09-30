@@ -45,14 +45,13 @@ function addHintsInfo(res, expressions, hints) {
     
         for(let j = 0; j < hint.fields.length; ++j) {
             const field = hint.fields[j];
-            if(field.op === "exp") {
-                expressions[field.id].line = printExpressions(res, expressions[field.id], expressions);
-                hintFields.push({name: field.name, op: "tmp", id: field.id, dim: expressions[field.id].dim });
-            } else if(["cm", "challenge", "public", "subproofValue", "const", "number", "string"].includes(field.op)) {
-                hintFields.push(field);
-            } else throw new Error("Invalid hint op: " + field.op);
-        }
+            const hintField = { 
+                name: field.name,
+                values: processHintFieldValue(field.values, res, expressions).flat(Infinity),
+            };
 
+            hintFields.push(hintField);
+        }
 
         hintsInfo[i] = {
             name: hint.name,
@@ -63,4 +62,30 @@ function addHintsInfo(res, expressions, hints) {
     delete res.hints;
 
     return hintsInfo;
+}
+
+function processHintFieldValue(values, res, expressions, pos = []) {
+    const processedFields = [];
+
+    for (let j = 0; j < values.length; ++j) {
+        const field = values[j];
+
+        const currentPos = [...pos, j];
+
+        if (Array.isArray(field)) {
+            processedFields.push(processHintFieldValue(field, res, expressions, currentPos));
+        } else {
+            let processedField;
+            if (field.op === "exp") {
+                expressions[field.id].line = printExpressions(res, expressions[field.id], expressions);
+                processedField = { op: "tmp", id: field.id, dim: expressions[field.id].dim, pos: currentPos };
+            } else if (["cm", "challenge", "public", "subproofValue", "const", "number", "string"].includes(field.op)) {
+                processedField = { ...field, pos: currentPos };
+            } else {
+                throw new Error("Invalid hint op: " + field.op);
+            }
+            processedFields.push(processedField);
+        }
+    }
+    return processedFields;
 }
