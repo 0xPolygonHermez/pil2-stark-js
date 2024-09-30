@@ -607,7 +607,7 @@ async function writeHintsSection(cHelpersBin, hintsInfo, section) {
             for(let v = 0; v < field.values.length; ++v) {
                 const value = field.values[v];
                 await module.exports.writeStringToFile(cHelpersBin, value.op);
-                if(field.op === "number") {
+                if(value.op === "number") {
                     const buffNumber = new Uint8Array(8);
                     const buffNumberV = new DataView(buffNumber.buffer);
                     buffNumberV.setBigUint64(0, BigInt(value.value), true);
