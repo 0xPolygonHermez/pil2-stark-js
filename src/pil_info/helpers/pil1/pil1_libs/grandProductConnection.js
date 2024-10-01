@@ -130,9 +130,9 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
         const hint = {
             name: "gprod",
             fields: [
-                {name: "reference", ...z},
-                {name: "numerator", ...E.exp(ciCtx.numId, 0, stage)},
-                {name: "denominator", ...E.exp(ciCtx.denId, 0, stage)},
+                {name: "reference", values: [z]},
+                {name: "numerator", values: [E.exp(ciCtx.numId, 0, stage)]},
+                {name: "denominator", values: [E.exp(ciCtx.denId, 0, stage)]},
             ],
         };
 
