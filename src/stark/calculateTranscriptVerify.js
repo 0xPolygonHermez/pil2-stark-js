@@ -27,13 +27,15 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
     };
 
     transcript.put(constRoot);
-    if(!starkInfo.starkStruct.hashCommits) {
-        for (let i=0; i<publics.length; i++) {
-            transcript.put(publics[i]);
+    if(starkInfo.nPublics > 0) {
+        if(!starkInfo.starkStruct.hashCommits) {
+            for (let i=0; i<publics.length; i++) {
+                transcript.put(publics[i]);
+            }
+        } else {
+            const commitsHash = await calculateHashStark(ctx, publics);
+            transcript.put(commitsHash);
         }
-    } else {
-        const commitsHash = await calculateHashStark(ctx, publics);
-        transcript.put(commitsHash);
     }
 
     for(let i=0; i < starkInfo.nStages; i++) {
