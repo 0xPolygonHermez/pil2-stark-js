@@ -24,7 +24,7 @@ module.exports.generatePilCode = function generatePilCode(res, symbols, constrai
         } 
     }
 
-    expressionsInfo.hintsInfo = addHintsInfo(res, expressions, hints);
+    expressionsInfo.hintsInfo = module.exports.addHintsInfo(res, expressions, hints);
 
     expressionsInfo.imPolsCode = generateImPolynomialsCode(res, symbols, expressions, stark);
 
@@ -36,7 +36,7 @@ module.exports.generatePilCode = function generatePilCode(res, symbols, constrai
 }
 
 
-function addHintsInfo(res, expressions, hints) {
+module.exports.addHintsInfo = function addHintsInfo(res, expressions, hints) {
     const hintsInfo = [];
     for(let i = 0; i < hints.length; ++i) {
         const hint = hints[i];

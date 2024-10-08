@@ -1,5 +1,6 @@
-const GLOBAL_CONSTRAINTS_NSECTIONS = 2;
+const GLOBAL_CONSTRAINTS_NSECTIONS = 3;
 const GLOBAL_CONSTRAINTS_SECTION = 2;
+const GLOBAL_HINTS_SECTION = 3;
 
 const { createBinFile, startWriteSection, endWriteSection } = require("@iden3/binfileutils");
 const { getParserArgs } = require("../getParserArgs.js");
@@ -7,20 +8,24 @@ const { getGlobalOperations } = require("../utils.js");
 const { writeStringToFile } = require("../binFile.js");
 
 module.exports.writeGlobalConstraintsBinFile = async function writeGlobalConstraintsBinFile(globalConstraintsInfo, globalConstraintsFilename) {    
+    const globalConstraintsBin = await createBinFile(globalConstraintsFilename, "chps", 1, GLOBAL_CONSTRAINTS_NSECTIONS, 1 << 22, 1 << 24);    
+
     const constraintsInfo = [];
 
     let operations = getGlobalOperations();
   
     // Get parser args for each constraint
-    for(let j = 0; j < globalConstraintsInfo.length; ++j) {
-        const constraintInfo = getParserArgs({}, operations, globalConstraintsInfo[j], "n", true, true).expsInfo;
-        constraintInfo.line = globalConstraintsInfo[j].line;
+    for(let j = 0; j < globalConstraintsInfo.constraints.length; ++j) {
+        const constraintInfo = getParserArgs({}, operations, globalConstraintsInfo.constraints[j], "n", true, true).expsInfo;
+        constraintInfo.line = globalConstraintsInfo.constraints[j].line;
         constraintsInfo.push(constraintInfo);
     }
 
-    const globalConstraintsBin = await createBinFile(globalConstraintsFilename, "chps", 1, GLOBAL_CONSTRAINTS_NSECTIONS, 1 << 22, 1 << 24);    
+    const hintsInfo = globalConstraintsInfo.hints;
 
     await writeConstraintsSection(globalConstraintsBin, constraintsInfo, GLOBAL_CONSTRAINTS_SECTION);
+
+    await writeHintsSection(globalConstraintsBin, hintsInfo, GLOBAL_HINTS_SECTION);
 
     console.log("> Writing the global constraints file finished");
     console.log("---------------------------------------------");
@@ -112,6 +117,55 @@ async function writeConstraintsSection(globalConstraintsBin, constraintsInfo, se
     await globalConstraintsBin.write(buffOpsDebug);
     await globalConstraintsBin.write(buffArgsDebug);
     await globalConstraintsBin.write(buffNumbersDebug);
+
+    await endWriteSection(globalConstraintsBin);
+}
+
+async function writeHintsSection(globalConstraintsBin, hintsInfo, section) {
+    console.log(`··· Writing Section ${section}. Hints section`);
+
+    await startWriteSection(globalConstraintsBin, section);
+
+    const nHints = hintsInfo.length;
+    await globalConstraintsBin.writeULE32(nHints);
+
+    for(let j = 0; j < nHints; j++) {
+        const hint = hintsInfo[j];
+        await writeStringToFile(globalConstraintsBin, hint.name);
+        const nFields = hint.fields.length;
+        await globalConstraintsBin.writeULE32(nFields);
+        for(let k = 0; k < nFields; k++) {
+            const field = hint.fields[k];
+            await writeStringToFile(globalConstraintsBin, field.name);
+            const nValues = field.values.length;
+            await globalConstraintsBin.writeULE32(nValues);
+            for(let v = 0; v < field.values.length; ++v) {
+                const value = field.values[v];
+                await writeStringToFile(globalConstraintsBin, value.op);
+                if(value.op === "number") {
+                    const buffNumber = new Uint8Array(8);
+                    const buffNumberV = new DataView(buffNumber.buffer);
+                    buffNumberV.setBigUint64(0, BigInt(value.value), true);
+                    await globalConstraintsBin.write(buffNumber);
+                } else if(value.op === "string") {
+                    writeStringToFile(globalConstraintsBin, value.string);
+                } else if(value.op === "subproofValue") {
+                    console.log(value);
+                    await globalConstraintsBin.writeULE32(value.subproofId);
+                    await globalConstraintsBin.writeULE32(value.id);
+                } else if(value.op === "tmp" || value.op === "public") {
+                    await globalConstraintsBin.writeULE32(value.id);
+                } else {
+                    throw new Error("Unknown operand");
+                }                
+                await globalConstraintsBin.writeULE32(value.pos.length);
+                for(let p = 0; p < value.pos.length; ++p) {
+                    await globalConstraintsBin.writeULE32(value.pos[p]);
+                }
+            }
+            
+        }
+    }
 
     await endWriteSection(globalConstraintsBin);
 }
