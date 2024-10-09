@@ -159,7 +159,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, express
             }
         }
 
-        ctx.fri = new FRI( ctx.pilInfo.starkStruct, ctx.MH );
+        ctx.fri = new FRI( ctx.pilInfo.starkStruct.nQueries, ctx.pilInfo.starkStruct.steps, ctx.MH );
     }
     
     return ctx;

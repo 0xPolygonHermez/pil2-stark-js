@@ -6,24 +6,22 @@ const {BigBuffer} = require("pilcom");
 
 class FRI {
 
-    constructor(starkStruct, MH) {
+    constructor(nQueries, stepsFRI, MH, logger) {
         this.F = new F3g();
-        this.inNBits = starkStruct.nBitsExt;
-        this.maxDegNBits = starkStruct.nBits;
-        this.nQueries = starkStruct.nQueries;
+        this.steps = stepsFRI;
+        this.nQueries = nQueries;
+        let blowupFactor = Math.ceil(128 / nQueries); 
+        this.maxDegNBits = this.steps[0].nBits - blowupFactor;
+        this.logger = logger
         this.MH = MH;
-        if (starkStruct) {
-            this.steps = starkStruct.steps;
-        } else {
-            throw new Error("stark struct not defined");
-        }
+        
     }
 
     async fold(step, pol, challenge) {
         let polBits = log2(pol.length);
             
         if(step === 0) {
-            assert(polBits == this.inNBits, "Invalid polynomial size");
+            assert(polBits == this.steps[0].nBits, "Invalid polynomial size");
         } else {
             assert(1<<polBits == pol.length, "Invalid polynomial size");    // Check the input polynomial is a power of 2
         }
@@ -104,72 +102,69 @@ class FRI {
         }
     }
 
-    verify(friChallenges, friQueries, proof, checkQuery) {
-        const self = this;
-        const F = this.F;
-
-        assert(proof.length == this.steps.length+1, "Invalid proof size");
-
-        let polBits = this.inNBits;
-        let shift = F.shift;
-        for (let si=0; si<this.steps.length; si++) {
-
-            const proofItem=proof[si];
-
-            const reductionBits = polBits - this.steps[si].nBits;
-
+    verifyMH(friQueries, proof) {
+        for (let si = 1; si < this.steps.length; si++) {
+            if(this.logger) this.logger.debug("Verifying MH FRI step: " + this.steps[si].nBits);
+            const root = proof[si - 1].root;
             for (let i=0; i<this.nQueries; i++) {
-                const pgroup_e = checkQuery(proofItem.polQueries[i], friQueries[i]);
-                if (!pgroup_e) return false;
-
-                const pgroup_c = F.ifft(pgroup_e);
-                const sinv = F.inv(F.mul( shift, F.exp(  F.w[polBits], friQueries[i])));
-                const ev = evalPol(F, pgroup_c, F.mul(friChallenges[si], sinv));
-                if (si < this.steps.length - 1) {
-                    const nextNGroups = 1 << this.steps[si+1].nBits
-                    const groupIdx  =Math.floor(friQueries[i] / nextNGroups);
-                    const query = proof[si+1].polQueries[i][0];
-                    if (!F.eq([query[groupIdx*3], query[groupIdx*3+1], query[groupIdx*3+2]], ev)) return false;
-                } else {
-                    if (!F.eq(proof[si+1][friQueries[i]], ev)) return false;
-                }
-            }
-
-            checkQuery = (query, idx) => {
-                const res = self.MH.verifyGroupProof(proof[si+1].root, query[1], idx, query[0]);
+                const query = proof[si - 1].polQueries[i];
+                const res = this.MH.verifyGroupProof(root, query[1], friQueries[i], query[0]);
                 if (!res) return false;
-                return split3(query[0]);
             }
-
-            polBits = this.steps[si].nBits;
-            for (let j=0; j<reductionBits; j++) shift = F.mul(shift, shift);
-
-            if (si < this.steps.length -1) {
-                for (let i=0; i<friQueries.length; i++) {
-                    friQueries[i] = friQueries[i] % (1 << this.steps[si+1].nBits);
-                }
-            }
-
         }
+        return true;
+    }
 
-        const lastPol_e = proof[proof.length-1];
+    computeNextStepFRI(si, friChallenges, friQueries, proof) {
+        const nextVals = [];
+        if(this.logger) {
+            this.logger.debug("Verifying FRI construction from " + this.steps[si - 1].nBits + " to " + this.steps[si].nBits);
+        }
+        let shift = this.F.shift;
+        for (let j=0; j<this.steps[0].nBits - this.steps[si - 1].nBits; j++) shift = this.F.mul(shift, shift);
+        for (let i=0; i<this.nQueries; i++) {
+            let queryIdx = friQueries[i] % (1 << this.steps[si].nBits);
+            const pgroup_c = this.F.ifft(split3(proof[si - 1].polQueries[i][0]));
+            const sinv = this.F.inv(this.F.mul( shift, this.F.exp(this.F.w[this.steps[si - 1].nBits], queryIdx)));
+            const ev = evalPol(this.F, pgroup_c, this.F.mul(friChallenges[si], sinv));
+            nextVals.push(ev);
+        }
+        return nextVals;
+    }
 
+    verifyStepFRI(step, friQueries, currValues, nextValues) {
+        for (let i=0; i<this.nQueries; i++) {
+            let queryIdx = friQueries[i] % (1 << this.steps[step].nBits);
+            if (step < this.steps.length - 1) {
+                const nextNGroups = 1 << this.steps[step+1].nBits;
+                const groupIdx = Math.floor(queryIdx / nextNGroups);
+                if (!this.F.eq([nextValues[i][groupIdx*3], nextValues[i][groupIdx*3+1], nextValues[i][groupIdx*3+2]], currValues[i])) return false;
+            } else {
+                if (!this.F.eq(nextValues[queryIdx], currValues[i])) return false;
+            }
+        }
+        return true;
+    }
+
+    verifyFinalPol(pol) {
+        this.logger.debug("Verifying FRI final polynomial");
+        
+        let polBits = this.steps[this.steps.length - 1].nBits;
         let maxDeg;
-        if (( polBits - (this.inNBits - this.maxDegNBits)) <0) {
+        if (( polBits - (this.steps[0].nBits - this.maxDegNBits)) <0) {
             maxDeg = 0;
         } else {
-            maxDeg = 1 <<  ( polBits - (this.inNBits - this.maxDegNBits));
+            maxDeg = 1 <<  ( polBits - (this.steps[0].nBits - this.maxDegNBits));
         }
 
-        const lastPol_c = F.ifft(lastPol_e);
+        const lastPol_c = this.F.ifft(pol);
         // We don't need to divide by shift as we just need to check for zeros
 
         for (let i=maxDeg+1; i< lastPol_c.length; i++) {
-            if (!F.isZero(lastPol_c[i])) return false;
+            if (!this.F.isZero(lastPol_c[i])) return false;
         }
 
         return true;
-
     }
 }
 
