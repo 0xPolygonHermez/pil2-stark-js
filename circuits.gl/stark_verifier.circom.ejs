@@ -770,11 +770,7 @@ template <%- verifierName %>() {
     enabled <== 1;
 <% } -%>
 
-<%      if (options.multiFRI) { -%>
-    signal output queryVals[<%- starkInfo.starkStruct.nQueries %>][3];
-<%      } else { -%>
     signal queryVals[<%- starkInfo.starkStruct.nQueries %>][3];
-<%      } -%>
 
 <% if (!options.inputChallenges) { -%>
 <%  let challengeNames = []; -%>

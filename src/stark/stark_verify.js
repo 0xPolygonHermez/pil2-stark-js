@@ -23,30 +23,36 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         F,
     };
     
-    let MH;
-    if (starkStruct.verificationHashType == "GL") {
-        MH = await buildMerkleHashGL(starkStruct.splitLinearHash);
-    } else if (starkStruct.verificationHashType == "BN128") {
-        MH = await buildMerkleHashBN128(starkInfo.starkStruct.merkleTreeArity, starkInfo.starkStruct.merkleTreeCustom);
-    } else {
-        throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
-    }
-
     const nBits = starkStruct.nBits;
     const N = 1 << nBits;
     const extendBits = starkStruct.nBitsExt - starkStruct.nBits;
 
-    assert(nBits+extendBits == starkStruct.steps[0].nBits, "First step must be just one");
-
+    const nQueries = starkInfo.starkStruct.nQueries;
+    const steps = starkInfo.starkStruct.steps;
+    const verificationHashType = (starkInfo.starkStruct.verificationHashType) || "GL";
+    let merkleTreeArity;
+    let merkleTreeCustom;
+    let MH;
+    if (verificationHashType == "GL") {
+        MH = await buildMerkleHashGL(starkStruct.splitLinearHash);
+    } else if (verificationHashType == "BN128") {
+        merkleTreeArity = starkStruct.merkleTreeArity;
+        merkleTreeCustom = starkStruct.merkleTreeCustom;
+        MH = await buildMerkleHashBN128(merkleTreeArity, merkleTreeCustom);
+    } else {
+        throw new Error("Invalid Hash Type: "+ starkStruct.verificationHashType);
+    }
+    assert(nBits+extendBits == steps[0].nBits, "First step must be just one");
+   
     const qStage = starkInfo.nStages + 1;
 
     if (logger) {
         logger.debug("-----------------------------");
         logger.debug("  PIL-STARK VERIFY SETTINGS");
         logger.debug(`  Blow up factor: ${extendBits}`);
-        logger.debug(`  Number queries: ${starkStruct.nQueries}`);
-        logger.debug(`  Number Stark steps: ${starkStruct.steps.length}`);
+        logger.debug(`  Number queries: ${nQueries}`);
         logger.debug(`  VerificationType: ${starkStruct.verificationHashType}`);
+        logger.debug(`  Number Stark steps: ${starkStruct.steps.length}`);
         logger.debug(`  Hash Commits: ${starkInfo.starkStruct.hashCommits || false}`);
         logger.debug(`  Domain size: ${N} (2^${nBits})`);
         logger.debug(`  Const  pols:   ${starkInfo.nConstants}`);
@@ -82,10 +88,10 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
             let friStage = starkInfo.nStages + 2;
             logger.debug("··· challenges[" + friStage + "][0]: " + F.toString(ctx.challenges[friStage][0]));
             logger.debug("··· challenges[" + friStage + "][1]: " + F.toString(ctx.challenges[friStage][1]));
-            for (let step=0; step<starkInfo.starkStruct.steps.length; step++) {
+            for (let step=0; step<ctx.challengesFRISteps.length; step++) {
                 logger.debug("··· challenges FRI folding step " + step + ": " + F.toString(ctx.challengesFRISteps[step]));
             }
-            logger.debug("··· challenge FRI permutations: " + F.toString(ctx.challengesFRISteps[starkInfo.starkStruct.steps.length]));
+            logger.debug("··· challenge FRI permutations: " + F.toString(ctx.challengesFRISteps[ctx.challengesFRISteps.length - 1]));
         }
     }
 
@@ -150,37 +156,8 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         if(logger) logger.warn("Invalid evaluations");
         return false;
     }
-
-    const fri = new FRI( starkStruct, MH );
-
-    if(logger) logger.debug("Verifying queries");
     
-    const checkQuery = (query, idx) => {
-        if(logger) logger.debug("Verifying query: " + idx);
-
-        let res;
-        
-        for(let i = 0; i < starkInfo.nStages; ++i) {
-            const stage = i + 1;
-            let res = MH.verifyGroupProof(proof[`root${stage}`], query[i][1], idx, query[i][0]);
-            if (!res) {
-                if(logger) logger.warn(`Invalid root${stage}`);
-                return false;
-            }
-        }
-        
-        res = MH.verifyGroupProof(proof[`root${qStage}`], query[starkInfo.nStages][1], idx, query[starkInfo.nStages][0]);
-        if (!res) {
-            if(logger) logger.warn(`Invalid root${qStage}`);
-            return false;
-        }
-
-        res = MH.verifyGroupProof(constRoot, query[starkInfo.nStages + 1][1], idx, query[starkInfo.nStages + 1][0]);
-        if (!res) {
-            if(logger) logger.warn(`Invalid constRoot`);
-            return false;
-        }
-        
+    const computeQuery = (query, idx) => {    
         const ctxQry = {};
         for(let i = 0; i < starkInfo.nStages; ++i) {
             const stage = i + 1;
@@ -210,12 +187,73 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
             ctxQry.xDivXSubXi[i] = F.div(x, F.sub(x, F.mul(ctxQry.challenges[evalsStage][0], w)));
         }
 
-        const vals = [module.exports.executeCode(F, ctxQry, verifierInfo.queryVerifier.code)];
-        return vals;
+        return module.exports.executeCode(F, ctxQry, verifierInfo.queryVerifier.code);
     }
 
-    return fri.verify(ctx.challengesFRISteps, ctx.friQueries, proof.fri, checkQuery);
+    for(let i = 0; i < starkInfo.nStages; ++i) {
+        if(logger) logger.debug("Verifying MH stage " + (i + 1));
+        const stage = i + 1;
+        for(let q = 0; q < nQueries; ++q) {
+            const query = proof.queries.polQueries[q];
+            let res = MH.verifyGroupProof(proof[`root${stage}`], query[i][1], ctx.friQueries[q], query[i][0]);
+            if (!res) {
+                if(logger) logger.warn(`Invalid root${stage}`);
+                return false;
+            }
+        }
+    }
 
+    if(logger) logger.debug("Verifying MH stage Q");
+    for(let i = 0; i < nQueries; ++i) {
+        const query = proof.queries.polQueries[i];
+        let res = MH.verifyGroupProof(proof[`root${qStage}`], query[starkInfo.nStages][1], ctx.friQueries[i], query[starkInfo.nStages][0]);
+        if (!res) {
+            if(logger) logger.warn(`Invalid rootQ`);
+            return false;
+        }
+    }
+
+    if(logger) logger.debug("Verifying MH const tree");
+    for(let i = 0; i < nQueries; ++i) {
+        const query = proof.queries.polQueries[i];
+        let res = MH.verifyGroupProof(constRoot, query[starkInfo.nStages + 1][1], ctx.friQueries[i], query[starkInfo.nStages + 1][0]);
+        if (!res) {
+            if(logger) logger.warn(`Invalid constRoot`);
+            return false;
+        }
+    }
+
+    if(logger) logger.debug("Computing queries");
+    let queryVals = [];
+    for(let i = 0; i < nQueries; ++i) {
+        queryVals[i] = computeQuery(proof.queries.polQueries[i], ctx.friQueries[i]);
+    }
+
+    const fri = new FRI( nQueries, steps, MH, logger );
+
+    if(logger) logger.debug("Verifying queries");
+    if(starkInfo.starkStruct.steps.length == 1) {
+        if(!fri.verifyStepFRI(0, ctx.friQueries, queryVals, proof.fri[0])) return false;
+    } else {
+        if(!fri.verifyStepFRI(0, ctx.friQueries, queryVals, proof.fri[0].polQueries.map(p => p[0]))) return false;
+    }
+    
+    if(!fri.verifyMH(ctx.friQueries, proof.fri)) return false;
+    
+    for (let si=1; si< starkInfo.starkStruct.steps.length; si++) {
+        let nextVals = fri.computeNextStepFRI(si, ctx.challengesFRISteps,ctx.friQueries, proof.fri);
+        
+        if (si < starkInfo.starkStruct.steps.length - 1) {
+            if(!fri.verifyStepFRI(si, ctx.friQueries, nextVals, proof.fri[si].polQueries.map(p => p[0]))) return false;
+        } else {
+            if(!fri.verifyStepFRI(si, ctx.friQueries, nextVals, proof.fri[si])) return false;
+        }
+    }
+
+    if(!fri.verifyFinalPol(proof.fri[starkInfo.starkStruct.steps.length - 1])) return false;
+    
+    return true;
+    
 }
 
 module.exports.executeCode = function executeCode(F, ctx, code, global) {
