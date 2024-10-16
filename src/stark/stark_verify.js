@@ -154,7 +154,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
     const fri = new FRI( starkStruct, MH );
 
     if(logger) logger.debug("Verifying queries");
-
+    
     const checkQuery = (query, idx) => {
         if(logger) logger.debug("Verifying query: " + idx);
 
@@ -211,7 +211,6 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         }
 
         const vals = [module.exports.executeCode(F, ctxQry, verifierInfo.queryVerifier.code)];
-
         return vals;
     }
 

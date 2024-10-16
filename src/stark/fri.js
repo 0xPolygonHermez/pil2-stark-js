@@ -125,7 +125,6 @@ class FRI {
                 const pgroup_c = F.ifft(pgroup_e);
                 const sinv = F.inv(F.mul( shift, F.exp(  F.w[polBits], friQueries[i])));
                 const ev = evalPol(F, pgroup_c, F.mul(friChallenges[si], sinv));
-
                 if (si < this.steps.length - 1) {
                     const nextNGroups = 1 << this.steps[si+1].nBits
                     const groupIdx  =Math.floor(friQueries[i] / nextNGroups);

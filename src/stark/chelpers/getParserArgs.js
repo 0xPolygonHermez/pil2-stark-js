@@ -9,11 +9,10 @@ const operationsTypeMap = {
     "sub_swap": 3,
 }
 
-module.exports.getParserArgs = function getParserArgs(starkInfo, operations, code, dom, debug = false, global = false) {
+module.exports.getParserArgs = function getParserArgs(starkInfo, operations, code, numbers = [], global = false, verify = false, debug = false) {
 
     var ops = [];
     var args = [];
-    var numbers = [];
 
     var counters_ops = new Array(operations.length).fill(0);
 
@@ -30,23 +29,16 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
     for (let j = 0; j < code_.length; j++) {
         const r = code_[j];
         
-        let operation = getOperation(r);
+        let operation = getOperation(r, starkInfo, verify, debug);
 
         if(operation.op !== "copy") args.push(operationsTypeMap[operation.op]);
 
-        pushResArg(r, r.dest.type);
+        pushResArg(r, r.dest.type, verify);
         for(let i = 0; i < operation.src.length; i++) {
-            pushSrcArg(operation.src[i], operation.src[i].type);
+            pushSrcArg(operation.src[i], operation.src[i].type, verify);
         }
 
-        
-        let opsIndex;
-        if(operation.op === "mul" && ["tmp3", "commit3"].includes(operation.dest_type) && operation.src1_type === "challenge") {
-            opsIndex = operations.findIndex(op => op.op === operation.op && op.dest_type === operation.dest_type && op.src0_type === operation.src0_type && op.src1_type === operation.src1_type);
-        } else {
-            opsIndex = operations.findIndex(op => !op.op && op.dest_type === operation.dest_type && op.src0_type === operation.src0_type && op.src1_type === operation.src1_type);
-        }
-        
+        let opsIndex = operations.findIndex(op => !op.op && op.dest_type === operation.dest_type && op.src0_type === operation.src0_type && op.src1_type === operation.src1_type);
         if (opsIndex === -1) throw new Error("Operation not considered: " + JSON.stringify(operation));
 
         ops.push(opsIndex);
@@ -60,7 +52,6 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         nTemp1: count1d,
         nTemp3: count3d,
         ops,
-        numbers,
         args,
     }
 
@@ -72,16 +63,14 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         expsInfo.subproofValuesIds = symbolsUsed.filter(s => s.op === "subproofValue").map(s => s.id).sort();
     }
 
-    if(debug) {
-        const destTmp = code_[code_.length - 1].dest;
-        if(destTmp.dim == 1) {
-            expsInfo.destDim = 1;
-            expsInfo.destId = ID1D[destTmp.id];
-        } else if(destTmp.dim == 3) {
-            expsInfo.destDim = 3;
-            expsInfo.destId = ID3D[destTmp.id];
-        } else throw new Error("Unknown");
-    }
+    const destTmp = code_[code_.length - 1].dest;
+    if(destTmp.dim == 1) {
+        expsInfo.destDim = 1;
+        expsInfo.destId = ID1D[destTmp.id];
+    } else if(destTmp.dim == 3) {
+        expsInfo.destDim = 3;
+        expsInfo.destId = ID3D[destTmp.id];
+    } else throw new Error("Unknown");
     
     const opsUsed = counters_ops.reduce((acc, currentValue, currentIndex) => {
         if (currentValue !== 0) {
@@ -97,7 +86,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
 
     return {expsInfo, opsUsed};
 
-    function pushResArg(r, type) {
+    function pushResArg(r, type, verify) {
         switch (type) {
             case "tmp": {
                 if (r.dest.dim == 1) {
@@ -109,13 +98,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 break;
             }
             case "cm": {
-                if (dom == "n") {
-                    evalMap_(r.dest.id, r.dest.prime)
-                } else if (dom == "ext") {
-                    evalMap_(r.dest.id, r.dest.prime)
-                } else {
-                    throw new Error("Invalid dom");
-                }
+                evalMap_(r.dest.id, r.dest.prime, verify)
                 break;
             }
             default: throw new Error("Invalid reference type set: " + r.dest.type);
@@ -123,7 +106,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
     }
 
 
-    function pushSrcArg(r, type) {
+    function pushSrcArg(r, type, verify) {
         switch (type) {
             case "tmp": {
                 if (r.dim == 1) {
@@ -138,19 +121,19 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 const primeIndex = starkInfo.openingPoints.findIndex(p => p === r.prime);
                 if(primeIndex == -1) throw new Error("Something went wrong");
 
-                args.push((starkInfo.nStages + 2)*primeIndex);
+               
+                if(verify) {
+                    args.push(0);
+                } else {
+                    args.push((starkInfo.nStages + 2)*primeIndex);
+                }
                 args.push(r.id);
+                
                 
                 break;
             }
             case "cm": {
-                if (dom == "n") {
-                    evalMap_(r.id, r.prime)
-                } else if (dom == "ext") {
-                    evalMap_(r.id, r.prime)
-                } else {
-                    throw new Error("Invalid dom");
-                }
+                evalMap_(r.id, r.prime, verify)
                 break;
             }
             case "number": {
@@ -177,23 +160,38 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 break;
             }
             case "xDivXSubXi":
-                args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
-                args.push(3*r.id);
+                if(verify) {
+                    args.push((starkInfo.nStages + 2));
+                    args.push(3*r.id);
+                } else {
+                    args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
+                    args.push(3*r.id);
+                }
                 break;
             case "Zi": {
-                args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
-                args.push(1 + r.boundaryId);
+                if(verify) {
+                    args.push((starkInfo.nStages + 2));
+                    args.push(3 + 3*r.boundaryId);
+                } else {
+                    args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
+                    args.push(1 + r.boundaryId);
+                }
                 break;
             }
             case "x": {
-                args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
-                args.push(0);
+                if(verify) {
+                    args.push(starkInfo.nStages + 2);
+                    args.push(0);
+                } else {
+                    args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
+                    args.push(0);
+                }
                 break;
             }
         }
     }
 
-    function evalMap_(polId, prime) {
+    function evalMap_(polId, prime, verify) {
         let p = starkInfo.cmPolsMap[polId];
 
         const stage = p.stage;
@@ -201,7 +199,12 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         const primeIndex = starkInfo.openingPoints.findIndex(p => p === prime);
         if(primeIndex == -1) throw new Error("Something went wrong");
         
-        args.push((starkInfo.nStages + 2)*primeIndex + stage);        
+       
+        if(verify) {
+            args.push(stage);
+        } else {
+            args.push((starkInfo.nStages + 2)*primeIndex + stage);
+        }
         args.push(Number(p.stagePos));
     }
 }

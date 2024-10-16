@@ -1,3 +1,4 @@
+const { printExpressions } = require("../pil2/utils");
 const { pilCodeGen, buildCode } = require("./codegen");
 
 module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
@@ -26,7 +27,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
                 ctx.calculated[expId] = {};
                 for(let i = 0; i < res.openingPoints.length; ++i) {
                     const openingPoint = res.openingPoints[i];
-                    ctx.calculated[expId][openingPoint] = true;
+                    ctx.calculated[expId][openingPoint] = { used: true };
                 }
             }
         }
@@ -70,51 +71,6 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
     }
 
     return expressionsCode;
-}
-
-module.exports.generateImPolynomialsCode = function generateImPolynomialsCode(res, symbols, expressions, stark) {
-    const imPolsCode = [];
-
-    for(let i = 0; i < res.nStages; ++i) {
-        
-        const stage = i + 1;
-
-        const ctx = {
-            stage,
-            calculated: {},
-            symbolsUsed: [],
-            tmpUsed: 0,
-            code: [],
-            dom: "n",
-            airId: res.airId,
-            subproofId: res.subproofId,
-            stark,
-        };
-
-        for(let j = 0; j < expressions.length; ++j) {
-            if(expressions[j].imPol) {
-                if(expressions[j].stage != stage) continue;
-                let symbolDest = symbols.find(s => s.expId === j && s.airId === res.airId && s.subproofId === res.subproofId);
-                if(!symbolDest) continue;
-                            
-                for(let k = 0; k < expressions[j].symbols.length; k++) {
-                    const symbolUsed = expressions[j].symbols[k];
-                    if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
-                        ctx.symbolsUsed.push(symbolUsed);
-                    };
-                }
-                pilCodeGen(ctx, symbols, expressions, j, 0);
-            }
-        }
-
-        const imPolsCodeStage = buildCode(ctx);
-        imPolsCodeStage.stage = stage;
-
-        imPolsCode.push(imPolsCodeStage);
-    }
-
-    return imPolsCode;
-
 }
 
 module.exports.generateConstraintsDebugCode = function generateConstraintsDebugCode(res, symbols, constraints, expressions, stark) {
@@ -170,6 +126,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
         openingPoints: res.openingPoints,
         stark,
         addMul,
+        symbolsUsed: [],
         verifierEvaluations: true,
     };
 
@@ -179,7 +136,16 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
         ctx.calculated[expId] = {};
         for(let i = 0; i < res.openingPoints.length; ++i) {
             const openingPoint = res.openingPoints[i];
-            ctx.calculated[expId][openingPoint] = true;
+            ctx.calculated[expId][openingPoint] = { cm: true };
+        }
+    }
+
+    if(expressions[res.cExpId].symbols) {
+        for(let k = 0; k < expressions[res.cExpId].symbols.length; k++) {
+            const symbolUsed = expressions[res.cExpId].symbols[k];
+            if(!ctx.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
+                ctx.symbolsUsed.push(symbolUsed);
+            };
         }
     }
 
@@ -202,7 +168,9 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
 
     pilCodeGen(ctx, symbols, expressions, res.cExpId, 0);
     verifierInfo.qVerifier = buildCode(ctx, expressions);
+    verifierInfo.qVerifier.line = "";
 
+    console.log(verifierInfo.qVerifier.line);
     res.evMap = ctx.evMap;
 
     if (!stark) {
@@ -241,10 +209,11 @@ module.exports.generateFRIVerifierCode = function generateFRIVerifierCode(res, v
         if(!ctxExt.symbolsUsed.find(s => s.op === symbolUsed.op && s.stage === symbolUsed.stage && s.id === symbolUsed.id)) {
             ctxExt.symbolsUsed.push(symbolUsed);
         };
-    } 
+    }
 
     ctxExt.verifierQuery = true;
     ctxExt.addMul = false;
     pilCodeGen(ctxExt, symbols, expressions, res.friExpId, 0);
     verifierInfo.queryVerifier = buildCode(ctxExt);
+    verifierInfo.queryVerifier.line = "";
 }

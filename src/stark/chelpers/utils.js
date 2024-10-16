@@ -122,8 +122,8 @@ module.exports.getGlobalOperations = function getGlobalOperations() {
 module.exports.getAllOperations = function getAllOperations() {
     const possibleOps = [];
 
-    const possibleDestinationsDim1 = [ "commit1", "tmp1" ];
-    const possibleDestinationsDim3 = [ "commit3", "tmp3" ];
+    const possibleDestinationsDim1 = [ "tmp1" ];
+    const possibleDestinationsDim3 = [ "tmp3" ];
 
     const possibleSrcDim1 = [ "commit1", "tmp1", "public", "number" ];
     const possibleSrcDim3 = [ "commit3", "tmp3", "challenge", "subproofValue" ];
@@ -161,11 +161,6 @@ module.exports.getAllOperations = function getAllOperations() {
             if(["commit3", "tmp3"].includes(src0_type)) possibleOps.push({dest_type, src0_type}); // Copy operation for PIL1
             for (let l = k; l < possibleSrcDim3.length; ++l) {
                 let src1_type = possibleSrcDim3[l];
-                if(src0_type === "challenge") {
-                    possibleOps.push({op: "mul", dest_type, src0_type: src1_type, src1_type: src0_type});
-                } else if(src1_type === "challenge") {
-                    possibleOps.push({op: "mul", dest_type, src0_type, src1_type});
-                }
                 possibleOps.push({dest_type, src0_type, src1_type})
             }
         }
@@ -173,12 +168,16 @@ module.exports.getAllOperations = function getAllOperations() {
 
     // Step FRI
     possibleOps.push({ dest_type: "tmp3", src0_type: "eval"}); // Copy operation for PIL1
-    possibleOps.push({ op: "mul", dest_type: "tmp3", src0_type: "eval", src1_type: "challenge"});
     possibleOps.push({ dest_type: "tmp3", src0_type: "challenge", src1_type: "eval"});
     possibleOps.push({ dest_type: "tmp3", src0_type: "tmp3", src1_type: "eval"});
 
     possibleOps.push({ dest_type: "tmp3", src0_type: "eval", src1_type: "commit1"});
     possibleOps.push({ dest_type: "tmp3", src0_type: "commit3", src1_type: "eval"});
     
+    possibleOps.push({ dest_type: "tmp3", src0_type: "eval", src1_type: "eval"});
+    possibleOps.push({ dest_type: "tmp3", src0_type: "eval", src1_type: "public"});
+    possibleOps.push({ dest_type: "tmp3", src0_type: "eval", src1_type: "number"});
+    possibleOps.push({ dest_type: "tmp3", src0_type: "subproofValue", src1_type: "eval"});
+
     return possibleOps;
 }

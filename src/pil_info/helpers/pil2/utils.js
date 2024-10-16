@@ -235,6 +235,8 @@ module.exports.printExpressions = function printExpressions(res, exp, expression
         return res.challengesMap[exp.id].name;
     } else if (exp.op === "x") {
         return "x";
+    } else if (exp.op === "Zi") {
+        return "zh";
     } else throw new Error("Unknown op: " + exp.op);
 }
 

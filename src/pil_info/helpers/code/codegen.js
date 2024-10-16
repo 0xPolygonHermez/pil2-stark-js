@@ -32,7 +32,7 @@ function pilCodeGen(ctx, symbols, expressions, expId, prime, evMap) {
         if (retRef.type === "tmp") {
             fixCommitPol(r, codeCtx, symbols);
             codeCtx.code[codeCtx.code.length-1].dest = r;
-            codeCtx.tmpUsed--;
+            if(r.type == "cm") codeCtx.tmpUsed--;
         } else {
             fixCommitPol(r, codeCtx, symbols);
             codeCtx.code.push({ op: "copy", dest: r, src: [ retRef ] })
@@ -41,7 +41,7 @@ function pilCodeGen(ctx, symbols, expressions, expId, prime, evMap) {
         ctx.code.push(...codeCtx.code);
         
         if(!ctx.calculated[expId]) ctx.calculated[expId] = {};
-        ctx.calculated[expId][prime] = true;
+        ctx.calculated[expId][prime] = { cm: false, tmpId:  codeCtx.tmpUsed };
     
         if (codeCtx.tmpUsed > ctx.tmpUsed) ctx.tmpUsed = codeCtx.tmpUsed;
     }
@@ -206,12 +206,12 @@ function fixDimensionsVerifier(ctx) {
 function fixCommitPol(r, ctx, symbols) {
     const symbol = symbols.find(s => s.type === "witness" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
     if(!symbol) return;
-    if(symbol.imPol && symbol.stage <= ctx.stage) {
+    if(symbol.imPol && (ctx.dom === "ext" || symbol.stage <= ctx.stage && ctx.calculated[r.id] && ctx.calculated[r.id][r.prime] && ctx.calculated[r.id][r.prime].cm)) {
         r.type = "cm";
         r.id = symbol.polId;
         r.dim = symbol.dim;
         if(ctx.verifierEvaluations) fixEval(r, ctx);
-    } else if(!ctx.verifierEvaluations && ctx.dom === "n") {
+    } else if(!ctx.verifierEvaluations && ctx.dom === "n" && ctx.calculated[r.id] && ctx.calculated[r.id][r.prime] && ctx.calculated[r.id][r.prime].cm) {
         r.type = "cm";
         r.id = symbol.polId;
         r.dim = symbol.dim;
