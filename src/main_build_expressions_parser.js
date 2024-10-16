@@ -30,14 +30,27 @@ async function run() {
         `#ifndef ${expressionsFilename}`,
         `#define ${expressionsFilename}`,
         `#include "expressions_ctx.hpp"\n`,
+    ];
+
+    if(parserType === "avx") {
+        expressionsHpp.push(`#ifdef __AVX2__\n`);
+    } else if(parserType === "avx512") {
+        expressionsHpp.push(`#ifdef __AVX512__\n`);
+    }
+
+    expressionsHpp.push(...[
         `class ${expressionsClass} : public ExpressionsCtx {`,
         "public:",
-    ];
+    ]);
       
 
     expressionsHpp.push(parser);
     expressionsHpp.push("};\n");
     expressionsHpp.push("#endif")
+    if(parserType === "avx" || parserType === "avx512") {
+        expressionsHpp.push("#endif")
+    }
+   
 
     await fs.promises.writeFile(expressionsFile, expressionsHpp.join("\n"), "utf8");
 
