@@ -63,12 +63,13 @@ module.exports = async function pilInfo(F, pil, stark = true, pil2 = true, stark
 
     const {expressionsInfo, verifierInfo} = generatePilCode(res, symbols, constraints, newExpressions, hints, options.debug, stark);
     
-    let nCols = {}; 
+    let nCols = {};
+    let summary = "";
     if(stark) {
-        console.log("--------------------- POLYNOMIALS INFO ---------------------")
+        console.log("------------------------- AIR INFO -------------------------")
         let nColumnsBaseField = 0;
         let nColumns = 0;
-        let summary = `SUMMARY | ${pil.name} `;
+        summary = `nBits: ${res.starkStruct.nBits} | blowUpFactor: ${res.starkStruct.nBitsExt - res.starkStruct.nBits} | maxConstraintDegree: ${res.qDeg + 1} `;
         for(let i = 1; i <= res.nStages + 1; ++i) {
             let stage = i;
             let stageDebug = i === res.nStages + 1 ? "Q" : stage;
@@ -100,14 +101,17 @@ module.exports = async function pilInfo(F, pil, stark = true, pil2 = true, stark
         console.log(`Total Constraints: ${constraints.length}`)
         if(!options.debug) console.log(`Number of evaluations: ${res.evMap.length}`)
         console.log("------------------------------------------------------------")
-        console.log(summary);
+        console.log(`SUMMARY | ${pil.name} | ${summary}`);
         console.log("------------------------------------------------------------")
     }
         
+    let stats = {summary, intermediatePolynomials: res.imPolsInfo};
+    
     delete res.nCommitments;
     delete res.imPolsStages;
     delete res.pilPower;
+    delete res.imPolsInfo;
 
-    return {pilInfo: res, expressionsInfo, verifierInfo};
+    return {pilInfo: res, expressionsInfo, verifierInfo, stats};
 
 }

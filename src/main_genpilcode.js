@@ -52,13 +52,14 @@ async function run() {
     delete res.nCommitments;
     delete res.imPolsStages;
     delete res.pilPower;
+    delete res.imPolsInfo;
 
     let nCols = {}; 
     if(stark) {
-        console.log("--------------------- POLYNOMIALS INFO ---------------------")
+        console.log("------------------------- AIR INFO --------------------------")
         let nColumnsBaseField = 0;
         let nColumns = 0;
-        let summary = `SUMMARY | ${pil.name} `;
+        let summary = `SUMMARY | ${pil.name} | nBits: ${res.starkStruct.nBits} | blowUpFactor: ${res.starkStruct.nBitsExt - res.starkStruct.nBits} | maxConstraintDegree: ${res.qDeg + 1} `;
         for(let i = 1; i <= res.nStages + 1; ++i) {
             let stage = i;
             let stageDebug = i === res.nStages + 1 ? "Q" : stage;
@@ -93,7 +94,7 @@ async function run() {
         console.log(summary);
         console.log("------------------------------------------------------------")
     }
-
+    
     await fs.promises.writeFile(starkInfoFile, JSON.stringify(res, null, 1), "utf8");
 
     await fs.promises.writeFile(expressionsInfoFile, JSON.stringify(expressionsInfo, null, 1), "utf8");

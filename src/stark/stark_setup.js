@@ -5,7 +5,6 @@ const buildMerkleHashBN128 = require("../helpers/hash/merklehash/merklehash_bn12
 const pilInfo = require("../pil_info/pil_info.js");
 
 const { interpolate } = require("../helpers/fft/fft_p");
-const { prepareExpressionsBin } = require("./chelpers/stark_chelpers.js");
 
 module.exports = async function starkSetup(constPols, pil, starkStruct, options) {
 
@@ -13,13 +12,14 @@ module.exports = async function starkSetup(constPols, pil, starkStruct, options)
     
     const pil2 = options.pil2 || false;
     
-    const {pilInfo: starkInfo, expressionsInfo, verifierInfo} = await pilInfo(F, pil, true, pil2, starkStruct, options);
+    const {pilInfo: starkInfo, expressionsInfo, verifierInfo, stats} = await pilInfo(F, pil, true, pil2, starkStruct, options);
 
     const res = {
         fixedPols: constPols,
         starkInfo,
         expressionsInfo,
         verifierInfo,
+        stats,
     }
     
     if(!options.skipConstTree) {

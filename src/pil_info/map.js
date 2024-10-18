@@ -17,6 +17,7 @@ module.exports = function map(res, symbols, expressions, constraints, options) {
     }
 
     console.log("----------------- INTERMEDIATE POLYNOMIALS -----------------");
+    res.imPolsInfo = { baseField: [], extendedField: []};
     const imPols = res.cmPolsMap.filter(i => i.imPol === true);
     for(let i = 0; i < imPols.length; ++i) {
         if(!options.recursion) {
@@ -24,6 +25,11 @@ module.exports = function map(res, symbols, expressions, constraints, options) {
             if(i > 0) console.log("------------------------------------------------------------");
             console.log(`Intermediate polynomial ${i} columns: ${imPols[i].dim}`);
             console.log(imPolExpression);
+            if(imPols[i].dim == 1) {
+                res.imPolsInfo.baseField.push(imPolExpression);
+            } else {
+                res.imPolsInfo.extendedField.push(imPolExpression);
+            }
         }
     }
     res.nCommitmentsStage1 = res.cmPolsMap.filter(p => p.stage === "cm1" && !p.imPol).length; 
