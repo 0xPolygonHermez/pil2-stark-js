@@ -11,8 +11,8 @@ module.exports.initCalculatedSymbols = function initCalculatedSymbols(pilInfo) {
         calculatedSymbols.const = new Array(pilInfo.nConstants).fill(false);
     }
 
-    if(pilInfo.nSubproofValues > 0) {
-        calculatedSymbols.subproofValue = new Array(pilInfo.nSubproofValues).fill(false);
+    if(pilInfo.airgroupValuesMap.length() > 0) {
+        calculatedSymbols.airgroupvalue = new Array(pilInfo.airgroupValuesMap.length()).fill(false);
     }
 
     const nChallenges = pilInfo.challengesMap.length;
@@ -64,10 +64,10 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
     }
 
     if(stage === ctx.pilInfo.nStages) {
-        for(let i = 0; i < ctx.pilInfo.nSubproofValues; ++i) {
-            const subproofValue = ctx.pilInfo.subproofValuesMap[i];
-            if(!module.exports.isSymbolCalculated(ctx, {op: "subproofValue", id: i})) {
-                console.log(`Subproof value ${subproofValue.name} with id ${i} is not calculated.`);
+        for(let i = 0; i < ctx.pilInfo.airgroupValuesMap.length(); ++i) {
+            const airgroupvalue = ctx.pilInfo.airgroupValuesMap[i];
+            if(!module.exports.isSymbolCalculated(ctx, {op: "airgroupvalue", id: i})) {
+                console.log(`Airgroup value ${airgroupvalue.name} with id ${i} is not calculated.`);
                 symbolsToBeCalculated++;
             }
         }
@@ -93,7 +93,7 @@ module.exports.setSymbolCalculated = function setSymbolCalculated(ctx, ref, opti
             if(ref.op === "const") options.logger.debug(`Fixed ${ctx.pilInfo.constPolsMap[ref.id].name} for with id ${ref.id} has been calculated`);
             if(ref.op === "challenge") options.logger.debug(`Challenge ${ctx.pilInfo.challengesMap[ref.id].name} for with id ${ref.id} has been calculated`);
             if(ref.op === "public") options.logger.debug(`Public ${ctx.pilInfo.publicsMap[ref.id].name} for with id ${ref.id} has been calculated`);
-            if(ref.op === "subproofValue") options.logger.debug(`SubproofValue ${ctx.pilInfo.subproofValuesMap[ref.id].name} for with id ${ref.id} has been calculated`);
+            if(ref.op === "airgroupvalue") options.logger.debug(`airgroupvalue ${ctx.pilInfo.airgroupValuesMap[ref.id].name} for with id ${ref.id} has been calculated`);
         }
     }
 }

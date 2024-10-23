@@ -16,7 +16,8 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
 
     ctx = {
         evals: proof.evals,
-        subproofValues: proof.subproofValues,
+        airgroupValues: proof.airgroupValues,
+        airValues: proof.airValues,
         publics,
         starkInfo,
         proof,
@@ -166,6 +167,8 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         ctxQry[`tree${qStage}`] = query[starkInfo.nStages][0];
         ctxQry.consts = query[starkInfo.nStages + 1][0];
         ctxQry.evals = ctx.evals;
+        ctxQry.airgroupValues = ctx.airgroupValues;
+        ctxQry.airValues = ctx.airValues;
         ctxQry.publics = ctx.publics;
         ctxQry.challenges = ctx.challenges;
         ctxQry.starkInfo = starkInfo;
@@ -290,7 +293,10 @@ module.exports.executeCode = function executeCode(F, ctx, code, global) {
             case "number": return BigInt(r.value);
             case "public": return BigInt(ctx.publics[r.id]);
             case "challenge": return ctx.challenges[r.stage - 1][r.stageId];
-            case "subproofValue": return global ? ctx.subproofValues[r.subproofId][r.id] : ctx.subproofValues[r.id];
+            case "airgroupvalue": {
+                return global ? ctx.airgroupValues[r.airgroupId][r.id] : ctx.airgroupValues[r.id];
+            }
+            case "airvalue": return ctx.airValues[r.id];
             case "xDivXSubXi": return ctx.xDivXSubXi[r.id];
             case "x": {
                 let evalsStage = ctx.starkInfo.nStages + 1;

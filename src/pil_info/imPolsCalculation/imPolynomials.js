@@ -43,7 +43,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
 
         const dim = getExpDim(expressions, expId, stark);
       
-        symbols.push({ type: "witness", name: `${res.name}.ImPol`, expId, polId: res.nCommitments++, stage: stageIm, stageId, dim, imPol: true, airId: res.airId, subproofId: res.subproofId });    
+        symbols.push({ type: "witness", name: `${res.name}.ImPol`, expId, polId: res.nCommitments++, stage: stageIm, stageId, dim, imPol: true, airId: res.airId, airgroupId: res.airgroupId });    
         
         expressions[expId].imPol = true;
         expressions[expId].polId = res.nCommitments - 1;
@@ -75,7 +75,7 @@ module.exports.addIntermediatePolynomials = function addIntermediatePolynomials(
     if(stark) {
                 for (let i=0; i<res.qDeg; i++) {
             const index = res.nCommitments++;
-            symbols.push({ type: "witness", name: `Q${i}`, polId: index, stage, dim: res.qDim, airId: res.airId, subproofId: res.subproofId });
+            symbols.push({ type: "witness", name: `Q${i}`, polId: index, stage, dim: res.qDim, airId: res.airId, airgroupId: res.airgroupId });
             E.cm(index, 0, stage, res.qDim);
         }
     }
@@ -211,7 +211,7 @@ module.exports.calculateExpDeg = function calculateExpDeg(expressions, exp, imEx
         return deg;
     } else if (["x", "const", "cm"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         return 1;
-    } else if (["number", "public", "challenge", "eval", "subproofValue"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
+    } else if (["number", "public", "challenge", "eval", "airgroupvalue", "airvalue"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
         return 0;
     } else if(exp.op === "neg") {
         return calculateExpDeg(expressions, exp.values[0], imExps, cacheValues);

@@ -64,12 +64,12 @@ async function run() {
         const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
         let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
         
-        pil = pilout.subproofs[0].airs[0];
+        pil = pilout.airgroups[0].airs[0];
         pil.symbols = pilout.symbols;
         pil.numChallenges = pilout.numChallenges;
         pil.hints = pilout.hints;
         pil.airId = 0;
-        pil.subproofId = 0;
+        pil.airgroupId = 0;
 
         constPols = generateFixedCols(pil.symbols, pil.numRows);
         cmPols = generateWtnsCols(pil.symbols, pil.numRows);

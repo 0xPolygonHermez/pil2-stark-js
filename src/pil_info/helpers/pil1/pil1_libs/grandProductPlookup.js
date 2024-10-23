@@ -15,7 +15,7 @@ module.exports.initChallengesPlookup = function initChallengesPlookup(stark) {
     return [alpha, beta, gamma, delta];
 }
 
-module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, hints, subproofId, airId, stark) {
+module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, hints, airgroupId, airId, stark) {
     const E = new ExpressionOps();
 
     const stage1 = 2;
@@ -202,8 +202,8 @@ module.exports.grandProductPlookup = function grandProductPlookup(pil, symbols, 
         hints.push(hint1);
         hints.push(hint2);
 
-        symbols.push({ type: "witness", name: `Plookup${i}.h1`, polId: puCtx.h1Id, stage: stage1, dim: Math.max(fDim, tDim), airId, subproofId});
-        symbols.push({ type: "witness", name: `Plookup${i}.h2`, polId: puCtx.h2Id, stage: stage1, dim: Math.max(fDim, tDim), airId, subproofId});
-        symbols.push({ type: "witness", name: `Plookup${i}.z`, polId: puCtx.zId, stage: stage2, dim: Math.max(numDim, denDim), airId, subproofId});
+        symbols.push({ type: "witness", name: `Plookup${i}.h1`, polId: puCtx.h1Id, stage: stage1, dim: Math.max(fDim, tDim), airId, airgroupId});
+        symbols.push({ type: "witness", name: `Plookup${i}.h2`, polId: puCtx.h2Id, stage: stage1, dim: Math.max(fDim, tDim), airId, airgroupId});
+        symbols.push({ type: "witness", name: `Plookup${i}.z`, polId: puCtx.zId, stage: stage2, dim: Math.max(numDim, denDim), airId, airgroupId});
     }
 }

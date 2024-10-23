@@ -29,7 +29,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
     for (let j = 0; j < code_.length; j++) {
         const r = code_[j];
         
-        let operation = getOperation(r, starkInfo, verify, debug);
+        let operation = getOperation(r, verify);
 
         if(operation.op !== "copy") args.push(operationsTypeMap[operation.op]);
 
@@ -60,7 +60,9 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         expsInfo.cmPolsIds = symbolsUsed.filter(s => s.op === "cm").map(s => s.id).sort();
         expsInfo.challengeIds = symbolsUsed.filter(s => s.op === "challenge").map(s => s.id).sort();
         expsInfo.publicsIds = symbolsUsed.filter(s => s.op === "public").map(s => s.id).sort();
-        expsInfo.subproofValuesIds = symbolsUsed.filter(s => s.op === "subproofValue").map(s => s.id).sort();
+        expsInfo.airgroupValuesIds = symbolsUsed.filter(s => s.op === "airgroupvalue").map(s => s.id).sort();
+        expsInfo.airValuesIds = symbolsUsed.filter(s => s.op === "airvalue").map(s => s.id).sort();
+
     }
 
     const destTmp = code_[code_.length - 1].dest;
@@ -150,13 +152,17 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 args.push(r.id);
                 break;
             }
-            case "subproofValue": {
+            case "airgroupvalue": {
                 if(!global) {
                     args.push(r.id);
                 } else {
-                    args.push(r.subproofId);
+                    args.push(r.airgroupId);
                     args.push(r.id);
                 }
+                break;
+            }
+            case "airvalue": {
+                args.push(r.id);
                 break;
             }
             case "xDivXSubXi":

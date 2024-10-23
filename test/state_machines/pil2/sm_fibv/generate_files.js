@@ -54,19 +54,19 @@ async function run() {
     const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
     let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
 
-    for (let i = 0; i < pilout.subproofs.length; i++) {
-        for (let j = 0; j < pilout.subproofs[i].airs.length; j++) {
+    for (let i = 0; i < pilout.airgroups.length; i++) {
+        for (let j = 0; j < pilout.airgroups[i].airs.length; j++) {
             console.log(
-                "Generating file for air " + pilout.subproofs[i].airs[j].name
+                "Generating file for air " + pilout.airgroups[i].airs[j].name
             );
 
-            const pil = pilout.subproofs[i].airs[j];
-            const subproof_name = pilout.subproofs[i].name;
-            const air_name = pilout.subproofs[i].airs[j].name;
+            const pil = pilout.airgroups[i].airs[j];
+            const subproof_name = pilout.airgroups[i].name;
+            const air_name = pilout.airgroups[i].airs[j].name;
             pil.symbols = pilout.symbols;
             pil.numChallenges = pilout.numChallenges;
             pil.hints = pilout.hints;
-            pil.subproofId = i;
+            pil.airgroupId = i;
             pil.airId = j;
 
             const outputConstFile = path.join(outPath, air_name + ".const");

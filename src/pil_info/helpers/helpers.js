@@ -47,9 +47,12 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
         if("rowOffset" in exp) {
             exp.rowsOffsets = [exp.rowOffset];
         }
-    } else if (["challenge", "eval", "subproofValue"].includes(exp.op)) {
+    } else if (["challenge", "eval"].includes(exp.op)) {
         exp.expDeg = 0;
         exp.dim = stark ? 3 : 1;
+    } else if (["airvalue", "airgroupvalue"].includes(exp.op)) {
+        exp.expDeg = 0;
+        exp.dim = 3;
     } else if (exp.op === "public") {
         exp.expDeg = 0;
         exp.stage = 1; 
@@ -132,7 +135,7 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
             }
             const lSym = {op: lhsValue.op, stage: lhsValue.stage, stageId: lhsValue.stageId, id: lhsValue.id};
             lhsSymbols.push(lSym);
-        } else if(["public", "subproofValue", "const"].includes(lhsValue.op)) {
+        } else if(["public", "airgroupvalue", "airvalue", "const"].includes(lhsValue.op)) {
             lhsSymbols.push({op: lhsValue.op, stage: lhsValue.stage, id: lhsValue.id});
         } else if(lhsValue.symbols) {
             lhsSymbols.push(...lhsValue.symbols);
@@ -146,7 +149,7 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
             }
             const rSym = {op: rhsValue.op, stage: rhsValue.stage, stageId: rhsValue.stageId, id: rhsValue.id};
             rhsSymbols.push(rSym);
-        } else if(["public", "subproofValue", "const"].includes(rhsValue.op)) {
+        } else if(["public", "airgroupvalue", "airvalue", "const"].includes(rhsValue.op)) {
             rhsSymbols.push({op: rhsValue.op, stage: rhsValue.stage, id: rhsValue.id});
         } else if(rhsValue.symbols) {
             rhsSymbols.push(...rhsValue.symbols);
@@ -157,7 +160,7 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
         [...lhsSymbols, ...rhsSymbols].forEach((symbol) => { uniqueSymbolsSet.add(JSON.stringify(symbol)); });
           
         exp.symbols = Array.from(uniqueSymbolsSet).map((symbol) => JSON.parse(symbol))
-            .sort((a, b) => a.stage !== b.stage ? a.stage - b.stage : a.op !== b.op ? b.op.localeCompare(a.op) : ["const", "subproofValue", "public"].includes(a.op) ? a.id - b.id : a.stageId - b.stageId);
+            .sort((a, b) => a.stage !== b.stage ? a.stage - b.stage : a.op !== b.op ? b.op.localeCompare(a.op) : ["const", "airgroupvalue", "airvalue", "public"].includes(a.op) ? a.id - b.id : a.stageId - b.stageId);
     }
 
     return;

@@ -4,15 +4,16 @@ const ExpressionOps = require("../../expressionops");
 const piloutTypes =  {
     FIXED_COL: 1,
     WITNESS_COL: 3,
-    SUBPROOF_VALUE: 5,
+    AIRGROUP_VALUE: 5,
     PUBLIC_VALUE: 6,
     CHALLENGE: 8,
+    AIR_VALUE: 9
 }
 
-module.exports.formatExpressions = function formatExpressions(pilout, stark, saveSymbols = false) {
+module.exports.formatExpressions = function formatExpressions(pilout, stark, saveSymbols = false, global = false) {
     const symbols = [];
 
-    const expressions = pilout.expressions.map(e => formatExpression(e, pilout, symbols, stark, saveSymbols));
+    const expressions = pilout.expressions.map(e => formatExpression(e, pilout, symbols, stark, saveSymbols, global));
     
     if(!saveSymbols) {
         return { expressions };
@@ -21,7 +22,7 @@ module.exports.formatExpressions = function formatExpressions(pilout, stark, sav
     }
 }
 
-module.exports.formatHints = function formatHints(pilout, rawHints, symbols, expressions, stark, saveSymbols) {
+module.exports.formatHints = function formatHints(pilout, rawHints, symbols, expressions, stark, saveSymbols, global = false) {
     const hints = [];
 
     for(let i = 0; i < rawHints.length; ++i) {
@@ -30,7 +31,7 @@ module.exports.formatHints = function formatHints(pilout, rawHints, symbols, exp
         hint.fields = [];
         for(let j = 0; j < fields.length; j++) {
             const name = fields[j].name;
-            const {values, lengths} = processHintField(fields[j], pilout, symbols, expressions, stark, saveSymbols);
+            const {values, lengths} = processHintField(fields[j], pilout, symbols, expressions, stark, saveSymbols, global);
             if(!lengths) {
                 hint.fields.push({name, values: [values], lengths});
             } else {
@@ -43,13 +44,13 @@ module.exports.formatHints = function formatHints(pilout, rawHints, symbols, exp
     return hints;
 }
 
-function processHintField(hintField, pilout, symbols, expressions, stark, saveSymbols) {
+function processHintField(hintField, pilout, symbols, expressions, stark, saveSymbols, global = false) {
     let resultFields = [];
     let lengths = [];
     if (hintField.hintFieldArray) {
         const fields = hintField.hintFieldArray.hintFields;
         for (let j = 0; j < fields.length; j++) {
-            const { values, lengths: subLengths } = processHintField(fields[j], pilout, symbols, expressions, stark, saveSymbols);
+            const { values, lengths: subLengths } = processHintField(fields[j], pilout, symbols, expressions, stark, saveSymbols, global);
 
             resultFields.push(values);
 
@@ -69,7 +70,7 @@ function processHintField(hintField, pilout, symbols, expressions, stark, saveSy
         let value;
 
         if (hintField.operand) {
-            value = formatExpression(hintField.operand, pilout, symbols, stark, saveSymbols);
+            value = formatExpression(hintField.operand, pilout, symbols, stark, saveSymbols, global);
             if (value.op === "exp") expressions[value.id].keep = true;
         } else if (hintField.stringValue) {
             value = { op: "string", string: hintField.stringValue };
@@ -84,7 +85,7 @@ function processHintField(hintField, pilout, symbols, expressions, stark, saveSy
 }
 
 
-function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
+function formatExpression(exp, pilout, symbols, stark, saveSymbols = false, global = false) {
     const P = new ProtoOut();
     
     if(exp.op) return exp;
@@ -97,15 +98,15 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
         const id = exp[op].idx;
         const expOp = Object.keys(pilout.expressions[id])[0];
         if(expOp != "mul" && Object.keys(pilout.expressions[id][expOp].lhs)[0] !== "expression" && Object.keys(pilout.expressions[id][expOp].rhs)[0] === "constant" && P.buf2bint(pilout.expressions[id][expOp].rhs.constant.value).toString() === "0") {
-            return formatExpression(pilout.expressions[id][expOp].lhs, pilout, symbols, stark, saveSymbols);
+            return formatExpression(pilout.expressions[id][expOp].lhs, pilout, symbols, stark, saveSymbols, global);
         }
         exp = { op: "exp", id };
     } else if(["add", "mul", "sub"].includes(op)) {
-        const lhs = formatExpression(exp[op].lhs, pilout, symbols, stark, saveSymbols);
-        const rhs = formatExpression(exp[op].rhs, pilout, symbols, stark, saveSymbols);
+        const lhs = formatExpression(exp[op].lhs, pilout, symbols, stark, saveSymbols, global);
+        const rhs = formatExpression(exp[op].rhs, pilout, symbols, stark, saveSymbols, global);
         exp = { op, values: [lhs, rhs] };
     } else if(op === "neg") {
-        const value = formatExpression(exp[op].value, pilout, symbols, stark, saveSymbols);
+        const value = formatExpression(exp[op].value, pilout, symbols, stark, saveSymbols, global);
         exp = { op, values: [value] };
     } else if (op === "constant") {
         const value = P.buf2bint(exp.constant.value).toString();
@@ -116,26 +117,29 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
         const stageId = exp[op].colIdx;
         const rowOffset = exp[op].rowOffset;
         const stage = exp[op].stage;
-        const subproofId = exp[op].subproofId;
-        const airId = exp[op].subproofId;
-        exp = { op: "cm", id, stageId, rowOffset, stage, dim, subproofId, airId };
+        const airgroupId = exp[op].airGroupId;
+        const airId = exp[op].airId;
+        exp = { op: "cm", id, stageId, rowOffset, stage, dim, airgroupId, airId };
         store = true;
     } else if (op === "fixedCol") {
         const id = exp[op].idx;
         const rowOffset = exp[op].rowOffset;
-        const subproofId = exp[op].subproofId;
-        const airId = exp[op].subproofId;
-        exp = { op: "const", id, rowOffset, stage: 0, dim: 1, subproofId, airId };
+        const airgroupId = exp[op].airGroupId;
+        const airId = exp[op].airId;
+        exp = { op: "const", id, rowOffset, stage: 0, dim: 1, airgroupId, airId };
         store = true;
     } else if (op === "publicValue") {
         const id = exp[op].idx;
         exp = { op: "public", id, stage: 1 };
         store = true;
-    } else if (op === "subproofValue") {
+    } else if (op === "airGroupValue") {
         const id = exp[op].idx;
-        const stage = pilout.numChallenges.length;
-        const subproofId = exp[op].subproofId;
-        exp = { op: "subproofValue", id, stage, subproofId };
+        const stage = !global ? pilout.airGroupValues[id].stage : pilout.airGroups[exp[op].airGroupId].airGroupValues[id].stage;
+        exp = { op: "airgroupvalue", id, airgroupId: exp[op].airGroupId, dim: 3, stage };
+        store = true;
+    } else if (op === "airValue") {
+        const id = exp[op].idx;
+        exp = { op: "airvalue", id, stage: pilout.airValues[id].stage, dim: 3 };
         store = true;
     } else if (op === "challenge") {
         const id = exp[op].idx + pilout.numChallenges.slice(0, exp[op].stage - 1).reduce((acc, c) => acc + c, 0);
@@ -146,49 +150,60 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false) {
     } else throw new Error("Unknown op: " + op);
 
     if(saveSymbols && store) {
-        addSymbol(pilout.name, symbols, exp, stark);
+        addSymbol(pilout, symbols, exp, stark, global);
     }
 
     return exp;
 }
 
-function addSymbol(subproofName, symbols, exp, stark) {
-    let subproofId = exp.subproofId || 0;
+function addSymbol(pilout, symbols, exp, stark, global = false) {
+    let airgroupId = exp.airGroupId || 0;
     let airId = exp.airId || 0;
     if(exp.op === "public") {
         const publicSymbol = symbols.find(s => s.type === "public" && s.id === exp.id);
         if(!publicSymbol) {
-            const name = subproofName + ".public_" + exp.id;
+            const name = pilout.name + ".public_" + exp.id;
             symbols.push({type: "public", dim: 1, id: exp.id, name });
         }
     } else if(exp.op === "challenge") {
         const challengeSymbol = symbols.find(s => s.type === "challenge" && s.stage === exp.stage && s.stageId === exp.stageId);
         if(!challengeSymbol) {
             const dim = stark ? 3 : 1;
-            const name = subproofName + ".challenge_" + exp.stage + "_" + exp.stageId;
+            const name = pilout.name + ".challenge_" + exp.stage + "_" + exp.stageId;
             const id = symbols.filter(si => si.type === "challenge" && ((si.stage < exp.stage) || (si.stage === exp.stage && si.stageId < exp.stageId))).length;
             symbols.push({ type: "challenge", stageId: exp.stageId, stage: exp.stage, id, dim, name});
         }
     } else if(exp.op === "const") {
-        const fixedSymbol = symbols.find(s => s.type === "fixed" && s.airId === airId && s.subproofId === subproofId
+        const fixedSymbol = symbols.find(s => s.type === "fixed" && s.airId === airId && s.airgroupId === airgroupId
             && s.stage === exp.stage && s.stageId === exp.id);
         if(!fixedSymbol) {
-            const name = subproofName + ".fixed_" + exp.id;
-            symbols.push({ type: "fixed", polId: exp.id, stageId: exp.id, stage: exp.stage, dim: 1, name, airId, subproofId});
+            const name = pilout.name + ".fixed_" + exp.id;
+            symbols.push({ type: "fixed", polId: exp.id, stageId: exp.id, stage: exp.stage, dim: 1, name, airId, airgroupId});
         }
     } else if(exp.op === "cm") {
-        const witnessSymbol = symbols.find(s => s.type === "witness" && s.airId === airId && s.subproofId === subproofId
+        const witnessSymbol = symbols.find(s => s.type === "witness" && s.airId === airId && s.airgroupId === airgroupId
             && s.stage === exp.stage && s.stageId === exp.stageId);
         if(!witnessSymbol) {
-            const name = subproofName + ".witness_" + exp.stage + "_" + exp.stageId;
+            const name = pilout.name + ".witness_" + exp.stage + "_" + exp.stageId;
             const dim = (exp.stage === 1 || !stark) ? 1 : 3;
-            symbols.push({ type: "witness", polId: exp.id, stageId: exp.stageId, stage: exp.stage, dim, name, airId, subproofId});
+            symbols.push({ type: "witness", polId: exp.id, stageId: exp.stageId, stage: exp.stage, dim, name, airId, airgroupId});
         }
-    } else if(exp.op === "subproofValue") {
-        const subProofValueSymbol = symbols.find(s => s.type === "subproofValue" && s.id === exp.id && s.airId === airId && s.subproofId === subproofId);
-        if(!subProofValueSymbol) {
-            const name = subproofName + ".subproofvalue_" + exp.id;
-            symbols.push({type: "subproofValue", dim: 1, id: exp.id, name, airId, subproofId });
+    } else if(exp.op === "airgroupvalue") {
+        const airgroupvalueSymbol = symbols.find(s => s.type === "airgroupvalue" && s.id === exp.id && s.airId === airId && s.airgroupId === airgroupId);
+        if(!airgroupvalueSymbol) {
+            const name = pilout.name + ".airgroupvalue_" + exp.id;
+            const airgroupVal = {type: "airgroupvalue", id: exp.id, name, stage: pilout.airGroupValues[exp.id].stage, dim: 3 };
+            if(!global) {
+                airgroupVal.airId = airId;
+                airgroupVal.airgroupId = airgroupId;
+            }
+            symbols.push(airgroupVal);
+        }
+    } else if(exp.op === "airvalue") {
+        const airvalueSymbol = symbols.find(s => s.type === "airvalue" && s.id === exp.id && s.airId === airId && s.airgroupId === airgroupId);
+        if(!airvalueSymbol) {
+            const name = pilout.name + ".airvalue_" + exp.id;
+            symbols.push({type: "airvalue", dim: 3, id: exp.id, stage: exp.stage, name, airId, airgroupId });
         }
     } else {
         throw new Error ("Unknown operation " + exp.op);
@@ -229,8 +244,10 @@ module.exports.printExpressions = function printExpressions(res, exp, expression
         return name;
     } else if (exp.op === "public") {
         return res.publicsMap[exp.id].name;
-    } else if (exp.op === "subproofValue") {
-        return res.subproofValuesMap[exp.id].name;    
+    } else if (exp.op === "airvalue") {
+        return res.airValuesMap[exp.id].name;    
+    } else if (exp.op === "airgroupvalue") {
+        return res.airgroupValuesMap[exp.id].name; 
     } else if (exp.op === "challenge") {
         return res.challengesMap[exp.id].name;
     } else if (exp.op === "x") {
@@ -259,7 +276,7 @@ module.exports.formatConstraints = function formatConstraints(pilout) {
     return constraints;
 }
 
-module.exports.formatSymbols = function formatSymbols(pilout, stark) {
+module.exports.formatSymbols = function formatSymbols(pilout, stark, global = false) {
     const E = new ExpressionOps();
 
     const symbols = pilout.symbols.flatMap(s => {
@@ -267,8 +284,9 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
             const dim = ([0,1].includes(s.stage) || !stark) ? 1 : 3;
             const type = s.type === piloutTypes.FIXED_COL ? "fixed" : "witness";
             const previousPols = pilout.symbols.filter(si => si.type === s.type 
-                && si.airId === s.airId && si.subproofId === s.subproofId
+                && si.airId === s.airId && si.airGroupId === s.airGroupId
                 && ((si.stage < s.stage) || (si.stage === s.stage && si.id < s.id)));
+
             let polId = 0;
             for(let i = 0; i < previousPols.length; ++i) {
                 if (!previousPols[i].dim) {
@@ -288,7 +306,7 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
                     stageId,
                     dim,
                     airId: s.airId,
-                    subproofId: s.subproofId,
+                    airgroupId: s.airGroupId,
                 }  
             } else {
                 const multiArraySymbols = [];
@@ -313,18 +331,28 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark) {
                 dim: 1,
                 id: s.id,
             }
-        } else if(s.type === piloutTypes.SUBPROOF_VALUE) {
-            return {
+        } else if(s.type === piloutTypes.AIRGROUP_VALUE) {
+            const airgroupValue = {
                 name: s.name,
-                type: "subproofValue",
+                type: "airgroupvalue",
                 id: s.id,
-                subproofId: s.subproofId,
+                airgroupId: s.airGroupId,
                 dim: stark ? 3 : 1,
-                airId: s.airId,
-                subproofId: s.subproofId,
             }
+            if(!global) airgroupValue.stage = pilout.airGroupValues[s.id].stage;
+            return airgroupValue;
+        } else if(s.type === piloutTypes.AIR_VALUE) {
+            const airvalue = {
+                name: s.name,
+                type: "airvalue",
+                id: s.id,
+                airgroupId: s.airGroupId,
+                dim: stark ? 3 : 1,
+            }
+            if(!global) airvalue.stage = pilout.airValues[s.id].stage;
+            return airvalue;
         }
-    }); 
+    });
 
     return symbols;
 }
@@ -342,7 +370,7 @@ function generateMultiArraySymbols(E, symbols, indexes, sym, type, dim, polId, s
             stageId: sym.id + shift,
             dim,
             airId: sym.airId,
-            subproofId: sym.subproofId,
+            airgroupId: sym.airGroupId,
         });
         return shift + 1;
     }

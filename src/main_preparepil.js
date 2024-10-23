@@ -15,7 +15,7 @@ const argv = require("yargs")
     .alias("f", "infopil")
     .alias("v", "pil2")
     .alias("m", "impolsstages")
-    .string("subproofId")
+    .string("airgroupId")
     .string("airId")
     
     .argv;

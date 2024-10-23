@@ -78,7 +78,7 @@ function processHintFieldValue(values, res, expressions, pos = []) {
             if (field.op === "exp") {
                 expressions[field.id].line = printExpressions(res, expressions[field.id], expressions);
                 processedField = { op: "tmp", id: field.id, dim: expressions[field.id].dim, pos: currentPos };
-            } else if (["cm", "challenge", "public", "subproofValue", "const", "number", "string"].includes(field.op)) {
+            } else if (["cm", "challenge", "public", "airgroupvalue", "airvalue", "const", "number", "string"].includes(field.op)) {
                 processedField = { ...field, pos: currentPos };
             } else {
                 throw new Error("Invalid hint op: " + field.op);

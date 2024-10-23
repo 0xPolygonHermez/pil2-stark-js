@@ -1,6 +1,6 @@
 module.exports.writeType = function writeType(type, c_args, parserType, global = false) {
-    if(global && !["public", "number", "subproofValue", "tmp1", "tmp3"].includes(type)) {
-        throw new Error("Global constraints only allow for publics, numbers and subproofValues");
+    if(global && !["public", "number", "airgroupvalue", "tmp1", "tmp3"].includes(type)) {
+        throw new Error("Global constraints only allow for publics, numbers and airgroupvalues");
     }
     switch (type) {
         case "public":
@@ -29,14 +29,18 @@ module.exports.writeType = function writeType(type, c_args, parserType, global =
             return parserType === "pack"
                 ? `&evals[args[i_args + ${c_args}]*FIELD_EXTENSION*nrowsPack]`
                 : `evals[args[i_args + ${c_args}]]`;
-        case "subproofValue":
+        case "airgroupvalue":
             if(global) {
-                return `subproofValues[args[i_args + ${c_args}][args[i_args + ${c_args}]]`;
+                return `airgroupValues[args[i_args + ${c_args}][args[i_args + ${c_args}]]`;
             } else {
                 return parserType === "pack"
-                ? `&subproofValues[args[i_args + ${c_args}]*FIELD_EXTENSION*nrowsPack]`
-                : `subproofValues[args[i_args + ${c_args}]]`;
+                ? `&airgroupValues[args[i_args + ${c_args}]*FIELD_EXTENSION*nrowsPack]`
+                : `airgroupValues[args[i_args + ${c_args}]]`;
             }
+        case "airvalue":
+            return parserType === "pack"
+            ? `&airValues[args[i_args + ${c_args}]*FIELD_EXTENSION*nrowsPack]`
+            : `airValues[args[i_args + ${c_args}]]`;
         case "number":
             return parserType === "pack" 
                 ? `&numbers_[args[i_args + ${c_args}]*nrowsPack]`
@@ -48,8 +52,8 @@ module.exports.writeType = function writeType(type, c_args, parserType, global =
 
 
 module.exports.numberOfArgs = function numberOfArgs(type, global = false) {
-    if(global && !["public", "number", "subproofValue", "tmp1", "tmp3"].includes(type)) {
-        throw new Error("Global constraints only allow for publics, numbers and subproofValues");
+    if(global && !["public", "number", "airgroupvalue", "tmp1", "tmp3"].includes(type)) {
+        throw new Error("Global constraints only allow for publics, numbers and airgroupValues");
     }
     switch (type) {
         case "public":            
@@ -58,8 +62,9 @@ module.exports.numberOfArgs = function numberOfArgs(type, global = false) {
         case "challenge":
         case "eval":
         case "number":
+        case "airvalue":
             return 1;
-        case "subproofValue":
+        case "airgroupvalue":
             return global ? 2 : 1;
         case "const":
         case "commit1":
@@ -78,7 +83,7 @@ module.exports.getGlobalOperations = function getGlobalOperations() {
     const possibleDestinationsDim3 = ["tmp3"];
 
     const possibleSrcDim1 = ["tmp1", "public", "number"];
-    const possibleSrcDim3 = ["tmp3", "subproofValue"];
+    const possibleSrcDim3 = ["tmp3", "airgroupvalue"];
 
     // Dim1 destinations
     for(let j = 0; j < possibleDestinationsDim1.length; j++) {
@@ -126,7 +131,7 @@ module.exports.getAllOperations = function getAllOperations() {
     const possibleDestinationsDim3 = [ "tmp3" ];
 
     const possibleSrcDim1 = [ "commit1", "tmp1", "public", "number" ];
-    const possibleSrcDim3 = [ "commit3", "tmp3", "challenge", "subproofValue" ];
+    const possibleSrcDim3 = [ "commit3", "tmp3", "challenge", "airgroupvalue", "airvalue" ];
 
     // Dim1 destinations
     for(let j = 0; j < possibleDestinationsDim1.length; j++) {
@@ -177,7 +182,7 @@ module.exports.getAllOperations = function getAllOperations() {
     possibleOps.push({ dest_type: "tmp3", src0_type: "eval", src1_type: "eval"});
     possibleOps.push({ dest_type: "tmp3", src0_type: "eval", src1_type: "public"});
     possibleOps.push({ dest_type: "tmp3", src0_type: "eval", src1_type: "number"});
-    possibleOps.push({ dest_type: "tmp3", src0_type: "subproofValue", src1_type: "eval"});
+    possibleOps.push({ dest_type: "tmp3", src0_type: "airgroupvalue", src1_type: "eval"});
 
     return possibleOps;
 }

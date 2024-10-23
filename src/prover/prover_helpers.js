@@ -181,7 +181,7 @@ module.exports.getRef = function getRef(r, ctx, dom, global) {
         case "number": return `ctx.F.e(${r.value}n)`;
         case "public": return `ctx.publics[${r.id}]`;
         case "challenge": return `ctx.challenges[${r.stage - 1}][${r.stageId}]`;
-        case "subproofValue": return global ? `ctx.subproofValues[${r.subproofId}][${r.id}]` : `ctx.subproofValues[${r.id}]`;
+        case "airgroupvalue": return global ? `ctx.airgroupvalues[${r.airgroupId}][${r.id}]` : `ctx.airgroupvalues[${r.id}]`;
         case "eval": return `ctx.evals[${r.id}]`;
         case "xDivXSubXi": {
             return `[
@@ -297,9 +297,9 @@ module.exports.setPol = function setPol(ctx, idPol, pol, dom, options) {
 }
 
 module.exports.setSubproofValue = function setSubproofValue(ctx, id, value, options) {
-    ctx.subproofValues[id] = value;
-    ctx.calculatedSymbols["subproofValue"][id] = true;
-    if(options?.logger) options.logger.debug(`Symbol subproofValue for with id ${id} has been calculated`);
+    ctx.airgroupValues[id] = value;
+    ctx.calculatedSymbols["airgroupvalue"][id] = true;
+    if(options?.logger) options.logger.debug(`Symbol airgroupvalue for with id ${id} has been calculated`);
 }
 
 module.exports.getPolRef = function getPolRef(ctx, idPol, dom, isFixed = false) {
@@ -472,7 +472,7 @@ module.exports.calculateExpsParallel = async function calculateExpsParallel(ctx,
                 evals: ctx.evals,
                 publics: ctx.publics,
                 challenges: ctx.challenges,
-                subproofValues: ctx.subproofValues,
+                airgroupValues: ctx.airgroupValues,
                 next: extend,
             };
             if(debug) {
@@ -572,7 +572,7 @@ function ctxProxy(ctx, global, stark = true) {
     if(ctx.publics) pCtx.publics = ctx.publics;
     if(ctx.challenges) pCtx.challenges = ctx.challenges;
     if(ctx.challengesFRISteps) pCtx.challengesFRISteps = ctx.challengesFRISteps;
-    if(ctx.subproofValues) pCtx.subproofValues = ctx.subproofValues;
+    if(ctx.airgroupValues) pCtx.airgroupValues = ctx.airgroupValues;
     if(ctx.evals) pCtx.evals = ctx.evals;
 
     return pCtx;

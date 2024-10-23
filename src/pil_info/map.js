@@ -50,8 +50,10 @@ function mapSymbols(res, symbols) {
             res.challengesMap[symbol.id] = {name: symbol.name, stage: symbol.stage, dim: symbol.dim, stageId: symbol.stageId};
         } else if(symbol.type === "public") {
             res.publicsMap[symbol.id] = {name: symbol.name, stage: symbol.stage};
-        } else if(symbol.type === "subproofValue") {
-            res.subproofValuesMap[symbol.id] = { name: symbol.name };
+        } else if(symbol.type === "airgroupvalue") {
+            res.airgroupValuesMap[symbol.id] = { name: symbol.name, stage: symbol.stage };
+        } else if(symbol.type == "airvalue") {
+            res.airValuesMap[symbol.id] = { name: symbol.name, stage: symbol.stage };
         }
     }
 }

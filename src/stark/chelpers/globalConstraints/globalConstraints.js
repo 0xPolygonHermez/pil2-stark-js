@@ -141,9 +141,9 @@ async function writeHintsSection(globalConstraintsBin, hintsInfo, section) {
                     await globalConstraintsBin.write(buffNumber);
                 } else if(value.op === "string") {
                     writeStringToFile(globalConstraintsBin, value.string);
-                } else if(value.op === "subproofValue") {
+                } else if(value.op === "airgroupvalue") {
                     console.log(value);
-                    await globalConstraintsBin.writeULE32(value.subproofId);
+                    await globalConstraintsBin.writeULE32(value.airgroupId);
                     await globalConstraintsBin.writeULE32(value.id);
                 } else if(value.op === "tmp" || value.op === "public") {
                     await globalConstraintsBin.writeULE32(value.id);

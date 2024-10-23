@@ -84,8 +84,9 @@ module.exports = async function pilInfo(F, pil, stark = true, pil2 = true, stark
                 console.log(`Columns stage ${stageDebug}: ${nColsStage} (${imPols.length} intermediate polynomials) -> Columns in the basefield: ${nColsBaseField} (${imPols.reduce((acc, curr) => acc + curr.dim, 0)} from intermediate polynomials)`);
             }
             if(i < res.nStages + 1) {
-                summary += `| Stage${i}: ${nColsBaseField} `;
-                
+                summary += `| Stage${i}: ${nColsBaseField} `;  
+            } else if (i == res.nStages + 1) {
+                summary += `| StageQ: ${nColsBaseField} `; 
             }
             nColumns += nColsStage;
             nColumnsBaseField += nColsBaseField;

@@ -16,7 +16,8 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
     res.constPolsMap = [];
     res.challengesMap = [];
     res.publicsMap = [];
-    res.subproofValuesMap = [];
+    res.airgroupValuesMap = [];
+    res.airValuesMap = [];
     res.pil2 = pil2;
 
     res.mapSectionsN = {
@@ -43,7 +44,7 @@ module.exports.preparePil = function preparePil(F, pil, starkStruct, stark, pil2
         if(!options.debug) {
             res.starkStruct = starkStruct;
             if (res.starkStruct.nBits != res.pilPower) {
-                throw new Error(`starkStruct and pilfile have degree mismatch (airId: ${pil.airId} subproofId: ${pil.subproofId} starkStruct:${res.starkStruct.nBits} pilfile:${res.pilPower})`);
+                throw new Error(`starkStruct and pilfile have degree mismatch (airId: ${pil.airId} airgroupId: ${pil.airgroupId} starkStruct:${res.starkStruct.nBits} pilfile:${res.pilPower})`);
             }
 
             if (res.starkStruct.nBitsExt != res.starkStruct.steps[0].nBits) {

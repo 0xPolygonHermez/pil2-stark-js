@@ -48,7 +48,7 @@ async function run() {
         const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
         let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
         
-        const pil = pilout.subproofs[0].airs[0];
+        const pil = pilout.airgroups[0].airs[0];
         pil.symbols = pilout.symbols;
         
         constPols = generateFixedCols(pil.symbols, pil.numRows);

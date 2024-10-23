@@ -6,10 +6,10 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
     const E = new ExpressionOps();
     const pil = JSON.parse(JSON.stringify(_pil));    // Make a copy as we are going to destroy the original
 
-    res.subproofId = 0;
+    res.airgroupId = 0;
     res.airId = 0;
 
-    if(options.subproofId) res.subproofId = options.subproofId;
+    if(options.airgroupId) res.airgroupId = options.airgroupId;
     if(options.airId) res.airId = options.airId;
     
     res.nPublics = pil.publics.length;
@@ -31,11 +31,11 @@ module.exports.generatePil1Polynomials = function generatePil1Polynomials(F, res
             for(let i = 0; i < polInfo.len; ++i) {
                 const namePol = name + i;
                 const polId = polInfo.id + i;
-                symbols.push({type, name: namePol, polId, stage, dim: 1, subproofId: res.subproofId, airId: res.airId });
+                symbols.push({type, name: namePol, polId, stage, dim: 1, airgroupId: res.airgroupId, airId: res.airId });
                 if(type === "witness") E.cm(polId, 0, stage, 1);
             }
         } else {
-            symbols.push({type, name, polId: polInfo.id, stage, dim: 1, subproofId: res.subproofId, airId: res.airId });
+            symbols.push({type, name, polId: polInfo.id, stage, dim: 1, airgroupId: res.airgroupId, airId: res.airId });
             if(type === "witness") E.cm(polInfo.id, 0, stage, 1);
         }
     }

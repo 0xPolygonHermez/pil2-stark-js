@@ -2,7 +2,7 @@
   name: 'myFirstPil',
   baseField: <Buffer ff ff ff ff 00 00 00 01>,
   blowupFactor: 3,
-  subproofs: [
+  airgroups: [
     {
       name: 'Fibonacci',
       aggregable: false,
@@ -323,7 +323,7 @@
             {
               sub: {
                 lhs: { witnessCol: { colIdx: 0, rowOffset: 0, stage: 2 } },
-                rhs: { subproofValue: { idx: 0, subproofId: 0 } }
+                rhs: { airgroupvalue: { idx: 0, airgroupId: 0 } }
               }
             },
             {
@@ -347,7 +347,7 @@
   hints: [
     {
       name: 'gsum',
-      subproofId: 0,
+      airgroupId: 0,
       airId: 0,
       hintFields: [
         {
@@ -371,15 +371,15 @@
       ]
     },
     {
-      name: 'subproofValue',
-      subproofId: 0,
+      name: 'airgroupvalue',
+      airgroupId: 0,
       airId: 0,
       hintFields: [
         {
           hintFieldArray: {
             hintFields: [
               {
-                operand: { subproofValue: { idx: 0, subproofId: 0 } },
+                operand: { airgroupvalue: { idx: 0, airgroupId: 0 } },
                 name: 'reference'
               },
               {
@@ -403,7 +403,7 @@
       lengths: [],
       debugLine: '',
       airId: 0,
-      subproofId: 0,
+      airgroupId: 0,
       type: 3,
       id: 0,
       stage: 1
@@ -414,7 +414,7 @@
       lengths: [],
       debugLine: '',
       airId: 0,
-      subproofId: 0,
+      airgroupId: 0,
       type: 3,
       id: 1,
       stage: 1
@@ -425,7 +425,7 @@
       lengths: [],
       debugLine: '',
       airId: 0,
-      subproofId: 0,
+      airgroupId: 0,
       type: 3,
       id: 0,
       stage: 2
@@ -436,7 +436,7 @@
       lengths: [],
       debugLine: '',
       airId: 0,
-      subproofId: 0,
+      airgroupId: 0,
       type: 1,
       id: 0,
       stage: 0
@@ -447,7 +447,7 @@
       lengths: [],
       debugLine: '',
       airId: 0,
-      subproofId: 0,
+      airgroupId: 0,
       type: 1,
       id: 1,
       stage: 0
@@ -509,7 +509,7 @@
       debugLine: 'fibonacci.pil:13',
       type: 5,
       id: 0,
-      subproofId: 0
+      airgroupId: 0
     }
   ]
 }

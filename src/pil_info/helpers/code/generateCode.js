@@ -15,7 +15,7 @@ module.exports.generateExpressionsCode = function generateExpressionsCode(res, s
             code: [],
             dom,
             airId: res.airId,
-            subproofId: res.subproofId,
+            airgroupId: res.airgroupId,
             stark,
         };
 
@@ -84,7 +84,7 @@ module.exports.generateConstraintsDebugCode = function generateConstraintsDebugC
             code: [],
             dom: "n",
             airId: res.airId,
-            subproofId: res.subproofId,
+            airgroupId: res.airgroupId,
             stark,
         };
 
@@ -122,7 +122,7 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
         evMap: [],
         dom: "n",
         airId: res.airId,
-        subproofId: res.subproofId,
+        airgroupId: res.airgroupId,
         openingPoints: res.openingPoints,
         stark,
         addMul,
@@ -197,7 +197,7 @@ module.exports.generateFRIVerifierCode = function generateFRIVerifierCode(res, v
         code: [],
         dom: "ext",
         airId: res.airId,
-        subproofId: res.subproofId,
+        airgroupId: res.airgroupId,
         openingPoints: res.openingPoints,
         verifierQuery: true,
         addMul: false,

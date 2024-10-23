@@ -1,5 +1,5 @@
 const { calculateH1H2, calculateS, calculateZ } = require("../helpers/polutils");
-const { getPol, setPol, setSubproofValue, calculateExpression, getFixedPol } = require("./prover_helpers");
+const { getPol, setPol, setAirgroupValue, calculateExpression, getFixedPol } = require("./prover_helpers");
 const { isSymbolCalculated, setSymbolCalculated } = require("./symbols_helpers");
 
 module.exports.applyHints = async function applyHints(stage, ctx, options) {
@@ -29,12 +29,12 @@ function getHintField(ctx, hint, field, dest = false, debug = false) {
     if ((hintField.op === "cm")) return getPol(ctx, hintField.id, "n");
     if (hintField.op === "tmp") return calculateExpression(ctx, hintField.id, debug);
     if ((hintField.op === "number")) return BigInt(hintField.value);
-    if (["subproofValue", "public"].includes(hintField.op)) return hintField;
+    if (["airgroupvalue", "public"].includes(hintField.op)) return hintField;
     throw new Error("Case not considered");
 }
 
 function canResolveHint(ctx, hint, stage) {
-    if(hint.name === "subproofValue" || hint.name === "public") {
+    if(hint.name === "airgroupvalue" || hint.name === "public") {
         const expression = hint.fields.find(f => f.name === "expression");
         if(expression.op === "cm" && !isSymbolCalculated(ctx, expression)) return false;
     } else if (hint.name === "gsum" || hint.name === "gprod") {
@@ -57,9 +57,9 @@ function canResolveHint(ctx, hint, stage) {
 }
 
 function isHintResolved(ctx, hint) {
-    if(hint.name === "subproofValue") {
-        const subproofValue = getHintField(ctx, hint, "reference");
-        return isSymbolCalculated(ctx, subproofValue);
+    if(hint.name === "airgroupvalue") {
+        const airgroupvalue = getHintField(ctx, hint, "reference");
+        return isSymbolCalculated(ctx, airgroupvalue);
     } else if(hint.name === "public") {
         const public = getHintField(ctx, hint, "reference");
         return isSymbolCalculated(ctx, public);
@@ -97,8 +97,8 @@ async function resolveHint(ctx, hint, options) {
         setPol(ctx, gsumField.id, gsum, "n", options);
         if(hint.fields.find(f => f.name === "result")) {
             const value = gsum[ctx.N - 1];
-            const subproofValue = getHintField(ctx, hint, "result");
-            setSubproofValue(ctx, subproofValue.id, value, options);
+            const airgroupvalue = getHintField(ctx, hint, "result");
+            setAirgroupValue(ctx, airgroupvalue.id, value, options);
         }
     } else if(hint.name === "gprod") {
         let numerator = getHintField(ctx, hint, "numerator");
@@ -108,8 +108,8 @@ async function resolveHint(ctx, hint, options) {
         setPol(ctx, gprodField.id, gprod, "n", options);
         if(hint.fields.find(f => f.name === "result")) {
             const value = gprod[ctx.N - 1];
-            const subproofValue = getHintField(ctx, hint, "result");
-            setSubproofValue(ctx, subproofValue.id, value, options);
+            const airgroupvalue = getHintField(ctx, hint, "result");
+            setAirgroupValue(ctx, airgroupvalue.id, value, options);
         }
     } else if(hint.name === "h1h2") {
         let f = getHintField(ctx, hint, "f");

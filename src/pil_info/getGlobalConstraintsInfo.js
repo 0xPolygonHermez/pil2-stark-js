@@ -14,11 +14,11 @@ module.exports.getGlobalConstraintsInfo = function getGlobalConstraintsInfo(pilo
     if(pilout.constraints) {
         const constraints = pilout.constraints.map(c => {  return { e: c.expressionIdx.idx, boundary: "finalProof", line: c.debugLine } });
         if(!saveSymbols) {
-            const e = formatExpressions(pilout, stark);
+            const e = formatExpressions(pilout, stark, false, true);
             expressions = e.expressions;
-            symbols = formatSymbols(pilout, stark);
+            symbols = formatSymbols(pilout, stark, true);
         } else {
-            const e = formatExpressions(pilout, stark, true);
+            const e = formatExpressions(pilout, stark, true, true);
             expressions = e.expressions;
             symbols = e.symbols;
         }
@@ -46,10 +46,10 @@ module.exports.getGlobalConstraintsInfo = function getGlobalConstraintsInfo(pilo
         }     
     }
 
-    const globalHints = pilout.hints.filter(h => h.airId === undefined && h.subproofId === undefined);
+    const globalHints = pilout.hints.filter(h => h.airId === undefined && h.airgroupId === undefined);
 
     if(globalHints) {
-        const hints = formatHints(pilout, globalHints, symbols, expressions, stark, saveSymbols);
+        const hints = formatHints(pilout, globalHints, symbols, expressions, stark, saveSymbols, true);
         const res = {};
         hintsCode = addHintsInfo(res, expressions, hints, true);
     }

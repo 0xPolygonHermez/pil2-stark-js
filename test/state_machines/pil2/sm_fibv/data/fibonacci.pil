@@ -12,7 +12,7 @@ function final_function() {
     gsum_fibonacci + gsum_module === 0;
 }
 
-subproof aggregate Fibonacci(2**2, 2**4) {
+airgroup aggregate Fibonacci(2**2, 2**4) {
 
     subproofval aggregate(sum) gsum_fibonacci;
 
@@ -29,7 +29,7 @@ subproof aggregate Fibonacci(2**2, 2**4) {
 
     @gsum { reference: gsum, numerator: 5, denominator: ((((L1'2*out + (1 - L1'2)*a') * std_alpha + a * a + b * b) * std_alpha) + MODULE_ID + std_beta)}
 
-    @subproofvalue { reference: gsum_fibonacci, expression: gsum, row_index: N - 1 }
+    @airgroupvalue { reference: gsum_fibonacci, expression: gsum, row_index: N - 1 }
 
     (gsum - 'gsum * (1 - L1)) * ((((L1'2*out + (1 - L1'2)*a') * std_alpha + a * a + b * b) * std_alpha) + MODULE_ID + std_beta) + 1 === 0;
     L1' * (gsum - gsum_fibonacci) === 0;

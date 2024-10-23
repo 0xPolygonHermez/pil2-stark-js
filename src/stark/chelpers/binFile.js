@@ -65,7 +65,9 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
     const cmPolsIdsExpressions = [];
     const challengesIdsExpressions = [];
     const publicsIdsExpressions = [];
-    const subproofValuesIdsExpressions = [];
+    const airgroupValuesIdsExpressions = [];
+    const airValuesIdsExpressions = [];
+
 
     const opsExpressionsOffset = [];
     const argsExpressionsOffset = [];
@@ -73,7 +75,8 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
     const cmPolsIdsExpressionsOffset = [];
     const challengesIdsExpressionsOffset = [];
     const publicsIdsExpressionsOffset = [];
-    const subproofValuesIdsExpressionsOffset = [];
+    const airgroupValuesIdsExpressionsOffset = [];
+    const airValuesIdsExpressionsOffset = [];
 
     for(let i = 0; i < expressionsInfo.length; i++) {
         if(i == 0) {
@@ -83,7 +86,8 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
             cmPolsIdsExpressionsOffset.push(0);
             challengesIdsExpressionsOffset.push(0);
             publicsIdsExpressionsOffset.push(0);
-            subproofValuesIdsExpressionsOffset.push(0);
+            airgroupValuesIdsExpressionsOffset.push(0);
+            airValuesIdsExpressionsOffset.push(0);
         } else {
             opsExpressionsOffset.push(opsExpressionsOffset[i-1] + expressionsInfo[i-1].ops.length);
             argsExpressionsOffset.push(argsExpressionsOffset[i-1] + expressionsInfo[i-1].args.length);
@@ -91,7 +95,9 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
             cmPolsIdsExpressionsOffset.push(cmPolsIdsExpressionsOffset[i-1] + expressionsInfo[i-1].cmPolsIds.length);
             challengesIdsExpressionsOffset.push(challengesIdsExpressionsOffset[i-1] + expressionsInfo[i-1].challengeIds.length);
             publicsIdsExpressionsOffset.push(publicsIdsExpressionsOffset[i-1] + expressionsInfo[i-1].publicsIds.length);
-            subproofValuesIdsExpressionsOffset.push(subproofValuesIdsExpressionsOffset[i-1] + expressionsInfo[i-1].subproofValuesIds.length);
+            airgroupValuesIdsExpressionsOffset.push(airgroupValuesIdsExpressionsOffset[i-1] + expressionsInfo[i-1].airgroupValuesIds.length);
+            airValuesIdsExpressionsOffset.push(airValuesIdsExpressionsOffset[i-1] + expressionsInfo[i-1].airValuesIds.length);
+
         }
         for(let j = 0; j < expressionsInfo[i].ops.length; j++) {
             opsExpressions.push(expressionsInfo[i].ops[j]);
@@ -111,8 +117,11 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
         for(let j = 0; j < expressionsInfo[i].publicsIds.length; j++) {
             publicsIdsExpressions.push(expressionsInfo[i].publicsIds[j]);
         }
-        for(let j = 0; j < expressionsInfo[i].subproofValuesIds.length; j++) {
-            subproofValuesIdsExpressions.push(expressionsInfo[i].subproofValuesIds[j]);
+        for(let j = 0; j < expressionsInfo[i].airgroupValuesIds.length; j++) {
+            airgroupValuesIdsExpressions.push(expressionsInfo[i].airgroupValuesIds[j]);
+        } 
+        for(let j = 0; j < expressionsInfo[i].airValuesIds.length; j++) {
+            airValuesIdsExpressions.push(expressionsInfo[i].airValuesIds[j]);
         } 
     }
     
@@ -124,7 +133,8 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
     await cHelpersBin.writeULE32(cmPolsIdsExpressions.length);
     await cHelpersBin.writeULE32(challengesIdsExpressions.length);
     await cHelpersBin.writeULE32(publicsIdsExpressions.length);
-    await cHelpersBin.writeULE32(subproofValuesIdsExpressions.length);
+    await cHelpersBin.writeULE32(airgroupValuesIdsExpressions.length);
+    await cHelpersBin.writeULE32(airValuesIdsExpressions.length);
 
     const nExpressions = expressionsInfo.length;
 
@@ -158,8 +168,11 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
         await cHelpersBin.writeULE32(expInfo.publicsIds.length);
         await cHelpersBin.writeULE32(publicsIdsExpressionsOffset[i]);
 
-        await cHelpersBin.writeULE32(expInfo.subproofValuesIds.length);
-        await cHelpersBin.writeULE32(subproofValuesIdsExpressionsOffset[i]);
+        await cHelpersBin.writeULE32(expInfo.airgroupValuesIds.length);
+        await cHelpersBin.writeULE32(airgroupValuesIdsExpressionsOffset[i]);
+
+        await cHelpersBin.writeULE32(expInfo.airValuesIds.length);
+        await cHelpersBin.writeULE32(airValuesIdsExpressionsOffset[i]);
 
         module.exports.writeStringToFile(cHelpersBin, expInfo.line);
     }
@@ -206,10 +219,16 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
         buffPublicsIdsExpressionsV.setUint16(2*j, publicsIdsExpressions[j], true);
     }
 
-    const buffSubproofValuesIdsExpressions = new Uint8Array(2*subproofValuesIdsExpressions.length);
-    const buffSubproofValuesIdsExpressionsV = new DataView(buffSubproofValuesIdsExpressions.buffer);
-    for(let j = 0; j < subproofValuesIdsExpressions.length; j++) {
-        buffSubproofValuesIdsExpressionsV.setUint16(2*j, subproofValuesIdsExpressions[j], true);
+    const buffAirgroupValuesIdsExpressions = new Uint8Array(2*airgroupValuesIdsExpressions.length);
+    const buffAirgroupValuesIdsExpressionsV = new DataView(buffAirgroupValuesIdsExpressions.buffer);
+    for(let j = 0; j < airgroupValuesIdsExpressions.length; j++) {
+        buffAirgroupValuesIdsExpressionsV.setUint16(2*j, airgroupValuesIdsExpressions[j], true);
+    }
+
+    const buffAirValuesIdsExpressions = new Uint8Array(2*airValuesIdsExpressions.length);
+    const buffAirValuesIdsExpressionsV = new DataView(buffAirValuesIdsExpressions.buffer);
+    for(let j = 0; j < airValuesIdsExpressions.length; j++) {
+        buffAirValuesIdsExpressionsV.setUint16(2*j, airValuesIdsExpressions[j], true);
     }
     
     await cHelpersBin.write(buffOpsExpressions);
@@ -220,7 +239,9 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
     await cHelpersBin.write(buffCmPolsIdsExpressions);
     await cHelpersBin.write(buffChallengesIdsExpressions);
     await cHelpersBin.write(buffPublicsIdsExpressions);
-    await cHelpersBin.write(buffSubproofValuesIdsExpressions);
+    await cHelpersBin.write(buffAirgroupValuesIdsExpressions);
+    await cHelpersBin.write(buffAirValuesIdsExpressions);
+
 
     await endWriteSection(cHelpersBin);
 }
@@ -236,7 +257,8 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
     const cmPolsIdsDebug = [];
     const challengesIdsDebug = [];
     const publicsIdsDebug = [];
-    const subproofValuesIdsDebug = [];
+    const airgroupValuesIdsDebug = [];
+    const airValuesIdsDebug = [];
 
     const opsOffsetDebug = [];
     const argsOffsetDebug = [];
@@ -244,7 +266,8 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
     const cmPolsIdsOffsetDebug = [];
     const challengesIdsOffsetDebug = [];
     const publicsIdsOffsetDebug = [];
-    const subproofValuesIdsOffsetDebug = [];
+    const airgroupValuesIdsOffsetDebug = [];
+    const airValuesIdsOffsetDebug = [];
 
     const nConstraints = constraintsInfo.length;
 
@@ -256,7 +279,8 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
             cmPolsIdsOffsetDebug.push(0);
             challengesIdsOffsetDebug.push(0);
             publicsIdsOffsetDebug.push(0);
-            subproofValuesIdsOffsetDebug.push(0);
+            airgroupValuesIdsOffsetDebug.push(0);
+            airValuesIdsOffsetDebug.push(0);
         } else {
             opsOffsetDebug.push(opsOffsetDebug[i-1] + constraintsInfo[i-1].ops.length);
             argsOffsetDebug.push(argsOffsetDebug[i-1] + constraintsInfo[i-1].args.length);
@@ -264,7 +288,9 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
             cmPolsIdsOffsetDebug.push(cmPolsIdsOffsetDebug[i-1] + constraintsInfo[i-1].cmPolsIds.length);
             challengesIdsOffsetDebug.push(challengesIdsOffsetDebug[i-1] + constraintsInfo[i-1].challengeIds.length);
             publicsIdsOffsetDebug.push(publicsIdsOffsetDebug[i-1] + constraintsInfo[i-1].publicsIds.length);
-            subproofValuesIdsOffsetDebug.push(subproofValuesIdsOffsetDebug[i-1] + constraintsInfo[i-1].subproofValuesIds.length);
+            airgroupValuesIdsOffsetDebug.push(airgroupValuesIdsOffsetDebug[i-1] + constraintsInfo[i-1].airgroupValuesIds.length);
+            airValuesIdsOffsetDebug.push(airValuesIdsOffsetDebug[i-1] + constraintsInfo[i-1].airValuesIds.length);
+
         }
         for(let j = 0; j < constraintsInfo[i].ops.length; j++) {
             opsDebug.push(constraintsInfo[i].ops[j]);
@@ -284,8 +310,11 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
         for(let j = 0; j < constraintsInfo[i].publicsIds.length; j++) {
             publicsIdsDebug.push(constraintsInfo[i].publicsIds[j]);
         }
-        for(let j = 0; j < constraintsInfo[i].subproofValuesIds.length; j++) {
-            subproofValuesIdsDebug.push(constraintsInfo[i].subproofValuesIds[j]);
+        for(let j = 0; j < constraintsInfo[i].airgroupValuesIds.length; j++) {
+            airgroupValuesIdsDebug.push(constraintsInfo[i].airgroupValuesIds[j]);
+        }
+        for(let j = 0; j < constraintsInfo[i].airValuesIds.length; j++) {
+            airValuesIdsDebug.push(constraintsInfo[i].airValuesIds[j]);
         }
     }
 
@@ -297,7 +326,8 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
     await cHelpersBin.writeULE32(cmPolsIdsDebug.length);
     await cHelpersBin.writeULE32(challengesIdsDebug.length);
     await cHelpersBin.writeULE32(publicsIdsDebug.length);
-    await cHelpersBin.writeULE32(subproofValuesIdsDebug.length);
+    await cHelpersBin.writeULE32(airgroupValuesIdsDebug.length);
+    await cHelpersBin.writeULE32(airValuesIdsDebug.length);
 
     await cHelpersBin.writeULE32(nConstraints);
 
@@ -332,8 +362,11 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
         await cHelpersBin.writeULE32(constraintInfo.publicsIds.length);
         await cHelpersBin.writeULE32(publicsIdsOffsetDebug[i]);
 
-        await cHelpersBin.writeULE32(constraintInfo.subproofValuesIds.length);
-        await cHelpersBin.writeULE32(subproofValuesIdsOffsetDebug[i]);
+        await cHelpersBin.writeULE32(constraintInfo.airgroupValuesIds.length);
+        await cHelpersBin.writeULE32(airgroupValuesIdsOffsetDebug[i]);
+
+        await cHelpersBin.writeULE32(constraintInfo.airValuesIds.length);
+        await cHelpersBin.writeULE32(airValuesIdsOffsetDebug[i]);
 
         await cHelpersBin.writeULE32(constraintInfo.imPol);
         module.exports.writeStringToFile(cHelpersBin, constraintInfo.line);
@@ -381,10 +414,16 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
         buffPublicsIdsDebugV.setUint16(2*j, publicsIdsDebug[j], true);
     }
 
-    const buffSubproofValuesIdsDebug = new Uint8Array(2*subproofValuesIdsDebug.length);
-    const buffSubproofValuesIdsDebugV = new DataView(buffSubproofValuesIdsDebug.buffer);
-    for(let j = 0; j < subproofValuesIdsDebug.length; j++) {
-        buffSubproofValuesIdsDebugV.setUint16(2*j, subproofValuesIdsDebug[j], true);
+    const buffAirgroupValuesIdsDebug = new Uint8Array(2*airgroupValuesIdsDebug.length);
+    const buffAirgroupValuesIdsDebugV = new DataView(buffAirgroupValuesIdsDebug.buffer);
+    for(let j = 0; j < airgroupValuesIdsDebug.length; j++) {
+        buffAirgroupValuesIdsDebugV.setUint16(2*j, airgroupValuesIdsDebug[j], true);
+    }
+
+    const buffAirValuesIdsDebug = new Uint8Array(2*airValuesIdsDebug.length);
+    const buffAirValuesIdsDebugV = new DataView(buffAirValuesIdsDebug.buffer);
+    for(let j = 0; j < airValuesIdsDebug.length; j++) {
+        buffAirValuesIdsDebugV.setUint16(2*j, airValuesIdsDebug[j], true);
     }
     
     await cHelpersBin.write(buffOpsDebug);
@@ -395,7 +434,8 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
     await cHelpersBin.write(buffCmPolsIdsDebug);
     await cHelpersBin.write(buffChallengesIdsDebug);
     await cHelpersBin.write(buffPublicsIdsDebug);
-    await cHelpersBin.write(buffSubproofValuesIdsDebug);
+    await cHelpersBin.write(buffAirgroupValuesIdsDebug);
+    await cHelpersBin.write(buffAirValuesIdsDebug);
 
     await endWriteSection(cHelpersBin);
 }

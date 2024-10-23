@@ -19,7 +19,7 @@ function pilCodeGen(ctx, symbols, expressions, expId, prime, evMap) {
             verifierQuery: ctx.verifierQuery,
             evMap: ctx.evMap,
             airId: ctx.airId,
-            subproofId: ctx.subproofId,
+            airgroupId: ctx.airgroupId,
             openingPoints: ctx.openingPoints,
             stage: ctx.stage,
             code: []
@@ -62,7 +62,7 @@ function calculateEvMap(ctx, symbols, expressions, exp, prime) {
     } else if (exp.op === "exp") {
         let p = exp.rowOffset || prime; 
         const r = { type: exp.op, expId: exp.id, id: exp.id, prime: p, dim: exp.dim };
-        const symbol = symbols.find(s => s.type === "witness" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
+        const symbol = symbols.find(s => s.type === "witness" && s.expId === r.id && s.airId === ctx.airId && s.airgroupId === ctx.airgroupId);
         if(symbol && symbol.imPol) {
             r.type = "cm";
             r.id = symbol.polId;
@@ -103,16 +103,16 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
         const r = { type: exp.op, expId: exp.id, id: exp.id, prime: p, dim: exp.dim };
         fixCommitPol(r, ctx, symbols);
         return r;
-    } else if (exp.op === "eval") {
-        return { type: exp.op, id: exp.id, dim: exp.dim, subproofId: exp.subproofId, airId: exp.airId}
     } else if (exp.op === "challenge") {
         return { type: exp.op, id: exp.id, stageId: exp.stageId, dim: exp.dim, stage: exp.stage }
     } else if (exp.op === "public") {
         return { type: exp.op, id: exp.id, dim: 1}
     } else if (exp.op == "number") {
         return { type: exp.op, value: exp.value.toString(), dim: 1 }
-    } else if (exp.op === "subproofValue") {
-        return { type: exp.op, id: exp.id, dim: exp.dim, subproofId: exp.subproofId, airId: exp.airId }    
+    } else if ("eval" === exp.op) {
+        return { type: exp.op, id: exp.id, dim: exp.dim}
+    } else if (["airgroupvalue", "airvalue"].includes(exp.op)) {
+        return { type: exp.op, id: exp.id, dim: 3, airgroupId: exp.airgroupId };
     } else if (exp.op == "xDivXSubXi") {
         return { type: exp.op, id: exp.id, opening: exp.opening, dim: 3 }
     } else if (exp.op == "Zi") {
@@ -194,8 +194,10 @@ function fixDimensionsVerifier(ctx) {
             d = r.dim;
         } else if(["const", "number", "public"].includes(r.type)) {
             d = 1;
-        } else if(["eval", "challenge", "xDivXSubXi", "x", "Zi", "subproofValue"].includes(r.type)) {
+        } else if(["eval", "challenge", "xDivXSubXi", "x", "Zi"].includes(r.type)) {
             d = ctx.stark ? 3 : 1;
+        } else if(["airvalue", "airgroupvalue"].includes(r.type)) {
+            d = r.dim;
         } else throw new Error("Invalid type: " + r.type);
         r.dim = d;
         return d;
@@ -204,7 +206,7 @@ function fixDimensionsVerifier(ctx) {
 }
 
 function fixCommitPol(r, ctx, symbols) {
-    const symbol = symbols.find(s => s.type === "witness" && s.expId === r.id && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
+    const symbol = symbols.find(s => s.type === "witness" && s.expId === r.id && s.airId === ctx.airId && s.airgroupId === ctx.airgroupId);
     if(!symbol) return;
     if(symbol.imPol && (ctx.dom === "ext" || symbol.stage <= ctx.stage && ctx.calculated[r.id] && ctx.calculated[r.id][r.prime] && ctx.calculated[r.id][r.prime].cm)) {
         r.type = "cm";
@@ -247,7 +249,7 @@ function fixEval(r, ctx) {
 }
 
 function fixCommitsQuery(r, ctx, symbols) {
-    const symbol = symbols.find(s => s.polId === r.id && s.type === "witness" && s.airId === ctx.airId && s.subproofId === ctx.subproofId);
+    const symbol = symbols.find(s => s.polId === r.id && s.type === "witness" && s.airId === ctx.airId && s.airgroupId === ctx.airgroupId);
     r.type = "tree" + symbol.stage;
     r.stageId = symbol.stageId;
     r.treePos = symbol.stagePos;

@@ -43,12 +43,12 @@ async function runTest(pilFile) {
         const PilOut = protobuf.loadSync(piloutProto).lookupType("PilOut");
         let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
         
-        const pil = pilout.subproofs[0].airs[0];
+        const pil = pilout.airgroups[0].airs[0];
         pil.symbols = pilout.symbols;
         pil.numChallenges = pilout.numChallenges;
         pil.hints = pilout.hints;
         pil.airId = 0;
-        pil.subproofId = 0;
+        pil.airgroupId = 0;
 
         const cnstPols = generateFixedCols(pil.symbols, pil.numRows);
         getFixedPolsPil2(pil, cnstPols, F);

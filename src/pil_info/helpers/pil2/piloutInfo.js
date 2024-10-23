@@ -3,7 +3,7 @@ const { formatExpressions, formatConstraints, formatSymbols, formatHints } = req
 
 module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     res.airId = pilout.airId;
-    res.subproofId = pilout.subproofId;
+    res.airgroupId = pilout.airgroupId;
     
     const constraints = formatConstraints(pilout);
     
@@ -19,17 +19,14 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
         symbols = e.symbols;
     }
 
-    symbols = symbols.filter(s => !["witness", "fixed"].includes(s.type) || s.airId === res.airId && s.subproofId === res.subproofId);
+    symbols = symbols.filter(s => !["witness", "fixed"].includes(s.type) || s.airId === res.airId && s.airgroupId === res.airgroupId);
 
-    const aggregationTypes = pilout.aggregationTypes || [];
+    const airGroupValues = pilout.airGroupValues || [];
     res.pilPower = Math.log2(pilout.numRows);
-    res.nCommitments = symbols.filter(s => s.type === "witness" && s.airId === res.airId && s.subproofId === res.subproofId).length;
-    res.nConstants = symbols.filter(s => s.type === "fixed" && s.airId === res.airId && s.subproofId === res.subproofId).length;
+    res.nCommitments = symbols.filter(s => s.type === "witness" && s.airId === res.airId && s.airgroupId === res.airgroupId).length;
+    res.nConstants = symbols.filter(s => s.type === "fixed" && s.airId === res.airId && s.airgroupId === res.airgroupId).length;
     res.nPublics = symbols.filter(s => s.type === "public").length;
-    res.aggregationTypes = aggregationTypes;
-    res.nSubproofValues = pilout.aggregationTypes 
-        ? aggregationTypes.length 
-        : symbols.filter(s => s.type === "subproofValue" && s.subproofId === res.subproofId).length;
+    res.airGroupValues = airGroupValues;
     if(pilout.numChallenges) {
         res.nStages = pilout.numChallenges.length;
     } else {
@@ -37,7 +34,7 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
         res.nStages = numChallenges.length;
     }
     
-    const airHints = pilout.hints?.filter(h => h.airId === res.airId && h.subproofId === res.subproofId) || [];
+    const airHints = pilout.hints?.filter(h => h.airId === res.airId && h.airGroupId === res.airgroupId) || [];
     const hints = formatHints(pilout, airHints, symbols, expressions, stark, saveSymbols);
 
     return {expressions, hints, constraints, symbols};

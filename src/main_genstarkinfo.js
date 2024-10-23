@@ -10,7 +10,7 @@ const path = require('path');
 
 const argv = require("yargs")
     .version(version)
-    .usage("node main_genstarkinfo.js -p <pil.json> [-P <pilconfig.json] -s <starkstruct.json> -i <starkinfo.json> [--pil2] [--subproofId <number>] [--airId <number>]")
+    .usage("node main_genstarkinfo.js -p <pil.json> [-P <pilconfig.json] -s <starkstruct.json> -i <starkinfo.json> [--pil2] [--airgroupId <number>] [--airId <number>]")
     .alias("p", "pil")
     .alias("P", "pilconfig")
     .alias("s", "starkstruct")
@@ -22,7 +22,7 @@ const argv = require("yargs")
     .alias("d", "debug")
     .alias("k", "skipimpols")
     .alias("o", "optimpols")
-    .string("subproofId")
+    .string("airgroupId")
     .string("airId")
     .alias("r", "recursion")
     .argv;
@@ -52,15 +52,15 @@ async function run() {
         const PilOut = protobuf.loadSync(pilOutProtoPath).lookupType("PilOut");
         let pilout = PilOut.toObject(PilOut.decode(piloutEncoded));
         
-        const subproofId = argv.subproofId || 0;
+        const airgroupId = argv.airgroupId || 0;
         const airId = argv.airId || 0;
 
-        pil = pilout.subproofs[subproofId].airs[airId];
+        pil = pilout.airgroups[airgroupId].airs[airId];
         pil.symbols = pilout.symbols;
         pil.numChallenges = pilout.numChallenges;
         pil.hints = pilout.hints;
         pil.airId = airId;
-        pil.subproofId = subproofId;
+        pil.airgroupId = airgroupId;
     } else {
         pil = await compile(F, pilFile, null, pilConfig);
     }

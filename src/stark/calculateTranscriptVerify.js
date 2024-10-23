@@ -47,6 +47,13 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
             if (logger) logger.debug("··· challenges[" + (stage - 1) + "][" + j + "]: " + F.toString(challenges[stage - 1][j]));
         }
         transcript.put(proof["root" + stage]);
+        let airValues = [];
+        let nAirValuesStage = starkInfo.airValuesMap.filter(a => a.stage === stage).length;
+        if(nAirValuesStage > 0) {
+            airValues.push(...proof.airValues[stage - 1][j]);
+            const airValuesHash = await calculateHashStark(ctx, airValues);
+            transcript.put(airValuesHash);
+        }
     }
     
     let qStep = starkInfo.nStages;
@@ -84,7 +91,7 @@ module.exports.calculateTranscript = async function calculateTranscript(F, stark
         if (logger) logger.debug("··· challenges FRI folding step " + step + ": " + F.toString(challengesFRISteps[step]));
 
         if (step < starkInfo.starkStruct.steps.length - 1) {
-            transcript.put(proof.fri[step+1].root);
+            transcript.put(proof.fri[step].root);
         } else {
             if(!starkInfo.starkStruct.hashCommits) {
                 for (let i=0; i<proof.fri[proof.fri.length-1].length; i++) {

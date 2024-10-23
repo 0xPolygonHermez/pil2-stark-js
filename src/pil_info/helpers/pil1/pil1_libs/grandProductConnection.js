@@ -13,7 +13,7 @@ module.exports.initChallengesConnection = function initChallengesConnection(star
     return [gamma, delta];
 }
 
-module.exports.grandProductConnection = function grandProductConnection(pil, symbols, hints, stark, subproofId, airId, F) {
+module.exports.grandProductConnection = function grandProductConnection(pil, symbols, hints, stark, airgroupId, airId, F) {
     const E = new ExpressionOps();
 
     const stage = 2;
@@ -125,7 +125,7 @@ module.exports.grandProductConnection = function grandProductConnection(pil, sym
         const numDim = getExpDim(pil.expressions, ciCtx.numId, stark);
         const denDim = getExpDim(pil.expressions, ciCtx.denId, stark);
 
-        symbols.push({ type: "witness", name: `Connection${i}.z`, polId: ciCtx.zId, stage, dim: Math.max(numDim, denDim), airId, subproofId});
+        symbols.push({ type: "witness", name: `Connection${i}.z`, polId: ciCtx.zId, stage, dim: Math.max(numDim, denDim), airId, airgroupId});
 
         const hint = {
             name: "gprod",

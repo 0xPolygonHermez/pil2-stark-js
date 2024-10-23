@@ -71,7 +71,7 @@ template AggregateValues() {
     signal hash[12] <== Poseidon(12)([valueA[0], valueA[1], valueA[2], valueA[3], valueB[0], valueB[1], valueB[2], valueB[3]], [0,0,0,0]);
     signal hashAB[4] <== [hash[0], hash[1], hash[2], hash[3]];
 
-    // If valueA or valueB is [0,0,0], it means that the particular subproof does not have that stage. Therefore we should proceed the same way as if circuitType is null
+    // If valueA or valueB is [0,0,0], it means that the particular airgroup does not have that stage. Therefore we should proceed the same way as if circuitType is null
     signal isValueA1Zero <== IsZero()(valueA[0]);
     signal isValueA2Zero <== IsZero()(valueA[1]);
     signal isValueA3Zero <== IsZero()(valueA[2]);
@@ -105,16 +105,16 @@ template AggregateSubproofValues() {
 
     signal output subproofValueAB[3];
 
-    // If circuit type A is null, then its subproofValue is zero;
+    // If circuit type A is null, then its airgroupvalue is zero;
     signal valueA[3] <== [ (1 - isNullA)*subproofValueA[0], (1 - isNullA)*subproofValueA[1], (1 - isNullA)*subproofValueA[2] ];
 
-    // If circuit type B is null, then its subproofValue is zero;
+    // If circuit type B is null, then its airgroupvalue is zero;
     signal valueB[3] <== [ (1 - isNullB)*subproofValueB[0], (1 - isNullB)*subproofValueB[1], (1 - isNullB)*subproofValueB[2] ];
 
     signal values[2][3];
     values[0] <== [valueA[0] + valueB[0], valueA[1] + valueB[1], valueA[2] + valueB[2]];
     values[1] <== [valueA[0] * valueB[0], valueA[1] * valueB[1], valueA[2] * valueB[2]];
 
-    // Either add or multiply the subproofValues according to the aggregation type and then return the result
+    // Either add or multiply the airgroupValues according to the aggregation type and then return the result
     subproofValueAB <== MultiMux1(3)(values, aggregationType);
 }

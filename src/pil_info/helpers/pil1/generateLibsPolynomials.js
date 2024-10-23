@@ -11,7 +11,7 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
 
     if(pil.plookupIdentities.length > 0) {
         pilLibs.push({
-            lib: function() { grandProductPlookup(pil, symbols, hints, res.subproofId, res.airId, stark) },
+            lib: function() { grandProductPlookup(pil, symbols, hints, res.airgroupId, res.airId, stark) },
         });
         const challenges = initChallengesPlookup(stark);
         calculateChallenges(res, symbols, challenges);
@@ -19,7 +19,7 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
 
     if(pil.permutationIdentities.length > 0) {
         pilLibs.push({
-            lib: function() { grandProductPermutation(pil, symbols, hints, stark, res.subproofId, res.airId)},
+            lib: function() { grandProductPermutation(pil, symbols, hints, stark, res.airgroupId, res.airId)},
         });
         const challenges = initChallengesPermutation(stark);
         calculateChallenges(res, symbols, challenges);
@@ -27,7 +27,7 @@ module.exports = function generateLibsPolynomials(F, res, pil, symbols, hints, s
 
     if(pil.connectionIdentities.length > 0) {
         pilLibs.push({
-            lib: function() { grandProductConnection(pil, symbols, hints, stark, res.subproofId, res.airId, F)},
+            lib: function() { grandProductConnection(pil, symbols, hints, stark, res.airgroupId, res.airId, F)},
         });
         const challenges = initChallengesConnection(stark);
         calculateChallenges(res, symbols, challenges);

@@ -1,6 +1,6 @@
 constant MODULE_ID = 1;
 
-subproof Module(2**4) {
+airgroup Module(2**4) {
 
     subproofval aggregate(sum) gsum_module;
 
@@ -14,7 +14,7 @@ subproof Module(2**4) {
 
     @gsum { reference: gsum, numerator: 1, denominator: (((x_mod * std_alpha + x) * std_alpha) + MODULE_ID + std_beta)}
 
-    @subproofvalue { reference: gsum_module, expression: gsum, row_index: N - 1 }
+    @airgroupvalue { reference: gsum_module, expression: gsum, row_index: N - 1 }
 
     (gsum - 'gsum * (1 - L1)) * (((x_mod * std_alpha + x) * std_alpha) + MODULE_ID + std_beta) - 1 === 0;
 
