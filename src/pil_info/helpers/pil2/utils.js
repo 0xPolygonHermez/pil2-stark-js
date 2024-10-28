@@ -139,7 +139,9 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false, glob
         store = true;
     } else if (op === "airValue") {
         const id = exp[op].idx;
-        exp = { op: "airvalue", id, stage: pilout.airValues[id].stage, dim: 3 };
+        const stage = pilout.airValues[id].stage;
+        const dim = stage !== 1 && stark ? 3 : 1; 
+        exp = { op: "airvalue", id, stage, dim };
         store = true;
     } else if (op === "challenge") {
         const id = exp[op].idx + pilout.numChallenges.slice(0, exp[op].stage - 1).reduce((acc, c) => acc + c, 0);
@@ -203,7 +205,8 @@ function addSymbol(pilout, symbols, exp, stark, global = false) {
         const airvalueSymbol = symbols.find(s => s.type === "airvalue" && s.id === exp.id && s.airId === airId && s.airgroupId === airgroupId);
         if(!airvalueSymbol) {
             const name = pilout.name + ".airvalue_" + exp.id;
-            symbols.push({type: "airvalue", dim: 3, id: exp.id, stage: exp.stage, name, airId, airgroupId });
+            const dim = stage !== 1 && stark ? 3 : 1; 
+            symbols.push({type: "airvalue", dim, id: exp.id, stage: exp.stage, name, airId, airgroupId });
         }
     } else {
         throw new Error ("Unknown operation " + exp.op);
@@ -347,9 +350,11 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark, global = fa
                 type: "airvalue",
                 id: s.id,
                 airgroupId: s.airGroupId,
-                dim: stark ? 3 : 1,
             }
-            if(!global) airvalue.stage = pilout.airValues[s.id].stage;
+            if(!global) {
+                airvalue.stage = pilout.airValues[s.id].stage;
+                airvalue.dim = stark && airvalue.stage != 1 ? 3 : 1;
+            }
             return airvalue;
         }
     });

@@ -112,7 +112,7 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
     } else if ("eval" === exp.op) {
         return { type: exp.op, id: exp.id, dim: exp.dim}
     } else if (["airgroupvalue", "airvalue"].includes(exp.op)) {
-        return { type: exp.op, id: exp.id, dim: 3, airgroupId: exp.airgroupId };
+        return { type: exp.op, id: exp.id, dim: exp.dim, airgroupId: exp.airgroupId };
     } else if (exp.op == "xDivXSubXi") {
         return { type: exp.op, id: exp.id, opening: exp.opening, dim: 3 }
     } else if (exp.op == "Zi") {

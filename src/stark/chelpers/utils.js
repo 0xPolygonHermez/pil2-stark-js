@@ -37,7 +37,11 @@ module.exports.writeType = function writeType(type, c_args, parserType, global =
                 ? `&airgroupValues[args[i_args + ${c_args}]*FIELD_EXTENSION*nrowsPack]`
                 : `airgroupValues[args[i_args + ${c_args}]]`;
             }
-        case "airvalue":
+        case "airvalue1":
+            return parserType === "pack"
+            ? `&airValues[args[i_args + ${c_args}]*FIELD_EXTENSION*nrowsPack]`
+            : `airValues[args[i_args + ${c_args}]][0]`;
+        case "airvalue3":
             return parserType === "pack"
             ? `&airValues[args[i_args + ${c_args}]*FIELD_EXTENSION*nrowsPack]`
             : `airValues[args[i_args + ${c_args}]]`;
@@ -62,7 +66,8 @@ module.exports.numberOfArgs = function numberOfArgs(type, global = false) {
         case "challenge":
         case "eval":
         case "number":
-        case "airvalue":
+        case "airvalue1":
+        case "airvalue3":
             return 1;
         case "airgroupvalue":
             return global ? 2 : 1;
@@ -130,8 +135,8 @@ module.exports.getAllOperations = function getAllOperations() {
     const possibleDestinationsDim1 = [ "tmp1" ];
     const possibleDestinationsDim3 = [ "tmp3" ];
 
-    const possibleSrcDim1 = [ "commit1", "tmp1", "public", "number" ];
-    const possibleSrcDim3 = [ "commit3", "tmp3", "challenge", "airgroupvalue", "airvalue" ];
+    const possibleSrcDim1 = [ "commit1", "tmp1", "public", "number", "airvalue1" ];
+    const possibleSrcDim3 = [ "commit3", "tmp3", "challenge", "airgroupvalue", "airvalue3" ];
 
     // Dim1 destinations
     for(let j = 0; j < possibleDestinationsDim1.length; j++) {

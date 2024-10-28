@@ -8,13 +8,14 @@ const operationsMap = {
     "tmp1": 4,
     "public": 5,
     "number": 6,
-    "commit3": 7,
-    "xDivXSubXi": 8,
-    "tmp3": 9,
-    "airvalue": 10,
-    "airgroupvalue": 11,
-    "challenge": 12, 
-    "eval": 13,
+    "airvalue1": 7,
+    "commit3": 8,
+    "xDivXSubXi": 9,
+    "tmp3": 10,
+    "airvalue3": 11,
+    "airgroupvalue": 12,
+    "challenge": 13, 
+    "eval": 14,
 }
 
 module.exports.generateParser = function generateParser(parserType = "avx") {
@@ -295,9 +296,9 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
     } else {
         parserCPP.push(...[
             "            Goldilocks::Element buff[nrowsPack];",
-            "            Goldilocks::store_avx(buff, tmp[0]);",
+            `            Goldilocks::${avxStore}(buff, tmp[0]);`,
             "            Goldilocks::batchInverse(buff, buff, nrowsPack);",
-            "            Goldilocks::load_avx(destVals[0], buff);",
+            `            Goldilocks::${avxLoad}(destVals[0], buff);`,
         ]);
     }
 
@@ -734,8 +735,8 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
         if(["tmp3", "commit3"].includes(operation.dest_type)) {
             if(operation.src1_type)  {
                 let dimType = "";
-                let dims1 = ["public", "commit1", "tmp1", "const", "number"];
-                let dims3 = ["commit3", "tmp3", "airgroupvalue", "airvalue", "challenge", "eval", "xDivXSubXi"];
+                let dims1 = ["public", "commit1", "tmp1", "const", "number", "airvalue1"];
+                let dims3 = ["commit3", "tmp3", "airgroupvalue", "airvalue3", "challenge", "eval", "xDivXSubXi"];
                 if(dims1.includes(operation.src0_type)) dimType += "1";
                 if (dims3.includes(operation.src0_type)) dimType += "3";
                 if(dims1.includes(operation.src1_type)) dimType += "1";
@@ -828,6 +829,8 @@ module.exports.getOperation = function getOperation(r, verify = false) {
             _op[`src${i}_type`] = "commit3";
         } else if(src[i].type === "tmp") {
             _op[`src${i}_type`] =  `tmp${src[i].dim}`;
+        } else if(src[i].type === "airvalue") {
+            _op[`src${i}_type`] = `airvalue${src[i].dim}`;
         } else {
             _op[`src${i}_type`] = src[i].type;
         }
