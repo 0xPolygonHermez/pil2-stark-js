@@ -49,6 +49,21 @@ class ExpressionOps {
         }
     }
 
+    custom(id, rowOffset = 0, stage, dim = 1, commitId) {
+        if(stage === undefined) {
+            throw new Error("Stage not defined for cm " + id);
+        }
+
+        return {
+            op: "custom",
+            id,
+            stage: stage,
+            dim,
+            rowOffset,
+            commitId,
+        }
+    }
+
     q(qDim) {
         return {
             op: "q",

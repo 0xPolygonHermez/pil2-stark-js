@@ -1,5 +1,5 @@
-const { printExpressions } = require("../pil2/utils");
 const { pilCodeGen, buildCode } = require("./codegen");
+
 
 module.exports.generateExpressionsCode = function generateExpressionsCode(res, symbols, expressions, stark) {
     const expressionsCode = [];
@@ -156,9 +156,16 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
         const rf = { type: "cm", id: qIndex + i, prime: 0, openingPos };
         ctx.evMap.push(rf);
     }
+
+    const typeOrder = { "cm": 0, "const": 1 };
+    for(let i = 0; i < res.customCommits.length; ++i) {
+        typeOrder[`custom${i}`] = i + 2;
+    }
     ctx.evMap.sort((a, b) => {
-        if(a.type !== b.type) {
-            return a.type === "cm" ? 1 : -1;
+        const a_type = ["const", "cm"].includes(a.type) ? a.type : `custom${a.commitId}`;
+        const b_type = ["const", "cm"].includes(b.type) ? b.type : `custom${b.commitId}`;
+        if(typeOrder[a_type] !== typeOrder[b_type]) {
+            return typeOrder[b_type] - typeOrder[a_type];
         } else if(a.id !== b.id) {
             return a.id - b.id;
         } else {
@@ -170,7 +177,6 @@ module.exports.generateConstraintPolynomialVerifierCode = function generateConst
     verifierInfo.qVerifier = buildCode(ctx, expressions);
     verifierInfo.qVerifier.line = "";
 
-    console.log(verifierInfo.qVerifier.line);
     res.evMap = ctx.evMap;
 
     if (!stark) {

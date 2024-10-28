@@ -20,6 +20,9 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
 
     let symbolsUsed = code.symbolsUsed;
 
+    const customCommits = !global ? starkInfo.customCommits : [];
+    let nStages = starkInfo.nStages + 2 + customCommits.length;
+
     // Evaluate max and min temporal variable for tmp_ and tmp3_
     let maxid = 1000000;
     let ID1D = new Array(maxid).fill(-1);
@@ -62,7 +65,10 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         expsInfo.publicsIds = symbolsUsed.filter(s => s.op === "public").map(s => s.id).sort();
         expsInfo.airgroupValuesIds = symbolsUsed.filter(s => s.op === "airgroupvalue").map(s => s.id).sort();
         expsInfo.airValuesIds = symbolsUsed.filter(s => s.op === "airvalue").map(s => s.id).sort();
-
+        expsInfo.customValuesIds = [];
+        for(let i = 0; i < customCommits.length; ++i) {
+            expsInfo.customValuesIds.push(symbolsUsed.filter(s => s.op === "custom" && s.commitId === i).map(s => s.id).sort());
+        }
     }
 
     const destTmp = code_[code_.length - 1].dest;
@@ -127,11 +133,20 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                 if(verify) {
                     args.push(0);
                 } else {
-                    args.push((starkInfo.nStages + 2)*primeIndex);
+                    args.push(nStages*primeIndex);
                 }
                 args.push(r.id);
                 
                 
+                break;
+            }
+            case "custom": {
+                const primeIndex = starkInfo.openingPoints.findIndex(p => p === r.prime);
+                if(primeIndex == -1) throw new Error("Something went wrong");
+
+                args.push(nStages*primeIndex + starkInfo.nStages + 2 + r.commitId);
+                args.push(r.id);
+
                 break;
             }
             case "cm": {
@@ -165,33 +180,35 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
             }
             case "xDivXSubXi":
                 if(verify) {
-                    args.push((starkInfo.nStages + 2));
+                    args.push(nStages);
                     args.push(3*r.id);
                 } else {
-                    args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
+                    args.push(nStages*starkInfo.openingPoints.length);
                     args.push(3*r.id);
                 }
                 break;
             case "Zi": {
                 if(verify) {
-                    args.push((starkInfo.nStages + 2));
+                    args.push(nStages);
                     args.push(3 + 3*r.boundaryId);
                 } else {
-                    args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
+                    args.push(nStages*starkInfo.openingPoints.length);
                     args.push(1 + r.boundaryId);
                 }
                 break;
             }
             case "x": {
                 if(verify) {
-                    args.push(starkInfo.nStages + 2);
+                    args.push(nStages);
                     args.push(0);
                 } else {
-                    args.push((starkInfo.nStages + 2)*starkInfo.openingPoints.length);
+                    args.push(nStages*starkInfo.openingPoints.length);
                     args.push(0);
                 }
                 break;
             }
+            default: 
+                throw new Error("Unknown type " + type);
         }
     }
 
@@ -207,7 +224,7 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
         if(verify) {
             args.push(stage);
         } else {
-            args.push((starkInfo.nStages + 2)*primeIndex + stage);
+            args.push(nStages*primeIndex + stage);
         }
         args.push(Number(p.stagePos));
     }

@@ -57,6 +57,8 @@ module.exports.writeExpressionsBinFile = async function writeExpressionsBinFile(
 async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps, section, verify = false) {
     console.log(`··· Writing Section ${section}. CHelpers expressions section`);
 
+    const nCustomCommits = expressionsInfo[0].customValuesIds.length;
+
     await startWriteSection(cHelpersBin, section);
 
     const opsExpressions = [];
@@ -67,6 +69,7 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
     const publicsIdsExpressions = [];
     const airgroupValuesIdsExpressions = [];
     const airValuesIdsExpressions = [];
+    const customCommitsIdsExpressions = [];
 
 
     const opsExpressionsOffset = [];
@@ -77,6 +80,7 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
     const publicsIdsExpressionsOffset = [];
     const airgroupValuesIdsExpressionsOffset = [];
     const airValuesIdsExpressionsOffset = [];
+    const customCommitsIdsExpressionsOffset = [];
 
     for(let i = 0; i < expressionsInfo.length; i++) {
         if(i == 0) {
@@ -88,6 +92,10 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
             publicsIdsExpressionsOffset.push(0);
             airgroupValuesIdsExpressionsOffset.push(0);
             airValuesIdsExpressionsOffset.push(0);
+            customCommitsIdsExpressionsOffset[0] = [];
+            for(let j = 0; j < nCustomCommits; ++j) {
+                customCommitsIdsExpressionsOffset[0].push(0);
+            }
         } else {
             opsExpressionsOffset.push(opsExpressionsOffset[i-1] + expressionsInfo[i-1].ops.length);
             argsExpressionsOffset.push(argsExpressionsOffset[i-1] + expressionsInfo[i-1].args.length);
@@ -97,6 +105,10 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
             publicsIdsExpressionsOffset.push(publicsIdsExpressionsOffset[i-1] + expressionsInfo[i-1].publicsIds.length);
             airgroupValuesIdsExpressionsOffset.push(airgroupValuesIdsExpressionsOffset[i-1] + expressionsInfo[i-1].airgroupValuesIds.length);
             airValuesIdsExpressionsOffset.push(airValuesIdsExpressionsOffset[i-1] + expressionsInfo[i-1].airValuesIds.length);
+            customCommitsIdsExpressionsOffset[i] = [];
+            for(let j = 0; j < nCustomCommits; ++j) {
+                customCommitsIdsExpressionsOffset[i].push(customCommitsIdsExpressionsOffset[i-1][j] + expressionsInfo[i-1].customValuesIds[j].length);
+            }
 
         }
         for(let j = 0; j < expressionsInfo[i].ops.length; j++) {
@@ -122,7 +134,14 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
         } 
         for(let j = 0; j < expressionsInfo[i].airValuesIds.length; j++) {
             airValuesIdsExpressions.push(expressionsInfo[i].airValuesIds[j]);
-        } 
+        }
+
+        for(let j = 0; j < nCustomCommits; ++j) {
+            for(let k = 0; k < expressionsInfo[i].customValuesIds[j].length; k++) {
+                customCommitsIdsExpressions.push(expressionsInfo[i].customValuesIds[j][k]);
+            }
+        }
+         
     }
     
     await cHelpersBin.writeULE32(opsExpressions.length);
@@ -135,8 +154,11 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
     await cHelpersBin.writeULE32(publicsIdsExpressions.length);
     await cHelpersBin.writeULE32(airgroupValuesIdsExpressions.length);
     await cHelpersBin.writeULE32(airValuesIdsExpressions.length);
+    await cHelpersBin.writeULE32(customCommitsIdsExpressions.length);
 
     const nExpressions = expressionsInfo.length;
+
+    await cHelpersBin.writeULE32(nCustomCommits);
 
     //Write the number of expressions
     await cHelpersBin.writeULE32(nExpressions);
@@ -173,6 +195,11 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
 
         await cHelpersBin.writeULE32(expInfo.airValuesIds.length);
         await cHelpersBin.writeULE32(airValuesIdsExpressionsOffset[i]);
+
+        for(let j = 0; j < nCustomCommits; ++j) {
+            await cHelpersBin.writeULE32(expInfo.customValuesIds[j].length);
+            await cHelpersBin.writeULE32(customCommitsIdsExpressionsOffset[i][j]);
+        }
 
         module.exports.writeStringToFile(cHelpersBin, expInfo.line);
     }
@@ -230,6 +257,12 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
     for(let j = 0; j < airValuesIdsExpressions.length; j++) {
         buffAirValuesIdsExpressionsV.setUint16(2*j, airValuesIdsExpressions[j], true);
     }
+
+    const buffCustomCommitsIdsExpressions = new Uint8Array(2*customCommitsIdsExpressions.length);
+    const buffCustomCommitsIdsExpressionsV = new DataView(buffCustomCommitsIdsExpressions.buffer);
+    for(let j = 0; j < customCommitsIdsExpressions.length; j++) {
+        buffCustomCommitsIdsExpressionsV.setUint16(2*j, customCommitsIdsExpressions[j], true);
+    }
     
     await cHelpersBin.write(buffOpsExpressions);
     await cHelpersBin.write(buffArgsExpressions);
@@ -241,6 +274,7 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
     await cHelpersBin.write(buffPublicsIdsExpressions);
     await cHelpersBin.write(buffAirgroupValuesIdsExpressions);
     await cHelpersBin.write(buffAirValuesIdsExpressions);
+    await cHelpersBin.write(buffCustomCommitsIdsExpressions);
 
 
     await endWriteSection(cHelpersBin);
@@ -248,6 +282,8 @@ async function writeExpressionsSection(cHelpersBin, expressionsInfo, numbersExps
 
 async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersConstraints, section) {
     console.log(`··· Writing Section ${section}. CHelpers constraints debug section`);
+
+    const nCustomCommits = constraintsInfo[0].customValuesIds.length;
 
     await startWriteSection(cHelpersBin, section);
 
@@ -259,6 +295,7 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
     const publicsIdsDebug = [];
     const airgroupValuesIdsDebug = [];
     const airValuesIdsDebug = [];
+    const customCommitsIdsDebug = [];
 
     const opsOffsetDebug = [];
     const argsOffsetDebug = [];
@@ -268,6 +305,7 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
     const publicsIdsOffsetDebug = [];
     const airgroupValuesIdsOffsetDebug = [];
     const airValuesIdsOffsetDebug = [];
+    const customCommitsIdsOffsetDebug = [];
 
     const nConstraints = constraintsInfo.length;
 
@@ -281,6 +319,10 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
             publicsIdsOffsetDebug.push(0);
             airgroupValuesIdsOffsetDebug.push(0);
             airValuesIdsOffsetDebug.push(0);
+            customCommitsIdsOffsetDebug[0] = [];
+            for(let j = 0; j < nCustomCommits; ++j) {
+                customCommitsIdsOffsetDebug[0].push(0);
+            }
         } else {
             opsOffsetDebug.push(opsOffsetDebug[i-1] + constraintsInfo[i-1].ops.length);
             argsOffsetDebug.push(argsOffsetDebug[i-1] + constraintsInfo[i-1].args.length);
@@ -290,7 +332,10 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
             publicsIdsOffsetDebug.push(publicsIdsOffsetDebug[i-1] + constraintsInfo[i-1].publicsIds.length);
             airgroupValuesIdsOffsetDebug.push(airgroupValuesIdsOffsetDebug[i-1] + constraintsInfo[i-1].airgroupValuesIds.length);
             airValuesIdsOffsetDebug.push(airValuesIdsOffsetDebug[i-1] + constraintsInfo[i-1].airValuesIds.length);
-
+            customCommitsIdsOffsetDebug[i] = [];
+            for(let j = 0; j < nCustomCommits; ++j) {
+                customCommitsIdsOffsetDebug[i].push(customCommitsIdsOffsetDebug[i-1][j] + constraintsInfo[i-1].customValuesIds[j].length);
+            }
         }
         for(let j = 0; j < constraintsInfo[i].ops.length; j++) {
             opsDebug.push(constraintsInfo[i].ops[j]);
@@ -316,6 +361,12 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
         for(let j = 0; j < constraintsInfo[i].airValuesIds.length; j++) {
             airValuesIdsDebug.push(constraintsInfo[i].airValuesIds[j]);
         }
+
+        for(let j = 0; j < nCustomCommits; ++j) {
+            for(let k = 0; k < constraintsInfo[i].customValuesIds[j].length; k++) {
+                customCommitsIdsDebug.push(constraintsInfo[i].customValuesIds[j][k]);
+            }
+        }
     }
 
     await cHelpersBin.writeULE32(opsDebug.length);
@@ -328,7 +379,10 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
     await cHelpersBin.writeULE32(publicsIdsDebug.length);
     await cHelpersBin.writeULE32(airgroupValuesIdsDebug.length);
     await cHelpersBin.writeULE32(airValuesIdsDebug.length);
+    await cHelpersBin.writeULE32(customCommitsIdsDebug.length);
 
+    await cHelpersBin.writeULE32(nCustomCommits);
+    
     await cHelpersBin.writeULE32(nConstraints);
 
     for(let i = 0; i < nConstraints; i++) {
@@ -367,6 +421,11 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
 
         await cHelpersBin.writeULE32(constraintInfo.airValuesIds.length);
         await cHelpersBin.writeULE32(airValuesIdsOffsetDebug[i]);
+
+        for(let j = 0; j < nCustomCommits; ++j) {
+            await cHelpersBin.writeULE32(constraintInfo.customValuesIds[j].length);
+            await cHelpersBin.writeULE32(customCommitsIdsOffsetDebug[i][j]);
+        }
 
         await cHelpersBin.writeULE32(constraintInfo.imPol);
         module.exports.writeStringToFile(cHelpersBin, constraintInfo.line);
@@ -425,6 +484,12 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
     for(let j = 0; j < airValuesIdsDebug.length; j++) {
         buffAirValuesIdsDebugV.setUint16(2*j, airValuesIdsDebug[j], true);
     }
+
+    const buffCustomCommitsIdsDebug = new Uint8Array(2*customCommitsIdsDebug.length);
+    const buffCustomCommitsIdsDebugV = new DataView(buffCustomCommitsIdsDebug.buffer);
+    for(let j = 0; j < customCommitsIdsDebug.length; j++) {
+        buffCustomCommitsIdsDebugV.setUint16(2*j, customCommitsIdsDebug[j], true);
+    }
     
     await cHelpersBin.write(buffOpsDebug);
     await cHelpersBin.write(buffArgsDebug);
@@ -436,6 +501,7 @@ async function writeConstraintsSection(cHelpersBin, constraintsInfo, numbersCons
     await cHelpersBin.write(buffPublicsIdsDebug);
     await cHelpersBin.write(buffAirgroupValuesIdsDebug);
     await cHelpersBin.write(buffAirValuesIdsDebug);
+    await cHelpersBin.write(buffCustomCommitsIdsDebug);
 
     await endWriteSection(cHelpersBin);
 }

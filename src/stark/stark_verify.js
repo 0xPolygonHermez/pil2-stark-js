@@ -163,9 +163,12 @@ module.exports = async function starkVerify(proof, proofValues, publics, constRo
         const ctxQry = {};
         for(let i = 0; i < starkInfo.nStages; ++i) {
             const stage = i + 1;
-            ctxQry[`tree${stage}`] = query[i][0];
+            ctxQry[`cm${stage}`] = query[i][0];
         }
-        ctxQry[`tree${qStage}`] = query[starkInfo.nStages][0];
+        ctxQry[`cm${qStage}`] = query[starkInfo.nStages][0];
+        for(let i = 0; i < starkInfo.customCommits.length; ++i) {
+            ctxQry[`custom_${starkInfo.customCommits[i].name}_0`] = query[starkInfo.nStages + 2 + i][0];
+        }
         ctxQry.consts = query[starkInfo.nStages + 1][0];
         ctxQry.evals = ctx.evals;
         ctxQry.airgroupValues = ctx.airgroupValues;
@@ -228,6 +231,23 @@ module.exports = async function starkVerify(proof, proofValues, publics, constRo
         }
     }
 
+    for(let i = 0; i < starkInfo.customCommits.length; ++i) {
+        if(logger) logger.debug("Verifying MH custom commit " + starkInfo.customCommits[i].name);
+        let root = [];
+        for(let j = 0; j < starkInfo.customCommits[i].publicValues.length; ++j) {
+            const publicId = starkInfo.customCommits[i].publicValues[j].idx;
+            root.push(publics[publicId]);
+        }
+        for(let q = 0; q < nQueries; ++q) {
+            const query = proof.queries.polQueries[q];
+            let res = MH.verifyGroupProof(root, query[starkInfo.nStages + 2 + i][1], ctx.friQueries[q], query[starkInfo.nStages + 2 + i][0]);
+            if (!res) {
+                if(logger) logger.warn(`Invalid root_${starkInfo.customCommits[i].name}_0`);
+                return false;
+            }
+        }
+    }
+
     if(logger) logger.debug("Computing queries");
     let queryVals = [];
     for(let i = 0; i < nQueries; ++i) {
@@ -282,13 +302,16 @@ module.exports.executeCode = function executeCode(F, ctx, code, global) {
     return getRef(code[code.length-1].dest);
 
 
-    function getRef(r) {
-
-        if (r.type.startsWith("tree")) {
-            return extractVal(ctx[r.type], r.treePos, r.dim);
-        }
-        
+    function getRef(r) {     
         switch (r.type) {
+            case "cm": {
+                let pol = ctx.starkInfo.cmPolsMap[r.id];
+                return extractVal(ctx["cm" + pol.stage], pol.stagePos, r.dim);
+            }
+            case "custom": {
+                let pol = ctx.starkInfo.customCommitsMap[r.commitId][r.id];
+                return extractVal(ctx[`custom_${ctx.starkInfo.customCommits[r.commitId].name}_0`], pol.stagePos, r.dim);
+            }
             case "tmp": return tmp[r.id];
             case "const": return ctx.consts[r.id];
             case "eval": return ctx.evals[r.id];

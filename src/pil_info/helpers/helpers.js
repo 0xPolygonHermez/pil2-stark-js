@@ -10,7 +10,7 @@ module.exports.getExpDim = function getExpDim(expressions, expId, stark) {
         } else if (exp.op === "exp") {
             exp.dim = _getExpDim(expressions[exp.id]);
             return exp.dim;
-        } else if (exp.op === "cm") {
+        } else if (exp.op === "cm" || exp.op === "custom") {
             return exp.dim || 1;
         } else if (["const", "number", "public", "x", "Zi"].includes(exp.op)) {
             return 1;
@@ -35,11 +35,11 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
         if(!exp.dim) exp.dim = expressions[exp.id].dim;
         if(!exp.stage) exp.stage = expressions[exp.id].stage;
 
-        if(["cm", "const"].includes(expressions[exp.id].op)) {
+        if(["cm", "const", "custom"].includes(expressions[exp.id].op)) {
             exp = expressions[exp.id];
         }
 
-    } else if (["x", "cm", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
+    } else if (["x", "cm", "custom", "const"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         exp.expDeg = 1;
         if(!exp.stage || exp.op === "const") exp.stage = exp.op === "cm" ? 1 : 0;
         if(!exp.dim) exp.dim = 1; 
@@ -113,16 +113,18 @@ module.exports.addInfoExpressionsSymbols = function addInfoExpressionsSymbols(sy
             }
         }
 
-    } else if (["cm", "const"].includes(exp.op) && !exp.symbols) {
+    } else if (["cm", "const", "custom"].includes(exp.op) && !exp.symbols) {
         if(exp.op === "cm") {
             if(exp.stageId === undefined) {
                 const sym = symbols.find(s => s.type === "witness" && s.polId === exp.id);
                 exp.stageId = sym.stageId;
             }
             exp.symbols = [{op: "cm", stage: exp.stage, stageId: exp.stageId, id: exp.id}];
-        } else {
+        } else if(exp.op === "const") {
             exp.symbols = [{op: exp.op, stage: exp.stage, id: exp.id}];
-        }        
+        } else {
+            exp.symbols = [{op: "custom", stage: 0, stageId: exp.stageId, id: exp.id, commitId: exp.commitId}];
+        }      
     } else if(["add", "sub", "mul", "neg"].includes(exp.op)) {
         const lhsValue = exp.values[0];
         const rhsValue = exp.values[1];

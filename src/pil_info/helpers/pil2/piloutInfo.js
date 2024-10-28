@@ -37,6 +37,17 @@ module.exports.getPiloutInfo = function getPiloutInfo(res, pilout, stark) {
     const airHints = pilout.hints?.filter(h => h.airId === res.airId && h.airGroupId === res.airgroupId) || [];
     const hints = formatHints(pilout, airHints, symbols, expressions, stark, saveSymbols);
 
+    res.customCommits = pilout.customCommits || [];
+    res.customCommitsMap = [];
+    for(let i = 0; i < res.customCommits.length; ++i) {
+        res.customCommitsMap[i] = [];
+        for(let j = 0; j < res.customCommits[i].stageWidths.length; ++j) {
+            if(res.customCommits[i].stageWidths[j] > 0) {
+                res.mapSectionsN[res.customCommits[i].name + j] = 0;
+            }
+        }
+    }
+
     return {expressions, hints, constraints, symbols};
 }
 

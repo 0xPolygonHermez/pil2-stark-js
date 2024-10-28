@@ -209,7 +209,7 @@ module.exports.calculateExpDeg = function calculateExpDeg(expressions, exp, imEx
         let deg = calculateExpDeg(expressions, expressions[exp.id], imExps, cacheValues);
         if(cacheValues) exp.degree_= deg;
         return deg;
-    } else if (["x", "const", "cm"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
+    } else if (["x", "const", "cm", "custom"].includes(exp.op) || (exp.op === "Zi" && exp.boundary !== "everyRow")) {
         return 1;
     } else if (["number", "public", "challenge", "eval", "airgroupvalue", "airvalue"].includes(exp.op) || (exp.op === "Zi" && exp.boundary === "everyRow")) {
         return 0;

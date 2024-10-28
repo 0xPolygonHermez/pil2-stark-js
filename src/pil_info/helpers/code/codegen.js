@@ -54,10 +54,11 @@ function calculateEvMap(ctx, symbols, expressions, exp, prime) {
         for(let i = 0; i < exp.values.length; ++i) {
             values[i] = calculateEvMap(ctx, symbols, expressions, exp.values[i], prime);
         }
-    } else if (["cm", "const"].includes(exp.op) || (exp.op === "exp" && ["cm", "const"].includes(expressions[exp.id].op))) {
+    } else if (["cm", "const", "custom"].includes(exp.op) || (exp.op === "exp" && ["cm", "const", "custom"].includes(expressions[exp.id].op))) {
         const expr = exp.op === "exp" ? expressions[exp.id] : exp;
         let p = expr.rowOffset || prime; 
         const r = { type: expr.op, id: expr.id, prime: p, dim: expr.dim }
+        if(expr.op === "custom") r.commitId = expr.commitId;
         calculateEval(r, ctx.evMap, ctx.openingPoints);
     } else if (exp.op === "exp") {
         let p = exp.rowOffset || prime; 
@@ -88,15 +89,15 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
         });
         
         return r;
-    } else if (["cm", "const"].includes(exp.op) || (exp.op === "exp" && ["cm", "const"].includes(expressions[exp.id].op))) {
+    } else if (["cm", "const", "custom"].includes(exp.op) || (exp.op === "exp" && ["cm", "const", "custom"].includes(expressions[exp.id].op))) {
         const expr = exp.op === "exp" ? expressions[exp.id] : exp;
         let p = expr.rowOffset || prime; 
-        const r = { type: expr.op, id: expr.id, prime: p, dim: expr.dim }
+        const r = { type: expr.op, id: expr.id, prime: p, dim: expr.dim };
+        if(expr.op === "custom") r.commitId = expr.commitId;
         if(ctx.verifierEvaluations) {
             fixEval(r, ctx, symbols);
-        } else if(ctx.verifierQuery && expr.op === "cm") {
-            fixCommitsQuery(r, ctx, symbols);
         }
+        
         return r;
     } else if (exp.op === "exp") {
         let p = exp.rowOffset || prime; 
@@ -192,9 +193,9 @@ function fixDimensionsVerifier(ctx) {
         let d;
         if(r.type === "tmp") {
             d = tmpDim[r.id];
-        } else if(r.type.includes("tree")) {
+        } else if(r.type.includes("cm")) {
             d = r.dim;
-        } else if(["const", "number", "public"].includes(r.type)) {
+        } else if(["const", "number", "public", "custom"].includes(r.type)) {
             d = 1;
         } else if(["eval", "challenge", "xDivXSubXi", "x", "Zi"].includes(r.type)) {
             d = ctx.stark ? 3 : 1;
@@ -233,6 +234,7 @@ function calculateEval(r, evMap, openingPoints) {
             prime,
             openingPos,
         };
+        if(r.type === "custom") rf.commitId = r.commitId;
         evMap.push(rf);
         evalIndex = evMap.length - 1;
     }
@@ -248,14 +250,6 @@ function fixEval(r, ctx) {
     r.type = "eval";
     r.dim = ctx.stark ? 3 : 1;
     return r;
-}
-
-function fixCommitsQuery(r, ctx, symbols) {
-    const symbol = symbols.find(s => s.polId === r.id && s.type === "witness" && s.airId === ctx.airId && s.airgroupId === ctx.airgroupId);
-    r.type = "tree" + symbol.stage;
-    r.stageId = symbol.stageId;
-    r.treePos = symbol.stagePos;
-    r.dim = symbol.dim;
 }
 
 function buildCode(ctx) {

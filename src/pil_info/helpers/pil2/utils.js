@@ -1,5 +1,4 @@
 const ProtoOut = require("pil2-compiler/src/proto_out.js");
-const ExpressionOps = require("../../expressionops");
 
 const piloutTypes =  {
     FIXED_COL: 1,
@@ -8,7 +7,8 @@ const piloutTypes =  {
     AIRGROUP_VALUE: 5,
     PUBLIC_VALUE: 6,
     CHALLENGE: 8,
-    AIR_VALUE: 9
+    AIR_VALUE: 9,
+    CUSTOM_COL: 10,
 }
 
 module.exports.formatExpressions = function formatExpressions(pilout, stark, saveSymbols = false, global = false) {
@@ -112,15 +112,19 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false, glob
     } else if (op === "constant") {
         const value = P.buf2bint(exp.constant.value).toString();
         exp = { op: "number", value };
-    } else if (op === "witnessCol") {
-        const id =  exp[op].colIdx + pilout.stageWidths.slice(0, exp[op].stage - 1).reduce((acc, c) => acc + c, 0);
-        const dim = exp[op].stage === 1 ? 1 : stark ? 3 : 1;
+    } else if (op === "witnessCol" || op === "customCol") {
+        const type = op === "witnessCol" ? "cm" : "custom";
+        const commitId = op === "customCol" ? exp[op].commitId : undefined;
+        const stageWidths = op === "witnessCol" ? pilout.stageWidths : pilout.customCommits[commitId].stageWidths;
         const stageId = exp[op].colIdx;
         const rowOffset = exp[op].rowOffset;
         const stage = exp[op].stage;
+        const id = stageId + stageWidths.slice(0, stage - 1).reduce((acc, c) => acc + c, 0);
+        const dim = stage <= 1 ? 1 : stark ? 3 : 1;
         const airgroupId = exp[op].airGroupId;
         const airId = exp[op].airId;
-        exp = { op: "cm", id, stageId, rowOffset, stage, dim, airgroupId, airId };
+        exp = { op: type, id, stageId, rowOffset, stage, dim, airgroupId, airId };
+        if(op === "customCol") exp.commitId = commitId;
         store = true;
     } else if (op === "fixedCol") {
         const id = exp[op].idx;
@@ -154,7 +158,9 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false, glob
         const id = exp[op].idx;
         exp = { op: "proofvalue", id};
         store = true;
-    } else throw new Error("Unknown op: " + op);
+    } else {
+        throw new Error("Unknown op: " + op);
+    }
 
     if(saveSymbols && store) {
         addSymbol(pilout, symbols, exp, stark, global);
@@ -291,15 +297,15 @@ module.exports.formatConstraints = function formatConstraints(pilout) {
 }
 
 module.exports.formatSymbols = function formatSymbols(pilout, stark, global = false) {
-    const E = new ExpressionOps();
-
     const symbols = pilout.symbols.flatMap(s => {
-        if([piloutTypes.FIXED_COL, piloutTypes.WITNESS_COL].includes(s.type)) {
+        if(s.type === piloutTypes.CUSTOM_COL && s.stage !== 0) throw new Error("Invalid stage " + s.stage + "for a custom commit");
+        if([piloutTypes.FIXED_COL, piloutTypes.WITNESS_COL, piloutTypes.CUSTOM_COL].includes(s.type)) {
             const dim = ([0,1].includes(s.stage) || !stark) ? 1 : 3;
-            const type = s.type === piloutTypes.FIXED_COL ? "fixed" : "witness";
+            const type = s.type === piloutTypes.FIXED_COL ? "fixed" : s.type === piloutTypes.CUSTOM_COL ? "custom" : "witness";
             const previousPols = pilout.symbols.filter(si => si.type === s.type 
                 && si.airId === s.airId && si.airGroupId === s.airGroupId
-                && ((si.stage < s.stage) || (si.stage === s.stage && si.id < s.id)));
+                && ((si.stage < s.stage) || (si.stage === s.stage && si.id < s.id))
+                && (s.type !== piloutTypes.CUSTOM_COL || s.commitId === si.commitId));
 
             let polId = 0;
             for(let i = 0; i < previousPols.length; ++i) {
@@ -311,8 +317,7 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark, global = fa
             };
             if(!s.dim) {
                 const stageId = s.id;
-                E.cm(polId, 0, s.stage, dim);
-                return {
+                const symbol = {
                     name: s.name,
                     stage: s.stage,
                     type,
@@ -321,10 +326,12 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark, global = fa
                     dim,
                     airId: s.airId,
                     airgroupId: s.airGroupId,
-                }  
+                }
+                if(s.type === piloutTypes.CUSTOM_COL) symbol.commitId = s.commitId;
+                return symbol;
             } else {
                 const multiArraySymbols = [];
-                generateMultiArraySymbols(E, multiArraySymbols, [], s, type, dim, polId, 0);
+                generateMultiArraySymbols(multiArraySymbols, [], s, type, dim, polId, 0);
                 return multiArraySymbols;
             }
         } else if(s.type === piloutTypes.PROOF_VALUE) {
@@ -344,12 +351,18 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark, global = fa
                 dim: stark ? 3 : 1,
             }
         } else if(s.type === piloutTypes.PUBLIC_VALUE) {
-            return {
-                name: s.name,
-                stage: 1,
-                type: "public",
-                dim: 1,
-                id: s.id,
+            if(!s.dim) {
+                return {
+                    name: s.name,
+                    stage: 1,
+                    type: "public",
+                    dim: 1,
+                    id: s.id,
+                }
+            } else {
+                const multiArraySymbols = [];
+                generateMultiArraySymbols(multiArraySymbols, [], s, "public", 1, s.id, 0);
+                return multiArraySymbols;
             }
         } else if(s.type === piloutTypes.AIRGROUP_VALUE) {
             const airgroupValue = {
@@ -373,16 +386,20 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark, global = fa
                 airvalue.dim = stark && airvalue.stage != 1 ? 3 : 1;
             }
             return airvalue;
-        } else throw new Error("Invalid type " + s.type);
+        } else {
+            throw new Error("Invalid type " + s.type);
+        }
     });
 
     return symbols;
 }
 
-function generateMultiArraySymbols(E, symbols, indexes, sym, type, dim, polId, shift) {
+function generateMultiArraySymbols(symbols, indexes, sym, type, dim, polId, shift) {
     if (indexes.length === sym.lengths.length) {
-        E.cm(polId + shift, 0, sym.stage, dim);
-        symbols.push({
+
+        const symbol = type === "public"
+            ? { name: sym.name, type: "public", stage: 1, dim: 1, id: polId + shift, lengths: indexes }
+            : {
             name: sym.name,
             lengths: indexes,
             idx: shift,
@@ -393,12 +410,14 @@ function generateMultiArraySymbols(E, symbols, indexes, sym, type, dim, polId, s
             dim,
             airId: sym.airId,
             airgroupId: sym.airGroupId,
-        });
+        };
+        if(type === "custom") symbol.commitId = sym.commitId;
+        symbols.push(symbol);
         return shift + 1;
     }
 
     for (let i = 0; i < sym.lengths[indexes.length]; i++) {
-        shift = generateMultiArraySymbols(E, symbols, [...indexes, i], sym, type, dim, polId, shift);
+        shift = generateMultiArraySymbols(symbols, [...indexes, i], sym, type, dim, polId, shift);
     }
 
     return shift;
