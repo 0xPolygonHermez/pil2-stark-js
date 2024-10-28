@@ -812,8 +812,8 @@ module.exports.getOperation = function getOperation(r, verify = false) {
     }
 
     src.sort((a, b) => {
-        let opA =  a.type === "cm" ? operationsMap[`commit${a.dim}`] : a.type === "tmp" ? operationsMap[`tmp${a.dim}`] : operationsMap[a.type];
-        let opB = b.type === "cm" ? operationsMap[`commit${b.dim}`] : b.type === "tmp" ? operationsMap[`tmp${b.dim}`] : operationsMap[b.type];
+        let opA =  a.type === "cm" ? operationsMap[`commit${a.dim}`] : a.type === "tmp" ? operationsMap[`tmp${a.dim}`] : a.type === "airvalue" ? operationsMap[`airvalue${a.dim}`] : operationsMap[a.type];
+        let opB = b.type === "cm" ? operationsMap[`commit${b.dim}`] : b.type === "tmp" ? operationsMap[`tmp${b.dim}`] : b.type === "airvalue" ? operationsMap[`airvalue${b.dim}`] : operationsMap[b.type];
         let swap = a.dim !== b.dim ? b.dim - a.dim : opA - opB;
         if(r.op === "sub" && swap < 0) _op.op = "sub_swap";
         return swap;
