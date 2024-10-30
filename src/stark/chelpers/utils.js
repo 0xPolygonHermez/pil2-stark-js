@@ -1,5 +1,5 @@
 module.exports.writeType = function writeType(type, c_args, parserType, global = false) {
-    if(global && !["public", "number", "airgroupvalue", "tmp1", "tmp3", "proofvalue"].includes(type)) {
+    if(global && !["public", "number", "airgroupvalue", "tmp1", "tmp3", "proofvalue", "challenge"].includes(type)) {
         throw new Error("Global constraints only allow for publics, numbers, airgroupvalues and proofvalues");
     }
     switch (type) {
@@ -60,7 +60,7 @@ module.exports.writeType = function writeType(type, c_args, parserType, global =
 
 
 module.exports.numberOfArgs = function numberOfArgs(type, global = false) {
-    if(global && !["public", "number", "airgroupvalue", "tmp1", "tmp3", "proofvalue"].includes(type)) {
+    if(global && !["public", "number", "airgroupvalue", "tmp1", "tmp3", "proofvalue", "challenge"].includes(type)) {
         throw new Error("Global constraints only allow for publics, numbers, proofvalues and airgroupValues");
     }
     switch (type) {
@@ -93,7 +93,7 @@ module.exports.getGlobalOperations = function getGlobalOperations() {
     const possibleDestinationsDim3 = ["tmp3"];
 
     const possibleSrcDim1 = ["tmp1", "public", "number"];
-    const possibleSrcDim3 = ["tmp3", "airgroupvalue", "proofvalue"];
+    const possibleSrcDim3 = ["tmp3", "airgroupvalue", "proofvalue", "challenge"];
 
     // Dim1 destinations
     for(let j = 0; j < possibleDestinationsDim1.length; j++) {
