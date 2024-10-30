@@ -1,4 +1,4 @@
-const { writeType, getAllOperations, numberOfArgs } = require("./utils");
+const { getAllOperations, numberOfArgs, getGlobalOperations, writeType } = require("./utils");
 
 const operationsMap = {
     "commit1": 1,
@@ -18,9 +18,9 @@ const operationsMap = {
     "eval": 14,
 }
 
-module.exports.generateParser = function generateParser(parserType = "avx") {
+module.exports.generateParser = function generateParser(parserType = "avx", global = false) {
 
-    let operations = getAllOperations();
+    let operations = !global ? getAllOperations() : getGlobalOperations();
 
     let c_args = 0;
     
@@ -737,6 +737,7 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
                 let dimType = "";
                 let dims1 = ["public", "commit1", "tmp1", "const", "number", "airvalue1"];
                 let dims3 = ["commit3", "tmp3", "airgroupvalue", "airvalue3", "challenge", "eval", "xDivXSubXi"];
+                if(global) dims3.push("proofvalue");
                 if(dims1.includes(operation.src0_type)) dimType += "1";
                 if (dims3.includes(operation.src0_type)) dimType += "3";
                 if(dims1.includes(operation.src1_type)) dimType += "1";
@@ -763,16 +764,16 @@ module.exports.generateParser = function generateParser(parserType = "avx") {
             c_args++;
         }
 
-        let typeDest = writeType(operation.dest_type, c_args, parserType);
-        c_args += numberOfArgs(operation.dest_type);
+        let typeDest = writeType(operation.dest_type, c_args, parserType, global);
+        c_args += numberOfArgs(operation.dest_type, global);
 
-        let typeSrc0 = writeType(operation.src0_type, c_args, parserType);
-        c_args += numberOfArgs(operation.src0_type);
+        let typeSrc0 = writeType(operation.src0_type, c_args, parserType, global);
+        c_args += numberOfArgs(operation.src0_type, global);
 
         let typeSrc1;
         if(operation.src1_type) {
-            typeSrc1 = writeType(operation.src1_type, c_args, parserType);
-            c_args += numberOfArgs(operation.src1_type);
+            typeSrc1 = writeType(operation.src1_type, c_args, parserType, global);
+            c_args += numberOfArgs(operation.src1_type, global);
         }
                 
         const operationCall = [];

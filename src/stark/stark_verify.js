@@ -5,7 +5,7 @@ const { assert } = require("chai");
 const buildPoseidonGL = require("../helpers/hash/poseidon/poseidon");
 const { calculateTranscript, calculateFRIQueries } = require("./calculateTranscriptVerify");
 
-module.exports = async function starkVerify(proof, publics, constRoot, challenges, starkInfo, verifierInfo, options = {}) {
+module.exports = async function starkVerify(proof, proofValues, publics, constRoot, challenges, starkInfo, verifierInfo, options = {}) {
     const logger = options.logger;
 
     const starkStruct = starkInfo.starkStruct;
@@ -19,6 +19,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         airgroupValues: proof.airgroupValues,
         airValues: proof.airValues,
         publics,
+        proofValues,
         starkInfo,
         proof,
         F,
@@ -170,6 +171,7 @@ module.exports = async function starkVerify(proof, publics, constRoot, challenge
         ctxQry.airgroupValues = ctx.airgroupValues;
         ctxQry.airValues = ctx.airValues;
         ctxQry.publics = ctx.publics;
+        ctxQry.proofValues = ctx.proofValues;
         ctxQry.challenges = ctx.challenges;
         ctxQry.starkInfo = starkInfo;
 
@@ -292,6 +294,7 @@ module.exports.executeCode = function executeCode(F, ctx, code, global) {
             case "eval": return ctx.evals[r.id];
             case "number": return BigInt(r.value);
             case "public": return BigInt(ctx.publics[r.id]);
+            case "proofvalue": return ctx.proofValues[r.id];
             case "challenge": return ctx.challenges[r.stage - 1][r.stageId];
             case "airgroupvalue": {
                 return global ? ctx.airgroupValues[r.airgroupId][r.id] : ctx.airgroupValues[r.id];

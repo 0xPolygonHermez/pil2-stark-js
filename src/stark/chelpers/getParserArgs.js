@@ -148,6 +148,8 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
             }
             case "public":
             case "eval": 
+            case "proofvalue":
+            case "airvalue":
             case "challenge": {
                 args.push(r.id);
                 break;
@@ -159,10 +161,6 @@ module.exports.getParserArgs = function getParserArgs(starkInfo, operations, cod
                     args.push(r.airgroupId);
                     args.push(r.id);
                 }
-                break;
-            }
-            case "airvalue": {
-                args.push(r.id);
                 break;
             }
             case "xDivXSubXi":

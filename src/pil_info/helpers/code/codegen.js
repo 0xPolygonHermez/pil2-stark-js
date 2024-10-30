@@ -107,6 +107,8 @@ function evalExp(ctx, symbols, expressions, exp, prime) {
         return { type: exp.op, id: exp.id, stageId: exp.stageId, dim: exp.dim, stage: exp.stage }
     } else if (exp.op === "public") {
         return { type: exp.op, id: exp.id, dim: 1}
+    } else if (exp.op === "proofvalue") {
+        return { type: exp.op, id: exp.id, dim: 3 }
     } else if (exp.op == "number") {
         return { type: exp.op, value: exp.value.toString(), dim: 1 }
     } else if ("eval" === exp.op) {

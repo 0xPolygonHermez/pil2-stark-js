@@ -4,6 +4,7 @@ const ExpressionOps = require("../../expressionops");
 const piloutTypes =  {
     FIXED_COL: 1,
     WITNESS_COL: 3,
+    PROOF_VALUE: 4,
     AIRGROUP_VALUE: 5,
     PUBLIC_VALUE: 6,
     CHALLENGE: 8,
@@ -149,6 +150,10 @@ function formatExpression(exp, pilout, symbols, stark, saveSymbols = false, glob
         const stage = exp[op].stage;
         exp = { op: "challenge", stage, stageId, id };
         store = true;
+    } else if (op === "proofValue") {
+        const id = exp[op].idx;
+        exp = { op: "proofvalue", id};
+        store = true;
     } else throw new Error("Unknown op: " + op);
 
     if(saveSymbols && store) {
@@ -207,6 +212,12 @@ function addSymbol(pilout, symbols, exp, stark, global = false) {
             const name = pilout.name + ".airvalue_" + exp.id;
             const dim = stage !== 1 && stark ? 3 : 1; 
             symbols.push({type: "airvalue", dim, id: exp.id, stage: exp.stage, name, airId, airgroupId });
+        }
+    } else if(exp.op === "proofvalue") {
+        const proofValueSymbol = symbols.find(s => s.type === "proofvalue" && s.id === exp.id);
+        if(!proofValueSymbol) {
+            const name = pilout.name + ".proofvalue_" + exp.id;
+            symbols.push({type: "proofvalue", name, id: exp.id })
         }
     } else {
         throw new Error ("Unknown operation " + exp.op);
@@ -316,6 +327,12 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark, global = fa
                 generateMultiArraySymbols(E, multiArraySymbols, [], s, type, dim, polId, 0);
                 return multiArraySymbols;
             }
+        } else if(s.type === piloutTypes.PROOF_VALUE) {
+            return {
+                name: s.name,
+                type: "proofValue",
+                id: s.id,
+            }
         } else if(s.type === piloutTypes.CHALLENGE) {
             const id = pilout.symbols.filter(si => si.type === piloutTypes.CHALLENGE && ((si.stage < s.stage) || (si.stage === s.stage && si.id < s.id))).length;
             return {
@@ -356,7 +373,7 @@ module.exports.formatSymbols = function formatSymbols(pilout, stark, global = fa
                 airvalue.dim = stark && airvalue.stage != 1 ? 3 : 1;
             }
             return airvalue;
-        }
+        } else throw new Error("Invalid type " + s.type);
     });
 
     return symbols;

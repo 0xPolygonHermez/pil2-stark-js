@@ -50,7 +50,7 @@ module.exports.addInfoExpressions = function addInfoExpressions(expressions, exp
     } else if (["challenge", "eval"].includes(exp.op)) {
         exp.expDeg = 0;
         exp.dim = stark ? 3 : 1;
-    } else if(exp.op === "airgroupvalue") {
+    } else if(exp.op === "airgroupvalue" || exp.op === "proofvalue") {
         exp.expDeg = 0;
         exp.dim = 3;
     } else if (exp.op === "airvalue") {

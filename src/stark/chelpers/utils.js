@@ -1,12 +1,16 @@
 module.exports.writeType = function writeType(type, c_args, parserType, global = false) {
-    if(global && !["public", "number", "airgroupvalue", "tmp1", "tmp3"].includes(type)) {
-        throw new Error("Global constraints only allow for publics, numbers and airgroupvalues");
+    if(global && !["public", "number", "airgroupvalue", "tmp1", "tmp3", "proofvalue"].includes(type)) {
+        throw new Error("Global constraints only allow for publics, numbers, airgroupvalues and proofvalues");
     }
     switch (type) {
         case "public":
             return parserType === "pack" 
                 ? `&publics[args[i_args + ${c_args}] * nrowsPack]`
                 : `publics[args[i_args + ${c_args}]]`;
+        case "proofvalue":
+            return parserType === "pack" 
+                ? `&proofValues[args[i_args + ${c_args}] * nrowsPack * FIELD_EXTENSION]`
+                : `proofValues[args[i_args + ${c_args}]]`;
         case "tmp1":
             return parserType === "pack" 
                 ? `&tmp1[args[i_args + ${c_args}] * nrowsPack]`
@@ -31,7 +35,7 @@ module.exports.writeType = function writeType(type, c_args, parserType, global =
                 : `evals[args[i_args + ${c_args}]]`;
         case "airgroupvalue":
             if(global) {
-                return `airgroupValues[args[i_args + ${c_args}][args[i_args + ${c_args}]]`;
+                return `&airgroupValues[args[i_args + ${c_args}]][args[i_args + ${c_args + 1}] * FIELD_EXTENSION]`;
             } else {
                 return parserType === "pack"
                 ? `&airgroupValues[args[i_args + ${c_args}]*FIELD_EXTENSION*nrowsPack]`
@@ -56,8 +60,8 @@ module.exports.writeType = function writeType(type, c_args, parserType, global =
 
 
 module.exports.numberOfArgs = function numberOfArgs(type, global = false) {
-    if(global && !["public", "number", "airgroupvalue", "tmp1", "tmp3"].includes(type)) {
-        throw new Error("Global constraints only allow for publics, numbers and airgroupValues");
+    if(global && !["public", "number", "airgroupvalue", "tmp1", "tmp3", "proofvalue"].includes(type)) {
+        throw new Error("Global constraints only allow for publics, numbers, proofvalues and airgroupValues");
     }
     switch (type) {
         case "public":            
@@ -68,6 +72,7 @@ module.exports.numberOfArgs = function numberOfArgs(type, global = false) {
         case "number":
         case "airvalue1":
         case "airvalue3":
+        case "proofvalue":
             return 1;
         case "airgroupvalue":
             return global ? 2 : 1;
@@ -88,7 +93,7 @@ module.exports.getGlobalOperations = function getGlobalOperations() {
     const possibleDestinationsDim3 = ["tmp3"];
 
     const possibleSrcDim1 = ["tmp1", "public", "number"];
-    const possibleSrcDim3 = ["tmp3", "airgroupvalue"];
+    const possibleSrcDim3 = ["tmp3", "airgroupvalue", "proofvalue"];
 
     // Dim1 destinations
     for(let j = 0; j < possibleDestinationsDim1.length; j++) {
