@@ -15,7 +15,8 @@ module.exports.getIdMaps = function getIdMaps(maxid, ID1D, ID3D, code) {
 
             let id_ = r.dest.id;
             let dim_ = r.dest.dim;
-            assert(id_ >= 0 && id_ < maxid);
+            assert(id_ >= 0, "Invalid id");
+            assert(id_ < maxid, "Id exceeds maxid");
 
             if (dim_ == 1) {
                 if (Ini1D[id_] == -1) {
