@@ -538,7 +538,8 @@ async function writeHintsSection(cHelpersBin, hintsInfo, section) {
                     await cHelpersBin.writeULE32(value.id);
                 }
                 if(value.op === "tmp") await cHelpersBin.writeULE32(value.dim);
-                
+                if(value.op === "custom") await cHelpersBin.writeULE32(value.commitId);
+
                 await cHelpersBin.writeULE32(value.pos.length);
                 for(let p = 0; p < value.pos.length; ++p) {
                     await cHelpersBin.writeULE32(value.pos[p]);
