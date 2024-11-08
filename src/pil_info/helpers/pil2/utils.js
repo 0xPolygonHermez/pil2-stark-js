@@ -244,8 +244,8 @@ module.exports.printExpressions = function printExpressions(res, exp, expression
         return printExpressions(res, exp.values[0], expressions, isConstraint);
     } else if (exp.op === "number") {
         return exp.value;
-    } else if (exp.op === "const" || exp.op === "cm") {
-        const col = exp.op === "const" ? res.constPolsMap[exp.id] : res.cmPolsMap[exp.id];
+    } else if (exp.op === "const" || exp.op === "cm" || exp.op === "custom") {
+        const col = exp.op === "const" ? res.constPolsMap[exp.id] : exp.op === "cm" ? res.cmPolsMap[exp.id] : res.customCommitsMap[exp.commitId][exp.id];
         if(col.imPol && !isConstraint) {
             return printExpressions(res, expressions[col.expId], expressions, false);
         }
