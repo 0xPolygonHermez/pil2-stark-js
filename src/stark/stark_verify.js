@@ -254,7 +254,7 @@ module.exports = async function starkVerify(proof, proofValues, publics, constRo
         queryVals[i] = computeQuery(proof.queries.polQueries[i], ctx.friQueries[i]);
     }
 
-    const fri = new FRI( nQueries, steps, MH, logger );
+    const fri = new FRI( nQueries, extendBits, steps, MH, logger );
 
     if(logger) logger.debug("Verifying queries");
     if(starkInfo.starkStruct.steps.length == 1) {

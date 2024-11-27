@@ -6,11 +6,10 @@ const {BigBuffer} = require("pilcom");
 
 class FRI {
 
-    constructor(nQueries, stepsFRI, MH, logger) {
+    constructor(nQueries, blowupFactor, stepsFRI, MH, logger) {
         this.F = new F3g();
         this.steps = stepsFRI;
         this.nQueries = nQueries;
-        let blowupFactor = Math.ceil(128 / nQueries); 
         this.maxDegNBits = this.steps[0].nBits - blowupFactor;
         this.logger = logger
         this.MH = MH;
@@ -108,7 +107,7 @@ class FRI {
             const root = proof[si - 1].root;
             for (let i=0; i<this.nQueries; i++) {
                 const query = proof[si - 1].polQueries[i];
-                const res = this.MH.verifyGroupProof(root, query[1], friQueries[i], query[0]);
+                const res = this.MH.verifyGroupProof(root, query[1], friQueries[i] % (1 << this.steps[si].nBits), query[0]);
                 if (!res) return false;
             }
         }
