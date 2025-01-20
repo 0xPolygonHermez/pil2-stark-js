@@ -5,14 +5,15 @@ const { log2 } = require("pilcom/src/utils.js");
 const {tmpName} = require("tmp-promise");
 const { compile, getKs } = require("pilcom");
 const ejs = require("ejs");
-const {M, P, S, C} = require("../helpers/hash/poseidon/poseidon_constants_opt.js");
+const {D, C} = require("../helpers/hash/poseidon/poseidon2_constants.js");
 const { connect } = require("../helpers/polutils");
 const { getCompressorConstraints } = require("./compressor_constraints");
+const { generateFixedCols } = require("../witness/witnessCalculator.js");
 
 /*
     Compress plonk constraints and verifies custom gates using 12 committed polynomials
 */
-module.exports = async function plonkSetup(F, r1cs, options) {
+module.exports = async function plonkSetup(F, r1cs, pil2, options) {
     const committedPols = 12;
 
     const {plonkAdditions, plonkConstraints, customGatesInfo, NUsed} = getCompressorConstraints(F, r1cs, committedPols);
@@ -23,12 +24,6 @@ module.exports = async function plonkSetup(F, r1cs, options) {
     //Calculate the first power of 2 that's bigger than the number of constraints
     let nBits = log2(NUsed - 1) + 1;
 
-    if (options.forceNBits) {
-        if (options.forceNBits < nBits) {
-            throw new Error("ForceNBits is less than required");
-        }
-        nBits = options.forceNBits;
-    }
     const N = 1 << nBits; // First power of 2 whose value is higher than the number of constraints
 
     console.log(`NUsed: ${NUsed}`);
@@ -38,16 +33,18 @@ module.exports = async function plonkSetup(F, r1cs, options) {
     const obj = {
         nBits: nBits,
         nPublics: nPublics,
-        M,
-        SS: S,
-        P,
+        D,
         C,
         committedPols
     };
 
     const pilStr = ejs.render(template ,  obj);
-    const pilFile = await tmpName();
+    const pilFile = "tmp/pil.pil";
     await fs.promises.writeFile(pilFile, pilStr, "utf8");
+
+    let constPols;
+
+    
     const pil = await compile(F, pilFile);
     constPols = generateFixedCols(pil.references, pil.references[Object.keys(pil.references)[0]].polDeg, false);
 
@@ -70,11 +67,9 @@ module.exports = async function plonkSetup(F, r1cs, options) {
         constPols.Compressor.EVPOL4[i] = 0n;
         constPols.Compressor.CMUL[i] = 0n;
         constPols.Compressor.GATE[i] = 0n;
-        constPols.Compressor.POSEIDONM[i] = 0n;
-        constPols.Compressor.POSEIDONP[i] = 0n;
+        constPols.Compressor.POSEIDONFULLROUND[i] = 0n;
         constPols.Compressor.POSEIDONFIRST[i] = 0n;
-        constPols.Compressor.PARTIALROUND[i] = 0n;
-        constPols.Compressor.PARTIALROUND2[i] = 0n;
+        constPols.Compressor.POSEIDONPARTIALROUND[i] = 0n;
         constPols.Compressor.POSEIDONCUSTFIRST[i] = 0n;
         constPols.Compressor.FFT4[i] = 0n;
         constPols.Compressor.TREESELECTOR4[i] = 0n;
@@ -114,12 +109,10 @@ module.exports = async function plonkSetup(F, r1cs, options) {
                 }
 
                 constPols.Compressor.GATE[r+i] = 0n;
-                constPols.Compressor.POSEIDONM[r+i] = i !== 3 && i !== 4 && i !== 5 && i !== 10 ? 1n : 0n;
-                constPols.Compressor.POSEIDONP[r+i] = i === 3 ? 1n : 0n; // Round 3 -> Round 4
+                constPols.Compressor.POSEIDONFULLROUND[r+i] = [0,1,2,3,6,7,8,9].includes(i) ? 1n : 0n;
                 constPols.Compressor.POSEIDONCUSTFIRST[r+i] = 0n;
                 constPols.Compressor.POSEIDONFIRST[r+i] = i === 0 ? 1n : 0n; // Input -> Round 1
-                constPols.Compressor.PARTIALROUND[r+i] = i === 4 ? 1n : 0n; // Round 4 -> Round 15
-                constPols.Compressor.PARTIALROUND2[r+i] = i === 5 ? 1n : 0n; // Round 15 -> Round 26
+                constPols.Compressor.POSEIDONPARTIALROUND[r+i] = i === 4 || i === 5 ? 1n : 0n; // Round 4 -> Round 15 && Round 15 -> Round 26
                 constPols.Compressor.CMUL[r+i] = 0n;
                 constPols.Compressor.EVPOL4[r+i] = 0n;
                 constPols.Compressor.TREESELECTOR4[r+i] = 0n;
@@ -142,12 +135,10 @@ module.exports = async function plonkSetup(F, r1cs, options) {
                 }
 
                 constPols.Compressor.GATE[r+i] = 0n;
-                constPols.Compressor.POSEIDONM[r+i] = i !== 3 && i !== 4 && i !== 5 && i !== 10 ? 1n : 0n;
-                constPols.Compressor.POSEIDONP[r+i] = i === 3 ? 1n : 0n; // Round 3 -> Round 4
+                constPols.Compressor.POSEIDONFULLROUND[r+i] = [0,1,2,3,6,7,8,9].includes(i) ? 1n : 0n;
                 constPols.Compressor.POSEIDONCUSTFIRST[r+i] = i === 0 ? 1n : 0n; // Input -> Round 1
                 constPols.Compressor.POSEIDONFIRST[r+i] = 0n;
-                constPols.Compressor.PARTIALROUND[r+i] = i === 4 ? 1n : 0n; // Round 4 -> Round 15
-                constPols.Compressor.PARTIALROUND2[r+i] = i === 5 ? 1n : 0n; // Round 15 -> Round 26
+                constPols.Compressor.POSEIDONPARTIALROUND[r+i] = i === 4 || i === 5 ? 1n : 0n; // Round 4 -> Round 15 && Round 15 -> Round 26
                 constPols.Compressor.CMUL[r+i] = 0n;
                 constPols.Compressor.EVPOL4[r+i] = 0n;
                 constPols.Compressor.TREESELECTOR4[r+i] = 0n;
@@ -163,11 +154,9 @@ module.exports = async function plonkSetup(F, r1cs, options) {
             }
             constPols.Compressor.CMUL[r] = 1n;
             constPols.Compressor.GATE[r] = 0n;
-            constPols.Compressor.POSEIDONM[r] = 0n;
-            constPols.Compressor.POSEIDONP[r] = 0n;
+            constPols.Compressor.POSEIDONFULLROUND[r] = 0n;
             constPols.Compressor.POSEIDONFIRST[r] = 0n;
-            constPols.Compressor.PARTIALROUND[r] = 0n;
-            constPols.Compressor.PARTIALROUND2[r] = 0n;
+            constPols.Compressor.POSEIDONPARTIALROUND[r] = 0n;
             constPols.Compressor.POSEIDONCUSTFIRST[r] = 0n;
             constPols.Compressor.EVPOL4[r] = 0n;
             constPols.Compressor.TREESELECTOR4[r] = 0n;
@@ -190,11 +179,9 @@ module.exports = async function plonkSetup(F, r1cs, options) {
             
             constPols.Compressor.CMUL[r] = 0n;
             constPols.Compressor.GATE[r] = 0n;
-            constPols.Compressor.POSEIDONM[r] = 0n;
-            constPols.Compressor.POSEIDONP[r] = 0n;
+            constPols.Compressor.POSEIDONFULLROUND[r] = 0n;
             constPols.Compressor.POSEIDONFIRST[r] = 0n;
-            constPols.Compressor.PARTIALROUND[r] = 0n;
-            constPols.Compressor.PARTIALROUND2[r] = 0n;
+            constPols.Compressor.POSEIDONPARTIALROUND[r] = 0n;
             constPols.Compressor.POSEIDONCUSTFIRST[r] = 0n;
             constPols.Compressor.EVPOL4[r] = 0n;
             constPols.Compressor.TREESELECTOR4[r] = 0n;
@@ -202,11 +189,9 @@ module.exports = async function plonkSetup(F, r1cs, options) {
 
             constPols.Compressor.CMUL[r+1] = 0n;
             constPols.Compressor.GATE[r+1] = 0n;
-            constPols.Compressor.POSEIDONM[r+1] = 0n;
-            constPols.Compressor.POSEIDONP[r+1] = 0n;
+            constPols.Compressor.POSEIDONFULLROUND[r+1] = 0n;
             constPols.Compressor.POSEIDONFIRST[r+1] = 0n;
-            constPols.Compressor.PARTIALROUND[r+1] = 0n;
-            constPols.Compressor.PARTIALROUND2[r+1] = 0n;
+            constPols.Compressor.POSEIDONPARTIALROUND[r+1] = 0n;
             constPols.Compressor.POSEIDONCUSTFIRST[r+1] = 0n;
             constPols.Compressor.EVPOL4[r+1] = 0n;
             constPols.Compressor.TREESELECTOR4[r+1] = 0n;
@@ -268,11 +253,9 @@ module.exports = async function plonkSetup(F, r1cs, options) {
             constPols.Compressor.TREESELECTOR4[r] = 0n;
             constPols.Compressor.CMUL[r] = 0n;
             constPols.Compressor.GATE[r] = 0n;
-            constPols.Compressor.POSEIDONM[r] = 0n;
-            constPols.Compressor.POSEIDONP[r] = 0n;
+            constPols.Compressor.POSEIDONFULLROUND[r] = 0n;
             constPols.Compressor.POSEIDONFIRST[r] = 0n;
-            constPols.Compressor.PARTIALROUND[r] = 0n;
-            constPols.Compressor.PARTIALROUND2[r] = 0n;
+            constPols.Compressor.POSEIDONPARTIALROUND[r] = 0n;
             constPols.Compressor.POSEIDONCUSTFIRST[r] = 0n;
             constPols.Compressor.FFT4[r] = 0n;
 
@@ -280,11 +263,9 @@ module.exports = async function plonkSetup(F, r1cs, options) {
             constPols.Compressor.TREESELECTOR4[r+1] = 0n;
             constPols.Compressor.CMUL[r+1] = 0n;
             constPols.Compressor.GATE[r+1] = 0n;
-            constPols.Compressor.POSEIDONM[r+1] = 0n;
-            constPols.Compressor.POSEIDONP[r+1] = 0n;
+            constPols.Compressor.POSEIDONFULLROUND[r+1] = 0n;
             constPols.Compressor.POSEIDONFIRST[r+1] = 0n;
-            constPols.Compressor.PARTIALROUND[r+1] = 0n;
-            constPols.Compressor.PARTIALROUND2[r+1] = 0n;
+            constPols.Compressor.POSEIDONPARTIALROUND[r+1] = 0n;
             constPols.Compressor.POSEIDONCUSTFIRST[r+1] = 0n;
             constPols.Compressor.FFT4[r+1] = 0n;
 
@@ -305,11 +286,9 @@ module.exports = async function plonkSetup(F, r1cs, options) {
             constPols.Compressor.TREESELECTOR4[r] = 1n;
             constPols.Compressor.CMUL[r] = 0n;
             constPols.Compressor.GATE[r] = 0n;
-            constPols.Compressor.POSEIDONM[r] = 0n;
-            constPols.Compressor.POSEIDONP[r] = 0n;
+            constPols.Compressor.POSEIDONFULLROUND[r] = 0n;
             constPols.Compressor.POSEIDONFIRST[r] = 0n;
-            constPols.Compressor.PARTIALROUND[r] = 0n;
-            constPols.Compressor.PARTIALROUND2[r] = 0n;
+            constPols.Compressor.POSEIDONPARTIALROUND[r] = 0n;
             constPols.Compressor.POSEIDONCUSTFIRST[r] = 0n;
             constPols.Compressor.FFT4[r] = 0n;
 
@@ -317,11 +296,9 @@ module.exports = async function plonkSetup(F, r1cs, options) {
             constPols.Compressor.TREESELECTOR4[r+1] = 0n;
             constPols.Compressor.CMUL[r+1] = 0n;
             constPols.Compressor.GATE[r+1] = 0n;
-            constPols.Compressor.POSEIDONM[r+1] = 0n;
-            constPols.Compressor.POSEIDONP[r+1] = 0n;
+            constPols.Compressor.POSEIDONFULLROUND[r+1] = 0n;
             constPols.Compressor.POSEIDONFIRST[r+1] = 0n;
-            constPols.Compressor.PARTIALROUND[r+1] = 0n;
-            constPols.Compressor.PARTIALROUND2[r+1] = 0n;
+            constPols.Compressor.POSEIDONPARTIALROUND[r+1] = 0n;
             constPols.Compressor.POSEIDONCUSTFIRST[r+1] = 0n;
             constPols.Compressor.FFT4[r+1] = 0n;
 
@@ -416,10 +393,8 @@ module.exports = async function plonkSetup(F, r1cs, options) {
             constPols.Compressor.GATE[r] = 1n;
             constPols.Compressor.EVPOL4[r] = 0n;
             constPols.Compressor.CMUL[r] = 0n;
-            constPols.Compressor.POSEIDONM[r] = 0n;
-            constPols.Compressor.POSEIDONP[r] = 0n;
-            constPols.Compressor.PARTIALROUND[r] = 0n;
-            constPols.Compressor.PARTIALROUND2[r] = 0n;
+            constPols.Compressor.POSEIDONFULLROUND[r] = 0n;
+            constPols.Compressor.POSEIDONPARTIALROUND[r] = 0n;
             constPols.Compressor.POSEIDONFIRST[r] = 0n;
             constPols.Compressor.POSEIDONCUSTFIRST[r] = 0n;
             constPols.Compressor.FFT4[r] = 0n;
@@ -508,11 +483,9 @@ module.exports = async function plonkSetup(F, r1cs, options) {
         constPols.Compressor.EVPOL4[r] = 0n;
         constPols.Compressor.CMUL[r] = 0n;
         constPols.Compressor.GATE[r] = 0n;
-        constPols.Compressor.POSEIDONM[r] = 0n;
-        constPols.Compressor.POSEIDONP[r] = 0n;
+        constPols.Compressor.POSEIDONFULLROUND[r] = 0n;
         constPols.Compressor.POSEIDONFIRST[r] = 0n;
-        constPols.Compressor.PARTIALROUND[r] = 0n;
-        constPols.Compressor.PARTIALROUND2[r] = 0n;
+        constPols.Compressor.POSEIDONPARTIALROUND[r] = 0n;
         constPols.Compressor.POSEIDONCUSTFIRST[r] = 0n;
         constPols.Compressor.FFT4[r] = 0n;
         for (let k=0; k<12; k++) {
@@ -535,6 +508,7 @@ module.exports = async function plonkSetup(F, r1cs, options) {
         pilStr: pilStr,
         constPols: constPols,
         sMap: sMap,
-        plonkAdditions: plonkAdditions
+        plonkAdditions: plonkAdditions,
+        nBits,
     };
 }

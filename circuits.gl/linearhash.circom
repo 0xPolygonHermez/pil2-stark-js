@@ -1,7 +1,7 @@
 pragma circom 2.1.0;
 pragma custom_templates;
 
-include "poseidon.circom";
+include "poseidon2.circom";
 
 template LinearHash(nInputs, eSize) {
 
@@ -38,7 +38,7 @@ template LinearHash(nInputs, eSize) {
         var curC=0;
 
         for (var i=0; i<nHashes; i++) {
-            hash[i] = Poseidon(4);
+            hash[i] = Poseidon2(4);
             for (var k=0; k<8; k++) {
                 if (curInput<nInputs) {
                     hash[i].in[k] <== in[curInput][curC];

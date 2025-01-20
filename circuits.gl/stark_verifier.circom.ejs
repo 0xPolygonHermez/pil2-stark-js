@@ -3,7 +3,7 @@ pragma custom_templates;
 
 include "cmul.circom";
 include "cinv.circom";
-include "poseidon.circom";
+include "poseidon2.circom";
 include "bitify.circom";
 include "fft.circom";
 include "evalpol.circom";
@@ -54,7 +54,7 @@ class Transcript {
     }`)
             }  
         }
-        this.code.push(`\n    signal ${signalName}_${this.hCnt++}[12] <== Poseidon(12)([${this.pending.join(',')}], [${this.state.join(',')}]);`);
+        this.code.push(`\n    signal ${signalName}_${this.hCnt++}[12] <== Poseidon2(12)([${this.pending.join(',')}], [${this.state.join(',')}]);`);
         for (let i=0; i<12; i++) {
             this.out[i] = `${signalName}_${this.hCnt-1}[${i}]`;
         }
@@ -435,8 +435,8 @@ template parallel <%- verifyEvaluationsName %>() {
     signal input challengeXi[3];
     signal input evals[<%- starkInfo.evMap.length %>][3];
     signal input publics[<%- starkInfo.nPublics %>];
-<%  if(starkInfo.airgroupValuesMap.length() > 0) { -%>
-    signal input airgroupValues[<%- starkInfo.airgroupValuesMap.length() %>][3];
+<%  if(starkInfo.airgroupValuesMap.length > 0) { -%>
+    signal input airgroupValues[<%- starkInfo.airgroupValuesMap.length %>][3];
 <%  } -%>
     signal input {binary} enable;
 
@@ -701,8 +701,8 @@ template parallel <%- verifyFinalPolName %>() {
 <% } -%>
 template <%- verifierName %>() {
     signal input publics[<%- starkInfo.nPublics %>]; // publics polynomials
-<% if(starkInfo.airgroupValuesMap.length() > 0) { -%>
-    signal input airgroupValues[<%- starkInfo.airgroupValuesMap.length() %>][3]; // airgroup values
+<% if(starkInfo.airgroupValuesMap.length > 0) { -%>
+    signal input airgroupValues[<%- starkInfo.airgroupValuesMap.length %>][3]; // airgroup values
 <% } -%>
 <% for(let i=0; i < starkInfo.nStages; i++) {  -%>
 <%  const stage = i + 1; -%>
@@ -837,7 +837,7 @@ template <%- verifierName %>() {
 <%      verifyEvalsInputs.push("challengeXi"); -%>
 <%      verifyEvalsInputs.push("evals"); -%>
 <%      verifyEvalsInputs.push("publics"); -%>
-<%      if(starkInfo.airgroupValuesMap.length() > 0) verifyEvalsInputs.push("airgroupValues"); -%>
+<%      if(starkInfo.airgroupValuesMap.length > 0) verifyEvalsInputs.push("airgroupValues"); -%>
 <%      verifyEvalsInputs.push("enabled"); -%>
 
     <%- verifyEvaluationsName %>()(<%- verifyEvalsInputs.join(", ") %>);

@@ -1,7 +1,7 @@
 pragma circom 2.1.0;
 pragma custom_templates;
 
-include "poseidon.circom";
+include "poseidon2.circom";
 
 /*
     Given a number of inputs, merge them into a one single output (which is made by 4 GL elements)
@@ -43,7 +43,7 @@ template BasicLinearHash(nInputs) {
         
         // Calculate the hashes
         for (var i=0; i<nHashes; i++) {
-            hash[i] = Poseidon(4);
+            hash[i] = Poseidon2(4);
             for (var k=0; k<8; k++) {
                 // Add the inputs for the Poseidon hash. If there are not enough inputs to fulfill the 8 slots, add zeros
                 if (i*8+k<nInputs) {

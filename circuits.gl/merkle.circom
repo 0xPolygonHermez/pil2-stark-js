@@ -1,7 +1,7 @@
 pragma circom 2.1.0;
 pragma custom_templates;
 
-include "poseidon.circom";
+include "poseidon2.circom";
 
 /*
     Given a value and its sibling path (with its corresponding vector determining if the element is the left or right one), 
@@ -22,7 +22,7 @@ template Merkle(nLevels) {
         // Therefore, a 2 inputs Poseidon is being performed.
         // The key that determines which element is the left one and which one the right one is also
         // sent to the custom gate
-        hash[i] = CustPoseidon(4);
+        hash[i] = CustPoseidon2(4);
         for (var k=0; k<4; k++) {
             hash[i].in[k] <== siblings[i][k];
             // If i == 0 we hash the sibling with the initial leave value. Otherwise with the last hash calculated

@@ -7,10 +7,10 @@ const { BigBuffer } = require("pilcom");
 
 const {linearHash, merkelizeLevel} = require("./merklehash_worker");
 
-buildPoseidon = require("../poseidon/poseidon");
+buildPoseidon2 = require("../poseidon/poseidon2");
 
 module.exports = async function buildMerkleHash(splitLinearHash = false) {
-    const poseidon = await buildPoseidon();
+    const poseidon = await buildPoseidon2();
     const MH = new MerkleHash(poseidon, splitLinearHash);
     return MH;
 }

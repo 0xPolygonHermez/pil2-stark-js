@@ -11,8 +11,8 @@ module.exports.initCalculatedSymbols = function initCalculatedSymbols(pilInfo) {
         calculatedSymbols.const = new Array(pilInfo.nConstants).fill(false);
     }
 
-    if(pilInfo.airgroupValuesMap.length() > 0) {
-        calculatedSymbols.airgroupvalue = new Array(pilInfo.airgroupValuesMap.length()).fill(false);
+    if(pilInfo.airgroupValuesMap && pilInfo.airgroupValuesMap.length > 0) {
+        calculatedSymbols.airgroupvalue = new Array(pilInfo.airgroupValuesMap.length).fill(false);
     }
 
     const nChallenges = pilInfo.challengesMap.length;
@@ -64,7 +64,7 @@ module.exports.isStageCalculated = function isStageCalculated(ctx, stage, option
     }
 
     if(stage === ctx.pilInfo.nStages) {
-        for(let i = 0; i < ctx.pilInfo.airgroupValuesMap.length(); ++i) {
+        for(let i = 0; i < ctx.pilInfo.airgroupValuesMap.length; ++i) {
             const airgroupvalue = ctx.pilInfo.airgroupValuesMap[i];
             if(!module.exports.isSymbolCalculated(ctx, {op: "airgroupvalue", id: i})) {
                 console.log(`Airgroup value ${airgroupvalue.name} with id ${i} is not calculated.`);

@@ -511,8 +511,8 @@ template parallel VerifyEvaluations() {
     signal input {maxNum} challengeXi[3];
     signal input {maxNum} evals[<%- starkInfo.evMap.length %>][3];
     signal input {maxNum} publics[<%- starkInfo.nPublics %>];
-<%  if(starkInfo.airgroupValuesMap.length() > 0) { -%>
-    signal input airgroupValues[<%- starkInfo.airgroupValuesMap.length() %>][3];
+<%  if(starkInfo.airgroupValuesMap.length > 0) { -%>
+    signal input airgroupValues[<%- starkInfo.airgroupValuesMap.length %>][3];
 <%  } -%>
     signal input {binary} enable;
 
@@ -829,8 +829,8 @@ template parallel VerifyFinalPol() {
 
 template StarkVerifier() {
     signal input publics[<%- starkInfo.nPublics %>]; // constant polynomials
-<% if(starkInfo.airgroupValuesMap.length() > 0) { -%>
-    signal input airgroupValues[<%- starkInfo.airgroupValuesMap.length() %>][3]; // airgroup values
+<% if(starkInfo.airgroupValuesMap.length > 0) { -%>
+    signal input airgroupValues[<%- starkInfo.airgroupValuesMap.length %>][3]; // airgroup values
 <% } -%>
 <% for(let i=0; i < starkInfo.nStages; i++) {  -%>
 <%  const stage = i + 1; -%>
@@ -906,9 +906,9 @@ signal input s0_vals<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkInfo.map
         }
     }
 
-<%  if(starkInfo.airgroupValuesMap.length() > 0) { -%>
-    signal {maxNum} subproofValuesGL[<%- starkInfo.airgroupValuesMap.length() %>][3];
-    for(var i = 0; i < <%- starkInfo.airgroupValuesMap.length() %>; i++){
+<%  if(starkInfo.airgroupValuesMap.length > 0) { -%>
+    signal {maxNum} subproofValuesGL[<%- starkInfo.airgroupValuesMap.length %>][3];
+    for(var i = 0; i < <%- starkInfo.airgroupValuesMap.length %>; i++){
         for(var j = 0; j < 3; j++) {
             subproofValuesGL[i][j] <== LessThan64Bits()(airgroupValues[i][j]);
         }
@@ -1037,7 +1037,7 @@ signal input s0_vals<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkInfo.map
 <%      verifyEvalsInputs.push("challengeXiGL"); -%>
 <%      verifyEvalsInputs.push("evalsGL"); -%>
 <%      verifyEvalsInputs.push("publicsGL"); -%>
-<%      if(starkInfo.airgroupValuesMap.length() > 0) verifyEvalsInputs.push("subproofValuesGL"); -%>
+<%      if(starkInfo.airgroupValuesMap.length > 0) verifyEvalsInputs.push("subproofValuesGL"); -%>
 <%      verifyEvalsInputs.push("enabled"); -%>
 
     VerifyEvaluations()(<%- verifyEvalsInputs.join(", ") %>);    
@@ -1180,8 +1180,8 @@ signal input s0_vals<%- qStage %>[<%- starkStruct.nQueries %>][<%- starkInfo.map
     signal output publicsHash;
 
     signal input publics[<%- starkInfo.nPublics %>];
-<%  if(starkInfo.airgroupValuesMap.length() > 0) { -%>
-    signal input airgroups[<%- starkInfo.airgroupValuesMap.length() %>];
+<%  if(starkInfo.airgroupValuesMap.length > 0) { -%>
+    signal input airgroups[<%- starkInfo.airgroupValuesMap.length %>];
 <% } -%>
 <% for(let i=0; i < starkInfo.nStages; i++) {  -%>
 <%  const stage = i + 1; -%>

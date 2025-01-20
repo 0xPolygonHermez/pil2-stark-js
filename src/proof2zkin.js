@@ -4,7 +4,7 @@ module.exports.proof2zkin = function proof2zkin(p, starkInfo) {
     const friSteps = starkInfo.starkStruct.steps;
     const nQueries = starkInfo.starkStruct.nQueries;
     const nStages = starkInfo.nStages;
-    const nSubproofValues = starkInfo.airgroupValuesMap.length();
+    const nSubproofValues = starkInfo.airgroupValuesMap.length;
 
     const qStage = nStages + 1;
     
@@ -84,7 +84,7 @@ module.exports.genNullProof = function genNullProof(starkInfo) {
     const friSteps = starkInfo.starkStruct.steps;
     const nQueries = starkInfo.starkStruct.nQueries;
     const nStages = starkInfo.nStages;
-    const nSubproofValues = starkInfo.airgroupValuesMap.length();
+    const nSubproofValues = starkInfo.airgroupValuesMap.length;
     const nEvals = starkInfo.evMap.length;
 
     const qStage = nStages + 1;

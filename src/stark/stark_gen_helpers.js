@@ -46,7 +46,7 @@ module.exports.initProverStark = async function initProverStark(pilInfo, express
 
     ctx.publics = [];
 
-    ctx.airgroupValues = new Array(pilInfo.airgroupValuesMap.length()).fill(0n) || [];
+    ctx.airgroupValues = new Array(pilInfo.airgroupValuesMap.length).fill(0n) || [];
 
     ctx.challenges[0] = [];
 
